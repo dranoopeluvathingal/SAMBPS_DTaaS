@@ -1,0 +1,141 @@
+% =======================================================
+% IIT MADRAS THESIS: MASTER TIKZ STYLES & MACROS
+% File: tikz_master_styles.tex
+% =======================================================
+
+% --- REQUIRED LIBRARIES ---
+\usetikzlibrary{shapes, shapes.geometric, arrows, arrows.meta, calc, positioning, fit, decorations.pathmorphing}
+
+% --- GLOBAL STYLES ---
+\tikzset{
+    >={latex'},
+    font=\sffamily\scriptsize,
+    
+    % Power System Components
+    bus/.style={ultra thick, draw=black, inner sep=0pt, outer sep=0pt},
+    breaker/.style={draw, rectangle, thick, minimum size=0.5cm, fill=white},
+    redbox/.style={draw=red, dashed, thick, inner sep=5pt},
+    load_zigzag/.style={blue!60!black, thick, decorate, decoration={snake, segment length=3.5mm, amplitude=0.9mm}},
+    load_triangle/.style={draw=blue!60!black, fill=blue!60!black, regular polygon, regular polygon sides=3, minimum size=0.5cm, inner sep=0pt},
+    
+    % Adaptive Logic / Flowchart Components
+    logic_start/.style={rectangle, rounded corners, minimum width=2.5cm, minimum height=0.8cm, text centered, draw=black, thick, fill=gray!10},
+    logic_process/.style={rectangle, minimum width=3cm, minimum height=0.8cm, text centered, text width=3cm, draw=black, thick, fill=white},
+    logic_io/.style={trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=2.5cm, minimum height=0.8cm, text centered, text width=2.5cm, draw=black, thick, fill=white},
+    logic_decision/.style={diamond, aspect=1.5, minimum width=3cm, minimum height=1cm, text centered, text width=2.2cm, draw=black, thick, fill=white},
+    logic_arrow/.style={thick, -{Stealth[length=2.5mm, width=2mm]}},
+    logic_line/.style={thick, draw=black}
+}
+
+% --- SURGICAL MACROS ---
+
+% 1. Conductor Slashes
+\newcommand{\vslashes}[3]{
+    \coordinate (mid) at ($(#1)!0.5!(#2)$);
+    \foreach \i in {-0.1,0,0.1} \draw [thick] ($(mid)+(\i,-0.15)$)--++(0.25,0.35);
+    \node at (mid) [right=0.35cm, yshift=0.15cm] {\textbf{#3}};
+}
+
+\newcommand{\hslashes}[3]{
+    \coordinate (mid) at ($(#1)!0.5!(#2)$);
+    \foreach \i in {-0.15,0,0.15} \draw [thick] ($(mid)+(\i,-0.2)$)--++(0.3,0.4);
+    \node at (mid) [above=0.2cm] {\textbf{#3}};
+}
+
+% 2. Load Drops
+\newcommand{\addloadvert}[3]{
+    \coordinate (start#3) at ([xshift=#2] #1.center);
+    \coordinate (end#3) at ($(start#3) + (0,-0.8)$);
+    \draw [load_zigzag] (start#3) -- (end#3);
+    \node (tri#3) [load_triangle, rotate=180, anchor=north] at (end#3) {};
+    \node at (tri#3.south) [below=0.05cm] {\textbf{Load #3}};
+}
+
+\newcommand{\addloadcoordvert}[2]{
+    \coordinate (end#2) at ($(#1) + (0,-0.8)$);
+    \draw [load_zigzag] (#1) -- (end#2);
+    \node (tri#2) [load_triangle, rotate=180, anchor=north] at (end#2) {};
+    \node at (tri#2.south) [below=0.05cm] {\textbf{Load #2}};
+}
+
+\newcommand{\addloadright}[3]{
+    \coordinate (start#3) at (#1);
+    \coordinate (end#3) at ($(start#3) + (1.2,0)$);
+    \draw [load_zigzag] (start#3) -- (end#3);
+    \node (tri#3) [load_triangle, rotate=-90, anchor=west] at (end#3) {};
+    \node at (tri#3.east) [right=0.1cm] {\textbf{#2}};
+}
+
+% 3. Cyber-Physical Assets (PV & Diesel)
+\newcommand{\addpvvert}[3]{
+    \coordinate (start#3) at ([xshift=#2] #1.center);
+    \node (ipr#3) [draw=red, dashed, thick, minimum size=0.25cm, inner sep=0pt, anchor=north] at ($(start#3) + (0,-0.4)$) {};
+    \draw [red, thick] (ipr#3.south west) -- (ipr#3.north east);
+    \node at (ipr#3.north) [above=0.05cm] {\textbf{#2}};
+    
+    \node (inv#3) [draw=green!60!black, thick, minimum width=0.6cm, minimum height=0.45cm, below=0.15cm of ipr#3] {};
+    \draw [green!60!black, thick] (inv#3.south west) -- (inv#3.north east);
+    \node at (inv#3.north west) [anchor=north west, inner sep=0.5pt] {\tiny $\sim$};
+    \node at (inv#3.south east) [anchor=south east, inner sep=0.5pt] {\tiny $=$};
+    
+    \node (pv_box#3) [draw=green!60!black, thick, minimum width=0.5cm, minimum height=0.45cm, below=0cm of inv#3, align=center, inner sep=1pt] {\textbf{PV}};
+    \node at (pv_box#3.south) [below=0.05cm] {\textbf{#3}};
+    
+    \draw [thick] (start#3) -- (ipr#3.north);
+    \draw [green!60!black, thick] (ipr#3.south) -- (inv#3.north);
+}
+
+\newcommand{\addpvright}[3]{
+    \coordinate (start#3) at (#1);
+    \node (ipr#3) [draw=red, dashed, thick, minimum size=0.25cm, inner sep=0pt, anchor=west] at ($(start#3) + (0.3,0)$) {};
+    \draw [red, thick] (ipr#3.south west) -- (ipr#3.north east);
+    \node at (ipr#3.north) [above=0.05cm] {\textbf{#2}};
+    
+    \node (inv#3) [draw=green!60!black, thick, minimum width=0.6cm, minimum height=0.45cm, right=0.2cm of ipr#3] {};
+    \draw [green!60!black, thick] (inv#3.south west) -- (inv#3.north east);
+    \node at (inv#3.north west) [anchor=north west, inner sep=0.5pt] {\tiny $\sim$};
+    \node at (inv#3.south east) [anchor=south east, inner sep=0.5pt] {\tiny $=$};
+    
+    \node (pv_box#3) [draw=green!60!black, thick, minimum width=0.5cm, minimum height=0.45cm, right=0cm of inv#3, align=center, inner sep=1pt] {\textbf{PV}};
+    \node at (pv_box#3.south) [below=0.05cm] {\textbf{#3}};
+    
+    \draw [thick] (start#3) -- (ipr#3.west);
+    \draw [green!60!black, thick] (ipr#3.east) -- (inv#3.west);
+}
+
+\newcommand{\adddiesel}[2]{
+    \coordinate (start#2) at (#1);
+    \node (ipr#2) [draw=red, dashed, thick, minimum size=0.25cm, inner sep=0pt, anchor=west] at ($(start#2) + (0.3,0)$) {};
+    \draw [red, thick] (ipr#2.south west) -- (ipr#2.north east);
+    \node at (ipr#2.north) [above=0.05cm] {\textbf{IPR #2}};
+    
+    \node (gen#2) [circle, draw, thick, minimum size=0.7cm, right=0.3cm of ipr#2] {\textbf{G}};
+    \node at (gen#2.south) [below=0.05cm, align=center] {\textbf{Diesel}\\\textbf{Generator}};
+    
+    \draw [thick] (start#2) -- (ipr#2.west);
+    \draw [thick] (ipr#2.east) -- (gen#2.west);
+}
+
+% 4. Flowchart Decisions
+\newcommand{\yesnode}[2]{\node [above] at (#1) {\textbf{Yes}};}
+\newcommand{\nonode}[2]{\node [right] at (#1) {\textbf{No}};}
+
+% =======================================================
+% ADAPTIVE LOGIC & FLOWCHART STYLES (Phase 2)
+% =======================================================
+\usetikzlibrary{shapes.geometric, arrows.meta}
+\tikzset{
+    % Standard Flowchart Blocks
+    logic_start/.style={rectangle, rounded corners, minimum width=2.5cm, minimum height=0.8cm, text centered, draw=black, thick, fill=gray!10},
+    logic_process/.style={rectangle, minimum width=3cm, minimum height=0.8cm, text centered, text width=3cm, draw=black, thick, fill=white},
+    logic_io/.style={trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=2.5cm, minimum height=0.8cm, text centered, text width=2.5cm, draw=black, thick, fill=white},
+    logic_decision/.style={diamond, aspect=1.5, minimum width=3cm, minimum height=1cm, text centered, text width=2.2cm, draw=black, thick, fill=white},
+    
+    % Routing & Arrows
+    logic_arrow/.style={thick, -{Stealth[length=2.5mm, width=2mm]}},
+    logic_line/.style={thick, draw=black}
+}
+% --- SURGICAL FLOWCHART MACROS ---
+% 1. Yes/No Decision Labels
+\newcommand{\yesnode}[2]{\node [above] at (#1) {\textbf{Yes}};}
+\newcommand{\nonode}[2]{\node [right] at (#1) {\textbf{No}};}
