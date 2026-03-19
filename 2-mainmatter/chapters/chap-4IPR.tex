@@ -96,9 +96,24 @@ The IPR is a multi-function digital device that integrates various protective fu
 	\caption{Interconnection protection using multi-function relays for a PV plant connected to MV distribution network}
 	\label{Fig2}
 \end{figure}
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \begin{figure}[h]
+%     \centering
+%     % \includestandalone strips the preamble of the child file and renders the TikZ natively
+%     \includestandalone{Z_Final_Thesis_figures/ch4_IPR/c4_1_sch_adaptive_logic}
+%     \caption{Adaptive LVRT decision logic for grid-tied inverter systems.}
+%     \label{fig:c4_1_adaptive_logic}
+% \end{figure}
 
 
- 
+\begin{figure}[h]
+    \centering
+    % \includegraphics pulls the PDF vector directly
+    \includegraphics[width=0.8\textwidth]{Z_Final_Thesis_figures/ch4_IPR/c4_3_plt_multistage_voltage_dip.pdf}
+    \caption{Three-phase voltage waveform demonstrating a multi-stage voltage dip during SLG fault transition.}
+    \label{fig:c4_3_multistage_dip}
+\end{figure}
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{itemize}[label=\textbullet, leftmargin=2em, nosep]
     \item \textbf{Anti-Islanding (ANSI 78/81R):} In addition to passive methods (OVP/UVP and OFP/UFP), active techniques such as \textit{Active Frequency Drift} (AFD) or \textit{Sandia Frequency Shift} (SFS) are implemented in the inverter control to destabilize the voltage/frequency if the utility is lost, forcing the relay to trip.
