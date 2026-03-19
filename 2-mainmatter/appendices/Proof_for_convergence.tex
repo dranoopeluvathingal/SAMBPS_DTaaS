@@ -1,0 +1,57 @@
+\chapter{Proof of convergence distributed algorithms}
+\section{Proof of Convergence of Distributed PI Consensus}
+ The distributed PI consensus convergence is proven using the discrete-time state-space model with two variables $x_i$ and $z_i$. The variable $x_i$ converges to a constant value, and the variable $z_i$ converges to zero at the end. 
+
+ To analyse the convergence of the protocol, the \eqref{eq:4.10} is represented in terms of two state variables $x_i(k) \ \text{and} \ z_i(k)$, and \eqref{eq:4.10} can be written as,
+	\begin{subequations}\label{eq:B.1}
+		\begin{equation}
+		%\begin{split}
+		x_i(k+1)=x_i(k)+(k_p+k_i)\sum_{j\in N_i}d_{ij}(x_j(k)-x_i(k))+k_iz_i(k),
+		%\end{split}	
+		\end{equation}
+		\begin{equation}	
+		z_i(k+1)=z_i(k)+\sum_{j\in N_i}d_{ij}(x_j(k)-x_i(k)).
+		\end{equation}
+	\end{subequations}
+	The linear discrete time state space model of \eqref{eq:B.1} is given by, 
+	\begin{align}\label{eq:B.2}
+	\begin{bmatrix}
+	X(k+1)\\
+	Z(k+1)
+	\end{bmatrix}
+	=
+	\begin{bmatrix}
+	I_N+(k_p+k_i)(D-I_N) & k_iI_N\\
+	(D-I_N) & I_N
+	\end{bmatrix}
+	\begin{bmatrix}
+	X(k)\\
+	Z(k)
+	\end{bmatrix}
+	\end{align}
+	The \eqref{eq:B.2} can be simplified as,
+	\begin{equation}\label{eq:B.3}
+	Y(k+1)=\tilde{A} Y(k).
+	\end{equation}
+	where,\\
+	$\tilde{A}=
+	\begin{bmatrix}
+	I_N+(k_p+k_i)(D-I_N) & k_iI_N\\
+	(D-I_N) & I_N
+	\end{bmatrix}
+	$~and~$Y(k)=~
+	\begin{bmatrix}
+	X(k)\\
+	Z(k)
+	\end{bmatrix}$.
+
+ The convergence of the algorithm given in \eqref{eq:B.3} depends on the eigenvalues of matrix $\tilde{A}$ and varies with the values of $k_p$ and $k_i$. The value of $k_i$ determines the algorithm's speed, and it is assumed to be in the range of $10^{-1}$ or $10^{-4}$. Hence the term $k_iI_N$ is assumed to be very small. This makes the matrix in \eqref{eq:B.2} lower triangular matrix. The eigenvalues of $\tilde{A}$ depends on the eigenvalues of $I_N+(k_p+k_i)(D-I_N)$ and $I_N$ since the eigenvalues of the triangular matrices are the union of eigenvalues of the diagonal matrices. The value of $k_p$ has chosen such that the matrix $I_N+(k_p+k_i)(D-I_N)$ is a doubly stochastic matrix. 
+%\begin{lem}
+The eigenvalues of a doubly stochastic matrix is bounded by one ie. $|\lambda_i| \leq 1 \ \forall \ i$.
+%\end{lem}
+ It is seen that all the eigenvalues of $\tilde{A}$ lie inside the unit circle, and at least one eigenvalue lies on the unit circle. Hence the algorithm is bounded and converges to a non-zero value.
+Since the eigenvalue 1 has $N+1$ multiplicity, there should be (N+1) independent eigenvectors. According to the protocol, the state variable $x(k)$ at all nodes converges to the same value $x^*$ and $z(k)$ converges to a constant value, which varies with node. The value $z(k)$ cannot be predicted from the eigenvalue. We are interested in $X(k)$, hence the eigenvector corresponding to $X(k)$. It can be easily verified that $\begin{bmatrix}
+	1_N\\
+	Z_N
+	\end{bmatrix}$ 
+is the eigenvector associated with $\lambda_1=1$ since $(D-I_N)1_N=0$, where $Z_N$ is a $N\times1$ matrix. All the other eigenvalues are inside the unit circle. Hence the $X[k] \ \text{converges to}\ \alpha 1_N$ and $Z[k] \ \text{converges to}\ Z[\infty]$ as $k \to \infty$. The consensus variable $x(k)$ converges to a common value, and the integral factors at different nodes converge to different values at optimal condition, which shows there will not be any variation in the consensus variable further.

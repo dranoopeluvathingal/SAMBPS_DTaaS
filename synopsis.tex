@@ -1,0 +1,128 @@
+\documentclass
+    [phd,synopsis]
+    {iitmdissertation}
+
+\dissertationDepartment      {Department of Electrical Engineering}
+\dissertationAuthorName      {Naina P. M.}
+\dissertationDateOfBirth     {16 May 1986}
+\dissertationDegree          {Doctor of Philosophy}
+\dissertationTitle           {Distributed Optimization Algorithms for Virtual Power Plants}
+\dissertationMonth           {October}
+\dissertationYear            {2023}
+\dissertationCertificateDate {October, 2023}
+\dissertationType            {Thesis}
+\dissertationGuides          {Dr. K. Shanti Swarup}
+\dissertationCommitteeName   {Doctoral Committee}
+%\dissertationImage           {tux.png}
+
+\begin{document}
+\prematter
+%For MS theses, the synopsis can be 2 -- 3 pages.
+%\newline 
+%For PhD theses, the synopsis can be 4 -- 6 pages.
+\section{Abstract}
+Virtual Power Plants (VPPs) are becoming increasingly pivotal in the context of modern energy grids, facilitating the integration of renewable and distributed energy resources. VPP enables the market participation of small distributed generators, including renewable sources. A Virtual Power Plant (VPP) consolidates the capacity of distributed energy resources, functioning like a traditional power plant. Like a conventional power plant, a VPP possesses its unique operational attributes, such as generation limits and more. The proliferation of distributed generators (DGs) fundamentally reshapes the power grid into a decentralized network. The heart of the VPP is its energy management system. The implementation of Energy Management in VPP faces technical as well as economic challenges. This thesis delves into the realm of Energy Management within VPPs. 
+
+Energy Management Operations employing conventional centralized algorithms may not be suitable, effective, and accurate in the presence of DGs. Consensus-based distributed algorithms for energy management are presented in this work, which preserves the privacy of the participants. Since the consensus protocol is a communication-based approach, noise and communication delays are unavoidable. Two different variants of consensus algorithms are proposed, which effectively reduce the adverse effects of noise and communication delay with time-varying communication networks. This work uses two different consensus protocols - proportional consensus and proportional integral consensus protocol. The proposed algorithms ensure a global optimal solution since the algorithms are based on lagrangian relaxation (LR). The algorithms are successfully tested on an IEEE 39 bus system and a 15-node VPP, and the results show the effectiveness of the algorithms. 
+
+This work also tackles a crucial challenge: effectively managing a Virtual Power Plant (VPP) by optimizing the scheduling of Distributed Energy Resources (DERs) to maximize profits while minimizing risks. The concept of VPP becomes particularly valuable when faced with uncertainties like variable renewable energy generation and fluctuating electricity prices. Our research explored scenario-based stochastic scheduling techniques to address uncertainties arising from variables such as wind power generation and electricity prices. The VPP is modeled on a modified IEEE 33-node distribution system, and we aimed to maximize its expected profit while considering the network parameters.
+
+\newpage
+
+\section{Objectives}
+\subsubsection{Research Objectives:}
+
+Fig. \ref{Fig:ch_1_thesis} illustrates the outline of this research work. The major objectives of this research work are identified as follows:
+\begin{enumerate}
+    \item \textbf{Modeling} and \textbf{Simulation} of Virtual Power Plant (VPP):
+    \newline
+    \textit{Develops a centralized energy management algorithm for Virtual Power Plant which includes both dispatchable and non-dispatchable sources. \newline
+    Describes the functioning of a Virtual Power Plant with three operational modes.}    
+    \item \textbf{Development} of Distributed Algorithm for VPP:
+    \newline
+    \textit{Develops a robust algorithm to facilitate effective decentralized operations, particularly in the presence of unreliable and limited communication mechanisms. \newline 
+    Decompose the optimization problem into subproblems using dual decomposition.}
+    \item \textbf{Implementation} of VPP in Day Ahead Market (DAM):
+    \newline
+    \textit{Handles the uncertainties in renewable sources, price and demand. \newline
+    Develop a scheduling model for VPPs to engage in electricity markets, taking into account the uncertainties within the system.}  
+\end{enumerate} 
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=0.965\textwidth]{images/chapter_1/thesis_organization_v1.pdf}
+    \caption{Outline of the research work}
+    \label{Fig:ch_1_thesis}
+\end{figure}
+
+\section{Existing gaps which were bridged}
+\begin{enumerate}[start=1,label={(RG \arabic*):}]
+    \item A comprehensive virtual power plant model has been introduced, featuring three operational modes: no power exchange, power export, and power import mode. This model has been implemented with the help of a centralized energy management system. 
+    \item A partially distributed leader-follower consensus-based algorithm has been proposed for optimal dispatch of VPP.  This algorithm holds particular relevance for large-scale VPPs that operate without geographical constraints.
+    \item A robust, fully distributed consensus algorithm based on consensus gain function has been proposed for deterministic distributed energy management of VPP considering noise and communication delay in a switching communication network.
+    \item A double consensus algorithm based on proportional integral consensus has been proposed for the distributed economic dispatch of a microgrid with nose and communication delay.
+    \item A scenario-based stochastic scheduling model of VPP has been presented considering the uncertainties in renewable generation, price, and demand to participate in the day ahead market.
+\end{enumerate}
+%\newpage
+
+\section{Most important contributions}
+Three important contributions of the work are discussed below.
+\begin{enumerate}
+    \item A \textbf{consensus-based leader-follower algorithm} has been proposed to solve the distributed optimal dispatch with limited communication. The algorithm's decentralized design preserves the privacy of the participants. The outcomes demonstrate that the algorithm consistently converges towards the global optimal solution. Furthermore, it is scalable and well-suited for larger systems, making it an effective tool for tackling distributed optimization challenges within the smart grid domain.
+    
+    \item A \textbf{robust, fully distributed consensus algorithm} has been proposed to tackle the challenge of distributed energy management within a Virtual Power Plant (VPP). The algorithm uses a consensus gain function to suppress the effects of noise and communication delay. The outcomes vividly demonstrate the algorithm's effectiveness. Furthermore, this algorithm is both scalable and adaptable for addressing various Lagrangian relaxation-based optimization challenges within the smart grid domain.
+    
+    \item A \textbf{proportional integral consensus algorithm} has been introduced to solve the distributed economic dispatch problem in a microgrid. In this algorithm, an integral term is strategically employed to mitigate the influence of noise. Furthermore, this algorithm is adaptable and well-suited for larger systems. The results reveal that this algorithm converges faster with noise and communication delay in a switching communication network.  
+\end{enumerate}
+%\newpage
+
+\section{Conclusions}
+\begin{enumerate}
+    \item \textbf{Technical Features:} \textit{The proposed virtual power plant model incorporates a centralized control center to coordinate distributed energy resources efficiently, the coordination process optimized through consensus-based algorithms.}
+    
+    \vspace{0.5cm}    
+    The proposed virtual power plant model provides a comprehensive overview of VPP operational modes with a centralized control center, which coordinates various distributed energy resources to operate as a single power plant. Consensus-based algorithms have been put forth as a solution to address the limitations associated with a centralized controller. Notably, the proposed proportional integral consensus algorithm converges faster than the consensus gain function-based algorithm in the presence of noise.
+     
+    \item \textbf{Economic Aspects:} \textit{When participating in markets, the synchronized operation of distributed energy resources generates higher profits than the individual operations of these resources.} 
+    
+     \vspace{0.5cm}
+    Two distinct types of Virtual Power Plants (VPPs) exist, each with its unique focus and purpose: Commercial VPPs (CVPPs) and Technical VPPs (TVPPs). CVPPs concentrate predominantly on economic and market aspects of energy generation and distribution. This thesis approaches the energy management of VPPs by framing it as a profit maximization problem. The proposed distributed algorithms are developed to address this problem within the context of CVPPs.     
+   
+    \item \textbf{Market Attributes:} \textit{Virtual power plant enables the market participation of small-scale distributed energy resources.}
+    
+    \vspace{0.5cm}
+    Managing uncertainty poses another substantial challenge in VPP's operation while participating in the wholesale markets. In response to this challenge, a scenario-based stochastic scheduling model of Technical VPP (TVPP) has been introduced, considering uncertainties related to renewables, price fluctuations, and demand variations. The outcomes of this model offer an operational schedule for the VPP spanning a 24-hour horizon, providing valuable insights into how the VPP should operate in the day-ahead market.        
+\end{enumerate}
+
+\newpage
+
+\section{List of Publications}
+\begin{enumerate}
+    \item{Journal (Published)}
+    \begin{enumerate}
+        \item Naina, P. M., and K. S. Swarup, "Double-Consensus-Based Distributed Energy Management in a Virtual Power Plant," in IEEE Transactions on Industry Applications, vol.58, no.6 (2022), pp. no. 7047-7056. \par
+    \end{enumerate}    
+    \item{Journal (under preparation)}
+    \begin{enumerate}
+        \item Naina, P. M., and K. S. Swarup, "Proportional-Integral Consensus based Operation in a Microgrid" in IEEE Transactions on Industrial Informatics (Under submission)
+        \item Naina, P. M., and K. S. Swarup, "Stochastic scheduling of virtual power plant participating in dayahead market" in IET Energy Conversion and Economics (Under submission)
+    \end{enumerate}
+    \item{Book Chapter}
+    \begin{enumerate}
+        \item Naina, P. M., and K. S. Swarup, "Decentralized Energy Management System within VPP," in Virtual Power Plant Solution for Future Smart Energy Communities (1st ed.) (chapter 9). CRC Press, 2022. https://doi.org/10.1201/9781003257202
+    \end{enumerate} \par
+    \item{Conferences}
+    \begin{enumerate}
+        \item Naina, P. M., and K. S. Swarup, "Double consensus based optimal dispatch considering communication delay and noise," In 2020 21st National Power Systems Conference (NPSC). IEEE, 2020, pp. 1-6. 
+        \item Naina, P. M., and K. S. Swarup, "An Iterative Distributed Approach for Optimal Power Dispatch in a Smart Grid Environment," In 2018 20th National Power Systems Conference (NPSC). IEEE, 2018. 
+        \item Naina, P. M., Haile-Selassie Rajamani, and K. S. Swarup, "Modeling and simulation of virtual power plant in energy management system applications," In 2017 7th International Conference on Power Systems (ICPS). IEEE, 2017.\par
+    \end{enumerate}
+\end{enumerate}
+        
+
+%\par
+%\begingroup
+%\footnotesize
+%\printAllBibliographyReferences{references.bib}
+% \printBibliographyReferences{references.bib}
+%\endgroup
+\end{document}

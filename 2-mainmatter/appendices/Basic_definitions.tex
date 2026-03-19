@@ -1,0 +1,50 @@
+\chapter{Basic Definitions}
+\section{Graph Theory}\label{graph}
+A graph $\mathcal{G}= (\mathcal{V}_g, \mathcal{E}_g)$ can be used to represent the communication network topology of the system, where $\mathcal{V}_g$ is the set of nodes (or vertices), and $\mathcal{E}_g$ is the set of edges, set of unordered pairs of distinct vertices. A simple graph is an undirected, unweighted graph without multiple edges or graph loops. The term graph usually refers to a simple graph. If there is a path from $x$ to $y$ in $\mathcal{G}$ for every pair of distinct vertices $x, y \in v(\mathcal{G})$, then the graph is called a connected graph. A simple graph may be either connected or disconnected. When the directions are given on the edges of a graph, it is called a directed graph or digraph. 
+
+Let $x$ be a node in a graph $\mathcal{G}$. The neighbourhood of $x$ in $\mathcal{G}$ is $N_G(x) = \{y \; |\; xy \in \mathcal{E}_g(G)\}$. The matrices $\mathcal{D}_G, \; \mathcal{A}_G,$ and $L_G$  for a graph are defined as the degree matrix, adjacency matrix, and laplacian matrix. The adjacency matrix~\cite{mesbahi2010graph} of a graph has all the same information that is contained in the graph. The graph and the adjacency matrix are different representations of the same data. The adjacency matrix $\mathcal{A}_G =[a_{ij}]$ is an $N_g \times N_g$ matrix where  $N_g$ is the number of nodes. The off-diagonal element $a_{ij}$ has a non-zero entry when an edge exists from vertex $x$ to vertex $y$. The adjacency matrix of a simple graph is a symmetric (0,1)-matrix with diagonal elements as zeros. 
+
+The degree matrix  $\mathcal{D}_G=[d(x_i)]$ is a $N_g \times N_g$ diagonal matrix, where the diagonal elements are the degree of each node. The cardinality of the neighborhood set $N_x$ of vertex $x$ is the degree $ deg (\ \! x )\ $. The dynamic characteristics of the graph can be represented as a matrix called Laplacian matrix, $L_\mathcal{G} = [\ \ell_{xy}]\ $ and is defined as
+\begin{align}\label{1}
+l_{ij}=
+\begin{cases}
+\sum \limits_{i \neq j} a_{ij}&,\text{for} \; i = j;\\   
+-a_{ij}&,\text{for} \; i \neq j.
+\end{cases}
+\end{align}
+
+A simple graph always has a symmetric positive semi-definite laplacian matrix. The Laplacian matrix can be calculated as
+\begin{align}\label{2}
+L_G=\mathcal{D}_G-\mathcal{A}_G.
+\end{align}
+The column (row) sum of the laplacian matrix is a zero vector. The eigenvalues of graph Laplacian relate to the corresponding network’s performance. The second smallest eigenvalue of Laplacian gives the algebraic connectivity of the graph. The algebraic connectivity of the network topology is a measure of the convergence speed of the consensus algorithm \cite{olfati2007consensus}. Hence, the convergence speed of the algorithm can be related to the second smallest eigenvalue of graph Laplacian. The laplacian matrix and any doubly stochastic matrix representing the graph are related to the dynamic network performance \cite{xu2011novel}.
+
+\section{First Order Discrete Consensus Protocol}
+Let $x_k \in \mathbb{R}$ be the state variable of each node $k$, and can be any physical quantities like power mismatch, incremental cost, output power, etc. The system reaches consensus when all the nodes attain the same state, i.e., $x_k = x_l$ for all $k, l$. Considering all the nodes have first-order dynamics, a standard linear consensus protocol \cite{olfati2007consensus} is given by,
+\begin{align}\label{3}
+    \Dot{x_k}(\ \! t )\ = \sum\limits_{l} a_{kl} (\ \! x_l - x_k)\ .
+\end{align}
+If a group of agents is following the protocol in \eqref{3}, then the collective dynamics can be written as
+\begin{align}\label{4}
+    \Dot{x_k} = -L_{\mathcal{H}}x.
+\end{align}
+where $L_\mathcal{H}$ denotes the Laplacian matrix of the graph. A discrete-time linear consensus protocol \cite{olfati2007consensus} having first-order dynamics can be represented as,
+\begin{align}\label{5}
+\begin{split}
+    & x_k (\ \! p+1)\ \! - x_k (\ \! p)\ \! = u_k (\ \! p)\ \implies \\
+    & x_k (\ \! p+1)\ \! = x_k (\ \! p)\ \! + u_k (\ \! p)\ .
+\end{split}
+\end{align}
+where, $u_k (\ p)\ \!$ depends on the information state of the neighbours of $k^{\text{th}}$ node and is given by,
+\begin{align}\label{6}
+    u_k (\ \! p)\ \! = \sum\limits_{l} a_{kl} (\ \! x_l(\ \! p)\ \! - x_k(\ \! p)\ \!)\ .
+\end{align}
+From \eqref{5} and \eqref{6}, the discrete time consensus algorithm can be written as,
+\begin{align}\label{7}
+    x_k (\ \! p+1)\ \! = \sum\limits_{l=1}^{n_\mathcal{H}} s_{kl} x_l(\ \! p)\ \!,
+\end{align}
+where, $p$ denotes the discrete time index; $s_{kl}$ is the $(\ \! k,l)\ \!^\text{th} $ element of the row-stochastic matrix $S$, which can be defined as,
+\begin{align}\label{8}
+    s_{kl} = \frac{\ell_{kl}}{\sum\limits_{l=1}^{n}|\ell_{kl}|}. 
+\end{align}
+From \eqref{7}, it is clear that the current state of each state variable depends on the previous state of the other state variables (state variables of the neighboring nodes).
