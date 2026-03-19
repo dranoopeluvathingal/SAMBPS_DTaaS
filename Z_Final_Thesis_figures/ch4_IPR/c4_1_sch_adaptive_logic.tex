@@ -1,0 +1,27 @@
+\documentclass[border=10pt]{standalone}
+\usepackage{tikz}
+\usepackage{amsmath} 
+
+% Route back up two directories to hit the root workspace
+\input{../../tikz_master_styles.tex} 
+
+\begin{document}
+\begin{tikzpicture}[node distance=2.5cm]
+
+    % --- 1. PLACE THE LOGIC NODES ---
+    \node (start) [logic_start] {Fault Inception};
+    \node (measure) [logic_process, below of=start] {Sample $V_{abc}, I_{abc}$};
+    \node (decide) [logic_decision, below of=measure, yshift=-0.5cm] {$V < 0.8$ p.u.?};
+    \node (lvrt) [logic_process, right of=decide, xshift=2.5cm] {Enable LVRT Mode};
+    \node (trip) [logic_process, below of=decide, yshift=-0.8cm] {Trip Breaker 52};
+
+    % --- 2. ROUTE THE ARROWS ---
+    \draw [logic_arrow] (start) -- (measure);
+    \draw [logic_arrow] (measure) -- (decide);
+    
+    % Decision Branches
+    \draw [logic_arrow] (decide) -- node[anchor=south] {\textbf{Yes}} (lvrt);
+    \draw [logic_arrow] (decide) -- node[anchor=east] {\textbf{No}} (trip);
+
+\end{tikzpicture}
+\end{document}
