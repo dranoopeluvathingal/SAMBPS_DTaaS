@@ -1,0 +1,47 @@
+# =======================================================
+# IIT MADRAS THESIS PLOT STYLE (thesis.mplstyle)
+# =======================================================
+
+# --- Figure & Export Settings ---
+figure.figsize: 6, 4          # Standard proportional width
+figure.dpi: 300               # High-res processing
+figure.autolayout: True       # Prevents label clipping (auto tight-layout)
+savefig.format: pdf           # Enforce vector export
+savefig.bbox: tight           # Strip whitespace for flawless LaTeX injection
+
+# --- Typography (Matches iitmdissertation newtxtext/newtxmath) ---
+font.family: serif
+font.serif: Times New Roman, Times, DejaVu Serif
+font.size: 10
+
+# --- Axes & Grid Architecture ---
+axes.titlesize: 11
+axes.labelsize: 10
+axes.linewidth: 1.0
+axes.grid: True
+axes.axisbelow: True          # Push grid behind data lines
+axes.grid.axis: both
+axes.grid.which: major
+grid.alpha: 0.6
+grid.color: 0.7
+grid.linestyle: --
+grid.linewidth: 0.5
+
+# --- Line & Marker Data ---
+lines.linewidth: 1.5
+lines.markersize: 4
+
+# --- Legend Hierarchy ---
+legend.fontsize: 9
+legend.frameon: True
+legend.edgecolor: black
+legend.fancybox: False        # Sharp corners, no rounding
+legend.shadow: False
+
+# --- Ticks ---
+xtick.labelsize: 9
+ytick.labelsize: 9
+xtick.direction: in           # Inner ticks (Engineering standard)
+ytick.direction: in
+xtick.major.size: 4
+ytick.major.size: 4

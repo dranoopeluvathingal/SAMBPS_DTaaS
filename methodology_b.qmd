@@ -1,0 +1,27 @@
+---
+title: "Method B: Magnitude-Invariant Entropy"
+---
+
+# 🧠 Theoretical Framework
+
+Standard protection relays fail in IBR-dominated microgrids because control loops mask fault magnitudes. **Method B** analyzes the **informational chaos** (entropy) of the current waveform, ensuring detection even when the inverter limits fault current to $1.1 \text{ pu}$.
+
+---
+
+### 🔬 Mathematical Foundation
+
+We define the probability $p_i$ of a current sample falling into a specific quantization bin $i$:
+
+$$p_i = \frac{n_i}{N}$$
+
+The **Shannon Entropy** ($H$) is calculated as:
+
+$$H = -\sum_{i=1}^{K} p_i \ln(p_i)$$
+
+To achieve **Magnitude-Invariance**, we normalize against the maximum possible uncertainty ($\ln K$):
+
+$$H_{norm} = \frac{-\sum p_i \ln(p_i)}{\ln(K)}$$
+
+**Result:** * $H_{norm} \approx 0$: Pure sinusoidal/steady state.
+* $H_{norm} \to 1$: High-Impedance Fault (HIF) or Inverter Control Interaction (Chaos).
+
