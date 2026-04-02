@@ -1,0 +1,51 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction and Scope}{3}{section.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}GOOSE Protocol Model}{3}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Retransmission Schedule}{3}{subsection.2.1}\protected@file@percent }
+\newlabel{eq:retransmit}{{1}{3}{Retransmission Schedule}{equation.2.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces IEC~61850-8-1 GOOSE retransmission schedule. State change at $t=0$ triggers immediate publication followed by doubling retransmit intervals until $T_{\rm  max}=1000$\,ms.}}{3}{figure.caption.4}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:retransmit}{{1}{3}{IEC~61850-8-1 GOOSE retransmission schedule. State change at $t=0$ triggers immediate publication followed by doubling retransmit intervals until $T_{\rm max}=1000$\,ms}{figure.caption.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Network Model}{4}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}SAMBP GOOSE Dataset}{4}{subsection.2.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces SAMBP GOOSE dataset fields (\texttt  {SambpGooseData}).}}{4}{table.caption.5}\protected@file@percent }
+\newlabel{tab:goose_dataset}{{1}{4}{SAMBP GOOSE dataset fields (\texttt {SambpGooseData})}{table.caption.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Inter-IED GOOSE Topology}{4}{section.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces SAMBP GOOSE inter-IED topology. Solid arrows carry trip and SAMBP state datasets in the forward (downstream) direction; dashed arrows carry confirmation in the reverse direction.}}{5}{figure.caption.6}\protected@file@percent }
+\newlabel{fig:goose_topology}{{2}{5}{SAMBP GOOSE inter-IED topology. Solid arrows carry trip and SAMBP state datasets in the forward (downstream) direction; dashed arrows carry confirmation in the reverse direction}{figure.caption.6}{}}
+\@writefile{toc}{\contentsline {paragraph}{Zone acceleration (forward GOOSE).}{5}{section*.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Zone confirmation (reverse GOOSE).}{5}{section*.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Clearance Time Results}{5}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Fault Detection and Clearance Times}{5}{subsection.4.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Fault clearance times at nominal GOOSE LAN conditions. CB operating time: 40\,ms.}}{5}{table.caption.9}\protected@file@percent }
+\newlabel{tab:clearance_nom}{{2}{5}{Fault clearance times at nominal GOOSE LAN conditions. CB operating time: 40\,ms}{table.caption.9}{}}
+\@writefile{toc}{\contentsline {paragraph}{Detection time.}{6}{section*.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Total clearance.}{6}{section*.11}\protected@file@percent }
+\newlabel{eq:clearance}{{2}{6}{Total clearance}{equation.4.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Clearance Time vs.\ GOOSE Latency}{6}{subsection.4.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Clearance time sensitivity to GOOSE network conditions.}}{6}{table.caption.12}\protected@file@percent }
+\newlabel{tab:latency_sweep}{{3}{6}{Clearance time sensitivity to GOOSE network conditions}{table.caption.12}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}GOOSE Timing Diagram}{6}{subsection.4.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces GOOSE timing diagram for Bus~A / 3ph fault. Detection at $t=0$\,ms, GOOSE published at $t=1$\,ms, received by adjacent IED at $t=3$\,ms. CB clears at $t=42$\,ms.}}{7}{figure.caption.13}\protected@file@percent }
+\newlabel{fig:goose_timing}{{3}{7}{GOOSE timing diagram for Bus~A / 3ph fault. Detection at $t=0$\,ms, GOOSE published at $t=1$\,ms, received by adjacent IED at $t=3$\,ms. CB clears at $t=42$\,ms}{figure.caption.13}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}SAMBP State Sharing via GOOSE}{7}{section.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Information Content of the GOOSE Dataset}{7}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {5.1.1}Cross-Zone Selectivity Confirmation}{7}{subsubsection.5.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {5.1.2}Model-Veto GOOSE Alert}{8}{subsubsection.5.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}GOOSE Event Statistics}{8}{subsection.5.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces GOOSE event statistics — Bus~A / 3ph, 200\,ms simulation.}}{8}{table.caption.14}\protected@file@percent }
+\newlabel{tab:goose_events}{{4}{8}{GOOSE event statistics — Bus~A / 3ph, 200\,ms simulation}{table.caption.14}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Implementation Notes}{8}{section.6}\protected@file@percent }
+\newlabel{sec:impl}{{6}{8}{Implementation Notes}{section.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Publisher State Machine}{8}{subsection.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Namespace Isolation in the Coordinator}{9}{subsection.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Discrete-Time Simulation Resolution}{9}{subsection.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Limitations}{9}{section.7}\protected@file@percent }
+\newlabel{sec:limit}{{7}{9}{Limitations}{section.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {8}Summary}{9}{section.8}\protected@file@percent }
+\bibstyle{ieeetr}
+\bibdata{references6}
+\gdef \@abspage@last{10}

@@ -1,0 +1,85 @@
+\documentclass[tikz,border=4pt]{standalone}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usetikzlibrary{calc,arrows.meta,positioning}
+
+\begin{document}
+\begin{tikzpicture}[
+    timeline/.style={draw,line width=1.0pt},
+    event/.style={draw,fill=blue!20,minimum width=0.15cm,
+                  minimum height=0.4cm,inner sep=0},
+    trip/.style={draw,fill=red!40,minimum width=0.3cm,
+                 minimum height=0.6cm,inner sep=0},
+    arr/.style={-{Latex[length=2mm]},line width=0.7pt},
+    label/.style={font=\scriptsize},
+]
+
+% Time axis (0 to 55 ms, scale: 1 cm = 5 ms)
+\def\scale{0.2}   % cm per ms
+
+% IED rows (y positions)
+\def\yOC{4.5}
+\def\yBA{3.0}
+\def\yL{1.5}
+\def\yCB{0.0}
+
+% Fault inception marker
+\draw[dashed,gray] (0,{-0.4}) -- (0,{5.2})
+    node[above,font=\scriptsize] {$t_{\rm fault}$};
+
+% ---- OC IED timeline ----------------------------------------------------
+\draw[timeline] (-0.5,\yOC) -- ({55*\scale},\yOC)
+    node[right,font=\small\bfseries] {IED OC};
+% Detection at t=0
+\node[trip] at ({0*\scale+0.1},\yOC) {};
+\draw[arr] ({1*\scale},\yOC) -- ++(0,-0.5)
+    node[below,label] {GOOSE pub};
+
+% ---- 87B_A IED timeline -------------------------------------------------
+\draw[timeline] (-0.5,\yBA) -- ({55*\scale},\yBA)
+    node[right,font=\small\bfseries] {IED 87B\textsubscript{A}};
+\node[trip] at ({0*\scale+0.1},\yBA) {};
+\draw[arr] ({1*\scale},\yBA) -- ++(0,-0.5)
+    node[below,label] {GOOSE pub};
+% Receive OC GOOSE at t≈2 ms
+\draw[arr] ({1*\scale},\yOC-0.2) -- ({2*\scale},\yBA+0.2)
+    node[midway,right,label] {1\,ms};
+
+% ---- 87L IED timeline ---------------------------------------------------
+\draw[timeline] (-0.5,\yL) -- ({55*\scale},\yL)
+    node[right,font=\small\bfseries] {IED 87L};
+% Receive 87B_A GOOSE at t≈3 ms (2 hops)
+\draw[arr] ({1*\scale},\yBA-0.2) -- ({3*\scale},\yL+0.2)
+    node[midway,right,label] {2\,ms};
+\node[event] at ({3*\scale},\yL) {};
+\node[label,below] at ({3*\scale},\yL-0.2) {\small RX};
+
+% ---- Circuit Breaker ----------------------------------------------------
+\draw[timeline] (-0.5,\yCB) -- ({55*\scale},\yCB)
+    node[right,font=\small\bfseries] {CB (87B\textsubscript{A})};
+% Trip command from 87B_A at t=2ms, CB opens at t=42ms
+\draw[arr] ({2*\scale},\yBA-0.25) -- ({2*\scale},\yCB+0.25)
+    node[midway,right,label] {trip cmd};
+\draw[line width=2pt,red!60] ({2*\scale},\yCB) -- ({42*\scale},\yCB)
+    node[midway,above,label,text=red!70] {CB operating (40\,ms)};
+\draw[line width=2pt,green!60] ({42*\scale},\yCB) -- ({55*\scale},\yCB);
+\node[font=\scriptsize,below] at ({42*\scale},\yCB-0.1) {$t_{\rm clear}=42$\,ms};
+
+% ---- Fault duration bar -------------------------------------------------
+\fill[red!15] (0,{-0.5}) rectangle ({42*\scale},{-0.3});
+\draw[arr,red!50] (0,{-0.4}) -- ({42*\scale},{-0.4})
+    node[right,label,text=red!70] {fault duration = 42\,ms};
+
+% ---- Component legend ---------------------------------------------------
+\node[font=\tiny,align=left,
+      above right=0.1cm and 0.0cm of {(0,\yOC+0.5)}]
+    {\textbf{Timing breakdown:}\\
+     $t_{\rm detect}=0$\,ms (instantaneous element)\\
+     $t_{\rm IED\,proc}=1$\,ms (IED processing)\\
+     $t_{\rm GOOSE}=1$\,ms (LAN latency)\\
+     $t_{\rm CB}=40$\,ms (breaker operating)\\
+     \hline
+     $t_{\rm clear}=42$\,ms total};
+
+\end{tikzpicture}
+\end{document}

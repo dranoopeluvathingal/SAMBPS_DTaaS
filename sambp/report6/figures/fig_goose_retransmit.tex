@@ -1,0 +1,78 @@
+\documentclass[tikz,border=4pt]{standalone}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usetikzlibrary{calc,arrows.meta,positioning}
+
+\begin{document}
+\begin{tikzpicture}[
+    arr/.style={-{Latex[length=2mm]},line width=0.8pt},
+    msg/.style={draw,fill=blue!15,rounded corners=2pt,
+                minimum height=0.35cm,font=\tiny,inner sep=2pt},
+    label/.style={font=\scriptsize},
+]
+
+% Time axis in log-like scale (compressed for large intervals)
+% Marks at: 0, 1, 3, 7, 15, 31, 63, 127, 255, 511, 1000 ms
+% Use positions: 0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.5 cm
+
+\def\positions{0, 0.55, 1.1, 1.65, 2.2, 2.75, 3.3, 3.85, 4.4, 4.95, 6.1}
+\def\labels{0, 2, 6, 14, 30, 62, 126, 254, 510, 1022, \ldots}
+
+% Time axis
+\draw[arr] (-0.3,0) -- (7.2,0) node[right,label] {Time [ms]};
+
+% State change marker
+\draw[dashed,gray!80] (0,0) -- (0,2.2)
+    node[above,font=\scriptsize,text=gray] {State change};
+
+% GOOSE messages (blue bars at retransmit times)
+\foreach \x/\lbl in {
+    0/\textbf{T0},
+    0.55/T1,
+    1.1/T2,
+    1.65/T3,
+    2.2/T4,
+    2.75/T5,
+    3.3/T6,
+    3.85/T7,
+    4.4/T8,
+    4.95/T9,
+    6.1/\ldots}
+{
+    \node[msg,minimum width=0.3cm] at (\x,0.5) {};
+}
+
+% Interval annotations
+\foreach \xa/\xb/\dlbl in {
+    0/0.55/{2\,ms},
+    0.55/1.1/{4\,ms},
+    1.1/1.65/{8\,ms},
+    1.65/2.2/{16\,ms},
+    2.2/2.75/{32\,ms},
+    2.75/3.3/{64\,ms}}
+{
+    \draw[{Latex[length=1.5mm]}-{Latex[length=1.5mm]},gray!60,yshift=-0.8cm]
+        (\xa,0) -- (\xb,0)
+        node[midway,below,font=\tiny] {\dlbl};
+}
+
+% Tmax annotation
+\draw[{Latex[length=1.5mm]}-{Latex[length=1.5mm]},gray!60,yshift=-0.8cm]
+    (4.95,0) -- (6.1,0) node[midway,below,font=\tiny] {$\ldots T_{\rm max}$};
+
+% State number
+\node[font=\scriptsize,text=blue!70,align=left]
+    at (3.5,1.6)
+    {StateNum increments\\on each state change};
+
+% StNum labels on bars
+\node[font=\tiny,above] at (0,0.75)  {SqN=1};
+\node[font=\tiny,above] at (0.55,0.75) {SqN=2};
+\node[font=\tiny,above] at (1.1,0.75) {SqN=3};
+
+% Heartbeat label
+\draw[dashed] (4.95,0.9) -- (6.1,0.9);
+\node[font=\tiny,right] at (6.1,0.9) {$T_{\rm max}=1000$\,ms heartbeat};
+
+\end{tikzpicture}
+\end{document}
