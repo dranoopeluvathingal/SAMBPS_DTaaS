@@ -46,6 +46,9 @@ class ConfidenceGateConfig:
     f_int_trip_thresh: float = 0.60    # minimum derived f_int to call internal fault
     n_confirm: int           = 2       # consecutive windows required to confirm
     confidence_min: float    = 0.40    # minimum composite confidence score
+    # Stage 2: CT saturation pre-blocking
+    ct_sat_thresh: float     = 0.15    # ε_CT above which CT saturation is flagged
+    ct_sat_block_enable: bool = True   # enable Stage-2 CT-sat blocking
 
 
 # ---------------------------------------------------------------------------
@@ -101,12 +104,29 @@ def evaluate_confidence_gate(
     kn     = zone_state.kappa_n
     rn     = zone_state.residual_norm
     f_int  = zone_state.f_int
+    eps_ct = zone_state.epsilon_CT
 
     # ----- Confidence checks -------------------------------------------------
     high_confidence = (
         kn  < gate_cfg.kappa_thresh
         and rn  < gate_cfg.residual_thresh
         and conf >= gate_cfg.confidence_min
+    )
+
+    # ----- Stage 2: model veto of conventional trip ---------------------------
+    # When the model is identifiable (κ_n < thresh) AND f_int clearly says the
+    # differential is NOT due to an internal fault, suppress the conventional
+    # trip even if I_op crosses the threshold.
+    # This handles:
+    #   • External fault + CT saturation  (f_int ≈ 0.5, κ_n low)
+    #   • Any other non-internal source that causes spurious I_op > I_op_min
+    # Does NOT require high residual quality because CT saturation degrades fit.
+    model_vetoes_conventional = (
+        gate_cfg.ct_sat_block_enable
+        and kn < gate_cfg.kappa_thresh
+        and f_int < gate_cfg.f_int_trip_thresh
+        and not zone_state.is_inrush         # inrush already handled by blocking
+        and not zone_state.is_overexcitation
     )
 
     # ----- Model-based internal fault indicator ------------------------------
@@ -139,6 +159,11 @@ def evaluate_confidence_gate(
         reason     = (f"model confirmed: f_int={f_int:.3f}  "
                       f"κ_n={kn:.1f}  conf={conf:.3f}  "
                       f"n_confirm={gate_state.confirm_count}")
+    elif model_vetoes_conventional:
+        final_trip = False
+        source     = "model_veto"
+        reason     = (f"model veto: f_int={f_int:.3f} < {gate_cfg.f_int_trip_thresh:.3f}, "
+                      f"κ_n={kn:.1f}")
     elif conventional_trip and not blocking_active:
         final_trip = True
         source     = "conventional"
@@ -228,5 +253,30 @@ if __name__ == "__main__":
     print(f"  Low-conf: trip={dec3.final_trip}  source={dec3.source}")
     assert dec3.final_trip and dec3.source == "conventional", \
         "Low confidence should fall back to conventional"
+
+    # ----- Scenario 4: Stage 2 — model veto of non-internal conventional trip -
+    # k2=0.13, k5=0.14, eps=0.05 → blocking_score = 0.32/0.60 = 0.53 → f_int = 0.47
+    # This mimics an external fault + CT saturation with moderate harmonic content
+    theta_ctsat = np.array([1.5, 0.05, 0.13, 0.14, 0.05])  # f_int ≈ 0.47 < 0.60
+    zs_ctsat = interpret_theta(theta_ctsat, kappa_n=9.0, residual_norm=1.5)
+    gs4 = GateState()
+    dec4, _ = evaluate_confidence_gate(zs_ctsat, conventional_trip=True,
+                                       gate_cfg=cfg, gate_state=gs4)
+    print(f"\n  Model-veto: trip={dec4.final_trip}  source={dec4.source}")
+    print(f"              reason: {dec4.reason}")
+    assert not dec4.final_trip and dec4.source == "model_veto", \
+        "Non-internal conventional trip must be vetoed by Stage-2 gate"
+
+    # ----- Scenario 5: internal fault — model veto must NOT fire --------------
+    # f_int is high → genuine internal → model_vetoes_conventional=False
+    theta_int_hi = np.array([2.5, 0.1, 0.01, 0.01, 0.02])  # no blocking sigs → f_int high
+    zs_int_hi = interpret_theta(theta_int_hi, kappa_n=7.0, residual_norm=0.04)
+    gs5 = GateState()
+    for cycle in range(3):
+        dec5, gs5 = evaluate_confidence_gate(zs_int_hi, conventional_trip=True,
+                                             gate_cfg=cfg, gate_state=gs5)
+    print(f"\n  Int-hi: trip={dec5.final_trip}  source={dec5.source}")
+    assert dec5.final_trip, \
+        "Genuine internal fault must trip despite Stage-2 veto logic"
 
     print("\ntransformer_confidence_gate self-test PASSED.")

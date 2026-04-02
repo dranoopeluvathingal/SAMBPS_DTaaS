@@ -155,10 +155,9 @@ EXPECTED = {
     "normal_load":            {"should_trip": False},
     "energisation_inrush":    {"should_trip": False},
     "overexcitation":         {"should_trip": False},
-    # External fault + CT saturation: conventional 87T may mal-trip (known
-    # limitation).  Conventional relay is NOT expected to restrain here; the
-    # model-based SAMBP layer should add discrimination in Stage 2.
-    "external_fault_ct_sat":  {"should_trip": None},   # None = skip assertion
+    # Stage 2: CT saturation pre-blocking now handled by ε_CT gate.
+    # The conventional relay still mal-trips but the SAMBP gate suppresses it.
+    "external_fault_ct_sat":  {"should_trip": False},
     "internal_tg_fault_phA":  {"should_trip": True},
     "internal_ab_fault":      {"should_trip": True},
     "internal_3ph_fault":     {"should_trip": True},

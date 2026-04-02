@@ -29,6 +29,8 @@ class LineConfidenceGateConfig:
     n_confirm: int           = 2       # overridden by fallback logic per mode
     n_confirm_sync: int      = 4       # extra caution when sync_error is active
     confidence_min: float    = 0.40
+    # Stage 2: suppress conventional trip when model identifies non-internal source
+    model_veto_enable: bool  = True
 
 
 @dataclass
@@ -84,6 +86,17 @@ def evaluate_87L_confidence_gate(
         and conventional_trip
     )
 
+    # Stage 2: model veto of conventional trip.
+    # When the model is identifiable (κ_n < thresh) AND f_int clearly says the
+    # differential is NOT an internal fault, suppress the conventional trip.
+    # This handles degraded-channel scenarios where residual skew creates a
+    # spurious differential that crosses I_op_min.
+    model_vetoes_conventional = (
+        gate_cfg.model_veto_enable
+        and kn < gate_cfg.kappa_thresh
+        and f_int < gate_cfg.f_int_thresh
+    )
+
     if model_says_internal:
         gate_state.confirm_count += 1
     else:
@@ -96,6 +109,11 @@ def evaluate_87L_confidence_gate(
         source     = "model"
         reason     = (f"model confirmed: f_int={f_int:.3f}  "
                       f"κ_n={kn:.1f}  n_confirm={gate_state.confirm_count}")
+    elif model_vetoes_conventional:
+        final_trip = False
+        source     = "model_veto"
+        reason     = (f"model veto: f_int={f_int:.3f} < {gate_cfg.f_int_thresh:.3f}, "
+                      f"κ_n={kn:.1f}")
     elif conventional_trip:
         final_trip = True
         source     = "conventional"
@@ -138,17 +156,19 @@ if __name__ == "__main__":
         print(f"  Internal cycle {cy}: trip={dec.final_trip} source={dec.source}")
     assert dec.final_trip and dec.source == "model"
 
-    # ----- Scenario 2: sync error only — should NOT confirm model trip ------
+    # ----- Scenario 2: sync error only — Stage 2 veto should fire -----------
+    # Small I_fund (sync-error range), f_int≈0, κ_n=10 → model_vetoes_conventional
     theta_sync = np.array([0.10, 0.4, 0.0, 0.05])
     zs_sync = interpret_theta(theta_sync, kappa_n=10.0, residual_norm=0.02)
     gs2 = LineGateState()
     for cy in range(6):
         dec2, gs2 = evaluate_87L_confidence_gate(zs_sync, conventional_trip=True,
                                                   gate_cfg=cfg, gate_state=gs2)
-    # is_sync_error=True means n_confirm_sync=4 is needed AND model_says_internal=False
+    # Stage 2: model identifies f_int=0 → veto conventional trip
     print(f"  Sync: trip={dec2.final_trip}  source={dec2.source}  "
           f"f_int={zs_sync.f_int:.3f}")
-    assert dec2.source == "conventional", "Sync error should fall back to conventional"
+    assert not dec2.final_trip and dec2.source == "model_veto", \
+        "Sync error (f_int=0, κ_n low) must be vetoed by Stage-2 gate"
 
     # ----- Scenario 3: low confidence → conventional fallback ---------------
     theta_low = np.array([1.5, 0.5, 0.3, 0.05])
@@ -158,5 +178,29 @@ if __name__ == "__main__":
                                             gate_cfg=cfg, gate_state=gs3)
     print(f"  Low conf: trip={dec3.final_trip}  source={dec3.source}")
     assert dec3.source == "conventional"
+
+    # ----- Scenario 4: Stage 2 — model veto of spurious conventional trip ----
+    # Small I_fund (0.08 pu < 0.20 pu fault threshold), small I_DC → f_int small
+    # κ_n=5.0 → identifiable → veto fires
+    theta_skew = np.array([0.08, 0.1, 0.02, 0.02])
+    zs_skew = interpret_theta(theta_skew, kappa_n=5.0, residual_norm=0.05)
+    gs4 = LineGateState()
+    dec4, _ = evaluate_87L_confidence_gate(zs_skew, conventional_trip=True,
+                                            gate_cfg=cfg, gate_state=gs4)
+    print(f"\n  Model-veto: trip={dec4.final_trip}  source={dec4.source}  "
+          f"f_int={zs_skew.f_int:.3f}")
+    assert not dec4.final_trip and dec4.source == "model_veto", \
+        "Skew-induced spurious trip must be vetoed by Stage-2 gate"
+
+    # ----- Scenario 5: genuine internal fault must NOT be vetoed -------------
+    theta_int2 = np.array([4.0, -0.1, 1.5, 0.03])
+    zs_int2 = interpret_theta(theta_int2, kappa_n=4.5, residual_norm=0.03)
+    gs5 = LineGateState()
+    for cy in range(3):
+        dec5, gs5 = evaluate_87L_confidence_gate(zs_int2, conventional_trip=True,
+                                                  gate_cfg=cfg, gate_state=gs5)
+    print(f"\n  Int-no-veto: trip={dec5.final_trip}  source={dec5.source}  "
+          f"f_int={zs_int2.f_int:.3f}")
+    assert dec5.final_trip, "Large internal fault must still trip"
 
     print("line_confidence_gate self-test PASSED.")
