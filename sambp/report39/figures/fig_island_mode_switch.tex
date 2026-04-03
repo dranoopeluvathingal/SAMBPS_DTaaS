@@ -1,0 +1,68 @@
+% fig_island_mode_switch.tex
+% TR-39: Protection mode switching state machine
+%
+% States: GRID_CONN → DETECTING → ISLANDED → RESYNCING → GRID_CONN
+%         (or ISLANDED → LOCKOUT if resync fails)
+
+\begin{tikzpicture}[
+  every node/.style={font=\small},
+  state/.style={draw=sambpblue, thick, rounded corners=6pt,
+                fill=blue!8, minimum width=3.2cm, minimum height=1.0cm,
+                align=center, font=\small},
+  action/.style={draw=green!50!black, thick, rounded corners=4pt,
+                 fill=green!8, minimum width=3.2cm, minimum height=0.8cm,
+                 align=center, font=\tiny},
+  arrow/.style={-{Stealth[length=7pt]}, thick, blue!60!black},
+  redarrow/.style={-{Stealth[length=7pt]}, thick, red!60!black},
+  greenarrow/.style={-{Stealth[length=7pt]}, thick, green!50!black},
+]
+
+%% ── States ────────────────────────────────────────────────────────────────
+\node[state] (GC)   at (0, 0)    {Grid-Connected\\Mode};
+\node[state] (DET)  at (5, 0)    {Islanding\\Detection};
+\node[state] (ISL)  at (10, 0)   {Islanded\\Mode};
+\node[state] (RES)  at (10, -4)  {Resyncing\\(Relay 25)};
+\node[state, fill=green!8, draw=green!60!black]
+             (BACK) at (5, -4)   {Grid-Connected\\Mode (restored)};
+\node[state, fill=red!8, draw=red!60!black]
+             (LOCK) at (10, -8)  {Lockout\\(resync failed)};
+
+%% ── Transitions ───────────────────────────────────────────────────────────
+% GC → DET: upstream breaker opens
+\draw[arrow] (GC.east) -- (DET.west)
+  node[midway, above, font=\tiny, align=center] {Upstream breaker opens (islanding)};
+
+% DET → ISL: ROCOF/V/f threshold exceeded, 100ms confirmed
+\draw[arrow] (DET.east) -- (ISL.west)
+  node[midway, above, font=\tiny, align=center] {Detection confirmed ($t=100$\,ms)};
+
+% ISL → RES: grid restores, 25 initiated
+\draw[arrow] (ISL.south) -- (RES.north)
+  node[midway, right=2pt, font=\tiny, align=left] {Grid\\restored};
+
+% RES → BACK: 25 closes (ΔV≤0.05, Δf≤0.10, Δθ≤10°)
+\draw[greenarrow] (RES.west) -- (BACK.east)
+  node[midway, above, font=\tiny, align=center]
+    {Relay 25 closes\\$\Delta V\leq0.05$, $\Delta f\leq0.10$\,Hz\\$\Delta\theta\leq10^\circ$};
+
+% RES → LOCK: timeout (>5s) or repeated fail
+\draw[redarrow] (RES.south) -- (LOCK.north)
+  node[midway, right=2pt, font=\tiny, align=left] {Timeout\\$>5$\,s};
+
+% BACK → GC (return arrow — dashed)
+\draw[arrow, dashed] (BACK.west) -- ++(-2.2,0) |- (GC.south)
+  node[midway, left=2pt, font=\tiny, align=center] {Normal operation};
+
+%% ── Mode action boxes ─────────────────────────────────────────────────────
+\node[action] at (0, -2.0) {Z1/Z2 + 87L + 67Q\\active\\OC at grid level};
+\node[action] at (10, -1.8) {Z1/Z2 disabled\\87L offline\\OC rescaled\\GFM: V/f reg};
+
+%% ── Timing annotation ─────────────────────────────────────────────────────
+\node[draw=gray!40, fill=gray!5, rounded corners=2pt,
+      font=\tiny, inner sep=3pt, align=center]
+  at (5, -7.0)
+  {Detection: $t_\mathrm{det}=100$\,ms (ROCOF trip)
+   \quad Mode switch: $t_\mathrm{sw}=120$\,ms from islanding
+   \quad Relay 25 window: $\leq5$\,s};
+
+\end{tikzpicture}

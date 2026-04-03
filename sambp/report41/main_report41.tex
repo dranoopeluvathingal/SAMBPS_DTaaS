@@ -1,0 +1,262 @@
+%% main_report41.tex
+%% SAMBP TR-41/2026: 87B Bus Differential Protection in IBR Microgrids
+%%
+%% pdflatex main_report41.tex
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[expansion=false]{microtype}
+\usepackage{lmodern}
+\usepackage[a4paper, top=25mm, bottom=25mm, left=25mm, right=25mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,shapes.geometric,positioning,fit,calc,patterns}
+\usepackage{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+
+\definecolor{sambpblue}{RGB}{0,70,140}
+
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries\color{sambpblue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{sambpblue!80}}{}{0em}{}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small\color{gray} SAMBP TR-41/2026}
+\lhead{\small\color{gray} 87B Bus Differential in IBR Microgrids}
+\cfoot{\small\thepage}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{sambpblue} SAMBP Technical Report TR-41/2026}\\[6pt]
+  {\large 87B Bus Differential Protection\\
+    in IBR Microgrids}\\[10pt]
+  {\normalsize PhD Thesis Supporting Report \quad|\quad 2026}
+\end{center}
+
+\vspace{2pt}\hrule\vspace{8pt}
+
+\begin{abstract}
+\noindent
+This report extends the 87B bus differential scheme developed in TR-04
+\cite{SAMBP_TR04} to IBR microgrids, where all feeders contribute inverter-limited
+fault current.  The scheme uses a two-slope percentage differential characteristic
+($k_1=30\%$, $k_2=60\%$, $I_\mathrm{diff,min}=0.10$\,pu) optimised for the
+reduced fault current environment.  The minimum detectable internal fault is
+$k_\mathrm{ibr}=0.1176$\,pu (slightly higher than the 87L line differential
+threshold of 0.06\,pu due to the slope constraint, but adequate for microgrids
+with $k_\mathrm{ibr}\geq0.20$).  CT saturation is not a concern at IBR fault
+levels (25$\times$ lower than SG).  The security margin for the maximum
+external through-current is 0.548\,pu.  For a two-bus microgrid with a
+bus-coupler, 87B-A correctly identifies a Bus~A fault and blocks 87B-B
+(which sees an external fault).  Bus~B continues in service after the trip.
+\end{abstract}
+
+\vspace{4pt}\hrule\vspace{10pt}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study A --- Sensitivity: Minimum Detectable Internal Fault}
+\label{sec:studyA}
+
+The 87B differential current for an internal busbar fault with $n$ feeders
+contributing $k_\mathrm{ibr}$ each is:
+
+\begin{equation}
+  I_\mathrm{diff} = n \cdot k_\mathrm{ibr},
+  \quad
+  I_\mathrm{rst} = \tfrac{1}{2} n \cdot k_\mathrm{ibr}
+\end{equation}
+
+The operating condition (slope region~1) is $I_\mathrm{diff} > I_\mathrm{diff,min}
++ k_1 \cdot I_\mathrm{rst}$, which gives:
+
+\begin{equation}
+  k_\mathrm{ibr,min} = \frac{I_\mathrm{diff,min}}{1 - k_1/2}
+  = \frac{0.10}{1 - 0.15} = 0.1176\;\mathrm{pu}
+\end{equation}
+
+\begin{center}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Feeders contributing & $I_\mathrm{diff}$ [pu] & $I_\mathrm{rst}$ [pu] & 87B operates? \\
+\midrule
+1 (single IBR) & 0.200 & 0.100 & YES \\
+2              & 0.400 & 0.200 & YES \\
+3              & 0.600 & 0.300 & YES \\
+4              & 0.800 & 0.400 & YES \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+At $k_\mathrm{ibr}=0.20$ (the design point), the single-feeder scenario
+($I_\mathrm{diff}=0.20$\,pu) exceeds the threshold of 0.115\,pu.  The 87B
+scheme is therefore sensitive to the most challenging case of a single-feeder
+internal fault in a 4-feeder microgrid.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study B --- Security: External Fault Check}
+\label{sec:studyB}
+
+For an external fault, KCL requires $I_\mathrm{diff}=0$ ideally.  The only
+spurious differential current arises from CT measurement errors ($\epsilon=1\%$
+per CT).  With $N=4$ CTs all contributing worst-case error in the same direction:
+
+\begin{equation}
+  I_\mathrm{diff,spurious} = \epsilon \cdot (I_\mathrm{through} + (N-1) I_\mathrm{load})
+  = 0.01 \times 3.2 = 0.032\;\mathrm{pu}
+\end{equation}
+
+The restraint current at the external fault condition is $I_\mathrm{rst}=1.60$\,pu,
+giving a slope~2 threshold of $0.100 + 0.30\times1.0 + 0.60\times0.60 = 0.76$\,pu.
+The security margin is:
+
+\begin{equation}
+  \text{Security margin} = 0.76 - 0.032 = 0.728\;\mathrm{pu}
+  \gg \text{CT error contribution}
+\end{equation}
+
+The 87B scheme is completely secure for all external faults at IBR microgrid
+fault levels.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study C --- Slope Characteristic}
+\label{sec:studyC}
+
+Figure~\ref{fig:characteristic} shows the 87B operating characteristic.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.88\textwidth}{!}{\input{figures/fig_87b_mg_characteristic.tex}}
+  \caption{87B operating characteristic in the ($I_\mathrm{rst}$,
+           $I_\mathrm{diff}$) plane.  Green region: trip; red region:
+           restrain.  Blue line: two-slope characteristic boundary
+           ($k_1=30\%$, $k_2=60\%$).  Green circles: internal fault
+           operating points (1--4 feeders, $k_\mathrm{ibr}=0.20$) --- all in
+           the TRIP region.  Red square: external fault spurious differential
+           (CT error only) --- well within RESTRAIN region with 0.728\,pu margin.}
+  \label{fig:characteristic}
+\end{figure}
+
+\noindent
+The IBR-specific slope optimisation reduces $k_1$ from the conventional SG
+value of 40\% to 30\%, enabled by the absence of CT saturation at the lower
+IBR fault current levels.  This provides an 11\% improvement in sensitivity
+(sensitivity factor $\frac{1-0.30/2}{1-0.40/2}=1.125$) without compromising
+security.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study D --- CT Saturation Analysis}
+\label{sec:studyD}
+
+CT saturation is typically the primary concern for high-current SG bus faults.
+At IBR fault levels, the concern is fundamentally different:
+
+\begin{center}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+Source & $I_\mathrm{fault}$ [pu] & CT secondary [A] & $V_k$ required [V] & Status \\
+\midrule
+SG reference & 20.0 & 0.25 & 7.1 & No saturation \\
+IBR microgrid & 0.80 & 0.010 & 0.3 & No saturation \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The IBR fault current ($\leq0.80$\,pu) is $25\times$ lower than the SG reference
+fault level.  The required CT knee-point voltage for non-saturated operation is
+only 0.3\,V --- orders of magnitude below the rated knee-point of 20\,V.
+Conventional CT class 1P or 5P specification provides ample margin.
+
+The \emph{practical consequence} is that the harmonic restraint feature
+(typically included in 87B to ride through CT saturation transients) can be
+disabled or set to a higher activation threshold in IBR microgrids, further
+improving sensitivity and operating speed.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study E --- Two-Bus Microgrid Coordination}
+\label{sec:studyE}
+
+Figure~\ref{fig:topology} shows the microgrid bus topology with two 87B zones.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.92\textwidth}{!}{\input{figures/fig_87b_mg_topology.tex}}
+  \caption{Two-bus IBR microgrid with bus-coupler and dual 87B zones.
+           Bus~A fault (cross symbol): 87B-A detects
+           $I_\mathrm{diff}=0.80$\,pu and trips Bus~A feeders and the
+           bus-coupler.  87B-B sees $I_\mathrm{diff}=0$ (external fault)
+           and remains stable.  Bus~B continues in service with its two
+           IBR feeders providing islanded voltage/frequency regulation.}
+  \label{fig:topology}
+\end{figure}
+
+\noindent
+The bus-coupler CT is included in both the 87B-A zone (measuring current into
+Bus~A from the coupler) and the 87B-B zone (measuring current into Bus~B from
+the coupler), using the opposite polarity convention for each.  This standard
+check-zone configuration ensures that the bus-coupler itself is fully protected
+by both differential zones simultaneously, consistent with TR-07
+\cite{SAMBP_TR04}.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Sensitivity Comparison Across the SAMBP Scheme}
+\label{sec:comparison}
+
+Figure~\ref{fig:sensitivity} benchmarks the 87B-MG minimum detection threshold
+against other SAMBP protection elements.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.88\textwidth}{!}{\input{figures/fig_87b_mg_sensitivity.tex}}
+  \caption{Minimum detectable $k_\mathrm{ibr}$ for each protection element.
+           Lower is more sensitive.  OC Group~2 (TR-40, green) is the
+           most sensitive at 0.0075\,pu; 87B-MG (orange) requires
+           $k_\mathrm{ibr}\geq0.1176$\,pu.  87B is less sensitive than 87L
+           because the slope constraint requires a larger differential
+           margin.  For microgrids with $k_\mathrm{ibr}\geq0.20$, all
+           elements are reliably active.}
+  \label{fig:sensitivity}
+\end{figure}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Summary}
+\label{sec:summary}
+
+\begin{enumerate}
+  \item \textbf{Sensitivity}: $k_\mathrm{ibr,min}=0.1176$\,pu for single-feeder
+    internal fault; all 1--4 feeder internal fault combinations detected at
+    $k_\mathrm{ibr}=0.20$.
+
+  \item \textbf{Security}: External fault security margin 0.728\,pu; CT
+    error contribution 0.032\,pu is negligible against the slope threshold.
+
+  \item \textbf{Slope}: $k_1$ reduced to 30\% (vs 40\% SG standard) because
+    CT saturation is not a concern at IBR fault levels; 11\% sensitivity gain.
+
+  \item \textbf{CT saturation}: Not applicable for IBR microgrids; required
+    knee-point voltage 0.3\,V vs available 20\,V.
+
+  \item \textbf{Multi-bus}: 87B-A correctly identifies and clears Bus~A fault;
+    87B-B is stable (external fault); Bus~B continues in service.
+\end{enumerate}
+
+\noindent
+TR-41 completes the busbar protection layer for IBR microgrids.  TR-42 will
+perform the microgrid protection system integration study, combining TR-39
+through TR-41 into a unified performance assessment.
+
+\bibliographystyle{IEEEtranN}
+\bibliography{references41}
+
+\end{document}

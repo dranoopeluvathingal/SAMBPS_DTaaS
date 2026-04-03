@@ -1,0 +1,353 @@
+%% main_report38.tex
+%% SAMBP TR-38/2026: GFL vs GFM Inverter Fault Characterisation
+%%
+%% pdflatex main_report38.tex
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[expansion=false]{microtype}
+\usepackage{lmodern}
+\usepackage[a4paper, top=25mm, bottom=25mm, left=25mm, right=25mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,shapes.geometric,positioning,fit,calc,patterns}
+\usepackage{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+
+\definecolor{sambpblue}{RGB}{0,70,140}
+
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries\color{sambpblue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{sambpblue!80}}{}{0em}{}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small\color{gray} SAMBP TR-38/2026}
+\lhead{\small\color{gray} GFL vs GFM Fault Characterisation}
+\cfoot{\small\thepage}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{sambpblue} SAMBP Technical Report TR-38/2026}\\[6pt]
+  {\large Grid-Following vs Grid-Forming Inverter\\
+    Fault Characterisation for Protection Studies}\\[10pt]
+  {\normalsize PhD Thesis Supporting Report \quad|\quad 2026}
+\end{center}
+
+\vspace{2pt}\hrule\vspace{8pt}
+
+\begin{abstract}
+\noindent
+This report characterises the fault current signatures of grid-following (GFL)
+and grid-forming (GFM) inverters and quantifies their implications for the SAMBP
+distance protection scheme developed in TR-29--TR-37.  GFL inverters suppress
+negative-sequence current ($I_2/I_1=0.10$) via inner-loop symmetrical-component
+control; GFM inverters have no active suppression ($I_2/I_1=0.40$) and produce a
+transient overcurrent of $1.5\times$ for the first 100\,ms.  The 67Q directional
+element consequently requires $k_\mathrm{ibr}\geq0.40$ for GFL fleets but only
+$k_\mathrm{ibr}\geq0.10$ for GFM fleets --- a 4$\times$ relaxation.  For mixed
+fleets, the 67Q threshold is crossed at $f_\mathrm{gfm}\geq0.34$ when
+$k_\mathrm{total}=0.20$.  The distance relay apparent impedance error remains
+large for both types (333--500\% at $\alpha=0.50$, $k=0.20$), confirming that
+87L is indispensable regardless of inverter control mode.  Dependability
+$P_\mathrm{dep}=1.000$ is maintained across all GFM fraction scenarios
+($k_\mathrm{total}\in[0.06,0.40]$) because 87L operates independently of
+control mode.
+\end{abstract}
+
+\vspace{4pt}\hrule\vspace{10pt}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{GFL and GFM Fault Current Models}
+\label{sec:models}
+
+\subsection{Grid-Following (GFL) inverter}
+
+GFL inverters regulate real and reactive power via a phase-locked loop (PLL) and
+inner current control loops.  During a fault the PLL tracks the retained voltage,
+and the current controller saturates at approximately $1.0$--$1.2$\,pu.  The
+symmetrical-component inner loop actively suppresses negative-sequence current
+to avoid unbalanced stresses on the semiconductor switches.  The resulting
+sequence current ratios are:
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Sequence & Ratio & Physical reason \\
+\midrule
+$I_1$ & $k_\mathrm{gfl}$ & Current-limited at rated output \\
+$I_2$ & $0.10 \times k_\mathrm{gfl}$ & Active $I_2$ suppression in inner loop \\
+$I_0$ & $0$ & Delta transformer connection \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Grid-Forming (GFM) inverter}
+
+GFM inverters synthesise an internal voltage source (virtual synchronous machine
+or droop control) and respond to faults similarly to a controlled voltage source
+behind an impedance.  Key differences from GFL:
+
+\begin{enumerate}
+  \item \textbf{Transient overcurrent}: In the first $T_\mathrm{trans}=100$\,ms,
+    GFM inverters inject up to $I_\mathrm{peak}=1.5\times k_\mathrm{gfm}$
+    before the current-limiting loop clamps output.
+  \item \textbf{No $I_2$ suppression}: Without active symmetrical-component
+    cancellation, $I_2/I_1=0.40$ for a single-line-to-ground fault (determined
+    by the LCL filter and control bandwidth).
+\end{enumerate}
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Sequence & Transient (0--100\,ms) & Steady-state \\
+\midrule
+$I_1$ & $\min(1.5\,k_\mathrm{gfm},\;1.5\,\mathrm{pu})$ & $k_\mathrm{gfm}$ \\
+$I_2$ & $0.40 \times I_1$ & $0.40\,k_\mathrm{gfm}$ \\
+$I_0$ & $0$ & $0$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Figure~\ref{fig:phasor} illustrates the phasor relationship at
+$k_\mathrm{ibr}=0.20$ for an SLG fault.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.96\textwidth}{!}{\input{figures/fig_gfl_gfm_phasor.tex}}
+  \caption{Fault current phasors for GFL (left) and GFM (right) at
+           $k_\mathrm{ibr}=0.20$, SLG fault, transient window.
+           GFL: $I_2/I_1=0.10$ (inner-loop suppression).
+           GFM: $I_2/I_1=0.40$ (no suppression), $I_1$ boosted by $1.5\times$
+           transient factor.  The 67Q threshold $I_{2,\min}$ is met by GFM
+           but not GFL at this $k$ level.}
+  \label{fig:phasor}
+\end{figure}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study A --- 67Q Activation Thresholds}
+\label{sec:studyA}
+
+The 67Q negative-sequence directional element requires $I_2 \geq I_{2,\min}$
+where $I_{2,\min}=0.054$\,pu is derived from the relay sensitivity floor.  For
+a pure fleet (all GFL or all GFM):
+
+\begin{center}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Fleet type & $I_2/I_1$ & 67Q threshold $k_\mathrm{ibr,min}$ & Ratio \\
+\midrule
+GFL only   & 0.10 & $\geq 0.40$\,pu & --- \\
+GFM only   & 0.40 (transient) & $\geq 0.10$\,pu & $4\times$ easier \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+The 4$\times$ relaxation in 67Q activation threshold is the most operationally
+significant difference between GFL and GFM fleets.  In a system with
+$k_\mathrm{total}=0.20$ (a moderate IBR penetration), 67Q is dormant for all-GFL
+but active for all-GFM.  This directly affects the relay's ability to provide
+directional discrimination for SLG and LL faults.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study B --- Mixed Fleet 67Q Threshold}
+\label{sec:studyB}
+
+For a mixed fleet with fraction $f_\mathrm{gfm}$ of GFM inverters
+($k_\mathrm{total}=0.20$ fixed), the aggregate $I_2$ is:
+
+\begin{equation}
+  I_{2,\mathrm{total}} = k_\mathrm{total}
+    \bigl[f_\mathrm{gfm}\cdot(I_2/I_1)_\mathrm{GFM}\cdot I_\mathrm{peak}
+          + (1-f_\mathrm{gfm})\cdot(I_2/I_1)_\mathrm{GFL}\bigr]
+\end{equation}
+
+Setting $I_{2,\mathrm{total}}=I_{2,\min}=0.054$\,pu and solving gives the
+critical GFM fraction $f_\mathrm{gfm}^* = 0.34$.  Figure~\ref{fig:i2ratio}
+shows $I_2$ versus $f_\mathrm{gfm}$.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.86\textwidth}{!}{\input{figures/fig_gfl_gfm_i2ratio.tex}}
+  \caption{Aggregate negative-sequence current $I_2$ versus GFM fleet fraction
+           $f_\mathrm{gfm}$ at $k_\mathrm{total}=0.20$.  The orange dashed
+           line marks $I_{2,\min}=0.054$\,pu (67Q activation threshold).
+           67Q becomes active for $f_\mathrm{gfm}\geq0.34$.  The green shaded
+           region indicates the 67Q-active operating zone.}
+  \label{fig:i2ratio}
+\end{figure}
+
+\noindent
+The implication for protection coordination: a transition from a GFL-dominated
+to a GFM-dominated fleet in the same network activates the 67Q element without
+any relay setting changes.  This is a \emph{passive improvement} in protection
+selectivity as grid-forming technology is adopted.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study C --- Distance Relay Apparent Impedance Error}
+\label{sec:studyC}
+
+The apparent impedance seen by a relay at end~A for a fault at normalised
+reach $\alpha$ on a line with IBR infeed at end~B is:
+
+\begin{equation}
+  Z_\mathrm{m} = \alpha Z_{1L} \cdot \frac{I_\mathrm{SG} + I_{1,\mathrm{IBR}}}{I_{1,\mathrm{IBR}}}
+\end{equation}
+
+The percentage impedance error (relative to the true fault impedance
+$\alpha Z_{1L}$) is:
+
+\begin{center}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Scenario & $I_1$\,[pu] & $Z_m$ error & Implication \\
+\midrule
+GFL, $k=0.20$, $\alpha=0.50$ & 0.20 & $+500\%$ & Far outside Z1 reach \\
+GFM transient, $k=0.20$, $\alpha=0.50$ & 0.30 & $+333\%$ & Still far outside Z1 \\
+GFM steady-state, $k=0.20$, $\alpha=0.50$ & 0.20 & $+500\%$ & Same as GFL \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+Even the GFM transient boost reduces the impedance error only from 500\% to
+333\% --- the relay still sees the fault as a load condition.  This confirms
+that distance relay~21 cannot independently provide dependable protection for
+IBR-connected lines without 87L, regardless of whether the IBR fleet is GFL
+or GFM.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study D --- 87L Coverage Independence from Control Mode}
+\label{sec:studyD}
+
+The differential element 87L compares local and remote current magnitudes and
+is independent of fault current symmetrical-component content.  Its operating
+condition is:
+
+\begin{equation}
+  I_{1,\mathrm{IBR}} \geq I_{\min,87L} = 0.06\;\mathrm{pu}
+\end{equation}
+
+Both GFL and GFM inverters satisfy this condition for $k_\mathrm{ibr}\geq0.06$,
+irrespective of $I_2/I_1$ ratio or transient overcurrent factor.  87L therefore
+provides identical coverage for pure GFL, pure GFM, and all mixed fleets:
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+$f_\mathrm{gfm}$ & 87L active? & 67Q active? \\
+\midrule
+0.00 (all GFL) & Yes ($k\geq0.06$) & No ($f<0.34$) \\
+0.25           & Yes               & No ($f<0.34$) \\
+0.34           & Yes               & Marginal (threshold) \\
+0.50           & Yes               & Yes \\
+1.00 (all GFM) & Yes               & Yes \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+The 67Q element adds directional selectivity for unbalanced faults when
+GFM content is sufficient; 87L provides the primary protection anchor for
+all fleet compositions.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study E --- Dependability vs GFM Fraction}
+\label{sec:studyE}
+
+Figure~\ref{fig:coverage} shows $P_\mathrm{dep}$ for five GFM fraction
+scenarios, each sampled with $N=500$ trials at $k_\mathrm{total}\in[0.06,0.40]$.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.84\textwidth}{!}{\input{figures/fig_gfl_gfm_coverage.tex}}
+  \caption{Dependability $P_\mathrm{dep}$ versus GFM fleet fraction
+           $f_\mathrm{gfm}$ ($k_\mathrm{total}\in[0.06,0.40]$, $N=500$
+           per scenario).  Blue bars: 67Q inactive ($f_\mathrm{gfm}<0.34$);
+           green bars: 67Q active.  All scenarios achieve $P_\mathrm{dep}=1.000$
+           because 87L operates independently of control mode.  The dashed
+           orange line at $f_\mathrm{gfm}=0.34$ marks the 67Q activation
+           boundary.}
+  \label{fig:coverage}
+\end{figure}
+
+\noindent
+The flat $P_\mathrm{dep}=1.000$ result across all GFM fractions confirms that
+the protection scheme is \textbf{control-mode agnostic}: it does not depend on
+the fleet operator declaring whether their inverters are GFL or GFM.  This is
+a critical operational property as system operators typically do not have
+real-time visibility of inverter control mode.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Discussion: Implications for Setting Groups and Coordination}
+\label{sec:discussion}
+
+The GFL/GFM characterisation has three practical coordination consequences:
+
+\begin{enumerate}
+  \item \textbf{67Q setting group}: If the system operator knows that
+    $f_\mathrm{gfm}$ will remain below 0.34 for the foreseeable future, the
+    67Q element may be disabled in the coordination scheme (reducing its
+    dependability contribution to zero without affecting overall $P_\mathrm{dep}$,
+    since 87L covers all cases).  Conversely, as GFM deployment increases,
+    67Q can be re-enabled by activating setting group~2.
+
+  \item \textbf{Auto-reclosing}: The GFM transient overcurrent
+    ($I_1\times1.5$ for 100\,ms) may be visible to the overcurrent supervisory
+    element of the auto-recloser.  The dead time $T_\mathrm{dead}>100$\,ms
+    (established in TR-36) ensures this transient has fully decayed before
+    the line is re-energised at second-trip.
+
+  \item \textbf{Minimum fault current grid code}: The structural limit
+    established in TR-37 ($k_\mathrm{ibr}\geq0.06$ for 87L; $k\geq0.10$ for
+    full Z1 redundancy) applies equally to GFL and GFM inverters.  For GFM
+    the effective current during the transient window is $1.5\times k$, so
+    the equivalent steady-state grid code threshold for GFM would be
+    $k_\mathrm{gfm}\geq0.04$ (reaching 0.06\,pu transiently).
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Summary}
+\label{sec:summary}
+
+\begin{enumerate}
+  \item \textbf{Sequence current}: GFL $I_2/I_1=0.10$ (active suppression);
+    GFM $I_2/I_1=0.40$ (no suppression) plus $1.5\times$ transient overcurrent.
+
+  \item \textbf{67Q threshold}: GFL requires $k_\mathrm{ibr}\geq0.40$; GFM
+    requires $k_\mathrm{ibr}\geq0.10$ (4$\times$ relaxation).
+
+  \item \textbf{Mixed fleet}: 67Q activates at $f_\mathrm{gfm}\geq0.34$ for
+    $k_\mathrm{total}=0.20$.
+
+  \item \textbf{Distance relay error}: 333--500\% regardless of GFL/GFM; 87L
+    is indispensable for both.
+
+  \item \textbf{Dependability}: $P_\mathrm{dep}=1.000$ for all $f_\mathrm{gfm}$
+    scenarios; scheme is control-mode agnostic.
+
+  \item \textbf{Grid-code implication}: GFM effective threshold is
+    $k_\mathrm{gfm}\geq0.04$ (transient boost provides 0.06\,pu of 87L-visible
+    current).
+\end{enumerate}
+
+\noindent
+TR-38 establishes the GFL/GFM characterisation foundation for the microgrid
+special-solutions phase (TR-39 onwards), where inverter control mode becomes a
+primary design parameter rather than a perturbation.
+
+\bibliographystyle{IEEEtranN}
+\bibliography{references38}
+
+\end{document}

@@ -1,0 +1,285 @@
+%% main_report39.tex
+%% SAMBP TR-39/2026: Islanding Detection and Protection Mode Switching
+%% for IBR Microgrids
+%%
+%% pdflatex main_report39.tex
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[expansion=false]{microtype}
+\usepackage{lmodern}
+\usepackage[a4paper, top=25mm, bottom=25mm, left=25mm, right=25mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,shapes.geometric,positioning,fit,calc,patterns}
+\usepackage{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+
+\definecolor{sambpblue}{RGB}{0,70,140}
+
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries\color{sambpblue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{sambpblue!80}}{}{0em}{}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small\color{gray} SAMBP TR-39/2026}
+\lhead{\small\color{gray} Islanding Detection and Mode Switching}
+\cfoot{\small\thepage}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{sambpblue} SAMBP Technical Report TR-39/2026}\\[6pt]
+  {\large Islanding Detection and Protection Mode Switching\\
+    for IBR Microgrids}\\[10pt]
+  {\normalsize PhD Thesis Supporting Report \quad|\quad 2026}
+\end{center}
+
+\vspace{2pt}\hrule\vspace{8pt}
+
+\begin{abstract}
+\noindent
+This report develops an islanding detection and protection mode switching
+framework for an IBR microgrid with very low equivalent inertia
+($H_\mathrm{eq}=0.5$\,s).  Passive detection via ROCOF ($\geq1$\,Hz/s) detects
+islanding for all power mismatches $|\Delta P|\geq0.02$\,pu within 100\,ms; the
+residual non-detection zone (NDZ) of $\pm2\%$ rated power is reduced to $\pm1.2\%$
+by active reactive-power injection.  On islanding confirmation, the protection
+system switches mode within 20\,ms: distance relay Zone~1/2 and 87L are disabled,
+overcurrent elements are rescaled to islanded fault levels, and GFM inverters
+assume voltage/frequency regulation.  Resynchronisation is supervised by relay
+25 (sync-check) with settings $\Delta V\leq0.05$\,pu, $\Delta f\leq0.10$\,Hz,
+$\Delta\theta\leq10^\circ$.  The combined framework provides seamless transition
+between grid-connected and islanded protection without any manual relay
+reconfiguration.
+\end{abstract}
+
+\vspace{4pt}\hrule\vspace{10pt}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Islanding Scenario and System Parameters}
+\label{sec:scenario}
+
+An IBR microgrid of rated capacity $S_\mathrm{ibr}=1.0$\,pu with local load
+$P_\mathrm{load}=0.80$\,pu, $Q_\mathrm{load}=0.10$\,pu is connected to the
+upstream grid via a point-of-common-coupling (PCC) breaker.  The microgrid
+uses GFM inverters as primary frequency-voltage regulators; the equivalent
+inertia constant is $H_\mathrm{eq}=0.5$\,s (virtual inertia provided by GFM
+control).  Islanding occurs when the PCC breaker opens unexpectedly under fault
+or network conditions.
+
+The protection system operates in two modes:
+\begin{enumerate}
+  \item \textbf{Grid-connected}: Distance relay 21 (Z1/Z2), line differential
+    87L, directional elements 67N/67Q, auto-reclosing (TR-36).
+  \item \textbf{Islanded}: Overcurrent relay 50/51 with reduced pickup (islanded
+    fault level), voltage and frequency monitoring, rate-of-frequency-change
+    (ROCOF), and GFM virtual-impedance current limiting.
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study A --- Passive Islanding Detection}
+\label{sec:studyA}
+
+\subsection{ROCOF method}
+
+For an IBR microgrid with low virtual inertia the ROCOF after islanding is:
+
+\begin{equation}
+  \left.\frac{\mathrm{d}f}{\mathrm{d}t}\right|_{t=0^+}
+  = \frac{|\Delta P| \cdot f_0}{2 H_\mathrm{eq}}
+\end{equation}
+
+Figure~\ref{fig:rocof} shows ROCOF versus power mismatch $\Delta P$.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.88\textwidth}{!}{\input{figures/fig_island_rocof.tex}}
+  \caption{ROCOF versus power mismatch $\Delta P$ for the IBR microgrid
+           ($H_\mathrm{eq}=0.5$\,s, $f_0=50$\,Hz).  The orange dashed line
+           marks the 1\,Hz/s detection threshold (IEEE~1547-2018
+           \cite{IEEE_1547_2018}).  The red shaded NDZ covers
+           $|\Delta P|<0.02$\,pu (2\% of rated).  All physically meaningful
+           mismatches above 2\% produce ROCOF~$>1$\,Hz/s.}
+  \label{fig:rocof}
+\end{figure}
+
+\noindent
+At $H_\mathrm{eq}=0.5$\,s (typical GFM virtual inertia), a 10\% mismatch
+produces ROCOF\,$=5$\,Hz/s, triggering the threshold within one measurement
+window.  The passive NDZ is $|\Delta P|<0.02$\,pu, an inherent mathematical
+consequence of the ROCOF formula at the chosen threshold.
+
+\subsection{Voltage/frequency window}
+
+The secondary passive method monitors voltage ($V\in[0.88,1.10]$\,pu) and
+frequency ($f\in[49.0,50.5]$\,Hz) per IEEE~1547-2018.  Droop-controlled GFM
+frequency deviation at $\Delta P=0.10$\,pu is only $-0.25$\,Hz, remaining
+within the 49\,Hz floor.  The V/f window provides a redundant detection path
+primarily for large voltage excursions (load rejection events) rather than
+balanced mismatches.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study B --- Active Detection and NDZ Reduction}
+\label{sec:studyB}
+
+The active method periodically injects $\Delta Q = 0.05$\,pu reactive power
+for one cycle.  In grid-connected operation the stiff voltage bus absorbs the
+perturbation with negligible frequency change; in islanded operation the GFM
+frequency response produces:
+
+\begin{equation}
+  \Delta f = K_{f,Q} \cdot \Delta Q = 2.0 \times 0.05 = 0.10\;\mathrm{Hz}
+\end{equation}
+
+This frequency shift is detectable against the $\Delta f_\mathrm{resol}=0.01$\,Hz
+measurement floor.  The active method's NDZ (residual undetected zone) is
+significantly smaller than the passive NDZ.  Figure~\ref{fig:ndz} compares the
+NDZ regions in $({\Delta P}, {\Delta Q})$ mismatch space.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.80\textwidth}{!}{\input{figures/fig_island_ndz.tex}}
+  \caption{Non-detection zone (NDZ) in load mismatch space.  Red rectangle:
+           passive NDZ ($|\Delta P|<0.020$\,pu, $|\Delta Q|<0.050$\,pu).
+           Orange rectangle: combined passive+active NDZ
+           ($|\Delta P|<0.012$\,pu, $|\Delta Q|<0.015$\,pu).  Active
+           Q-injection reduces the NDZ area by approximately 87\%.
+           A typical microgrid load mismatch (blue dot) lies well outside
+           both NDZ regions.}
+  \label{fig:ndz}
+\end{figure}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study C --- Mode Switching Sequence and Timing}
+\label{sec:studyC}
+
+Figure~\ref{fig:modeswitch} shows the protection mode state machine.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.92\textwidth}{!}{\input{figures/fig_island_mode_switch.tex}}
+  \caption{Protection mode switching state machine.  Grid-connected mode
+           (left) runs the full scheme from TR-35.  On islanding detection
+           at $t=100$\,ms, mode switches within 20\,ms: distance and 87L
+           elements are disabled, overcurrent is rescaled, and GFM inverters
+           assume frequency/voltage regulation.  Relay~25 supervises
+           resynchronisation; failure causes lockout.}
+  \label{fig:modeswitch}
+\end{figure}
+
+\noindent
+The 20\,ms mode-switch gap (from detection at 100\,ms to reconfiguration at
+120\,ms) means a window of 20\,ms exists where the relay has declared islanding
+but grid-connected element settings are still active.  During this window the
+microgrid operates in islanded condition with over-reach protection elements
+still enabled.  For internal faults occurring in this window, Z1 and 87L would
+still operate correctly (the fault current level is unchanged).  For external
+faults, 87L would be the discriminating element --- and with 87L still active
+for 20\,ms there is no selectivity gap.
+
+The mode switch sequence for the islanded state disables:
+\begin{itemize}
+  \item Zone~1 and Zone~2 distance relay (no remote infeed reference for
+    apparent impedance calculation);
+  \item 87L (communications path to remote relay is lost when PCC breaker opens);
+  \item Z2/POTT permissive carrier (same reason).
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study D --- Non-Detection Zone Characterisation}
+\label{sec:studyD}
+
+The NDZ is the set of operating points $({\Delta P}, {\Delta Q})$ for which no
+detection method produces a trip signal.  For the combined scheme:
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Method & $|\Delta P|$ NDZ & $|\Delta Q|$ NDZ \\
+\midrule
+ROCOF only & $<0.020$\,pu & (any) \\
+V/f window & (any) & $<0.050$\,pu \\
+Passive combined & $<0.020$\,pu & $<0.050$\,pu \\
+Active Q-injection & $<0.012$\,pu & $<0.015$\,pu \\
+Combined passive + active & $<0.012$\,pu & $<0.015$\,pu \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+For practical microgrid operation, the load-generation balance is maintained
+within $\pm5\%$ by the GFM droop control.  The remaining ND\hspace{-0.3pt}Z
+of $\pm1.2\%$ ($\pm0.012$\,pu) is smaller than the typical droop dead-band and
+is therefore not reachable in normal operation.  The NDZ constitutes a negligible
+risk for real microgrid deployments.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study E --- Resynchronisation Check (Relay 25)}
+\label{sec:studyE}
+
+Before reconnecting the microgrid to the upstream grid, relay~25 verifies:
+
+\begin{equation}
+  \Delta V \leq 0.05\;\mathrm{pu}
+  \quad \text{AND} \quad
+  \Delta f \leq 0.10\;\mathrm{Hz}
+  \quad \text{AND} \quad
+  \Delta\theta \leq 10^\circ
+\end{equation}
+
+These settings comply with IEEE~1547-2018 reconnection requirements.  The
+transient energy injected at closing angle $\Delta\theta_\mathrm{max}=10^\circ$
+is:
+
+\begin{equation}
+  \Delta W = \tfrac{1}{2} S_\mathrm{ibr}(1 - \cos\Delta\theta_\mathrm{max})
+           = 0.0076\;\mathrm{pu{\cdot}s}
+\end{equation}
+
+This is well below the thermal-stress threshold for power electronic converters
+($\Delta W_\mathrm{limit}\approx0.05$\,pu$\cdot$s for typical LCL-filtered VSC).
+Scenarios with $\Delta f>0.10$\,Hz or $\Delta\theta>10^\circ$ are blocked; the
+GFM frequency regulation brings the islanded frequency to within 0.03\,Hz of
+the grid within 1.5\,s after resynchronisation is requested.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Summary}
+\label{sec:summary}
+
+\begin{enumerate}
+  \item \textbf{Passive detection}: ROCOF\,$\geq1$\,Hz/s detects islanding for
+    $|\Delta P|\geq0.02$\,pu within 100\,ms; V/f window provides redundant path.
+
+  \item \textbf{Active NDZ reduction}: Q-injection ($\Delta Q=0.05$\,pu) reduces
+    NDZ area by 87\%; combined NDZ is $|\Delta P|<0.012$\,pu.
+
+  \item \textbf{Mode switch}: 20\,ms after detection, grid-connected scheme is
+    replaced by islanded OC scheme; no protection gap for internal faults.
+
+  \item \textbf{Relay 25}: Resync conditions $\Delta V\leq0.05$, $\Delta f\leq0.10$\,Hz,
+    $\Delta\theta\leq10^\circ$ limit closing transient to $0.0076$\,pu$\cdot$s.
+
+  \item \textbf{Seamless transition}: The framework operates without manual
+    relay reconfiguration, using an IEC~61850 GOOSE-triggered setting group
+    change (consistent with TR-06~\cite{SAMBP_TR35}).
+\end{enumerate}
+
+\noindent
+TR-39 provides the islanding protection foundation for adaptive OC coordination
+(TR-40) and bus differential in IBR microgrids (TR-41).
+
+\bibliographystyle{IEEEtranN}
+\bibliography{references39}
+
+\end{document}
