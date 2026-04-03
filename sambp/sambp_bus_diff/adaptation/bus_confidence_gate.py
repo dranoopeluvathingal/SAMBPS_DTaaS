@@ -43,6 +43,15 @@ class BusGateConfig:
     n_confirm: int           = 2
     confidence_min: float    = 0.40
     model_veto_enable: bool  = True
+    # Magnitude override: if I_diff_fund exceeds this threshold, the veto is
+    # suppressed even when f_int < f_int_trip_thresh.
+    # Rationale: CT saturation on an internal fault produces a saturated
+    # waveform (ε_CT > 0) but the fault current I_diff_fund is much larger
+    # than the saturation distortion alone.  For an external fault + CT sat,
+    # I_diff_fund ≈ 0 (no true differential).  The threshold is set at
+    # 3 × I_op_pickup ≈ 3 × 0.2 = 0.60 pu, comfortably above the saturation-
+    # only level (~0.1–0.3 pu for typical ε_CT) but below fault levels.
+    veto_override_I_thresh: float = 0.60   # pu
 
 
 @dataclass
@@ -83,12 +92,24 @@ def evaluate_87B_confidence_gate(
         and conf >= gate_cfg.confidence_min
     )
 
+    # Magnitude override: when I_diff_fund is large, the fault current
+    # dominates the saturation distortion.  An external fault + CT saturation
+    # produces I_diff_fund ≈ 0 (no true differential); an internal fault with
+    # concurrent CT saturation produces I_diff_fund >> threshold.
+    # Override prevents the veto from suppressing legitimate fault trips.
+    I_diff_fund = zone_state.I_diff_fund
+    magnitude_override = (
+        I_diff_fund >= gate_cfg.veto_override_I_thresh
+        and conventional_trip
+    )
+
     # Stage-2 veto: suppress conventional trip when model is identifiable
     # and differential is NOT attributed to an internal fault.
     model_vetoes_conventional = (
         gate_cfg.model_veto_enable
         and kn < gate_cfg.kappa_thresh
         and f_int < gate_cfg.f_int_trip_thresh
+        and not magnitude_override   # suppressed when large differential seen
     )
 
     model_says_internal = (
