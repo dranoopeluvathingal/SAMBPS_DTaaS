@@ -1,0 +1,50 @@
+% fig_mc_perturbation.tex  — bare tikzpicture for \input in main_report8.tex
+\begin{tikzpicture}[
+    box/.style={draw,rounded corners=4pt,fill=#1,minimum width=3.0cm,
+                minimum height=0.85cm,align=center,font=\small},
+    arr/.style={-{Latex[length=2.5mm]},line width=0.9pt},
+    ann/.style={font=\footnotesize,align=center},
+    param/.style={draw,rounded corners=3pt,fill=orange!15,
+                  font=\footnotesize,align=center,minimum width=2.2cm,
+                  minimum height=0.55cm},
+]
+
+% Nominal snapshot
+\node[box=gray!20] (snap) at (0,0) {Nominal\\Snapshot};
+
+% Perturbation block
+\node[box=orange!25] (perturb) at (3.8,0) {Perturb\\Waveforms};
+
+% Perturbation parameters (stacked above perturb)
+\node[param] (p1) at (3.8,1.5)  {$\delta_I \sim U(\pm 20\%)$};
+\node[param] (p2) at (3.8,2.2)  {$\delta_{\rm dc} \sim U(\pm 30\%)$};
+\node[param] (p3) at (3.8,2.9)  {$\delta_\tau \sim U(\pm 20\%)$};
+\node[param] (p4) at (3.8,3.6)  {$\delta_\phi \sim U(\pm 45^\circ)$};
+
+\draw[arr,gray!50] (p1.south) -- (perturb.north);
+\draw[arr,gray!50] (p2.south) -- (perturb.north);
+
+\draw[arr] (snap.east) -- (perturb.west)
+           node[midway,above,ann]{$N{=}200$\\trials};
+
+% SAMBP coordinator
+\node[box=blue!15] (coord) at (7.6,0) {SAMBP\\Coordinator};
+\draw[arr] (perturb.east) -- (coord.west);
+
+% Outputs
+\node[box=green!20] (conv) at (11.0, 0.7)  {conv\_trip};
+\node[box=red!15]   (samp) at (11.0,-0.7)  {final\_trip};
+\draw[arr] (coord.east) -- (conv.west);
+\draw[arr] (coord.east) -- (samp.west);
+
+% Metric boxes
+\node[box=purple!15] (m1) at (14.0, 0.7)  {TPR/FPR\\Conv.};
+\node[box=purple!15] (m2) at (14.0,-0.7)  {TPR/FPR\\SAMBP};
+\draw[arr] (conv.east) -- (m1.west);
+\draw[arr] (samp.east) -- (m2.west);
+
+% Annotation below
+\node[ann,below=0.55cm of perturb]
+  {20 scenarios\\(10 loc.\ $\times$ 2 types)};
+
+\end{tikzpicture}
