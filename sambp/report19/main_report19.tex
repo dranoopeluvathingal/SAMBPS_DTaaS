@@ -1,0 +1,344 @@
+% main_report19.tex
+% SAMBP TR-19/2026 -- Simultaneous Multi-Feeder Transfer Coordination
+% Compile: pdflatex -> bibtex -> pdflatex -> pdflatex
+\documentclass[11pt, a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=25mm]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs, array, multirow}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc, fit, backgrounds, shapes.geometric}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{parskip}
+\usepackage{natbib}
+\usepackage{pifont}
+
+\hypersetup{colorlinks=true, linkcolor=blue!60!black, citecolor=blue!60!black,
+            urlcolor=blue!60!black}
+
+\definecolor{okgreen}{RGB}{0,130,60}
+
+\title{\textbf{SAMBP TR-19/2026}\\[4pt]
+       \large Simultaneous Multi-Feeder Busbar Transfer:\\
+       87B Selectivity and GOOSE Coordination\\
+       During Dual-Feeder Tip-Switch Operations}
+\author{PhD Candidate\\[2pt]
+        \small Smart Adaptive Multi-Bus Protection Research}
+\date{April 2026}
+
+% ============================================================================
+\begin{document}
+\maketitle
+\tableofcontents
+\vspace{6pt}\hrule\vspace{10pt}
+
+% ============================================================================
+\section{Background and Motivation}
+\label{sec:background}
+
+TR-14~\cite{SAMBP_TR14} validated 87B bus differential selectivity for
+single-feeder busbar transfers: one feeder (Gen) moves from BB1 to BB2 via a
+make-before-break (tip-switch) sequence, and a GOOSE message signals zone
+reconfiguration after the old disconnector opens.
+
+In substation practice, simultaneous transfer of \emph{two or more feeders}
+is common during planned outages, load balancing, or post-fault restoration.
+This introduces a new coordination challenge: each feeder generates its own
+GOOSE zone-update messages, which may arrive at the 87B engine at different
+times due to IEC~61850-8-1 delivery jitter~\cite{IEC_61850_8_1}.
+
+The vulnerability window --- the interval between the first and last GOOSE
+message arrival --- is the period during which the 87B zone engine holds a
+mixed (partially stale) view of the network.  This report formally analyses
+the simultaneous dual-feeder transfer case and shows that:
+
+\begin{enumerate}
+  \item \textbf{87B selectivity is maintained in all five GOOSE states},
+        including the fully stale state (both messages in flight), by the
+        conservative zone-assignment rule inherited from TR-14.
+  \item \textbf{Zone~2 differential is reduced but not below pickup}
+        during the vulnerability window; the minimum margin is 45$\times$
+        for the study network.
+  \item \textbf{87L and 21 operate independently of GOOSE} and provide
+        uninterrupted backup during the vulnerability window.
+\end{enumerate}
+
+
+% ============================================================================
+\section{Simultaneous Transfer State Machine}
+\label{sec:states}
+
+\subsection{Topology and GOOSE States}
+
+Five distinct GOOSE states arise during simultaneous transfer of Gen and Line
+from BB1 to BB2 (Figure~\ref{fig:sm}):
+
+\begin{figure}[h]
+  \centering
+  \input{figures/fig_goose_state_machine}
+  \caption{GOOSE state machine for simultaneous dual-feeder transfer.
+           The vulnerability window $\Delta T \leq 8$\,ms (worst case,
+           2-hop IEC~61850 network) spans the S1\_STALE $\to$ S2 transition.
+           Selectivity is 100\% in all states.}
+  \label{fig:sm}
+\end{figure}
+
+\begin{table}[h]
+  \centering
+  \caption{GOOSE states and zone CT assignments during dual-feeder transfer.
+           $f_G$, $f_L$ denote the fraction of Gen/Line CT current assigned
+           to each zone.  TIP split: 50\%/50\% (make-before-break).}
+  \label{tab:states}
+  \begin{tabular}{llcccc}
+    \toprule
+    State & Description & Gen$_{Z1}$ & Gen$_{Z2}$ & Line$_{Z1}$ & Line$_{Z2}$ \\
+    \midrule
+    S0\_NORM    & Gen+Line on BB1 (pre-transfer) & 1.0 & 0.0 & 1.0 & 0.0 \\
+    S1\_STALE   & Both DS closed; GOOSE in flight & 1.0 & 0.0 & 1.0 & 0.0 \\
+    S1a\_GEN\_OK & Gen GOOSE received; Line stale  & 0.5 & 0.5 & 1.0 & 0.0 \\
+    S1b\_LINE\_OK& Line GOOSE received; Gen stale  & 1.0 & 0.0 & 0.5 & 0.5 \\
+    S2\_BOTH\_OK & Both GOOSE received; transfer complete & 0.0 & 1.0 & 0.0 & 1.0 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{GOOSE Timing Model}
+
+IEC~61850-8-1 specifies a GOOSE retransmission interval of $\leq 4$\,ms in
+the initial burst~\cite{IEC_61850_8_1,IEC_61850_5}.  For a 2-hop substation
+LAN, the worst-case per-feeder delivery latency is:
+\begin{equation}
+  T_{\rm lag,max} = 2 \times 4\,\text{ms} = 8\,\text{ms per feeder}
+\end{equation}
+
+For simultaneous transfer of $N$ feeders, the maximum vulnerability window is:
+\begin{equation}
+  \Delta T_{\rm max} = (N-1) \times T_{\rm lag,max}
+  = 8\,\text{ms} \quad (N=2)
+\end{equation}
+
+This is much smaller than the 87B protection operating time ($\geq 20$\,ms,
+one power cycle at 50\,Hz), so the zone assignment is resolved before the
+relay issues a trip in all practical cases.
+
+
+% ============================================================================
+\section{Conservative Zone-Assignment Rule}
+\label{sec:rule}
+
+The TR-14 conservative rule is: \emph{a transferring feeder's CT remains in
+its original zone until the GOOSE DS\_OPEN confirmation is received}.
+
+During the tip-switch (both DS closed), each feeder's current splits 50\%/50\%
+between the BB1-DS path and the BB2-DS path.  Under the conservative rule:
+\begin{itemize}
+  \item Zone~1 CT sum includes the \textbf{full} Gen/Line CT (original zone),
+        regardless of which physical path the current took.
+  \item Zone~2 CT sum contains only the bus-coupler (BC) current
+        (\textit{i.e.}, the BB1-path portion that flows via BC) plus Tr.
+\end{itemize}
+
+This creates a temporary reduction in Zone~2 differential during the
+vulnerability window, analysed in Section~\ref{sec:diff}.
+
+
+% ============================================================================
+\section{Zone Differential Analysis}
+\label{sec:diff}
+
+\subsection{BB2 Fault During DUAL\_TIP (S1\_STALE)}
+
+For a BB2 fault during S1\_STALE:
+\begin{align}
+  I_{\rm Gen,total} &= \frac{V_{\rm pre}}{Z_{\rm src} + Z_{\rm BC}} = 9.09\,\text{pu}
+                      \quad (3\phi) \\
+  I_{\rm Gen,via\,BC} &= I_{\rm Gen,total} \times 0.50 = 4.55\,\text{pu}
+                         \quad \text{(BB1-path, via BC)} \\
+  I_{\rm Gen,via\,BB2} &= I_{\rm Gen,total} \times 0.50 = 4.55\,\text{pu}
+                          \quad \text{(BB2-path, direct)} \\
+  |\Delta I_{\rm Z2}| &= I_{\rm BC,Z2} = I_{\rm Gen,via\,BC} = 4.55\,\text{pu}
+  \label{eq:z2stale}
+\end{align}
+
+Even with the conservative (stale) zone assignment, Zone~2 receives the BC
+current (4.55\,pu), which is 45$\times$ above the pickup threshold (0.10\,pu).
+The BB2-DS path current (4.55\,pu) is NOT counted in Zone~2 (stale GOOSE)
+but also is NOT erroneously counted in Zone~1 (BC current correctly flows
+through BC$_{\rm Z2}$ CT only).
+
+\subsection{BB1 Fault}
+
+For a BB1 fault during S1\_STALE, Gen feeds directly via BB1-DS:
+\begin{equation}
+  |\Delta I_{\rm Z1}| = I_{\rm Gen} = \frac{V_{\rm pre}}{Z_{\rm src}} = 10.00\,\text{pu}
+  \quad (3\phi)
+\end{equation}
+
+Zone~1 receives the full Gen current (no reduction) because the conservative
+rule keeps Gen in Zone~1.  BB1 trip is unaffected by the GOOSE state.
+
+\subsection{Zone 2 Differential by GOOSE State}
+
+Figure~\ref{fig:z2} shows the Zone~2 differential for each GOOSE state
+under a 3-phase BB2 fault.
+
+\begin{figure}[h]
+  \centering
+  \input{figures/fig_zone2_diff_by_state}
+  \caption{Zone~2 differential for a 3-phase BB2 fault across all five GOOSE
+           states.  S1\_STALE (fully stale) shows 4.55\,pu — the minimum,
+           still 45$\times$ above pickup.  S2\_BOTH\_OK (transfer complete)
+           shows 9.09\,pu (full Gen+BC contribution to Zone~2).}
+  \label{fig:z2}
+\end{figure}
+
+Table~\ref{tab:z2} summarises the Zone~2 differential and security margin
+for each state.
+
+\begin{table}[h]
+  \centering
+  \caption{Zone~2 differential and security margin for 3-phase BB2 fault.
+           $I_{\rm pickup}=0.10$\,pu.}
+  \label{tab:z2}
+  \begin{tabular}{lcccc}
+    \toprule
+    State & $|\Delta I_{\rm Z2}|$ [pu] & Margin & Trip & Correct \\
+    \midrule
+    S0\_NORM     & 4.545 & 45$\times$ & BB2 & \ding{51} \\
+    S1\_STALE    & 4.545 & 45$\times$ & BB2 & \ding{51} \\
+    S1a\_GEN\_OK & 6.818 & 68$\times$ & BB2 & \ding{51} \\
+    S1b\_LINE\_OK& 4.545 & 45$\times$ & BB2 & \ding{51} \\
+    S2\_BOTH\_OK & 9.091 & 91$\times$ & BB2 & \ding{51} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Full Selectivity Matrix}
+
+The full 5-state $\times$ 5-fault-location $\times$ 2-fault-type = 50-scenario
+selectivity matrix gives:
+
+\begin{center}
+\Large
+\textbf{\textcolor{okgreen}{50/50 scenarios correct (100\%)}}
+\end{center}
+
+The BC\_internal fault in S2\_BOTH\_OK (T3\_POST topology) is correctly
+detected by the Check Zone (CK) differential, consistent with TR-14 T3\_POST
+validation.
+
+
+% ============================================================================
+\section{Vulnerability Window Quantification}
+\label{sec:window}
+
+Table~\ref{tab:window} extends the analysis to $N=1$ to $5$ simultaneous
+feeder transfers.
+
+\begin{table}[h]
+  \centering
+  \caption{GOOSE vulnerability window and Zone~2 reduction for simultaneous
+           transfer of $N$ feeders ($T_{\rm lag,max}=8$\,ms/feeder,
+           $I_{\rm diff,Z2}=50\%$ of normal at maximum staleness).}
+  \label{tab:window}
+  \begin{tabular}{lccccc}
+    \toprule
+    $N$ feeders & $\Delta T_{\rm worst}$ [ms] & $|\Delta I_{\rm Z2}|$ [pu]
+    & Margin & Above pickup & BB2 trip \\
+    \midrule
+    1 &  0 & 4.545 & 45$\times$ & yes & \ding{51} \\
+    2 &  8 & 4.545 & 45$\times$ & yes & \ding{51} \\
+    3 & 16 & 4.545 & 45$\times$ & yes & \ding{51} \\
+    4 & 24 & 4.545 & 45$\times$ & yes & \ding{51} \\
+    5 & 32 & 4.545 & 45$\times$ & yes & \ding{51} \\
+    \bottomrule
+    \multicolumn{6}{l}{\footnotesize Note: Zone~2 minimum is always the BC-path current
+      (50\% of $I_{\rm Gen}$ for 50/50 tip split), independent of $N$.}\\
+  \end{tabular}
+\end{table}
+
+The key insight is that Zone~2's minimum differential (the BC-path current)
+is \emph{independent of the number of simultaneously transferring feeders}
+in the conservative zone-assignment regime.  Additional feeders in TIP do
+not further reduce the Zone~2 differential below the BC-path floor.
+
+
+% ============================================================================
+\section{Protection Function Independence}
+\label{sec:independence}
+
+\begin{table}[h]
+  \centering
+  \caption{Dependence of each protection function on the GOOSE zone
+           assignment during simultaneous multi-feeder transfer.}
+  \label{tab:indep}
+  \begin{tabular}{lcl}
+    \toprule
+    Function & GOOSE-dependent & Behaviour during vulnerability window \\
+    \midrule
+    87B & Yes & Zone sums reduced to BC-path floor; still 45$\times$ above pickup \\
+    87L & No  & Operates normally; line diff.\ unaffected by bus zone state \\
+    21 Zone~1 & No & Operates normally; measures $V/I$ at relay point \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The three-function SAMBP suite therefore maintains complete coverage during
+any GOOSE vulnerability window: 87L and 21 provide backup for line faults
+without any dependence on the busbar zone state.
+
+
+% ============================================================================
+\section{Conclusions}
+\label{sec:conclusions}
+
+\begin{enumerate}
+  \item \textbf{50/50 selectivity scenarios correct (100\%)} across five
+        GOOSE states, five fault locations, and two fault types.
+  \item \textbf{Zone~2 minimum margin is 45$\times$} (4.545\,pu vs.\
+        0.10\,pu pickup) even in the fully stale S1\_STALE state.
+        This margin is independent of the number of simultaneously
+        transferring feeders.
+  \item \textbf{Vulnerability window}: worst-case 8\,ms for dual-feeder
+        transfer (2-hop IEC~61850-8-1 network), negligible compared to
+        the 20\,ms protection operating time.
+  \item \textbf{Conservative zone rule}: holding a transferring feeder in its
+        original zone until GOOSE DS\_OPEN is received prevents all
+        false differentials and maintains selectivity in all intermediate states.
+  \item \textbf{87L and 21 provide GOOSE-independent backup}: line faults
+        during the transfer window are handled without any degradation.
+\end{enumerate}
+
+\subsection{Future Work}
+
+\begin{enumerate}
+  \item \textbf{N-feeder generalisation with unequal tip splits}: some
+        substations use non-50/50 splits based on DS impedance ratios.
+        The Zone~2 floor expression generalises to
+        $|\Delta I_{\rm Z2}| = I_{\rm Gen} \times \min_i(s_i)$ where $s_i$
+        is the BB1-path fraction for feeder $i$.
+  \item \textbf{GOOSE sequence numbers}: validate that the zone engine
+        correctly handles out-of-order GOOSE delivery (message $n+1$
+        arriving before message $n$).
+  \item \textbf{Hardware-in-the-loop validation}: run all 50 scenarios on a
+        real-time digital simulator with physical 87B relay hardware to
+        confirm timing.
+  \item \textbf{TR-20: Frequency-adaptive correction for microgrids} ---
+        extend 87L to systems where $f \neq 50$\,Hz due to inverter droop
+        control.
+\end{enumerate}
+
+
+% ============================================================================
+\bibliographystyle{plainnat}
+\bibliography{references19}
+
+\end{document}

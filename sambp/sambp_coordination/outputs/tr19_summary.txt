@@ -1,0 +1,38 @@
+SAMBP TR-19/2026 Simultaneous Multi-Feeder Transfer Summary
+================================================================
+
+Network: Z_SRC=j0.10 pu, Z_BC=j0.01 pu, Z_LINE=j0.05 pu
+GOOSE max lag: 8 ms/feeder (2-hop IEC 61850-8-1)
+I_pickup: 0.1 pu  |  TIP split: 50%
+
+GOOSE States (dual-feeder Gen + Line transfer BB1→BB2)
+----------------------------------------------------------------
+  S0_NORM             : Gen_Z1=1.0  Gen_Z2=0.0  Line_Z1=1.0  Line_Z2=0.0
+  S1_STALE            : Gen_Z1=1.0  Gen_Z2=0.0  Line_Z1=1.0  Line_Z2=0.0
+  S1a_GEN_OK          : Gen_Z1=0.5  Gen_Z2=0.5  Line_Z1=1.0  Line_Z2=0.0
+  S1b_LINE_OK         : Gen_Z1=1.0  Gen_Z2=0.0  Line_Z1=0.5  Line_Z2=0.5
+  S2_BOTH_OK          : Gen_Z1=0.0  Gen_Z2=1.0  Line_Z1=0.0  Line_Z2=1.0
+
+Zone 2 differential during BB2 fault
+----------------------------------------------------------------
+  S0_NORM             : I_diff_Z2=4.5455 pu  (pickup=0.1)  trip=BB2  OK
+  S1_STALE            : I_diff_Z2=4.5455 pu  (pickup=0.1)  trip=BB2  OK
+  S1a_GEN_OK          : I_diff_Z2=6.8182 pu  (pickup=0.1)  trip=BB2  OK
+  S1b_LINE_OK         : I_diff_Z2=4.5455 pu  (pickup=0.1)  trip=BB2  OK
+  S2_BOTH_OK          : I_diff_Z2=9.0909 pu  (pickup=0.1)  trip=BB2  OK
+
+Selectivity: 50/50 (100%) correct
+
+Vulnerability window (worst-case GOOSE staleness)
+----------------------------------------------------------------
+  N=1 feeders: max window=0.0ms  I_diff_Z2=50%  above_pickup=True
+  N=2 feeders: max window=8.0ms  I_diff_Z2=50%  above_pickup=True
+  N=3 feeders: max window=16.0ms  I_diff_Z2=50%  above_pickup=True
+  N=4 feeders: max window=24.0ms  I_diff_Z2=50%  above_pickup=True
+  N=5 feeders: max window=32.0ms  I_diff_Z2=50%  above_pickup=True
+
+Protection function independence from GOOSE
+----------------------------------------------------------------
+  87L           : GOOSE_dep=False  Operates normally; line differential unaffected
+  21 Zone 1     : GOOSE_dep=False  Operates normally; measures V/I directly
+  87B           : GOOSE_dep=True  Zone sums reduced 50% for BB2 fault; still above pickup

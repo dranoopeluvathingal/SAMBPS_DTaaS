@@ -1,0 +1,60 @@
+% fig_goose_state_machine.tex
+% GOOSE state machine for simultaneous dual-feeder transfer (TR-19)
+% States: S0_NORM → S1_STALE → S1a/S1b → S2_BOTH_OK
+\begin{tikzpicture}[
+  state/.style={draw, rounded corners=4pt, fill=blue!8, minimum width=2.6cm,
+                minimum height=1.0cm, font=\scriptsize, align=center,
+                inner sep=4pt},
+  stag/.style={draw, rounded corners=4pt, fill=orange!10, minimum width=2.6cm,
+               minimum height=1.0cm, font=\scriptsize, align=center,
+               inner sep=4pt},
+  sok/.style={draw, rounded corners=4pt, fill=green!10, minimum width=2.6cm,
+              minimum height=1.0cm, font=\scriptsize, align=center,
+              inner sep=4pt},
+  arr/.style={-latex, thick},
+  lab/.style={font=\scriptsize\itshape},
+  goose/.style={font=\tiny, blue!60!black},
+]
+
+% ---- S0: Normal state ------------------------------------------------------
+\node[state] (S0) at (0, 0) {S0\_NORM\\[2pt]Gen+Line on BB1\\BC closed};
+
+% ---- S1: Dual-TIP initiated ------------------------------------------------
+\node[stag] (S1) at (4.5, 0) {S1\_STALE\\[2pt]Both DS closed\\GOOSE in flight};
+\draw[arr] (S0.east) -- node[above, lab, align=center]{operator initiates\\dual-transfer}
+  (S1.west);
+
+% ---- S1a: Gen GOOSE received first -----------------------------------------
+\node[sok] (S1a) at (8.5, 1.5)
+  {S1a\_GEN\_OK\\[2pt]Gen GOOSE rcvd\\Line still in TIP};
+\draw[arr] (S1.east) -- node[above, goose, sloped]{$t_{G1}$: Gen GOOSE} (S1a.west);
+
+% ---- S1b: Line GOOSE received first ----------------------------------------
+\node[sok] (S1b) at (8.5, -1.5)
+  {S1b\_LINE\_OK\\[2pt]Line GOOSE rcvd\\Gen still in TIP};
+\draw[arr] (S1.east) -- node[below, goose, sloped]{$t_{L1}$: Line GOOSE} (S1b.west);
+
+% ---- S2: Both GOOSE received -----------------------------------------------
+\node[sok] (S2) at (13.0, 0)
+  {S2\_BOTH\_OK\\[2pt]Gen+Line on BB2\\(= T3\_POST)};
+\draw[arr] (S1a.east) -- node[above, goose, sloped]{$t_{L1}$: Line GOOSE} (S2.west);
+\draw[arr] (S1b.east) -- node[below, goose, sloped]{$t_{G1}$: Gen GOOSE} (S2.west);
+
+% ---- GOOSE window annotation -----------------------------------------------
+\draw[{latex[length=4pt]}-{latex[length=4pt]}, red!60!black, thick]
+  (4.5, -2.8) -- node[below, font=\scriptsize, red!70!black]
+    {Vulnerability window: $\Delta T \leq 8$\,ms (2-hop IEC 61850)}
+  (13.0, -2.8);
+
+% ---- Zone assignment notes -------------------------------------------------
+\node[font=\tiny, gray!70!black, align=center]
+  at (4.5, -1.5) {Z1: Gen+Line (both)\\[1pt]Z2: BC$_{\rm Z2}$, Tr\\[1pt](conservative)};
+\node[font=\tiny, gray!70!black, align=center]
+  at (8.5, 0) {\emph{either}};
+
+% ---- Selectivity OK banners ------------------------------------------------
+\foreach \x in {0, 4.5, 8.5, 13.0} {
+  \node[font=\tiny\bfseries, green!60!black] at (\x, 1.0) {\ding{51} 100\%};
+}
+
+\end{tikzpicture}
