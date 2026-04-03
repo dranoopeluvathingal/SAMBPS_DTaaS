@@ -1,0 +1,98 @@
+% ============================================================
+%  Figure 3 — Full algorithm flowchart
+% ============================================================
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  proc/.style ={draw, thick, fill=blue!8,  rounded corners=2pt,
+                minimum width=3.0cm, minimum height=0.55cm, align=center},
+  dec/.style  ={draw, thick, fill=orange!12, diamond, aspect=2.8,
+                minimum width=3.0cm, align=center},
+  term/.style ={draw, thick, fill=green!12, rounded corners=4pt,
+                minimum width=3.0cm, minimum height=0.55cm, align=center},
+  warn/.style ={draw, thick, fill=red!10, rounded corners=2pt,
+                minimum width=3.0cm, minimum height=0.55cm, align=center},
+  arr/.style  ={->, thick},
+  >=Latex,
+  node distance=0.5cm
+]
+
+\node[term]  (start)  {Fault detected; window $[t_0, t_0+T_w]$ available};
+
+\node[proc, below=of start]  (hilb)
+     {Compute analytic signals $\mathcal{I}_k = i_k + j\mathcal{H}\{i_k\}$,\;
+      $k\in\{a,b,c\}$};
+
+\node[proc, below=of hilb]   (fort)
+     {Fortescue decompose:\; $I_1,I_2,I_0$};
+
+\node[dec,  below=of fort]   (bal)
+     {Fault type?};
+
+% Branches
+\node[proc, below left=0.6 and 2.0 of bal]  (p3ph)
+     {3PH: use $i_a$ directly\\(avoid Hilbert artifacts)};
+
+\node[proc, below=0.6 of bal]               (pll)
+     {LL: fit $I_1$ (pos)\\ and $I_2$ (neg) independently};
+
+\node[proc, below right=0.6 and 2.0 of bal] (pslg)
+     {SLG: fit $I_1$ (pos) only\\propagate $\hat\theta^{(2)}=\hat\theta^{(0)}=\hat\theta^{(1)}$};
+
+% Symmetry check
+\node[dec,  below=1.2 of pll]   (sym)
+     {$\|I_2\|/\|I_1\| < 0.05$?};
+
+\node[warn, right=0.8 of sym]   (skip)
+     {Skip neg-seq fit\\(noise-dominated)};
+
+% Two-pass estimator
+\node[proc, below=0.6 of sym]   (seed)
+     {Neg-seq seed:\;
+      $I_{sub,0}^{(2)}=0.7\hat I_{sub}^{(1)}$,\;
+      $\tau_{ac,0}^{(2)}=0.5\hat\tau_{ac}^{(1)}$,\;
+      $\phi_{a,0}^{(2)}=\hat\phi_a^{(1)}-\pi/6$};
+
+\node[proc, below=0.5 of seed]  (est)
+     {Two-pass LM estimation per active sequence};
+
+\node[proc, below=0.5 of est]   (cond)
+     {Compute $\kappa_n(\mathbf{J})$, residual $\|\varepsilon\|$,
+      confirmation count $n_c$};
+
+\node[dec,  below=0.5 of cond]  (gate)
+     {$\gamma = w_1\gamma_\kappa + w_2\gamma_\varepsilon
+       + w_3\gamma_n \geq \gamma_{\min}$?};
+
+\node[warn, right=0.8 of gate]  (hold)
+     {Hold previous\\setting; flag low-$\gamma$};
+
+\node[term, below=0.6 of gate]  (relay)
+     {Relay update from $\hat{\bm\theta}^{(1)}$:\;
+      $I_p^* = f(\hat I_{ss}^{(1)})$,\;
+      $TMS^* = K_{TMS}\hat\tau_{ac}^{(1)}$};
+
+% Arrows main flow
+\draw[arr] (start) -- (hilb);
+\draw[arr] (hilb)  -- (fort);
+\draw[arr] (fort)  -- (bal);
+\draw[arr] (bal)   -| node[near start,above,font=\tiny]{3PH} (p3ph);
+\draw[arr] (bal)   --  node[near start,right,font=\tiny]{LL}  (pll);
+\draw[arr] (bal)   -| node[near start,above,font=\tiny]{SLG/LLG} (pslg);
+
+% Symmetry check on LL branch
+\draw[arr] (pll)   -- (sym);
+\draw[arr] (sym)   -- node[midway,right,font=\tiny]{No} (seed);
+\draw[arr] (sym)   -- node[midway,above,font=\tiny]{Yes} (skip);
+
+% Merge all branches back to estimator
+\draw[arr] (p3ph)  |- (est);
+\draw[arr] (pslg)  |- (est);
+\draw[arr] (seed)  -- (est);
+\draw[arr] (skip)  |- (est);
+
+\draw[arr] (est)   -- (cond);
+\draw[arr] (cond)  -- (gate);
+\draw[arr] (gate)  -- node[midway,right,font=\tiny]{Yes} (relay);
+\draw[arr] (gate)  -- node[midway,above,font=\tiny]{No}  (hold);
+
+\end{tikzpicture}

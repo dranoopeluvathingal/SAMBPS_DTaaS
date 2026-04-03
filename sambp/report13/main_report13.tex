@@ -1,0 +1,532 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[a4paper,
+            top=25mm, bottom=25mm,
+            left=25mm, right=25mm,
+            headheight=15pt]{geometry}
+
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,decorations.pathreplacing,patterns,calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{groupplots}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{fancyhdr}
+\usepackage{microtype}
+\usepackage{siunitx}
+\usepackage{listings}
+\usepackage{caption}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small SAMBP TR-13/2026 --- 87L Pi-Section Line Model}
+\rhead{\small PhD Thesis Supporting Report}
+\cfoot{\thepage}
+
+\hypersetup{colorlinks=true, linkcolor=blue!70!black, citecolor=OliveGreen,
+            urlcolor=blue!70!black}
+
+\newcommand{\sambp}{\textsc{sambp}}
+\newcommand{\Idiff}{I_{\mathrm{diff}}}
+\newcommand{\Ifund}{I_{\mathrm{fund}}}
+\newcommand{\fint}{f_{\mathrm{int}}}
+\newcommand{\alphaThresh}{\alpha_{\mathrm{thresh}}}
+\newcommand{\alphafifty}{\alpha_{50}}
+\newcommand{\kappan}{\kappa_n}
+\newcommand{\BC}{B_C}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\pu}{\,\text{pu}}
+
+\lstset{basicstyle=\ttfamily\small,
+        keywordstyle=\color{blue!70!black},
+        commentstyle=\color{gray},
+        frame=single, breaklines=true}
+
+%=======================================================================
+\begin{document}
+%=======================================================================
+
+\begin{center}
+  {\LARGE\bfseries SAMBP Technical Report TR-13/2026}\\[6pt]
+  {\large 87L Line Differential: Pi-Section Charging Compensation\\
+          and Adaptive Threshold Recalibration}\\[4pt]
+  \today
+\end{center}
+
+\vspace{4pt}
+\noindent\rule{\linewidth}{0.6pt}
+
+\begin{abstract}
+SAMBP TR-12 introduced a magnitude override to recover 87L HIF sensitivity
+when the Stage-2 confidence gate suppressed correct trips at low fault
+currents, improving $\alphafifty$ from 0.10 to 0.07 for phase-to-ground
+faults (ag).  TR-12 identified that the residual charging current
+error of the fixed-amplitude compensation model was the fundamental limiter,
+and recommended a pi-section line model as future work.  This report
+implements the pi-section correction: the pre-fault differential waveform
+is used to fit the actual charging amplitude and phase at both line ends,
+and this fit is subtracted before the Levenberg--Marquardt (LM) estimation
+step.  The correction reduces the charging residual noise floor from
+$0.018\pu$ to $0.0009\pu$ (20$\times$ reduction), enabling the fault
+detection threshold to be safely lowered from $0.20\pu$ to $0.12\pu$.
+Combined with recalibrating the $f_{\rm int}$ sensitivity range
+($\mathrm{max\_factor}: 5.0 \to 3.0$), the pi-section model improves
+$\alphafifty$ for ag faults from 0.07 to 0.05 --- reaching the same
+sensitivity level as three-phase faults --- without requiring the magnitude
+override.  The override is retained as a safety net but is no longer
+the primary sensitivity recovery mechanism.  All other zones are unaffected.
+\end{abstract}
+
+\noindent\rule{\linewidth}{0.6pt}
+
+\tableofcontents
+\vspace{6pt}
+
+%=======================================================================
+\section{Background and Motivation}
+\label{sec:background}
+%=======================================================================
+
+\subsection{Cumulative sensitivity improvements}
+
+The 87L line differential sensitivity against high-impedance faults (HIF) has
+been progressively improved across three consecutive SAMBP reports:
+
+\begin{itemize}
+  \item \textbf{TR-11}~\cite{SAMBP_TR11}: identified the fundamental sensitivity
+        floor caused by the Stage-2 model veto suppressing conventional trips
+        when estimated $\Ifund$ falls below the fault threshold at low fault
+        currents.  Recommended magnitude override and pi-section correction.
+  \item \textbf{TR-12}~\cite{SAMBP_TR12}: implemented the magnitude override in
+        \texttt{line\_confidence\_gate.py}, improving $\alphafifty$ from
+        $0.10 \to 0.07$ (ag) and $0.07 \to 0.05$ (3ph) by bypassing the veto
+        when $\Ifund \geq 0.30\pu$.
+  \item \textbf{TR-13} (this report): addresses the root cause identified in
+        TR-12 by replacing the fixed-amplitude charging compensation with a
+        pre-fault pi-section correction, enabling further threshold reduction.
+\end{itemize}
+
+\subsection{Root-cause analysis of the TR-12 residual floor}
+
+The existing charging compensation in \texttt{line\_diff\_baseline.py} subtracts:
+\begin{equation}
+  i_C^{\mathrm{fixed}}(t) = I_{C,\mathrm{nom}} \cdot \sin\!\bigl(\omega t + \tfrac{\pi}{2} + \phi_{\mathrm{ph}}\bigr)
+  \label{eq:fixed_comp}
+\end{equation}
+where $I_{C,\mathrm{nom}} = \BC\cdot V_{\mathrm{nom}} = 0.013\pu$ (peak) is
+computed from the nominal voltage.  Under actual load-flow conditions the
+terminal voltages at both line ends deviate from nominal by $\pm 5$--10\% in
+magnitude and $\pm 3^\circ$ in phase.  This leaves a residual:
+\begin{equation}
+  \eps(t) = i_C^{\mathrm{actual}}(t) - i_C^{\mathrm{fixed}}(t)
+           \approx \Delta I_C \cdot \cos(\omega t + \phi_\eps)
+  \label{eq:residual}
+\end{equation}
+with typical RMS amplitude $\|\eps\|_{\mathrm{rms}} \approx 0.018\pu$.
+
+The LM estimator sees $\eps(t)$ as a power-frequency sinusoidal component
+and assigns it to $\hat{\Ifund}$, inflating the healthy-line estimate from
+the theoretical zero to approximately $0.018\pu$ RMS.  To prevent false
+trips on the healthy line, the fault detection threshold must be set
+substantially above this noise floor.  With a 10$\times$ safety margin, the
+minimum threshold is $0.18\pu$, explaining the empirically-derived
+$I_{\rm fund,thresh} = 0.20\pu$.
+
+\subsection{Why pi-section correction reduces the noise floor}
+
+In a lumped pi-section model~\cite{Glover2012}, the differential current of a
+healthy line (no fault) is:
+\begin{equation}
+  i_{\mathrm{diff}}^{\mathrm{healthy}}(t) =
+      \frac{\BC}{2}\,v_L(t) + \frac{\BC}{2}\,v_R(t)
+  = \BC\, v_{\mathrm{avg}}(t)
+  \label{eq:pi_healthy}
+\end{equation}
+where $v_L$, $v_R$ are the sending- and receiving-end voltages and $\BC$ is
+the total line susceptance.  Before fault inception, the differential waveform
+is \emph{entirely} due to charging; there is no fault component.  This makes
+the pre-fault window ideal for identifying the actual charging amplitude and
+phase via least-squares regression.
+
+\begin{figure}[h]
+  \centering
+  \resizebox{\columnwidth}{!}{\input{figures/fig_pi_section_circuit}}
+  \caption{Pi-section line model for the SAMBP 87L zone.  Shunt susceptances
+           $\BC/2$ at each terminal create a charging differential current even
+           in the healthy state.  A fault at location $F$ injects an additional
+           component $i_{\rm fault}$.  Both-end IEDs exchange samples via
+           GOOSE / IEC~61850.}
+  \label{fig:pi_circuit}
+\end{figure}
+
+The correction procedure (Figure~\ref{fig:pi_circuit}) fits:
+\begin{equation}
+  i_{\mathrm{diff}}^{\mathrm{pre}}(t) \approx A_C \cos(\omega t) + B_C^{\prime} \sin(\omega t)
+  \label{eq:prefault_fit}
+\end{equation}
+using linear least-squares on the pre-fault epoch.  This 2-parameter regression
+requires no iteration and solves in $O(N)$ time.  The fit captures both the
+amplitude and phase of the actual charging current (including voltage deviation
+from nominal), leaving only measurement noise $\|\eps_{\pi}\|_{\rm rms} \approx
+0.0009\pu$ after subtraction --- a 20$\times$ improvement over the fixed model.
+
+%=======================================================================
+\section{Pi-Section Model Implementation}
+\label{sec:implementation}
+%=======================================================================
+
+\subsection{New module: \texttt{line\_pi\_section\_model.py}}
+
+The correction is implemented in
+\texttt{models/line\_pi\_section\_model.py} with three operational modes:
+
+\paragraph{Mode 1 (voltage-based).}
+When both-end voltage phasors are available:
+\begin{equation}
+  i_C^{\pi}(t) = \BC\cdot\mathcal{H}\!\bigl[v_{\mathrm{avg}}(t)\bigr]
+  \label{eq:voltage_correction}
+\end{equation}
+where $\mathcal{H}[\cdot]$ denotes the Hilbert transform (90° phase lead).
+Achieves $\|\eps_{\pi}\|_{\rm rms} \approx 0.0005\pu$.
+
+\paragraph{Mode 2 (pre-fault estimation, blind).}
+When only current measurements are available:
+\begin{equation}
+  \hat{i}_C^{\pi}(t) = \hat{A}_C \cos(\omega t) + \hat{B}_C^{\prime} \sin(\omega t)
+  \label{eq:blind_correction}
+\end{equation}
+fit by linear least-squares on the pre-fault window (1 cycle, $N_p = 20$ samples
+at 1\,kHz).  Achieves $\|\eps_{\pi}\|_{\rm rms} \approx 0.0009\pu$.
+This is the mode used in all validations in this report.
+
+\paragraph{Mode 3 (nominal fallback).}
+When no pre-fault window is available (e.g., fault at energisation), falls back
+to the fixed model of \eqref{eq:fixed_comp}.  Residual matches the baseline.
+
+The key dataclass is:
+
+\begin{lstlisting}[language=Python]
+@dataclass
+class PiSectionConfig:
+    B_C_pu: float = 0.013    # total line susceptance [pu]
+    V_nom_pu: float = 1.0    # nominal voltage [pu]
+    freq_hz: float = 50.0
+    pre_fault_window_s: float = 0.02  # 1 cycle pre-fault
+    min_prefault_samples: int = 10
+\end{lstlisting}
+
+\subsection{Threshold recalibration}
+
+The reduced noise floor enables two parameter changes relative to TR-12:
+
+\begin{enumerate}
+  \item \textbf{Fault threshold}: $I_{\rm fund,thresh}: 0.20 \to 0.12\pu$\\
+        Rule: threshold $\geq 10 \times \|\eps_{\pi}\|_{\rm rms} = 0.009\pu$;
+        hard floor at $0.12\pu$ for security.
+  \item \textbf{Sensitivity range} ($\mathrm{max\_factor}$): $5.0 \to 3.0$\\
+        With a lower threshold, the distance from threshold to saturation
+        ($f_{\rm int} = 1.0$) is compressed.
+        Setting $\mathrm{max\_factor} = 3.0$ means $f_{\rm int} = 0.50$
+        at $I_{\rm fund} = 2.0 \times I_{\rm thresh} = 0.24\pu$, versus
+        $3.0 \times 0.20 = 0.60\pu$ for the baseline.
+\end{enumerate}
+
+Figure~\ref{fig:fint} illustrates the effect: a fault at $\alpha = 0.05$ with
+$\hat{I}_{\rm fund} = 0.28\pu$ produces $\fint = 0.10$ under the baseline
+(Model A), triggering the Stage-2 veto.  Under pi-section correction (Config B),
+the same fault produces $\fint = 0.67 > f_{\rm int,thresh}$, so no veto fires.
+
+\begin{figure}[h]
+  \centering
+  \input{figures/fig_fint_comparison}
+  \caption{Internal-fault fraction $f_{\rm int}$ versus estimated
+           fundamental $\hat{\Ifund}$ for the baseline (blue solid) and
+           pi-section (red dashed) configurations.  The veto zone
+           ($f_{\rm int} < 0.50$) is shaded red.  At $\alpha=0.05$
+           ($\hat{I}_f = 0.28\pu$), the baseline is vetoed ($f_{\rm int}=0.10$)
+           while the pi-section configuration escapes the veto
+           ($f_{\rm int}=0.67$).}
+  \label{fig:fint}
+\end{figure}
+
+\subsection{Integration with the confidence gate}
+
+No changes are made to \texttt{line\_confidence\_gate.py} or the Stage-2 veto
+logic itself.  The pi-section correction is applied \emph{upstream} of the LM
+estimator:
+
+\begin{lstlisting}[language=Python]
+# In the evaluation pipeline (run_pi_section_study.py):
+i_corr, pi_state = compute_pi_section_correction(
+    i_diff_fault_abc, t_fault,
+    i_diff_pre_abc=i_pre, t_pre=t_pre,
+    cfg=pi_cfg,
+)
+result = estimate_line_zone_parameters(
+    t_window=t_fault, i_diff_meas=i_corr[ph],
+    I_fund_fault_thresh=0.12,
+)
+\end{lstlisting}
+
+The magnitude override (\texttt{veto\_override\_I\_thresh=0.30\pu}, from TR-12)
+is retained in Config~C but is no longer the primary recovery mechanism; it
+acts as a safety net for unusual operating conditions where the pre-fault window
+is unavailable or corrupted.
+
+%=======================================================================
+\section{Validation Results}
+\label{sec:results}
+%=======================================================================
+
+The same HIF sweep as TR-12 was re-run using the pi-section
+\texttt{run\_pi\_section\_study.py} with $N = 200$ trials per
+$(\mathrm{fault\_type}, \alpha)$ combination (seed 2026, jitter $\pm 5\%$).
+Three configurations are compared:
+
+\begin{description}
+  \item[Config A (Baseline)] TR-12 state: fixed charging comp.,
+        $I_{\rm thresh} = 0.20\pu$, $\mathrm{mf} = 5.0$, override at 0.30\pu.
+  \item[Config B (Pi only)] Pre-fault pi-section correction,
+        $I_{\rm thresh} = 0.12\pu$, $\mathrm{mf} = 3.0$, no override.
+  \item[Config C (Pi + override)] Config B + override at 0.30\pu (TR-12 guard).
+\end{description}
+
+\subsection{TPR vs $\alpha$}
+
+\begin{figure}[h]
+  \centering
+  \input{figures/fig_tpr_comparison}
+  \caption{True positive rate (TPR) versus fault scale factor $\alpha$ for
+           ag fault (left) and 3ph fault (right).
+           Config~A: baseline TR-12 (blue solid squares);
+           Config~B: pi-section correction only (red dashed triangles);
+           Config~C: pi-section $+$ magnitude override (green dotted diamonds).
+           $N = 200$ trials per point; log-scale on $x$-axis.}
+  \label{fig:tpr}
+\end{figure}
+
+The results are shown in Figure~\ref{fig:tpr} and summarised in
+Table~\ref{tab:alpha50}.
+
+\paragraph{ag fault.}
+Config~A achieves $\alphafifty = 0.07$ (TPR transitions $0\to1$ at $\alpha=0.07$).
+Config~B and Config~C both achieve $\alphafifty = 0.05$, a one-step improvement
+in the sweep grid.  At $\alpha = 0.05$, TPR = 1.000 for Configs B and C versus
+0.000 for Config A.  The minimum detectable fault current improves from
+$I_{f,50}^A = 0.07 \times 5.55 = 0.39\pu$ to
+$I_{f,50}^{B,C} = 0.05 \times 5.55 = 0.28\pu$ --- a \textbf{28\%} reduction.
+
+\paragraph{3ph fault.}
+All three configurations achieve $\alphafifty = 0.05$.  The pi-section
+correction provides no additional alpha-level improvement for 3ph faults
+because the 3ph differential magnitude at $\alpha=0.05$ already exceeds the
+baseline override threshold ($\alpha \times 7.5 = 0.375\pu > 0.30\pu$).
+However, the margin above threshold increases substantially: the pi-section
+$f_{\rm int}$ at $\alpha=0.05$ is $0.72$ versus $0.13$ baseline, giving
+significantly more headroom against estimation noise.
+
+\begin{table}[h]
+  \centering
+  \caption{$\alphafifty$ and minimum detectable fault current ($I_{f,50}$)
+           by configuration and fault type.  $N=200$ trials per alpha level.}
+  \label{tab:alpha50}
+  \begin{tabular}{llccc}
+    \toprule
+    Config & Description & Fault & $\alphafifty$ & $I_{f,50}$ (pu) \\
+    \midrule
+    A & Baseline (TR-12)           & ag  & 0.07 & 0.39 \\
+    A & Baseline (TR-12)           & 3ph & 0.05 & 0.375 \\
+    \midrule
+    B & Pi-section only            & ag  & 0.05 & 0.28 \\
+    B & Pi-section only            & 3ph & 0.05 & 0.375 \\
+    \midrule
+    C & Pi-section $+$ override    & ag  & 0.05 & 0.28 \\
+    C & Pi-section $+$ override    & 3ph & 0.05 & 0.375 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Charging residual noise floor}
+
+\begin{figure}[h]
+  \centering
+  \input{figures/fig_charging_residual}
+  \caption{Charging compensation quality.
+           \textbf{(a)} Phase-A healthy-line differential waveform after
+           fixed compensation (blue solid) and pi-section compensation
+           (red dashed).  The pi-section residual is essentially at
+           measurement noise level.
+           \textbf{(b)} RMS of charging residual by compensation method:
+           nominal fixed ($0.018\pu$), pre-fault pi-section ($0.0009\pu$),
+           voltage-based pi-section ($0.0005\pu$).}
+  \label{fig:charging}
+\end{figure}
+
+Figure~\ref{fig:charging} and Table~\ref{tab:noise} quantify the noise floor
+reduction.  The pre-fault method achieves a 20$\times$ reduction in RMS
+residual ($0.018 \to 0.0009\pu$), consistent with the analytical prediction
+that the residual is limited by measurement noise ($\sigma_{\rm noise} = 0.001\pu$)
+rather than the fitting procedure.  The voltage-based method achieves a
+further 45\% reduction to $0.0005\pu$ but requires additional voltage channel
+availability.
+
+\begin{table}[h]
+  \centering
+  \caption{Charging residual RMS by compensation method and resulting
+           recommended fault detection threshold.}
+  \label{tab:noise}
+  \begin{tabular}{lccc}
+    \toprule
+    Method & $\|\eps\|_{\rm rms}$ (pu) & $I_{\rm thresh}$ (pu) & Improvement \\
+    \midrule
+    Nominal fixed (baseline) & 0.018 & 0.20 & --- \\
+    Pre-fault $\pi$-section  & 0.0009 & 0.12 & 20$\times$ \\
+    Voltage-based $\pi$-sec. & 0.0005 & 0.12 & 36$\times$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{False positive check}
+
+The through-fault and sync-error scenarios from TR-11 were re-run with the
+pi-section correction active.  In both cases:
+\begin{itemize}
+  \item \textbf{Through-fault}: $\hat{\Ifund} \leq 0.005\pu$ after pi-section
+        correction (cf.\ $\leq 0.08\pu$ baseline due to channel skew residual).
+        The lower estimate gives additional security margin.
+  \item \textbf{Sync error}: $\hat{\Ifund} \in [0.002, 0.010]\pu$ $\ll
+        0.12\pu$ threshold.  The is\_sync\_error flag correctly identifies the
+        elevated estimate; no false trip observed in any trial.
+\end{itemize}
+
+%=======================================================================
+\section{Discussion}
+\label{sec:discussion}
+%=======================================================================
+
+\subsection{Role of the magnitude override after TR-13}
+
+The TR-12 magnitude override (bypass veto when $\Ifund \geq 0.30\pu$) was
+introduced to recover the 87L veto-suppression at low fault currents.
+After TR-13, Config~B achieves the same $\alphafifty = 0.05$ as Config~C
+without the override, demonstrating that the pi-section correction
+\emph{makes the override redundant} for the tested fault types and alpha
+range.
+
+The override is retained in Config~C as a safety net for three scenarios:
+\begin{enumerate}
+  \item Fault at power-on (no pre-fault window available; falls back to
+        nominal method, which still benefits from the override at large $\alpha$).
+  \item Channel impairment corrupting the pre-fault estimate.
+  \item High-current faults where the pi-section f\_int may be near the
+        threshold due to numerical artefacts.
+\end{enumerate}
+
+In all three safety-net scenarios, $\Ifund \geq 0.30\pu$, so the override
+fires before the gate makes a wrong decision.
+
+\subsection{Threshold floor and limits of sensitivity improvement}
+
+At $\alpha = 0.03$ (ag), $\hat{I}_f \approx 0.167\pu > 0.12\pu$ but
+$f_{\rm int} = (0.167/0.12-1)/2 = 0.196 < 0.50$, so the veto fires and
+TPR = 0.  Further reduction of $I_{\rm thresh}$ to, say, $0.09\pu$ would
+extend coverage to $\alpha = 0.03$, but would reduce the security margin
+against sync-error false positives (where $\hat{\Ifund} \in [0.002, 0.010]\pu$
+gives a 9$\times$ margin rather than the current 13$\times$).
+
+IEC~60255-187-3~\cite{IEC60255} requires sensitivity to internal faults at
+$I_f \geq 0.2\,I_n$; the TR-13 threshold of $0.12\pu$ already supports
+detection well below this requirement.  The $\alpha = 0.03$ gap is therefore
+not a compliance deficiency but an inherent limit of the LM-based approach
+near the relay's own operating characteristic.
+
+\subsection{Relationship to voltage-based compensation}
+
+Mode~1 (voltage-based, \eqref{eq:voltage_correction}) improves the residual
+to $0.0005\pu$ and would support $I_{\rm thresh} \leq 0.08\pu$, potentially
+extending coverage to $\alpha = 0.03$.  However, voltage measurements require
+an additional communication channel or local VT input.  The pre-fault method
+achieves $\alphafifty = 0.05$ using only the differential current waveform
+already available to the relay, making it the preferred implementation for
+existing IED deployments.
+
+\subsection{Platform-level design principle}
+
+Adding TR-13 to the cumulative TR-10 through TR-13 history establishes a
+layered pattern for \sambp{} HIF sensitivity:
+
+\begin{quotation}
+  \noindent\emph{Layer 1 (TR-10/12): magnitude override bypasses the Stage-2
+  veto when the estimated differential is large --- prevents veto from making
+  things worse than the conventional relay.}\\
+  \emph{Layer 2 (TR-13): pi-section compensation reduces the noise floor ---
+  allows the fault threshold to be lowered, improving sensitivity at the
+  source rather than patching with an override.}
+\end{quotation}
+
+This hierarchy ensures that the override is a fallback (not the primary
+mechanism) and that the core estimator operates with the cleanest possible
+input signal.
+
+%=======================================================================
+\section{Conclusions}
+\label{sec:conclusions}
+%=======================================================================
+
+\begin{enumerate}
+  \item A pre-fault pi-section charging correction has been implemented in
+        \texttt{models/line\_pi\_section\_model.py}.  The pre-fault epoch
+        (1 power cycle before fault inception) is fit to a 2-parameter
+        sinusoidal model using linear least-squares; the fit is subtracted
+        from the fault-epoch differential before LM estimation.
+  \item The correction reduces the charging residual noise floor from
+        $0.018\pu$ to $0.0009\pu$ (20$\times$ reduction), enabling the fault
+        detection threshold to be safely lowered from $0.20\pu$ to $0.12\pu$.
+  \item Recalibrating $\mathrm{max\_factor}$ from 5.0 to 3.0 ensures that the
+        $f_{\rm int}$ sensitivity range is properly scaled to the new
+        threshold; a fault at $2\times I_{\rm thresh}$ now produces
+        $f_{\rm int} = 0.50$ (the veto boundary) rather than 0.25.
+  \item The combined effect improves $\alphafifty$ for ag faults from
+        $0.07 \to 0.05$ without the magnitude override, reducing the minimum
+        detectable fault current by \textbf{28\%}
+        ($0.39\pu \to 0.28\pu$).
+  \item Three-phase faults retain $\alphafifty = 0.05$ (no regression).
+  \item The TR-12 magnitude override is rendered redundant as the primary
+        recovery mechanism but is retained as a safety net for corner cases
+        (fault at energisation, channel impairment).
+  \item False-positive security is maintained: through-fault and sync-error
+        scenarios show $\hat{\Ifund} < 0.012\pu$, well below the $0.12\pu$
+        threshold and the $0.30\pu$ override trigger.
+\end{enumerate}
+
+\subsection*{Future work}
+
+\begin{enumerate}
+  \item \textbf{Voltage-based correction}: deploying Mode~1 with both-end
+        voltage measurements could push $\alphafifty$ to 0.03 by supporting
+        $I_{\rm thresh} = 0.08\pu$ (TR-11 Recommendation~1).
+  \item \textbf{Adaptive threshold}: replacing the fixed $0.12\pu$ threshold
+        with a function of the estimated restraint current (TR-12 future work)
+        remains applicable and could improve performance under varying load.
+  \item \textbf{Frequency-adaptive correction}: under off-nominal frequency
+        the pre-fault fit of \eqref{eq:prefault_fit} can be extended to
+        jointly estimate frequency and charging amplitude, improving
+        correction accuracy in islanded microgrids.
+  \item \textbf{Hardware-in-loop validation}: OPAL-RT / RTDS injection of HIF
+        scenarios at $\alpha \in [0.03, 0.07]$ to confirm the threshold in
+        real-time environments with hardware CT and VT models.
+\end{enumerate}
+
+%=======================================================================
+\section*{References}
+\bibliographystyle{plainnat}
+\bibliography{references13}
+%=======================================================================
+
+\end{document}

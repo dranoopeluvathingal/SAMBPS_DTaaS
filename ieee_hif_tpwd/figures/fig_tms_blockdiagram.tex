@@ -1,0 +1,106 @@
+% fig_tms_blockdiagram.tex
+% Block diagram of the impedance-aware adaptive TMS law
+% Signal flow from measurements → estimator → correction factor → bounded update → relay
+\begin{tikzpicture}[
+    blk/.style={draw,thick,fill=white,rounded corners=2pt,
+                minimum width=2.0cm,minimum height=0.85cm,
+                font=\scriptsize,align=center},
+    mux/.style={draw,thick,fill=gray!8,
+                minimum width=0.6cm,minimum height=1.5cm,
+                font=\tiny,align=center},
+    sum/.style={draw,thick,circle,fill=white,
+                minimum size=0.55cm,font=\scriptsize},
+    limiter/.style={draw,thick,fill=yellow!10,rounded corners=1pt,
+                    minimum width=1.4cm,minimum height=0.7cm,
+                    font=\scriptsize,align=center},
+    >=Stealth,thick]
+
+  % ---- Input measurements ----
+  \node[font=\scriptsize\bfseries,align=left] (meas) at (-4.0,0)
+    {CT measurement\\$i_a(t)$};
+
+  % ---- Two-pass LM estimator ----
+  \node[blk,fill=blue!7,minimum width=2.4cm,minimum height=1.4cm]
+    (LM) at (-1.6,0)
+    {Two-Pass LM\\Estimator\\\tiny(Section~\ref{sec:estimation:lm})};
+
+  % ---- Outputs of estimator ----
+  \node[font=\tiny,align=center] (pout1) at (0.6, 0.5)
+    {$\hat{I}_{ss}$, $\hat{I}_{sub}$};
+  \node[font=\tiny,align=center] (pout2) at (0.6,-0.0)
+    {$\hat{\tau}_{ac}$, $\hat{t}_0$};
+  \node[font=\tiny,align=center] (pout3) at (0.6,-0.5)
+    {$\hat{\phi}_a$, $\hat{\tau}_{dc}$};
+
+  % ---- Confidence gate ----
+  \node[blk,fill=green!7,minimum width=1.8cm,minimum height=0.8cm]
+    (GATE) at (0.6,-1.6)
+    {Confidence\\Gate $\gamma$};
+
+  % ---- f_HIF correction block ----
+  \node[blk,fill=orange!10,minimum width=2.1cm]
+    (FHIF) at (2.8, 0.5)
+    {$f_{\mathrm{HIF}}$ Correction\\eq.~\eqref{eq:fhif}};
+
+  % ---- K_eff gain switch ----
+  \node[blk,fill=orange!10,minimum width=2.1cm]
+    (KEFF) at (2.8,-0.5)
+    {$K_{\mathrm{TMS}}^{\mathrm{eff}}$ Switch\\eq.~\eqref{eq:Keff}};
+
+  % ---- Multiply block ----
+  \node[sum] (MULT) at (5.0,0)
+    {$\times$};
+
+  \node[font=\tiny,above=0pt] at (5.0,0.35) {$K_{\mathrm{eff}}\cdot\hat{\tau}_{ac}\cdot f_{\mathrm{HIF}}$};
+
+  % ---- Rate limiter ----
+  \node[limiter] (RATE) at (6.6,0)
+    {Rate\\Limit\\$\Delta_{\max}$};
+
+  % ---- Clip ----
+  \node[limiter] (CLIP) at (8.1,0)
+    {Clip\\$[TMS_{\min},$\\$TMS_{\max}]$};
+
+  % ---- Gate AND ----
+  \node[blk,fill=green!8,minimum width=0.9cm,minimum height=0.5cm]
+    (AND) at (6.6,-1.6)
+    {Enable\\($\gamma{\geq}0.80$)};
+
+  % ---- OC Relay block ----
+  \node[blk,fill=yellow!12,minimum width=1.6cm]
+    (RELAY) at (9.8,0)
+    {OC Relay\\$t_{\mathrm{op}}(M,TMS^*)$};
+
+  % ---- Signal flow ----
+  \draw[->] (meas)  -- (LM);
+  \draw[->] (LM.east)  -- ++(0.3,0) |- (FHIF.west)
+        node[above left,font=\tiny]{$\hat{I}_{ss}$};
+  \draw[->] (LM.east)  -- ++(0.3,0) |- (KEFF.west)
+        node[below left,font=\tiny]{$\hat{I}_{ss}$};
+  \draw[->] (LM.east)  -- (MULT.west|-LM)
+        node[above,pos=0.7,font=\tiny]{$\hat{\tau}_{ac}$};
+  \draw[->] (LM.south) -- (GATE.north);
+
+  \draw[->] (FHIF.east) -| node[right,font=\tiny,pos=0.2]{$f_{\mathrm{HIF}}$} (MULT.north);
+  \draw[->] (KEFF.east) -| node[right,font=\tiny,pos=0.2]{$K_{\mathrm{eff}}$}  (MULT.south);
+
+  \draw[->] (MULT.east) -- (RATE.west);
+  \draw[->] (RATE.east) -- (CLIP.west);
+  \draw[->] (CLIP.east) -- node[above,font=\tiny]{$TMS^*$} (RELAY.west);
+
+  % Gate enable path
+  \draw[->] (GATE.east) -- (AND.west)
+        node[midway,above,font=\tiny]{$\gamma$};
+  \draw[->,green!60!black,dashed] (AND.north) -- (RATE.south)
+        node[midway,right,font=\tiny,green!60!black]{Enable};
+
+  % ---- Regime indicator (below) ----
+  \node[draw,thick,rounded corners=2pt,fill=gray!6,
+        minimum width=3.5cm,minimum height=0.55cm,
+        font=\tiny,align=center] (REG) at (2.8,-2.6)
+    {Regime classifier: $f_{\mathrm{HIF}}\geq0.9$ $\Rightarrow$ bolted/low-$R_f$;
+     $f_{\mathrm{HIF}}<0.9$ $\Rightarrow$ HIF};
+  \draw[->,dashed,gray!60] (FHIF.south) -- (REG.north);
+  \draw[->,dashed,gray!60] (KEFF.south) -- (REG.north);
+
+\end{tikzpicture}

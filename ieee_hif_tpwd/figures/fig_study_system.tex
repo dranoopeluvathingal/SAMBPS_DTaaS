@@ -1,0 +1,118 @@
+% fig_study_system.tex
+% HIF Study System: SG → Transformer → HV Bus → Thévenin network → Load
+% OC relay with inverse estimator and adaptive feedback loop
+% Uses tikz_master_styles node styles where applicable
+\begin{tikzpicture}[
+    bus/.style={draw=black,very thick,fill=black!75,
+                minimum width=0.18cm,minimum height=2.2cm},
+    block/.style={draw,thick,fill=gray!10,rounded corners=2pt,
+                  minimum width=1.2cm,minimum height=0.8cm,
+                  font=\scriptsize,align=center},
+    cblock/.style={draw,thick,fill=blue!8,rounded corners=2pt,
+                   minimum width=1.4cm,minimum height=0.7cm,
+                   font=\scriptsize,align=center},
+    relay/.style={draw,thick,fill=yellow!20,diamond,
+                  minimum size=0.8cm,font=\scriptsize\bfseries},
+    wire/.style={thick},
+    dashed_wire/.style={thick,dashed,gray!60},
+    signal/.style={-{Stealth[length=2mm]},thick},
+    feedback/.style={-{Stealth[length=2mm]},thick,orange!80!black,dashed},
+    >=Stealth]
+
+  % ---- Generator ----
+  \node[block,ellipse,minimum width=1.3cm,minimum height=1.3cm] (SG) at (0,0)
+    {\textbf{SG}\\\tiny 10 MVA\\11 kV};
+
+  % ---- Subtransient impedance label ----
+  \node[font=\tiny,above] at (0.65,0.22) {$Z_d''$};
+
+  % ---- Transformer ----
+  \node[block] (TX) at (2.8,0) {Tx\\{\tiny 11/33 kV}\\{\tiny 10 MVA}};
+  \node[font=\tiny,below] at (2.8,-0.5) {$jX_T$};
+
+  % ---- HV Bus ----
+  \node[bus] (BUS) at (4.6,0) {};
+  \node[font=\scriptsize,above=2pt,align=center] at (4.6,1.15) {HV Bus\\33 kV};
+
+  % ---- Thévenin network ----
+  \node[block] (ZTH) at (6.4,0) {$Z_{\mathrm{th}}$\\{\tiny $0.01{+}j0.10$\,pu}};
+
+  % ---- Load ----
+  \node[block] (LOAD) at (8.4,0) {Load\\{\tiny 0.8--1.0\,pu}};
+
+  % ---- Wires: generator to bus ----
+  \draw[wire] (SG.east) -- (TX.west);
+  \draw[wire] (TX.east) -- (BUS.north);
+  \draw[wire] (BUS.south) -- ++(0,-0.0);  % bus thick bar
+  \draw[wire] (BUS.north) -- ++(0,0);
+  \draw[wire] (4.6,0)    -- (ZTH.west);
+  \draw[wire] (ZTH.east) -- (LOAD.west);
+
+  % ---- CT tap point ----
+  \node[circle,fill=black,inner sep=1.4pt] (CT_TAP) at (1.4,0) {};
+  \node[font=\tiny,above=1pt] at (1.4,0.1) {CT};
+
+  % ---- OC Relay ----
+  \node[relay] (RY) at (1.4,-2.2) {$R_{OC}$};
+  \draw[dashed_wire] (CT_TAP) -- (RY.north)
+        node[midway,right,font=\tiny] {$i_a(t)$};
+
+  % ---- Fault branch ----
+  \node[circle,fill=red!70,inner sep=1.6pt] (FPOINT) at (4.6,0) {};
+  \draw[wire,red!80!black,dashed]
+        (FPOINT) -- ++(0,-1.8)
+        node[midway,right,font=\scriptsize,red!70!black] {$R_f$}
+        -- ++(0,-0.5)
+        node[below,font=\scriptsize\bfseries,red!70!black] {Fault}
+        node[circle,fill=red!70,inner sep=1.8pt,below=8pt] {};
+
+  % Earth symbol at fault
+  \draw[thick,red!70!black]
+    (4.6,-2.5) -- ++(0.25,0) (4.6,-2.5) -- ++(-0.25,0);
+  \draw[thick,red!70!black]
+    (4.45,-2.62) -- ++(0.3,0);
+  \draw[thick,red!70!black]
+    (4.52,-2.74) -- ++(0.16,0);
+
+  % ---- Inverse Estimator block ----
+  \node[cblock,minimum width=2.0cm,minimum height=1.1cm]
+    (EST) at (1.4,-4.2)
+    {Inverse\\Estimator\\{\tiny 2-pass LM}};
+
+  % Current signal to estimator
+  \draw[signal,blue!70!black] (RY.south) -- (EST.north)
+        node[midway,right,font=\tiny,blue!70!black] {$i_a(t)$};
+
+  % Estimated parameters
+  \node[font=\tiny,blue!70!black,align=center] at (1.4,-5.25)
+    {$\hat{\bm{\theta}}$: $\hat{I}_{ss}$, $\hat{I}_{sub}$, $\hat{\tau}_{ac}$,
+     $\hat{\tau}_{dc}$, $\hat{\phi}_a$, $\hat{t}_0$};
+  \node[font=\tiny,green!50!black,align=center] at (1.4,-5.7)
+    {$\gamma \geq \gamma_{\min}=0.80$?};
+
+  % ---- Adaptive TMS Law block ----
+  \node[cblock,minimum width=1.8cm,minimum height=1.0cm,fill=orange!10]
+    (TMSLAW) at (4.0,-4.2)
+    {TMS Law\\Eq.~\eqref{eq:tms_ext}};
+
+  \draw[signal,blue!50!black]  (EST.east) -- (TMSLAW.west)
+        node[midway,above,font=\tiny] {$\hat{I}_{ss},\hat{\tau}_{ac},\gamma$};
+
+  % Feedback to relay
+  \draw[feedback]
+    (TMSLAW.north) to[out=90,in=0] (2.8,-2.2)
+    node[midway,above,font=\tiny,orange!80!black] {$TMS^*$, $I_p^*$}
+    to[out=180,in=0] (RY.east);
+
+  % ---- Regime labels ----
+  \node[font=\tiny,align=center,fill=green!10,draw=green!40,
+        rounded corners=2pt,inner sep=2pt]
+    at (8.4,1.5) {Instantaneous\\$R_f < R_f^{\mathrm{HIF}}$};
+  \node[font=\tiny,align=center,fill=orange!12,draw=orange!40,
+        rounded corners=2pt,inner sep=2pt]
+    at (8.4,0.6) {Inverse-time (HIF)\\$R_f^{\mathrm{HIF}} \leq R_f \leq R_f^{\mathrm{NT}}$};
+  \node[font=\tiny,align=center,fill=red!10,draw=red!30,
+        rounded corners=2pt,inner sep=2pt]
+    at (8.4,-0.3) {No-trip\\$R_f > R_f^{\mathrm{NT}}$};
+
+\end{tikzpicture}

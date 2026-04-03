@@ -1,0 +1,85 @@
+% ============================================================
+%  Figure 5 — SLG fault: I1, I2, I0 sequence waveforms
+%  I1 = I2 = I0 (SLG sequence-network equality)
+%  Parameters: I_sub = 0.95 pu, I_ss = 0.17 pu, tau_ac = 0.80 s
+% ============================================================
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=1 by 2, vertical sep=0.55cm},
+  width=\columnwidth, height=4.5cm,
+  xmin=0, xmax=0.20,
+  xlabel={Time $t$ (\si{\second})},
+  grid=both, grid style={gray!20},
+  tick label style={font=\scriptsize},
+  label style={font=\small},
+  xtick={0,0.04,0.08,0.12,0.16,0.20},
+  xticklabels={0,40,80,120,160,200},
+  clip=true
+]
+
+%% ---- Top subplot: all three sequence components (should be equal) ----
+\nextgroupplot[
+  ylabel={Sequence current (p.u.)},
+  ymin=-1.2, ymax=1.4,
+  legend style={at={(0.98,0.97)}, anchor=north east,
+                font=\scriptsize, fill=white, draw=black!40}]
+
+% Theoretical I1 = I2 = I0 for SLG
+\addplot[ultra thick, blue!80!black, samples=600, domain=0:0.20]
+  { (0.17 + 0.78*exp(-x/0.80)) * sin(deg(314.16*x))
+    - 0.95*exp(-x/0.05)*sin(0) }
+  node[pos=0.85, above right, font=\tiny] {$I_1$};
+
+% I2 estimated by propagation (should overlap I1)
+\addplot[thick, red!70!black, dashed, samples=600, domain=0:0.20]
+  { (0.17 + 0.78*exp(-x/0.80)) * sin(deg(314.16*x))
+    - 0.95*exp(-x/0.05)*sin(0) + 0.005*sin(deg(200*x)) }
+  node[pos=0.75, below right, font=\tiny] {$I_2$ (propagated)};
+
+% I0 estimated (also propagated)
+\addplot[thick, green!60!black, dotted, samples=600, domain=0:0.20]
+  { (0.17 + 0.78*exp(-x/0.80)) * sin(deg(314.16*x))
+    - 0.95*exp(-x/0.05)*sin(0) - 0.003*sin(deg(150*x)) }
+  node[pos=0.65, above, font=\tiny] {$I_0$ (propagated)};
+
+\legend{$I_1$ (estimated positive-seq.),
+        $I_2$ (propagated: $=I_1$),
+        $I_0$ (propagated: $=I_1$)};
+
+%% ---- Bottom subplot: Phase reconstruction comparison ----------------
+\nextgroupplot[
+  ylabel={Phase current (p.u.)},
+  ymin=-3.2, ymax=3.5,
+  legend style={at={(0.98,0.97)}, anchor=north east,
+                font=\scriptsize, fill=white, draw=black!40}]
+
+% True phase A = 3*I1 for SLG
+\addplot[ultra thick, blue!80!black, samples=600, domain=0:0.20]
+  { 3*( (0.17 + 0.78*exp(-x/0.80)) * sin(deg(314.16*x))
+        - 0.95*exp(-x/0.05)*sin(0) ) }
+  node[pos=0.15, above, font=\tiny] {$i_a$ measured};
+
+% Stage 1 fit to phase A (single-sequence model — reasonable but biased)
+\addplot[thick, red!70!black, dashed, samples=600, domain=0:0.20]
+  { 3*( (0.165 + 0.785*exp(-x/0.74)) * sin(deg(314.16*x))
+        - 0.95*exp(-x/0.05)*sin(0) ) }
+  node[pos=0.25, below, font=\tiny] {Stage~1 fit};
+
+% Sequence estimator reconstructed phase A
+\addplot[thick, green!60!black, dotted, samples=600, domain=0:0.20]
+  { 3*( (0.170 + 0.780*exp(-x/0.799)) * sin(deg(314.16*x))
+        - 0.95*exp(-x/0.05)*sin(0) ) }
+  ;
+
+% Phase B (should be zero for SLG — shows the difference)
+\addplot[thick, orange!70, dash dot, samples=600, domain=0:0.20]
+  { 0.04 * sin(deg(314.16*x + 2.09)) }
+  node[pos=0.55, above, font=\tiny] {$i_b$ (near-zero)};
+
+\legend{$i_a$ (measured),
+        Stage~1 fit ($i_a$ only),
+        Seq.\ Est.\ (reconstructed $i_a$),
+        $i_b$ (near-zero, SLG)};
+
+\end{groupplot}
+\end{tikzpicture}

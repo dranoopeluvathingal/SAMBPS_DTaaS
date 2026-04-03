@@ -1,0 +1,109 @@
+% ============================================================
+%  Figure 2 — Sequence networks and fault-type interconnections
+% ============================================================
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  box/.style={draw, thick, fill=gray!10,
+              minimum width=1.2cm, minimum height=0.5cm, align=center},
+  >=Latex, thick
+]
+
+%% ---- Positive-sequence network  (top) ------------------------------
+\begin{scope}[xshift=0cm, yshift=0cm]
+  % Bus bars
+  \draw[ultra thick, blue!70!black] (-0.3,0) -- (4.0,0)
+        node[right, font=\small\bfseries, blue!70!black] {$+$ seq};
+  \draw[ultra thick, blue!70!black] (-0.3,-1.5) -- (4.0,-1.5);
+
+  % Source
+  \draw[blue!70!black] (0.3,0) -- (0.3,-0.3);
+  \draw[blue!70!black] (0.3,-0.3) circle(0.25) node{$V_0$};
+  \draw[blue!70!black] (0.3,-0.8) -- (0.3,-1.5);
+
+  % Z1 block
+  \draw[blue!70!black] (1.2,0) -- (1.8,0);
+  \draw[blue!70!black, fill=blue!5] (1.8,-0.2) rectangle (3.0,0.2)
+       node[midway, font=\scriptsize] {$Z_1=Z_d''+Z_{th}$};
+  \draw[blue!70!black] (3.0,0) -- (3.6,0);
+  \draw[blue!70!black] (3.6,0) -- (3.6,-1.5);
+
+  % Fault current label
+  \node[blue!70!black] at (2.4,-0.7) {$I_1$};
+  \draw[->, blue!70!black] (3.35,-0.3) -- (3.35,-1.2)
+       node[midway, right, font=\tiny] {};
+\end{scope}
+
+%% ---- Negative-sequence network  (middle) ---------------------------
+\begin{scope}[xshift=0cm, yshift=-2.5cm]
+  \draw[ultra thick, red!70!black] (-0.3,0) -- (4.0,0)
+       node[right, font=\small\bfseries, red!70!black] {$-$ seq};
+  \draw[ultra thick, red!70!black] (-0.3,-1.5) -- (4.0,-1.5);
+
+  % No source in negative seq
+  \draw[red!70!black] (0.3,0) -- (0.3,-1.5);
+
+  \draw[red!70!black] (1.2,0) -- (1.8,0);
+  \draw[red!70!black, fill=red!5] (1.8,-0.2) rectangle (3.0,0.2)
+       node[midway, font=\scriptsize] {$Z_2=Z_q''+Z_{th}$};
+  \draw[red!70!black] (3.0,0) -- (3.6,0);
+  \draw[red!70!black] (3.6,0) -- (3.6,-1.5);
+
+  \node[red!70!black] at (2.4,-0.7) {$I_2$};
+\end{scope}
+
+%% ---- Zero-sequence network  (bottom) -------------------------------
+\begin{scope}[xshift=0cm, yshift=-5.0cm]
+  \draw[ultra thick, green!60!black] (-0.3,0) -- (4.0,0)
+       node[right, font=\small\bfseries, green!60!black] {$0$ seq};
+  \draw[ultra thick, green!60!black] (-0.3,-1.5) -- (4.0,-1.5);
+
+  \draw[green!60!black] (0.3,0) -- (0.3,-1.5);
+
+  \draw[green!60!black] (1.2,0) -- (1.8,0);
+  \draw[green!60!black, fill=green!5] (1.8,-0.2) rectangle (3.0,0.2)
+       node[midway, font=\scriptsize] {$Z_0 = 3R_f+Z_0^m$};
+  \draw[green!60!black] (3.0,0) -- (3.6,0);
+  \draw[green!60!black] (3.6,0) -- (3.6,-1.5);
+
+  \node[green!60!black] at (2.4,-0.7) {$I_0$};
+\end{scope}
+
+%% ---- LL interconnection (right side, top two networks) --------------
+\begin{scope}[xshift=5.8cm, yshift=-0.75cm]
+  \node[font=\small\bfseries, align=center] at (1.4,0.9)
+       {Line-to-Line (LL)};
+  % Connect positive to negative: series
+  \draw[thick, purple!70] (0,0) -- (0,-1.5)
+       node[midway, left, font=\tiny, purple!70, align=left]
+       {$I_1{=}I_2$,\\$I_0{=}0$};
+  \draw[thick, purple!70] (0,0) arc(180:0:0.7cm)
+       node[above, font=\tiny] {};
+  % Fault impedance between them
+  \draw[thick, purple!70, fill=purple!5] (-0.25,-0.5) rectangle (0.25,-1.0)
+       node[midway, font=\tiny] {$R_f$};
+  \draw[thick, purple!70] (0,-1.5) -- (0,-2.5);
+  % Terminal labels
+  \node[above, font=\tiny, purple!70] at (0,0.1)   {$a$ (pos-seq term.)};
+  \node[below, font=\tiny, purple!70] at (0,-2.6)  {$a$ (neg-seq term.)};
+\end{scope}
+
+%% ---- SLG interconnection (right side, all three networks) -----------
+\begin{scope}[xshift=7.8cm, yshift=-0.75cm]
+  \node[font=\small\bfseries, align=center] at (1.0,0.9)
+       {Single-Line-to-Ground (SLG)};
+  % series connection of all three
+  \draw[thick, orange!80] (0, 0)   -- (0,-4.2);
+  % Impedances stacked
+  \draw[thick, orange!80, fill=orange!5](-0.25,-0.5) rectangle(0.25,-1.0)
+       node[midway,font=\tiny]{$Z_1$};
+  \draw[thick, orange!80, fill=orange!5](-0.25,-1.5) rectangle(0.25,-2.0)
+       node[midway,font=\tiny]{$Z_2$};
+  \draw[thick, orange!80, fill=orange!5](-0.25,-2.5) rectangle(0.25,-3.0)
+       node[midway,font=\tiny]{$Z_0$};
+  \draw[thick, orange!80, fill=orange!5](-0.25,-3.3) rectangle(0.25,-3.8)
+       node[midway,font=\tiny]{$3R_f$};
+  \node[right, font=\tiny, orange!80] at (0.35,-2.5)
+       {$I_1=I_2=I_0$};
+\end{scope}
+
+\end{tikzpicture}

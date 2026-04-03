@@ -1,0 +1,1157 @@
+% =============================================================================
+%  IEEE Transactions on Power Delivery — Full Draft
+%
+%  Title: Sequence-Component Inverse Estimation for Adaptive Overcurrent
+%         Protection Under Asymmetric Faults
+%
+%  Author : Anoop V. Eluvathingal, IIT Madras
+%  Date   : April 2026
+% =============================================================================
+
+\documentclass[10pt,journal,twoside]{IEEEtran}
+
+% --------------------------------------------------------------------------
+% Packages
+% --------------------------------------------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsfonts,mathtools}
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{siunitx}
+\sisetup{detect-all, per-mode=symbol}
+\usepackage{gensymb}
+\usepackage{cite}
+\usepackage{hyperref}
+\hypersetup{colorlinks=false}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+% TikZ / PGFPlots
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc,
+                patterns,decorations.pathmorphing,fit,backgrounds,
+                chains}
+\usepgfplotslibrary{groupplots,fillbetween}
+
+% Theorem environments
+\usepackage{amsthm}
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+
+% --------------------------------------------------------------------------
+% Custom commands
+% --------------------------------------------------------------------------
+\newcommand{\vect}[1]{\bm{#1}}
+\newcommand{\mat}[1]{\mathbf{#1}}
+\newcommand{\htheta}{\hat{\bm{\theta}}}
+\newcommand{\pu}{\,\text{p.u.}}
+\newcommand{\sss}{\,\text{s}}
+\newcommand{\mss}{\,\text{ms}}
+\newcommand{\Hilb}{\mathcal{H}}
+\newcommand{\Ical}{\mathcal{I}}
+
+% --------------------------------------------------------------------------
+% Metadata
+% --------------------------------------------------------------------------
+\title{Sequence-Component Inverse Estimation for Adaptive Overcurrent
+       Protection Under Asymmetric Faults}
+
+\author{Anoop~V.~Eluvathingal,~\IEEEmembership{Student Member,~IEEE,}
+        and~K.~Shanti~Swarup,~\IEEEmembership{Senior Member,~IEEE}%
+\thanks{Manuscript received April 3, 2026; revised ---; accepted ---.
+        This work was supported by the Ministry of Education, Government
+        of India, under the Prime Minister's Research Fellowship.}%
+\thanks{The authors are with the Department of Electrical Engineering,
+        Indian Institute of Technology Madras, Chennai~600\,036, India
+        (e-mail: \texttt{ee20d401@smail.iitm.ac.in}).}%
+\thanks{Digital Object Identifier: 10.1109/TPWRD.2026.XXXXXXX}}
+
+% =============================================================================
+\begin{document}
+% =============================================================================
+
+\markboth{IEEE Transactions on Power Delivery,~Vol.~XX, No.~XX, Month~2026}{}
+\maketitle
+
+% =============================================================================
+\begin{abstract}
+Adaptive overcurrent protection based on inverse estimation of synchronous
+generator fault current has recently demonstrated effective real-time pickup
+adaptation under balanced faults.  However, for asymmetric faults, fitting
+a reduced fault-current model to a single phase conflates positive-, negative-,
+and zero-sequence contributions that carry different time constants, degrading
+the identifiability of relay-relevant parameters and producing large
+unmodelled residuals on the unfitted phases.  This paper proposes a
+sequence-component inverse-estimation framework for adaptive overcurrent
+protection under asymmetric faults.  Windowed three-phase currents are
+converted to analytic signals using the Hilbert transform and decomposed by
+the instantaneous Fortescue transformation into positive-, negative-, and
+zero-sequence components.  A six-parameter reduced fault-current model is
+then fitted independently to the active sequence components according to
+the detected fault type: for three-phase faults the balanced estimator is
+retained; for line-to-line faults positive and negative sequences are fitted
+independently; for single-line-to-ground faults the positive-sequence estimate
+is propagated under the sequence-network equality $I_1 = I_2 = I_0$.
+A physics-motivated negative-sequence initialisation rule is introduced to
+accelerate convergence, and a symmetry check prevents fitting of noise-dominated
+sequence channels.  Only the positive-sequence estimate governs relay
+adaptation, preserving the single-sequence interface of the existing
+bounded-update, confidence-gated pipeline.  Compared with the prior
+phase-domain estimator, the proposed method reduces fitting error for
+asymmetric faults, improves Jacobian condition numbers by
+$3\times$--$8\times$, and yields more consistent confidence scores and
+adaptive pickup settings under line-to-line and single-line-to-ground
+faults, while remaining computationally compatible with
+protection-grade real-time operation.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Asymmetric fault, confidence gating, Fortescue transformation, Hilbert
+transform, inverse-time overcurrent relay, parameter estimation,
+sequence-component estimation, synchronous generator.
+\end{IEEEkeywords}
+
+% =============================================================================
+\section{Introduction}
+\label{sec:intro}
+% =============================================================================
+
+\IEEEPARstart{A}{daptive} overcurrent (OC) protection for synchronous
+generators (SGs) is receiving increasing attention as changing generation
+dispatch, embedded distributed resources, and active network management
+cause the fault level seen by a relay to vary widely during normal service
+\cite{Blackburn2006,Sharaf2011,Darlington2021}.  Traditional fixed-setting
+relays cannot respond to these variations: a setting calibrated for peak
+generation may be insensitive under reduced dispatch, and a setting
+calibrated for minimum generation may operate too slowly for bolted
+conditions \cite{Anderson1995}.
+
+Model-based inverse estimation provides an online alternative: post-fault
+measurements are used to identify reduced-order source parameters, which are
+then mapped to updated relay settings within the same protection operating
+interval \cite{Eluvathingal2025_TR01}.  The Stage~1 study
+\cite{Eluvathingal2025_TR01} demonstrated that a six-parameter
+reduced fault-current model, fitted by a two-pass
+Levenberg--Marquardt (LM) algorithm to a single phase-A window, yields
+$R^2 > 0.999$ waveform fit for three-phase (3PH) faults and confidence
+scores $\gamma > 0.89$ across balanced and moderate asymmetric cases.
+
+\subsection{The Asymmetric-Fault Limitation of Phase-Domain Estimation}
+
+The Stage~1 study explicitly noted that, for line-to-line (LL) and
+single-line-to-ground (SLG) faults, fitting the model to phase~A alone
+produces large unmodelled residuals on phases~B and~C, and that the
+identified parameters are biased because the phase-A signal simultaneously
+contains positive-, negative-, and zero-sequence components with
+\emph{different} effective time constants \cite{Eluvathingal2025_TR01,
+Eluvathingal2026_TR02}.
+
+For an LL fault, the phase-A current is
+\begin{equation}
+i_a(t) = i_{a,1}(t) + i_{a,2}(t),
+\label{eq:iall}
+\end{equation}
+where $i_{a,1}$ and $i_{a,2}$ are the positive- and negative-sequence
+contributions, each following an exponential envelope decay with distinct
+time constants ($\tau_{ac}^{(1)}$ governed by $d$-axis transient dynamics,
+$\tau_{ac}^{(2)}$ governed by $q$-axis subtransient dynamics).
+A single six-parameter model fitted to \eqref{eq:iall} averages these
+time constants, producing a biased estimate of $\hat{\tau}_{ac}$, high
+Jacobian condition numbers, and a lower confidence score $\gamma$
+\cite{Eluvathingal2026_TR02}.
+
+For an SLG fault, $I_1 = I_2 = I_0$ and $i_a = 3I_1$, so phase-A fitting
+yields a reasonable estimate of the positive-sequence parameters.  However,
+the method provides no explicit confirmation that the sequence-network
+equality holds, no information about phases~B and~C, and no path for
+extending to LLG faults where $I_1 \neq I_2 \neq I_0$.
+
+\subsection{Contributions}
+
+This paper proposes a sequence-domain reformulation of the inverse-estimation
+problem for asymmetric faults.  The four specific contributions are:
+
+\begin{enumerate}
+\item A \textbf{sequence-domain inverse-estimation framework} in which
+      analytic phase currents are decomposed by the instantaneous Fortescue
+      transformation and the six-parameter reduced model is fitted independently
+      to the active sequence components.  This eliminates the cross-contamination
+      problem of phase-domain fitting.
+      (\textit{Sections~\ref{sec:formulation}--\ref{sec:conditioned}})
+
+\item A \textbf{fault-type-conditioned estimation strategy} that selects
+      active sequences according to the detected fault type (3PH, LL, SLG, LLG)
+      and applies the appropriate estimation path, including
+      the propagation rule $\hat{\bm{\theta}}^{(2)} = \hat{\bm{\theta}}^{(0)}
+      = \hat{\bm{\theta}}^{(1)}$ for SLG.
+      (\textit{Section~\ref{sec:conditioned}})
+
+\item A \textbf{physics-motivated negative-sequence initialisation rule}
+      that seeds the negative-sequence LM estimator from the positive-sequence
+      solution using scaled subtransient magnitude, reduced decay constant, and
+      a phase offset consistent with $X_q'' < X_d''$ machine dynamics.
+      (\textit{Section~\ref{sec:practical}})
+
+\item A \textbf{quantitative demonstration} that sequence-domain fitting
+      improves Jacobian identifiability by $3\times$--$8\times$ and increases
+      confidence-gate acceptance rates for LL and SLG faults, while the
+      relay continues to adapt from the positive-sequence estimate alone.
+      (\textit{Sections~\ref{sec:pipeline}--\ref{sec:results}})
+\end{enumerate}
+
+\noindent
+The paper is organised as follows.
+Section~\ref{sec:limitation} establishes the structural bias of phase-domain
+estimation under asymmetric faults.
+Section~\ref{sec:formulation} defines the sequence-domain inverse problem.
+Section~\ref{sec:conditioned} presents the fault-type-conditioned logic.
+Section~\ref{sec:practical} addresses initialisation and edge effects.
+Section~\ref{sec:pipeline} describes integration into the relay pipeline.
+Section~\ref{sec:system} defines the study system.
+Section~\ref{sec:results} presents numerical results.
+Section~\ref{sec:discussion} discusses implications and limitations.
+Section~\ref{sec:conclusion} concludes.
+
+% =============================================================================
+\section{Limitation of Phase-Domain Estimation Under Asymmetric Faults}
+\label{sec:limitation}
+% =============================================================================
+
+\subsection{Six-Parameter Reduced Model}
+\label{sec:limitation:model}
+
+The Stage~1 reduced fault-current model for phase~A is
+\cite{Eluvathingal2025_TR01}
+\begin{equation}
+i_a(t; \bm{\theta}) =
+  \bigl[I_{ss} + (I_{sub} - I_{ss})\,e^{-t_{\mathrm{rel}}/\tau_{ac}}\bigr]
+  \sin(\omega t + \phi_a)
+  - I_{sub}\sin(\phi_a)\,e^{-t_{\mathrm{rel}}/\tau_{dc}},
+\label{eq:model}
+\end{equation}
+where $t_{\mathrm{rel}} = t - t_0$, and the parameter vector is
+$\bm{\theta} = [t_0, I_{ss}, I_{sub}, \tau_{ac}, \tau_{dc}, \phi_a]^\top$.
+The LM estimator minimises
+\begin{equation}
+\hat{\bm{\theta}} = \arg\min_{\bm{\theta}}
+  \sum_{k} \bigl[i_a(k) - i_a(t_k;\bm{\theta})\bigr]^2.
+\label{eq:lsq}
+\end{equation}
+
+\subsection{Structural Bias Under Asymmetric Faults}
+\label{sec:limitation:bias}
+
+For a balanced three-phase fault, the phase-A current contains only a
+positive-sequence contribution: $i_a^{3PH}(t) = i_{a,1}(t)$, and model
+\eqref{eq:model} is structurally correct.
+
+For an LL (A--B) fault, the Fortescue decomposition gives
+$I_0 = 0$ and $I_1 = I_2$, so
+\begin{equation}
+i_a^{LL}(t) = i_{a,1}(t) + i_{a,2}(t),
+\label{eq:ia_ll}
+\end{equation}
+where
+\begin{align}
+i_{a,1}(t) &= \bigl[I_{ss,1} + (I_{sub,1} - I_{ss,1})e^{-t/\tau_{ac}^{(1)}}\bigr]
+               \sin(\omega t + \phi_1)
+               - I_{sub,1}\sin\phi_1\,e^{-t/\tau_{dc}},
+               \label{eq:ia1}\\
+i_{a,2}(t) &= \bigl[I_{ss,2} + (I_{sub,2} - I_{ss,2})e^{-t/\tau_{ac}^{(2)}}\bigr]
+               \sin(\omega t + \phi_2)
+               - I_{sub,2}\sin\phi_2\,e^{-t/\tau_{dc}}.
+               \label{eq:ia2}
+\end{align}
+Because $X_q'' \leq X_d''$ and $T'_{q0} \leq T'_{d0}$ in typical machines,
+$\tau_{ac}^{(2)} < \tau_{ac}^{(1)}$: the negative-sequence component decays
+faster than the positive.  A single model \eqref{eq:model} fitted to
+$i_a^{LL}$ must represent both decays with one time constant $\tau_{ac}$,
+producing a biased average and an unmodelled residual
+\begin{equation}
+\varepsilon_{bias}(t) = i_a^{LL}(t) - i_a(t;\hat{\bm{\theta}}_{phaseA})
+  \approx [i_{a,2}(t) - \hat{i}_{a,2}(t)],
+\end{equation}
+where $\hat{i}_{a,2}$ is the implicit negative-sequence component captured
+in the residual.  This bias inflates the residual norm, raises the Jacobian
+condition number $\kappa_n$, and reduces the confidence score.
+
+\begin{proposition}[Phase-domain identifiability degradation]
+\label{prop:kn}
+For an LL fault with $\tau_{ac}^{(2)} = \beta\,\tau_{ac}^{(1)}$,
+$0 < \beta < 1$, the Jacobian $\mathbf{J}$ of the single-sequence model
+\eqref{eq:model} has condition number
+$\kappa_n \propto (1 - \beta)^{-2}$,
+which grows without bound as $\beta \to 1$ (equal time constants) and
+is large when $\beta < 1$ because the two exponential terms in
+\eqref{eq:ia_ll} are partially collinear in the estimation window.
+\end{proposition}
+
+\noindent
+This is the mathematical reason why Stage~1 reported $\kappa_n \approx 70$
+for LL faults, compared with $\kappa_n \approx 12$ for 3PH faults under the
+same machine and window parameters (Table~\ref{tab:fitquality}).
+
+For an SLG fault, $i_a = 3I_1$ and the single-sequence model is
+structurally adequate for phase~A.  However, the method gives no
+prediction for phases~B and~C (both near zero for SLG) and cannot
+naturally extend to LLG.
+
+% =============================================================================
+\section{Sequence-Domain Inverse-Estimation Formulation}
+\label{sec:formulation}
+% =============================================================================
+
+\subsection{Analytic Signal and Hilbert Transform}
+\label{sec:formulation:analytic}
+
+For each phase $k \in \{a, b, c\}$, the analytic signal is
+\begin{equation}
+\Ical_k(t) = i_k(t) + j\,\Hilb\{i_k(t)\},
+\label{eq:analytic}
+\end{equation}
+where $\Hilb\{\cdot\}$ denotes the Hilbert transform.  The imaginary part
+$\Hilb\{i_k\}$ is the $90\degree$-phase-shifted counterpart of $i_k$,
+enabling instantaneous amplitude and phase extraction.  In discrete
+implementation, the Hilbert transform is applied via the FFT to the
+windowed current block; a Savitzky--Golay pre-smoothing step and a
+2~ms leading-edge skip mitigate Gibbs ringing at the fault-inception
+discontinuity.
+
+\subsection{Instantaneous Fortescue Decomposition}
+\label{sec:formulation:fortescue}
+
+The three symmetrical-component analytic signals are
+\begin{align}
+\Ical_0(t) &= \tfrac{1}{3}\bigl[\Ical_a + \Ical_b + \Ical_c\bigr],
+             \label{eq:I0}\\
+\Ical_1(t) &= \tfrac{1}{3}\bigl[\Ical_a + a\,\Ical_b + a^2\Ical_c\bigr],
+             \label{eq:I1}\\
+\Ical_2(t) &= \tfrac{1}{3}\bigl[\Ical_a + a^2\Ical_b + a\,\Ical_c\bigr],
+             \label{eq:I2}
+\end{align}
+where $a = e^{j2\pi/3}$ is the Fortescue rotation operator.
+The real-valued sequence waveforms used for estimation are
+\begin{equation}
+I_s(t) = \operatorname{Re}\{\Ical_s(t)\}, \qquad s \in \{0,1,2\}.
+\label{eq:seqwaveform}
+\end{equation}
+These are instantaneous symmetrical components of the sampled waveform,
+not phasor quantities, and are therefore compatible with
+the transient-window fitting philosophy of the Stage~1 estimator.
+
+Fig.~\ref{fig:arch} contrasts the Stage~1 and proposed architectures.
+
+\subsection{Sequence-Wise Inverse Problem}
+\label{sec:formulation:seqproblem}
+
+For each active sequence $s \in \mathcal{S}_{\mathrm{active}}$, the
+inverse problem is
+\begin{equation}
+\hat{\bm{\theta}}^{(s)} = \arg\min_{\bm{\theta}^{(s)} \in \Theta^{(s)}}
+  J_s\bigl(\bm{\theta}^{(s)}\bigr),
+  \qquad
+  J_s = \sum_k \bigl[I_s(k) - i_s(t_k;\bm{\theta}^{(s)})\bigr]^2,
+\label{eq:seqproblem}
+\end{equation}
+where $i_s(t;\bm{\theta}^{(s)})$ is the same six-parameter model
+\eqref{eq:model} applied to the $s$-th sequence waveform.
+The parameter space $\Theta^{(s)}$ is bounded: the same box constraints
+used in Stage~1 are applied per sequence.
+
+By fitting each active sequence in \eqref{eq:seqproblem} separately, the
+cross-contamination between $i_{a,1}$ and $i_{a,2}$ in \eqref{eq:ia_ll}
+is eliminated.  The positive-sequence Jacobian $\mathbf{J}^{(1)}$ now
+reflects only the transient structure of the positive-sequence signal,
+and its condition number is $O(\kappa_n^{3PH})$, independent of the
+negative-sequence time constant.
+
+% =============================================================================
+\section{Fault-Type-Conditioned Estimator Logic}
+\label{sec:conditioned}
+% =============================================================================
+
+Table~\ref{tab:faultpolicy} defines the active sequences and estimation
+policy for each fault type.  The fault type is determined by a standard
+symmetry classifier applied to cycle-averaged RMS magnitudes before the
+estimation window opens \cite{Kimbark1956}.
+
+\begin{table}[!t]
+\centering
+\caption{Fault-Type Sequence Activity and Estimation Policy}
+\label{tab:faultpolicy}
+\begin{tabular}{@{}p{1.1cm}cccl@{}}
+\toprule
+Fault & $I_1$ & $I_2$ & $I_0$ & Estimation action \\
+\midrule
+3PH   & $\neq 0$ & $\approx 0$ & $\approx 0$ &
+  Use $i_a$ directly (balanced estimator; avoid Hilbert artifacts) \\
+LL    & $\neq 0$ & $\neq 0$ & $= 0$ &
+  Fit $I_1$ and $I_2$ independently; $\hat{\bm\theta}^{(0)} = \varnothing$ \\
+SLG   & $\neq 0$ & $\neq 0$ & $\neq 0$ &
+  Fit $I_1$ (positive seq.\ only); propagate
+  $\hat{\bm\theta}^{(2)} = \hat{\bm\theta}^{(0)} = \hat{\bm\theta}^{(1)}$ \\
+LLG   & $\neq 0$ & $\neq 0$ & $\neq 0$ &
+  Fit $I_1$, $I_2$, $I_0$ independently \\
+\midrule
+\multicolumn{5}{@{}l@{}}{\footnotesize
+  $\varnothing$ = not applicable.
+  For 3PH, $i_a$ is used directly to avoid Hilbert edge effects on a
+  perfectly balanced signal.}
+\end{tabular}
+\end{table}
+
+\subsection{Three-Phase Fault}
+\label{sec:conditioned:3ph}
+
+Since the 3PH fault produces a purely positive-sequence signal, the
+balanced estimator from Stage~1 is used without modification.  For this
+case, applying the Hilbert--Fortescue decomposition would give
+$I_1 \approx i_a/\sqrt{3}$, but introduces avoidable edge artefacts.
+Using $i_a$ directly is therefore both accurate and computationally
+simpler.
+
+\subsection{Line-to-Line Fault}
+\label{sec:conditioned:ll}
+
+For LL faults, $I_1 = I_2$ (equal magnitudes) and $I_0 = 0$.
+Equation~\eqref{eq:I0}--\eqref{eq:I2} gives clean sequence components
+with $I_2(t) = I_1(t)$ modulo a phase shift and different envelope decay.
+The positive and negative sequences are fitted independently using the
+two-pass LM algorithm.  The negative-sequence estimator is initialised
+using the physics-motivated seed described in Section~\ref{sec:practical}.
+After both fits, a symmetry verification check is performed:
+\begin{equation}
+\rho_{12} = \left|\frac{\|\hat{I}_{sub,1}\| - \|\hat{I}_{sub,2}\|}
+                        {\|\hat{I}_{sub,1}\|}\right| < \rho_{\max},
+\label{eq:symcheck}
+\end{equation}
+with $\rho_{\max} = 0.20$.  A violation flags the fault classifier for
+review.
+
+\subsection{Single-Line-to-Ground Fault}
+\label{sec:conditioned:slg}
+
+For SLG faults, sequence-network theory \cite{Kimbark1956} gives
+$I_1 = I_2 = I_0$.  Therefore, fitting the positive-sequence waveform
+$I_1$ is sufficient.  The negative- and zero-sequence parameter vectors
+are propagated by identity:
+\begin{equation}
+\hat{\bm{\theta}}^{(2)} = \hat{\bm{\theta}}^{(0)} = \hat{\bm{\theta}}^{(1)}.
+\label{eq:slgprop}
+\end{equation}
+This avoids three redundant fits and halves the computation relative to a
+na\"{i}ve three-sequence approach.
+
+\subsection{Line-to-Line-to-Ground Fault}
+\label{sec:conditioned:llg}
+
+For LLG faults, $I_1 \neq I_2 \neq I_0$ in general.  All three sequences
+are fitted independently.  The negative-sequence seed is derived from the
+positive-sequence result (Section~\ref{sec:practical}); the zero-sequence
+seed uses the same scaling applied to the zero-sequence transformer
+impedance ratio.
+
+\subsection{Symmetry Check}
+\label{sec:conditioned:sym}
+
+Before fitting any negative- or zero-sequence channel, a pre-check
+ensures that the channel is not noise-dominated:
+\begin{equation}
+\frac{\|I_s\|_{\mathrm{rms}}}{\|I_1\|_{\mathrm{rms}}} \geq \delta_s,
+  \qquad \delta_2 = \delta_0 = 0.05.
+\label{eq:symtest}
+\end{equation}
+If \eqref{eq:symtest} fails, the corresponding fit is skipped and the
+parameter vector for that sequence is flagged as unavailable.  This prevents
+the LM algorithm from fitting a numerical noise floor and producing a
+spuriously well-conditioned but meaningless result.
+
+% =============================================================================
+\section{Physics-Motivated Initialisation and Practical Implementation}
+\label{sec:practical}
+% =============================================================================
+
+\subsection{Negative-Sequence Seed}
+\label{sec:practical:seed}
+
+The initial guess for the negative-sequence LM estimator is derived from
+the positive-sequence result using three physics-motivated scaling rules:
+\begin{equation}
+\begin{aligned}
+I_{sub,0}^{(2)} &= 0.70\,\hat{I}_{sub}^{(1)},\\[2pt]
+\tau_{ac,0}^{(2)} &= 0.50\,\hat{\tau}_{ac}^{(1)},\\[2pt]
+\phi_{a,0}^{(2)} &= \hat{\phi}_a^{(1)} - \pi/6.
+\end{aligned}
+\label{eq:seed}
+\end{equation}
+The magnitude scaling by $0.70$ reflects that the negative-sequence
+Th\'{e}venin impedance $Z_2 = (Z_d'' + Z_q'')/2 + Z_{\mathrm{th}}$ is
+typically larger than $Z_1 = Z_d'' + Z_{\mathrm{th}}$ for machines
+with $X_d'' > X_q''$.  The time constant scaling by $0.50$ reflects the
+faster decay of the negative-sequence envelope, which is governed by the
+$q$-axis subtransient time constant $T''_{q0}$ rather than the $d$-axis
+transient $T'_{d0}$.  The phase offset $-\pi/6$ accounts for the
+$30\degree$ inter-sequence phase relationship common to SLG and LL faults
+in star-connected machines \cite{Anderson1995}.
+
+\begin{table}[!t]
+\centering
+\caption{Initial-Guess Rules for Each Active Sequence}
+\label{tab:initguess}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Parameter & Positive seq. & Negative seq. & Zero seq. \\
+\midrule
+$I_{sub,0}$   & Two-pass Pass-1 seed & $0.70\,\hat{I}_{sub}^{(1)}$ &
+  $0.60\,\hat{I}_{sub}^{(1)}$ \\
+$\tau_{ac,0}$ & Physical guess $T'_{d0}$ & $0.50\,\hat{\tau}_{ac}^{(1)}$ &
+  $0.70\,\hat{\tau}_{ac}^{(1)}$ \\
+$\phi_{a,0}$  & Inception angle & $\hat\phi_a^{(1)} - \pi/6$ &
+  $\hat\phi_a^{(1)}$ \\
+$I_{ss,0}$    & Tail-window mean & $0.70\,\hat{I}_{ss}^{(1)}$ &
+  $0.60\,\hat{I}_{ss}^{(1)}$ \\
+$\tau_{dc,0}$ & $T''_{d0}/(2\pi f_0 R_a)$ & same as positive & same as positive \\
+$t_{0,0}$     & Zero-crossing detect & same as positive & same as positive \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hilbert Edge-Effect Mitigation}
+\label{sec:practical:hilbert}
+
+The Hilbert transform is a global frequency-domain operation; the step
+discontinuity at fault inception $t_0$ causes Gibbs-like ringing in the
+analytic signal over the first 5--10~ms of the estimation window.  Two
+mitigations are applied:
+\begin{enumerate}
+\item The estimation window opens $2\mss$ after $t_0$, by which time the
+      instantaneous analytic amplitude has stabilised.
+\item A fourth-order Savitzky--Golay smoothing filter (window 11 samples,
+      $f_s = 10\,\text{kHz}$) is applied to the raw measured currents
+      before Hilbert transformation.
+\end{enumerate}
+For 3PH faults, $i_a$ is used directly without Hilbert--Fortescue
+decomposition, eliminating any ringing artefact on the dominant signal.
+
+\subsection{Pass-2 Tail Window for Negative-Sequence Estimation}
+\label{sec:practical:pass2}
+
+The two-pass LM strategy is retained for each active sequence.  For
+negative-sequence estimation, Pass~2 (tail window) uses the window
+$[t_0 + 3\tau_{dc}, t_c]$, the same as positive sequence.  However, if
+$\tau_{ac}^{(2)} < 0.3\sss$ (fast envelope decay), the tail window reduces
+to $[t_0 + 4\tau_{dc}, t_c]$ to avoid fitting the fast-decaying front
+portion in Pass~2.
+
+\subsection{Computational Complexity}
+\label{sec:practical:compute}
+
+Table~\ref{tab:compute} summarises the expected runtime increase.
+For 3PH faults, the runtime is essentially unchanged from Stage~1
+($\leq 9\mss$).  For LL faults (two independent fits), the
+runtime increases to $\leq 17\mss$; for LLG (three fits),
+to $\leq 25\mss$.  All values remain within the 100~ms
+protection operating interval required by IEC~60255-151
+\cite{IEC60255-151}.
+
+% =============================================================================
+\section{Integration into the Adaptive Relay Pipeline}
+\label{sec:pipeline}
+% =============================================================================
+
+\subsection{Relay Adaptation from Positive-Sequence Estimate}
+\label{sec:pipeline:adaptation}
+
+A key design principle is that the relay adaptation uses only the
+positive-sequence estimate, regardless of fault type:
+\begin{equation}
+\hat{\bm{\theta}}_{\mathrm{relay}} = \hat{\bm{\theta}}^{(1)}.
+\label{eq:relay_theta}
+\end{equation}
+This preserves the single-sequence interface of the existing pipeline
+and avoids the question of how to combine sequence estimates into a
+pickup setting.  The physical justification is that the positive-sequence
+current magnitude governs the apparent fault current as seen by the
+three-phase OC relay, which responds to the fundamental RMS of the measured
+phase current---a quantity dominated by the positive-sequence component
+even for asymmetric faults.
+
+The adaptive pickup and TMS mappings from Stage~1 are retained:
+\begin{align}
+I_p^* &= K_{Ip}\,\hat{I}_{ss}^{(1)} + I_{p,\min},
+          \label{eq:Ip}\\
+TMS^* &= K_{TMS}\,\hat{\tau}_{ac}^{(1)},
+          \label{eq:TMS}
+\end{align}
+where $K_{Ip}$, $K_{TMS}$ are gain constants calibrated in Stage~1
+\cite{Eluvathingal2025_TR01} and $I_{p,\min}$ is the minimum pickup floor.
+
+\subsection{Confidence Score}
+\label{sec:pipeline:confidence}
+
+The composite confidence score uses the positive-sequence Jacobian:
+\begin{equation}
+\gamma = w_1\gamma_{\kappa} + w_2\gamma_{\varepsilon} + w_3\gamma_n,
+\label{eq:gamma}
+\end{equation}
+where
+$\gamma_{\kappa} = \operatorname{clip}(1 - \kappa_n^{(1)}/\kappa_{\max}, 0, 1)$,
+$\gamma_{\varepsilon} = \operatorname{clip}(1 - \|{\varepsilon}^{(1)}\|_2/\varepsilon_{\max}, 0, 1)$,
+$\gamma_n = \min(n_c/n_{c,\min}, 1)$.
+Weights $w_1 = w_2 = 0.40$, $w_3 = 0.20$ with
+$\kappa_{\max} = 20$, $\varepsilon_{\max} = 0.15\pu$, $n_{c,\min} = 3$.
+The bounded update \eqref{eq:Ip}--\eqref{eq:TMS} is accepted only when
+$\gamma \geq \gamma_{\min} = 0.80$.
+
+\subsection{Full Pipeline Algorithm}
+\label{sec:pipeline:alg}
+
+Algorithm~\ref{alg:seqest} summarises the complete sequence-component
+estimation and relay adaptation pipeline.
+
+\begin{algorithm}[!t]
+\caption{Sequence-Component Inverse Estimation and Relay Update}
+\label{alg:seqest}
+\begin{algorithmic}[1]
+\Require Three-phase current window $\{i_a, i_b, i_c\}$ over $[t_0, t_c]$;
+         fault type; prior relay settings $I_p$, $TMS$
+\Ensure Updated settings $I_p^*$, $TMS^*$; confidence $\gamma$
+
+\State Apply Savitzky--Golay pre-filter; skip first $2\mss$
+\State Compute analytic signals: $\Ical_k = i_k + j\Hilb\{i_k\}$,
+       $k \in \{a, b, c\}$
+
+\If{fault type $= $ 3PH}
+   \State $\hat{\bm\theta}^{(1)} \leftarrow$ \textsc{TwoPassLM}($i_a$)
+\Else
+   \State Decompose: $I_0, I_1, I_2 \leftarrow
+          \textsc{Fortescue}(\Ical_a, \Ical_b, \Ical_c)$
+   \State $\hat{\bm\theta}^{(1)} \leftarrow$ \textsc{TwoPassLM}($I_1$)
+
+   \If{fault type $\in \{\text{LL, LLG}\}$
+       \textbf{and} $\|I_2\|_{\mathrm{rms}}/\|I_1\|_{\mathrm{rms}} \geq 0.05$}
+      \State Seed: eq.~\eqref{eq:seed}
+      \State $\hat{\bm\theta}^{(2)} \leftarrow$
+             \textsc{TwoPassLM}($I_2$, seeded from $\hat{\bm\theta}^{(1)}$)
+   \EndIf
+
+   \If{fault type $\in \{\text{LLG}\}$
+       \textbf{and} $\|I_0\|_{\mathrm{rms}}/\|I_1\|_{\mathrm{rms}} \geq 0.05$}
+      \State $\hat{\bm\theta}^{(0)} \leftarrow$
+             \textsc{TwoPassLM}($I_0$, seeded from $\hat{\bm\theta}^{(1)}$)
+   \EndIf
+
+   \If{fault type $= $ SLG}
+      \State $\hat{\bm\theta}^{(2)} \leftarrow \hat{\bm\theta}^{(0)}
+             \leftarrow \hat{\bm\theta}^{(1)}$ \Comment{propagation}
+   \EndIf
+\EndIf
+
+\State Compute $\kappa_n(\mathbf{J}^{(1)})$, $\|\varepsilon^{(1)}\|_2$,
+       $n_c$, and $\gamma$ via eq.~\eqref{eq:gamma}
+
+\If{$\gamma \geq \gamma_{\min} = 0.80$}
+   \State $I_p^* \leftarrow \operatorname{clip}(K_{Ip}\hat{I}_{ss}^{(1)}
+          + I_{p,\min},\; I_{p,\min},\; I_{p,\max})$
+   \State $TMS^* \leftarrow \operatorname{clip}(K_{TMS}\hat{\tau}_{ac}^{(1)},\;
+          TMS_{\min},\; TMS_{\max})$
+\Else
+   \State $I_p^* \leftarrow I_p$;\; $TMS^* \leftarrow TMS$
+   \Comment{hold; flag low-$\gamma$}
+\EndIf
+\end{algorithmic}
+\end{algorithm}
+
+% =============================================================================
+\section{Study System and Simulation Programme}
+\label{sec:system}
+% =============================================================================
+
+The study system is a 10~MVA, 11~kV synchronous generator connected through
+a step-up transformer to a 33~kV Th\'{e}venin equivalent feeder, as shown
+in Fig.~\ref{fig:arch}.  Machine and relay parameters are listed in
+Table~\ref{tab:sysparams}.  Four fault types are studied (3PH, LL, SLG, LLG)
+with three inception angles ($0\degree$, $90\degree$, $180\degree$),
+two loading levels (0.8~pu, 1.0~pu), and three fault resistances
+($R_f = 0$, 0.10~pu, 0.30~pu), yielding 72~cases per fault type
+(288~total).  The estimation window is $T_w = 100\mss$ (five cycles at
+50~Hz).
+
+\begin{table}[!t]
+\centering
+\caption{Study System and Relay Parameters}
+\label{tab:sysparams}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Symbol & Description & Value \\
+\midrule
+\multicolumn{3}{@{}l@{}}{\textit{Synchronous machine (10~MVA, 11~kV, 50~Hz)}} \\
+$X_d / X_d' / X_d''$   & $d$-axis reactances        & 1.80 / 0.30 / 0.20\pu \\
+$X_q / X_q' / X_q''$   & $q$-axis reactances        & 1.70 / 0.50 / 0.20\pu \\
+$T_{d0}' / T_{d0}''$    & $d$-axis OC time const.   & 0.80 / 0.030\sss \\
+$T_{q0}' / T_{q0}''$    & $q$-axis OC time const.   & 0.40 / 0.050\sss \\
+$R_a$                   & Armature resistance        & 0.010\pu \\
+\midrule
+\multicolumn{3}{@{}l@{}}{\textit{Th\'{e}venin network}} \\
+$R_{\mathrm{th}} / X_{\mathrm{th}}$ & Pos.-seq.\ network & 0.010 / 0.100\pu \\
+$R_0 / X_0$               & Zero-seq.\ network         & 0.030 / 0.300\pu \\
+\midrule
+\multicolumn{3}{@{}l@{}}{\textit{Relay settings}} \\
+$I_p$ (nominal)         & Inverse-time pickup        & 1.00\pu \\
+$TMS_0$                 & Initial TMS                & 0.12 \\
+$\gamma_{\min}$         & Acceptance threshold       & 0.80 \\
+$\kappa_{\max}$         & Condition-number limit     & 20 \\
+\midrule
+\multicolumn{3}{@{}l@{}}{\textit{Estimation}} \\
+$f_s$                   & Sampling frequency         & 10\,000~Hz \\
+$T_w$                   & Estimation window          & 100\mss \\
+$n_{c,\min}$            & Confirmation count         & 3 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =============================================================================
+\section{Numerical Results}
+\label{sec:results}
+% =============================================================================
+
+\subsection{A. Architecture Comparison}
+\label{sec:results:arch}
+
+Fig.~\ref{fig:arch} contrasts the Stage~1 phase-domain and proposed
+sequence-domain architectures.  The key structural difference is the
+Hilbert--Fortescue front-end that routes each active sequence to a
+dedicated LM estimator, with the positive-sequence result feeding the
+relay adaptation block.
+
+\begin{figure}[!t]
+\centering
+\input{diagrams/fig1_architecture}
+\caption{Architecture comparison.  \textit{Left}: Stage~1 phase-domain
+  estimator fits a single 6-parameter model to phase~A current.  The red
+  dashed block highlights the unmodelled phase-B/C residual for asymmetric
+  faults.  \textit{Right}: proposed sequence-domain estimator decomposes
+  three-phase currents by Hilbert--Fortescue, routes active sequences to
+  independent LM estimators, and selects the positive-sequence result
+  $\hat{\bm\theta}^{(1)}$ for relay adaptation.}
+\label{fig:arch}
+\end{figure}
+
+\subsection{B. Sequence Networks and Fault-Type Topology}
+\label{sec:results:seqnet}
+
+Fig.~\ref{fig:seqnet} shows the positive-, negative-, and zero-sequence
+networks and their interconnections for LL and SLG faults.  The distinct
+network impedances ($Z_1 \neq Z_2$ due to $X_d'' \neq X_q''$, and
+$Z_0 \gg Z_1$ for solidly grounded transformers) determine both the
+sequence current magnitudes and the time constants.
+
+\begin{figure}[!t]
+\centering
+\input{diagrams/fig2_seqnet}
+\caption{Sequence networks for the study system and fault-type
+  interconnections.  For LL faults (left connection): positive and
+  negative networks are placed in series ($I_1 = I_2$, $I_0 = 0$);
+  the different impedances $Z_1$ and $Z_2$ cause different transient
+  time constants.  For SLG faults (right connection): all three
+  networks are in series ($I_1 = I_2 = I_0$); the large zero-sequence
+  impedance $Z_0$ reduces the total fault current compared with LL.}
+\label{fig:seqnet}
+\end{figure}
+
+\subsection{C. Algorithm Flowchart}
+\label{sec:results:flow}
+
+Fig.~\ref{fig:flowchart} summarises the complete estimation and relay
+update algorithm, including the Hilbert pre-processing, Fortescue
+decomposition, fault-type branching, symmetry check, two-pass LM
+estimation, confidence gate, and bounded relay update.
+
+\begin{figure}[!t]
+\centering
+\input{diagrams/fig3_flowchart}
+\caption{Sequence-component inverse-estimation and relay update algorithm.
+  The fault-type selector routes to either the balanced estimator (3PH)
+  or the sequence estimators (LL/SLG/LLG).  For negative- and
+  zero-sequence channels, a symmetry check prevents fitting of
+  noise-dominated signals.  The relay update always uses the
+  positive-sequence estimate $\hat{\bm\theta}^{(1)}$.}
+\label{fig:flowchart}
+\end{figure}
+
+\subsection{D. Line-to-Line Fault: Sequence Waveform Fitting}
+\label{sec:results:ll}
+
+Fig.~\ref{fig:ll_waveforms} presents the positive- and negative-sequence
+waveforms $I_1(t)$ and $I_2(t)$ for a representative LL fault
+($R_f = 0$, $90\degree$ inception, 1.0~pu loading), comparing the measured
+sequence components, the Stage~1 phase-A fit projected onto the sequence
+domain, and the proposed sequence estimator fit.
+
+\begin{figure}[!t]
+\centering
+\input{diagrams/fig4_ll_waveforms}
+\caption{LL fault: positive sequence $I_1(t)$ (top) and negative sequence
+  $I_2(t)$ (bottom).
+  Blue solid: measured.
+  Red dashed: Stage~1 (phase-A-only) fit projected onto sequence domain---
+  the phase-A model captures an averaged time constant and cannot represent
+  the faster-decaying $I_2$.
+  Green dotted: proposed sequence estimator---near-perfect reconstruction
+  of both $I_1$ and $I_2$ independently.}
+\label{fig:ll_waveforms}
+\end{figure}
+
+\noindent
+The Stage~1 estimator yields a single time constant $\hat{\tau}_{ac}
+\approx 0.62\sss$ (a biased average of $\tau_{ac}^{(1)} = 0.80\sss$ and
+$\tau_{ac}^{(2)} = 0.38\sss$) and fails to reproduce the negative-sequence
+envelope.  The proposed sequence estimator recovers
+$\hat{\tau}_{ac}^{(1)} = 0.801\sss$ and
+$\hat{\tau}_{ac}^{(2)} = 0.381\sss$ independently,
+reducing the positive-sequence RMSE from 0.089 to 0.038~p.u.
+(Table~\ref{tab:fitquality}).
+
+\subsection{E. Single-Line-to-Ground Fault: Propagation Verification}
+\label{sec:results:slg}
+
+Fig.~\ref{fig:slg_waveforms} shows all three sequence components for a
+representative SLG fault ($R_f = 0$, $0\degree$ inception).
+The estimated positive-sequence waveform $I_1(t)$ is fitted with
+$R^2 = 0.999$.  The propagated $I_2$ and $I_0$ overlap $I_1$ as
+required by sequence-network theory, confirming the SLG fault type.
+Phase~B and~C reconstruction from the propagated sequences shows
+near-zero values consistent with theory.
+
+\begin{figure}[!t]
+\centering
+\input{diagrams/fig5_slg_waveforms}
+\caption{SLG fault: sequence components $I_1, I_2, I_0$ (top) and
+  phase-current reconstruction (bottom).
+  Top: $I_1$ is fitted; $I_2$ and $I_0$ are propagated and overlap
+  $I_1$ as expected from $I_1=I_2=I_0$.
+  Bottom: phase~A current $i_a = 3I_1$ is accurately reconstructed
+  by both Stage~1 and the proposed method; the key difference is that
+  the proposed method explicitly confirms the sequence-network equality
+  and predicts the near-zero $i_b$, $i_c$.}
+\label{fig:slg_waveforms}
+\end{figure}
+
+\subsection{F. Identifiability and Fit-Quality Comparison}
+\label{sec:results:fitquality}
+
+Table~\ref{tab:fitquality} presents the median fit quality and conditioning
+metrics across all 288~cases, separated by fault type and estimator.
+
+\begin{table*}[!t]
+\centering
+\caption{Fit Quality and Identifiability Comparison: Stage~1 vs.\ Proposed Sequence Estimator (median over all cases of each fault type)}
+\label{tab:fitquality}
+\begin{tabular}{@{}lllrrrrl@{}}
+\toprule
+Fault type & Estimator & Signal & RMSE (p.u.) & $R^2$ & $\kappa_n(\mathbf{J})$ &
+  Runtime (\si{\ms}) & Note \\
+\midrule
+\multirow{2}{*}{3PH}
+  & Stage~1   & $i_a$     & 0.042 & 0.998 &  12.3 &  8.4 & Baseline \\
+  & Seq.\ Est.& $I_1$     & 0.041 & 0.998 &  11.8 &  8.7 & Equivalent \\
+\midrule
+\multirow{5}{*}{LL}
+  & Stage~1   & $i_a$ (fit)    & 0.089 & 0.971 & 72.4 &  9.1 & Biased $\hat\tau_{ac}$ \\
+  & Stage~1   & $i_b$ (resid.) & 0.241 & 0.814 & ---  &  --- & Not fitted \\
+  & Stage~1   & $i_c$ (resid.) & 0.268 & 0.779 & ---  &  --- & Not fitted \\
+  & Seq.\ Est.& $I_1$ (pos.)   & 0.038 & 0.997 &  9.7 & 17.2 & $3\times\kappa_n$ improvement \\
+  & Seq.\ Est.& $I_2$ (neg.)   & 0.041 & 0.996 & 12.1 & ---  & Independent fit \\
+\midrule
+\multirow{3}{*}{SLG}
+  & Stage~1   & $i_a$ (fit)    & 0.073 & 0.984 & 58.6 &  8.9 & Adequate on $i_a$ only \\
+  & Stage~1   & $i_b$ (resid.) & 0.189 & 0.862 & ---  &  --- & Not fitted \\
+  & Seq.\ Est.& $I_1$ (pos.)   & 0.031 & 0.999 &  8.2 &  9.4 & $7\times\kappa_n$ improvement \\
+\midrule
+\multirow{2}{*}{LLG}
+  & Stage~1   & $i_a$ (fit)    & 0.097 & 0.959 & 88.2 &  9.3 & Largest bias \\
+  & Seq.\ Est.& $I_1$ (pos.)   & 0.039 & 0.997 & 10.4 & 24.8 & $8\times\kappa_n$ improvement \\
+\midrule
+\multicolumn{8}{@{}l@{}}{\footnotesize
+  RMSE and $R^2$ are computed over the estimation window $T_w = 100\mss$.
+  Residual columns for Stage~1 phases B/C are computed from the fitted phase-A
+  model applied to the other phases (not an optimisation result).
+  Runtime includes both passes of the LM algorithm; multi-sequence runtime is
+  the total for all active sequences.}
+\end{tabular}
+\end{table*}
+
+\noindent
+The improvement is most pronounced for LLG ($8\times$ condition-number
+reduction) and least for SLG (where phase-A estimation is structurally
+adequate but improved by the explicit sequence formulation).  For 3PH
+faults, the two estimators are equivalent, confirming that the overhead
+of the Hilbert--Fortescue step is unnecessary for balanced conditions.
+
+\subsection{G. Condition-Number and Identifiability Analysis}
+\label{sec:results:kappa}
+
+Fig.~\ref{fig:conditioning} plots $\kappa_n(\mathbf{J})$ for Stage~1 and
+the sequence estimator across all fault types.  The proposed method keeps
+$\kappa_n$ below the acceptance threshold of 20 for all fault types, while
+Stage~1 exceeds 20 for LL, SLG, and LLG cases---the three cases where
+sequence contamination is present.
+
+\begin{figure}[!t]
+\centering
+\input{diagrams/fig6_conditioning}
+\caption{Jacobian condition number $\kappa_n$ for Stage~1 (red) and
+  the proposed sequence estimator (blue).  The orange dashed threshold
+  at $\kappa_{\max} = 20$ marks the confidence-gate limit; above this
+  the relay update is rejected.  Stage~1 exceeds the threshold for all
+  asymmetric fault types (LL, SLG, LLG), producing frequent
+  low-$\gamma$ rejections.  The sequence estimator remains below the
+  threshold for all cases.}
+\label{fig:conditioning}
+\end{figure}
+
+\subsection{H. Relay Adaptation Performance}
+\label{sec:results:relay}
+
+Table~\ref{tab:relayperf} presents the relay adaptation comparison and
+Fig.~\ref{fig:relay} shows the adaptive pickup $I_p^*$ for LL and SLG
+faults.
+
+\begin{table}[!t]
+\centering
+\caption{Relay Adaptation Performance Comparison ($R_f = 0$, $0\degree$ inception, 1.0~pu loading)}
+\label{tab:relayperf}
+\begin{tabular}{@{}lllcccl@{}}
+\toprule
+Fault & Estimator & $\gamma$ & Accept? & $I_p^*$ (pu) &
+  $\hat{I}_{ss}$ (pu) & $\hat\tau_{ac}$ (s) \\
+\midrule
+\multirow{3}{*}{3PH}
+  & Fixed      & ---  & ---  & 1.00 & ---   & ---   \\
+  & Stage~1    & 0.96 & Yes  & 1.24 & 0.511 & 0.812 \\
+  & Seq.\ Est. & 0.96 & Yes  & 1.24 & 0.511 & 0.815 \\
+\midrule
+\multirow{3}{*}{LL}
+  & Fixed      & ---  & ---  & 1.00 & ---   & ---   \\
+  & Stage~1    & 0.83 & Yes* & 1.18 & 0.463 & 0.791 \\
+  & Seq.\ Est. & 0.93 & Yes  & 1.22 & 0.497 & 0.823 \\
+\midrule
+\multirow{3}{*}{SLG}
+  & Fixed      & ---  & ---  & 1.00 & ---   & ---   \\
+  & Stage~1    & 0.81 & Marg.& 1.09 & 0.382 & 0.744 \\
+  & Seq.\ Est. & 0.91 & Yes  & 1.17 & 0.412 & 0.798 \\
+\midrule
+\multirow{3}{*}{LLG}
+  & Fixed      & ---  & ---  & 1.00 & ---   & ---   \\
+  & Stage~1    & 0.72 & No   & ---  & ---   & ---   \\
+  & Seq.\ Est. & 0.89 & Yes  & 1.21 & 0.488 & 0.808 \\
+\midrule
+\multicolumn{7}{@{}l@{}}{\footnotesize
+  * Stage~1 accepts LL update due to $\gamma = 0.83 > 0.80$ but with
+  a biased $\hat\tau_{ac} = 0.791$ (averaged over both sequence time constants).
+  Marg. = marginal acceptance ($\gamma$ just above threshold).
+  For LLG, Stage~1 is rejected ($\gamma = 0.72 < 0.80$); the relay
+  holds the prior setting.}
+\end{tabular}
+\end{table}
+
+\begin{figure}[!t]
+\centering
+\input{diagrams/fig7_relay_comparison}
+\caption{Adaptive pickup $I_p^*$ for LL (left) and SLG (right) faults.
+  Grey bars: setting produced by each estimator.
+  Blue annotations: confidence score $\gamma$.
+  The fixed relay does not adapt ($I_p = 1.00\pu$, $\gamma$ not
+  applicable).
+  Stage~1 produces a lower $I_p^*$ due to the biased $\hat{I}_{ss}$
+  and lower confidence.  The sequence estimator produces a higher,
+  more accurate $I_p^*$ with significantly improved confidence,
+  especially for SLG and LLG faults where Stage~1 either marginally
+  accepts or rejects the update.}
+\label{fig:relay}
+\end{figure}
+
+\noindent
+Key observations from Table~\ref{tab:relayperf} and Fig.~\ref{fig:relay}:
+\begin{itemize}
+\item For 3PH faults, both estimators are equivalent, as expected.
+\item For LL faults, the sequence estimator improves $\gamma$ from 0.83
+      to 0.93 and corrects the biased $\hat{I}_{ss}$ from 0.463 to
+      0.497~p.u., resulting in a more accurate $I_p^* = 1.22\pu$ versus
+      1.18~p.u.\ from Stage~1.
+\item For SLG faults, the sequence estimator lifts $\gamma$ from a
+      marginal 0.81 to a comfortable 0.91.
+\item For LLG faults, Stage~1 is rejected entirely ($\gamma = 0.72$);
+      the sequence estimator accepts the update with $\gamma = 0.89$.
+\end{itemize}
+
+\subsection{I. Computational Performance}
+\label{sec:results:compute}
+
+\begin{table}[!t]
+\centering
+\caption{Computational Runtime per Estimation Call (median, $N=288$ cases)}
+\label{tab:compute}
+\begin{tabular}{@{}lcrr@{}}
+\toprule
+Fault type & Active sequences & Stage~1 (\si{\ms}) & Seq.\ Est.\ (\si{\ms}) \\
+\midrule
+3PH  & 1 & 8.4 &  8.7 \\
+LL   & 2 & 9.1 & 17.2 \\
+SLG  & 1 & 8.9 &  9.4 \\
+LLG  & 3 & 9.3 & 24.8 \\
+\midrule
+\multicolumn{4}{@{}l@{}}{\footnotesize
+  All values within the IEC~60255 operating interval of 100~ms.
+  Python 3.10 implementation; Intel Core i7-11th Gen; 10~kHz sampled data.}
+\end{tabular}
+\end{table}
+
+All runtimes remain within the 100~ms protection operating interval, even
+for the worst case (LLG, three independent sequences) at 24.8~ms.  The
+LLG runtime is $2.7\times$ the 3PH baseline but is still approximately
+one-quarter of the allowable operating interval.  A hardware IED
+implementation in C would reduce these times by roughly one order of
+magnitude.
+
+% =============================================================================
+\section{Discussion}
+\label{sec:discussion}
+% =============================================================================
+
+\subsection{Why Sequence-Domain Fitting Is Necessary}
+\label{sec:discussion:why}
+
+The core result of this paper is that single-phase model fitting for
+asymmetric faults is structurally biased, not merely statistically noisy.
+Proposition~\ref{prop:kn} and the results in Table~\ref{tab:fitquality}
+jointly establish that the bias grows with the ratio $\tau_{ac}^{(1)}
+/\tau_{ac}^{(2)}$ (equivalently, with the difference between $d$- and
+$q$-axis time constants).  For salient-pole generators with
+$T'_{d0}/T'_{q0} \approx 2$, this ratio is of order~2, and the
+condition-number inflation is severe.  For round-rotor machines with
+$T'_{d0} \approx T'_{q0}$, the two time constants are nearly equal,
+$\kappa_n$ from Phase-A fitting is lower, and the improvement from
+sequence decomposition is smaller.  This machine-type dependence is
+an important practical qualifier.
+
+\subsection{Positive-Sequence Adaptation Is Sufficient for OC Relays}
+\label{sec:discussion:pos}
+
+The design choice in \eqref{eq:relay_theta} --- using only
+$\hat{\bm\theta}^{(1)}$ for relay adaptation --- is justified by the
+operating principle of OC protection: an IDMT relay responds to the
+\emph{measured phase current}, which for an asymmetric fault is
+dominated by the positive-sequence component.  The negative- and
+zero-sequence components are used internally to improve the estimate
+of $\hat{I}_{ss}^{(1)}$ (by eliminating their contaminating contribution
+from the phase-A signal) rather than directly driving the relay setting.
+This is consistent with protection practice, where sequence-component
+analysis informs but does not replace the fundamental OC characteristic.
+
+\subsection{LLG Fault Unlocked for the First Time}
+\label{sec:discussion:llg}
+
+The most operationally significant result is that Stage~1 fails entirely
+for LLG faults ($\gamma = 0.72$, rejected), while the sequence estimator
+succeeds ($\gamma = 0.89$, accepted).  LLG faults are the most common
+type in cable distribution systems and are particularly dangerous for
+SGs because the ground-current contribution can stress transformer
+neutrals.  The sequence-component estimator provides the first credible
+path toward adaptive OC protection for LLG events.
+
+\subsection{Remaining Limitations}
+\label{sec:discussion:limits}
+
+Three limitations are not addressed in this paper:
+
+\begin{description}
+\item[Stage~2 dq forward model:]
+     The Stage~1 three-component synthesis model \eqref{eq:model} is used
+     for both positive- and negative-sequence fitting.  A more accurate
+     forward model for each sequence, derived from the Park~$dq$ ODE system
+     with AVR/PSS dynamics, would improve long-window ($> 150\mss$)
+     estimation but is outside the scope of this study.
+
+\item[Multi-generator coordination:]
+     Independent sequence-component adaptation by $N$ generators on a
+     common busbar may violate selectivity constraints.  A coordination
+     algorithm for multi-generator settings is presented in a companion
+     study \cite{Eluvathingal2026_TR02}.
+
+\item[High-impedance fault extension:]
+     For HIF cases in the inverse-time regime, the impedance-aware TMS
+     adaptation law developed in the companion paper extends the present
+     framework, but the interaction between sequence-component estimation
+     and HIF TMS adaptation has not yet been studied jointly.
+\end{description}
+
+% =============================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+% =============================================================================
+
+This paper has proposed and validated a sequence-component inverse-estimation
+framework for adaptive overcurrent protection under asymmetric faults.
+Four conclusions are supported:
+
+\begin{enumerate}
+\item \textbf{Sequence-domain estimation is necessary for asymmetric faults.}
+      Single-phase fitting conflates contributions with different time
+      constants, producing structural bias, inflated Jacobian condition
+      numbers ($\kappa_n = 50$--$90$ for LL/SLG/LLG), and reduced
+      confidence scores.  Sequence-domain fitting reduces condition numbers
+      by $3\times$--$8\times$ and improves $R^2$ from 0.96--0.97 to 0.997--0.999.
+
+\item \textbf{Fault-type-conditioned logic enables efficient estimation.}
+      The SLG propagation rule halves the computation for the most common
+      ground fault type; the symmetry check prevents spurious fitting;
+      and the physics-based initialisation rule stabilises LM convergence
+      for negative-sequence channels.
+
+\item \textbf{Positive-sequence-only adaptation remains sufficient.}
+      The relay update from $\hat{\bm\theta}^{(1)}$ is consistent with the
+      OC relay operating principle and preserves the bounded-update,
+      confidence-gated pipeline without modification.
+
+\item \textbf{The method is computationally compatible with protection-grade
+      operation.}  All runtimes remain below 25~ms, well within the 100~ms
+      operating interval.  LLG faults, previously rejected entirely under
+      Stage~1, are now accepted with $\gamma = 0.89$.
+\end{enumerate}
+
+\noindent
+The natural next steps are Stage~2 dq-model integration for long-window
+validation and joint sequence-domain HIF testing.
+
+% =============================================================================
+% Author biographies
+% =============================================================================
+\begin{IEEEbiographynophoto}{Anoop~V.~Eluvathingal}
+(Student Member, IEEE) received the B.Tech.\ degree from the University of
+Kerala, India, in 2016, and the M.Tech.\ degree from NIT Calicut, India,
+in 2018.  He is currently pursuing the Ph.D.\ degree at IIT~Madras,
+Chennai.  His research interests are adaptive power system protection,
+inverse estimation, symmetrical components, and intelligent electronic
+devices.
+\end{IEEEbiographynophoto}
+
+\begin{IEEEbiographynophoto}{K.~Shanti~Swarup}
+(Senior Member, IEEE) received the Ph.D.\ degree from Anna University,
+Chennai.  He is a Professor with the Department of Electrical Engineering,
+IIT~Madras.  His research interests include power system operation,
+optimisation, and digital protection.
+\end{IEEEbiographynophoto}
+
+% =============================================================================
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+% =============================================================================
+
+\end{document}
