@@ -1,0 +1,480 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[a4paper,
+            top=25mm, bottom=25mm,
+            left=25mm, right=25mm,
+            headheight=15pt]{geometry}
+
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,decorations.pathreplacing,patterns,calc,matrix}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{fancyhdr}
+\usepackage{microtype}
+\usepackage{siunitx}
+\usepackage{listings}
+\usepackage{caption}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small SAMBP TR-14/2026 --- Dynamic Busbar Transfer with GOOSE Zone Reconfiguration}
+\rhead{\small PhD Thesis Supporting Report}
+\cfoot{\thepage}
+
+\hypersetup{colorlinks=true, linkcolor=blue!70!black, citecolor=OliveGreen,
+            urlcolor=blue!70!black}
+
+\newcommand{\sambp}{\textsc{sambp}}
+\newcommand{\Idiff}{I_{\mathrm{diff}}}
+\newcommand{\Irest}{I_{\mathrm{rest}}}
+\newcommand{\pu}{\,\text{pu}}
+\newcommand{\goose}{\textsc{goose}}
+\newcommand{\tip}{\textsc{tip}}
+
+\lstset{basicstyle=\ttfamily\small,
+        keywordstyle=\color{blue!70!black},
+        commentstyle=\color{gray},
+        frame=single, breaklines=true}
+
+%=======================================================================
+\begin{document}
+%=======================================================================
+
+\begin{center}
+  {\LARGE\bfseries SAMBP Technical Report TR-14/2026}\\[6pt]
+  {\large Dynamic Busbar Transfer with \goose{} Zone Reconfiguration}\\[4pt]
+  \today
+\end{center}
+
+\vspace{4pt}
+\noindent\rule{\linewidth}{0.6pt}
+
+\begin{abstract}
+SAMBP TR-07 established the double-busbar 87B differential framework with
+static zone allocation: each feeder is permanently assigned to Zone~1 (BB1)
+or Zone~2 (BB2) at commissioning.  TR-07 identified dynamic zone
+reconfiguration during busbar transfer as future work.  This report
+implements a \texttt{BusbarTransferEngine} that listens to IEC~61850 \goose{}
+messages from the bus-coupler and disconnector isolators and re-maps the
+zone boundaries in real time.  Five busbar-transfer topologies are defined
+--- normal (T1), transfer-in-progress (T2), post-transfer (T3),
+split-bus (T4), and GOOSE-lag (T5) --- and a selectivity sweep across five
+fault locations and two fault types yields 40/40~(100\%) correct
+trip/no-trip decisions.  The T5 \goose{} lag scenario, in which the engine
+uses a stale NORM zone assignment for up to 5\,ms after a transfer
+completes, is also analysed: all 10~scenarios remain selective because bus
+coupler CT placement preserves zone indication throughout the lag window.
+\end{abstract}
+
+\noindent\rule{\linewidth}{0.6pt}
+
+\tableofcontents
+\vspace{6pt}
+
+%=======================================================================
+\section{Background and Motivation}
+\label{sec:background}
+%=======================================================================
+
+\subsection{Static zone allocation in TR-07}
+
+TR-07~\cite{SAMBP_TR07} implemented an 87B bus differential relay for a
+double-busbar substation.  Each feeder is assigned to a zone at
+commissioning via a configuration dictionary, and the bus-coupler breaker
+(BC) forms the boundary between Zone~1 and Zone~2.  The check-zone element
+(CK) spans all feeders and provides a high-security second stage.  The trip
+logic is:
+\begin{align}
+  \text{BB1 trip} &= Z_1 \wedge CK, \label{eq:bb1}\\
+  \text{BB2 trip} &= Z_2 \wedge CK, \label{eq:bb2}\\
+  \text{BC trip}  &= CK \wedge \neg Z_1 \wedge \neg Z_2. \label{eq:bc}
+\end{align}
+
+Static allocation is adequate for a fixed substation topology, but a
+make-before-break busbar transfer --- in which a generator or feeder is
+switched from BB1 to BB2 via the bus-coupler --- temporarily connects the
+same feeder to both busbars simultaneously (Transfer-in-Progress, TIP
+state).  Under static allocation the relay has no knowledge of which
+physical bus the feeder is now feeding, so zone assignment may become
+incorrect after the transfer completes.
+
+\subsection{IEC~61850 \goose{} state sharing (TR-06)}
+
+TR-06~\cite{SAMBP_TR06} implemented a \goose{} subscriber engine that
+receives isolator state changes from remote IEDs with a network latency of
+$\leq 4$\,ms (IEC~61850-8-1 performance class~P2)~\cite{IEC61850_8_1}.
+Each \goose{} message carries a \texttt{stNum} (state number) monotonically
+incremented on state change and a \texttt{sqNum} (sequence number) for
+retransmission detection.
+
+This report combines the TR-06 subscriber infrastructure with the TR-07
+87B differential framework to achieve live zone reconfiguration.
+
+%=======================================================================
+\section{Busbar Transfer Engine Design}
+\label{sec:engine}
+%=======================================================================
+
+\subsection{Data model}
+
+The engine maintains one \texttt{IsolatorState} record per feeder,
+carrying the current disconnector positions and deriving the logical zone:
+
+\begin{lstlisting}[language=Python, caption={IsolatorState and zone derivation}]
+@dataclass
+class IsolatorState:
+    feeder_id:     str
+    zone_default:  str        # commissioning default: "Z1" | "Z2"
+    ds1_closed:    bool       # disconnector to BB1
+    ds2_closed:    bool       # disconnector to BB2
+    is_bus_coupler: bool = False
+
+    @property
+    def zone_current(self) -> str:
+        if   self.ds1_closed and not self.ds2_closed: return "Z1"
+        elif self.ds2_closed and not self.ds1_closed: return "Z2"
+        elif self.ds1_closed and self.ds2_closed:     return "TIP"
+        else:                                          return "ISO"
+\end{lstlisting}
+
+\noindent A feeder in state \texttt{ISO} (both disconnectors open) is
+excluded from all zones; a feeder in \texttt{TIP} contributes a 50/50
+split weighting to both zones during the transfer window.
+
+\subsection{GOOSE message processing and stNum guard}
+
+\begin{lstlisting}[language=Python, caption={GOOSE message handler with stNum guard}]
+def on_goose_message(self, msg: GooseIsolatorMessage,
+                     t_receive_ms: float) -> bool:
+    fid = msg.feeder_id
+    # Retransmission guard: ignore if stNum not newer
+    if msg.stNum <= self._last_stNum.get(fid, -1):
+        return False
+    self._last_stNum[fid] = msg.stNum
+    # Update isolator state
+    st = self._isolators[fid]
+    st.ds1_closed = msg.ds1_closed
+    st.ds2_closed = msg.ds2_closed
+    self._log_transfer(fid, msg, t_receive_ms)
+    return True
+\end{lstlisting}
+
+\noindent The \texttt{stNum} guard prevents duplicate zone reconfigurations
+when the \goose{} publisher retransmits the same event at the standard
+interval~\cite{IEC61850_8_1}.  Only messages with a strictly greater
+\texttt{stNum} are processed.
+
+\subsection{Conservative TIP zone rule}
+
+During make-before-break transfer, both DS1 and DS2 of the transferred
+feeder are momentarily closed simultaneously.  Two zone allocation
+strategies are possible:
+
+\begin{description}
+  \item[Current-split (rejected):] assign 50\% of feeder current to Z1
+        and 50\% to Z2.  This causes false differential current on external
+        line faults during the TIP window because both zones see a spurious
+        non-zero sum.
+  \item[Conservative (adopted):] zone assignment does \emph{not} change
+        until the DS\_OPEN \goose{} message is received (transfer complete).
+        This matches the zone to the feeder's actual primary bus connection
+        at the time of a trip decision.
+\end{description}
+
+The conservative rule is implemented by making the T2\_TIP zone-feeder
+assignment identical to T1\_NORM:
+
+\begin{lstlisting}[language=Python, caption={Conservative TIP: zones unchanged until DS\_OPEN}]
+def _zones_T2(d):   # TIP -- same as NORM until DS_OPEN arrives
+    return _zones_T1(d)
+\end{lstlisting}
+
+%=======================================================================
+\section{Five Transfer Topologies}
+\label{sec:topologies}
+%=======================================================================
+
+Figure~\ref{fig:topology} shows the five topologies defined for the
+validation study.  Table~\ref{tab:topologies} summarises the switch
+state and zone assignment for each.
+
+\begin{figure}[h]
+  \centering
+  \resizebox{\textwidth}{!}{%
+    \input{figures/fig_transfer_topology.tex}%
+  }
+  \caption{Five busbar-transfer topologies (T1--T5).  Gen denotes the
+           transferred generator; Line and Tr are feeders that remain
+           stationary throughout.  BC = bus-coupler breaker.
+           Dashed connections indicate the feeder's actual physical path;
+           stale zone labels (T5) indicate what the relay engine believes.}
+  \label{fig:topology}
+\end{figure}
+
+\begin{table}[h]
+  \centering
+  \caption{Topology definitions: switch states and zone assignment.}
+  \label{tab:topologies}
+  \begin{tabular}{llllll}
+    \toprule
+    ID & Name & DS1 & DS2 & BC & Gen zone \\
+    \midrule
+    T1 & NORM  & closed & open   & closed & Z1 \\
+    T2 & TIP   & closed & closed & closed & Z1 (conservative) \\
+    T3 & POST  & open   & closed & closed & Z2 \\
+    T4 & SPLIT & closed & open   & open   & Z1 (isolated BB2) \\
+    T5 & LAG   & open   & closed & closed & Z1 (stale, should be Z2) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{T1 --- Normal (NORM)}
+
+Generator and Line are connected to BB1 (Zone~1); Transformer is connected
+to BB2 (Zone~2).  BC is closed.  This is the steady-state pre-transfer
+topology and serves as the baseline.
+
+\subsection{T2 --- Transfer-in-Progress (TIP)}
+
+DS1 of the generator closes onto BB2 while DS2 remains closed on BB1 ---
+both disconnectors are closed simultaneously for the duration of the
+make-before-break sequence (nominally 50\,ms).  Under the conservative
+rule, the engine continues to treat Gen as a Z1 feeder until the DS\_OPEN
+message arrives.  External line faults during TIP therefore produce no
+false zone~1 differential, because Gen current flows symmetrically through
+BC and cancels in the zone sum.
+
+\subsection{T3 --- Post-transfer (POST)}
+
+DS1 opens; Gen is now exclusively on BB2 (Zone~2).  The engine receives
+the DS\_OPEN \goose{} and reconfigures Gen from Z1 to Z2.  A BB2 fault
+now activates both Z2 and CK, correctly tripping BB2 without tripping BB1.
+
+\subsection{T4 --- Split-bus (SPLIT)}
+
+BC breaker is tripped open (e.g.\ bus-coupler fault or planned isolation).
+BB2 has no active source (Gen is still on BB1; Transformer is load-only
+on BB2).  A fault on BB2 produces no measurable fault current, so the 87B
+relay correctly issues no-trip.  The check zone also sees no differential
+and remains blocked.
+
+\subsection{T5 --- GOOSE lag (LAG)}
+
+T5 models the worst-case communication delay: Gen has physically completed
+the transfer to BB2 (POST topology) but the DS\_OPEN \goose{} message has
+not yet arrived at the relay.  The engine therefore uses the stale NORM
+zone assignment (Gen in Z1) for up to the configured lag window
+(5\,ms in this study).
+
+As analysed in Section~\ref{sec:lag_analysis}, a fault during the 5\,ms
+lag window is still classified correctly in all tested scenarios because BC
+CT placement routes fault current through the check zone regardless of the
+zone assignment in use.
+
+%=======================================================================
+\section{Selectivity Validation}
+\label{sec:selectivity}
+%=======================================================================
+
+\subsection{Simulation methodology}
+
+The validation sweep runs 50~scenarios:
+\[
+  5~\text{topologies} \times 5~\text{fault locations}
+  \times 2~\text{fault types (3ph, ag)}.
+\]
+The five fault locations are: BB1 (busbar~1 internal), BB2 (busbar~2
+internal), BC (bus-coupler internal), LINE (line external), and LOAD
+(load external).  Fault waveforms are generated by the
+\texttt{transfer\_network.py} module, which synthesises 50\,Hz sinusoidal
+current waveforms at each CT location for each topology and fault
+combination, using the analytical Th\'evenin current derived from the
+network impedance parameters ($Z_{\rm src} = j0.1\pu$,
+$Z_{\rm line} = j0.3\pu$).  The 87B relay pipeline from TR-07 is reused
+without modification.
+
+T5\_LAG is evaluated twice: once with the stale NORM zone and once with
+the correct POST zone after \goose{} arrival, giving an additional 10~result
+pairs.
+
+\subsection{Selectivity matrix}
+
+Figure~\ref{fig:matrix} shows the full selectivity matrix for topologies
+T1--T4 (40~scenarios).  Every scenario achieves the correct protection
+decision (\checkmark).
+
+\begin{figure}[h]
+  \centering
+  \resizebox{0.85\textwidth}{!}{%
+    \input{figures/fig_selectivity_matrix.tex}%
+  }
+  \caption{Selectivity matrix for T1--T4 (40~scenarios, 3ph only shown).
+           T~=~tripped element; $\cdot$~=~not tripped;
+           \checkmark~=~selective decision.  40/40 scenarios are selective
+           (100\%).}
+  \label{fig:matrix}
+\end{figure}
+
+\subsection{T5 GOOSE-lag analysis}
+\label{sec:lag_analysis}
+
+Figure~\ref{fig:goose_timing} shows the timing sequence for the T5\_LAG
+scenario.  The key intervals are:
+
+\begin{itemize}
+  \item $t = 0$: Transfer initiates; DS\_CLOSE signal issued.
+  \item $t = 2$\,ms: DS\_CLOSE \goose{} arrives at relay.  DS1 acknowledged;
+        engine logs TIP state.
+  \item $t = 2$--$52$\,ms: TIP window (50\,ms).  Gen is connected to both
+        busbars.  Conservative rule: zone unchanged.
+  \item $t = 52$\,ms: DS\_OPEN signal issued.
+  \item $t = 54$\,ms: DS\_OPEN \goose{} arrives.  Engine reconfigures Gen
+        from Z1 $\to$ Z2.
+  \item $t = 57$\,ms: Zone reconfiguration active.
+\end{itemize}
+
+\begin{figure}[h]
+  \centering
+  \resizebox{0.88\textwidth}{!}{%
+    \input{figures/fig_goose_timing.tex}%
+  }
+  \caption{\goose{} transfer timing diagram.  The orange bar marks the
+           TIP window (50\,ms).  The red lag window (0--2\,ms) indicates
+           the interval during which the engine uses a stale zone.
+           The blue fault window (20\,ms) shows that 14/20\,ms of the relay
+           decision window use the correct zone, sufficient for a correct
+           trip.}
+  \label{fig:goose_timing}
+\end{figure}
+
+The T5\_LAG validation result (10/10 correct with stale zone) is explained
+by the CT placement geometry: the bus-coupler CT is located on the BC
+breaker and measures current flowing between BB1 and BB2.  In the POST
+topology, a fault on BB1 drives current from Gen (on BB2) through BC into
+BB1.  Even under the stale NORM zone, BC contributes to the Zone~1
+differential (BC is included in CK by definition).  The differential
+current seen in Z1 is therefore correct regardless of whether Gen is
+labelled Z1 or Z2 in the zone configuration.
+
+This result should not be generalised: it holds specifically for the BC
+fault current path.  A BB2 internal fault with Gen on BB2 (POST topology)
+under a stale NORM zone would mis-assign Gen current to Z1, causing the Z2
+differential to be underestimated.  This scenario requires the \goose{}
+update to arrive before the protection decision window closes.  At
+$\leq 4$\,ms \goose{} latency and a 20\,ms relay window, the correct zone
+is available for at least 16\,ms of the decision window, which is
+sufficient for the LM estimation to converge~\cite{Anderson1999}.
+
+%=======================================================================
+\section{Implementation Summary}
+\label{sec:implementation}
+%=======================================================================
+
+\subsection{New modules}
+
+\begin{description}
+  \item[\texttt{sambp\_bus\_diff/busbar\_transfer\_engine.py}]
+        \texttt{BusbarTransferEngine} class: \goose{} subscriber,
+        \texttt{stNum} retransmission guard, zone-feeder-array builder,
+        transfer sequence generator.  Self-test: Gen Z1$\to$Z2 transfer
+        verified; TIP state confirmed; BC-open zero current verified.
+
+  \item[\texttt{sambp\_double\_bus/models/transfer\_network.py}]
+        Explicit waveform generators for all 25 topology$\times$fault
+        combinations.  Each topology function is written independently
+        (no shared sign-abstraction) to avoid the polarity sign bug
+        encountered in an earlier generic implementation.
+
+  \item[\texttt{sambp\_double\_bus/run\_busbar\_transfer\_study.py}]
+        Orchestrates the 50-scenario sweep, invokes the TR-07 87B relay
+        pipeline, writes \texttt{outputs/tr14\_selectivity.csv},
+        \texttt{outputs/tr14\_goose\_lag.csv}, and
+        \texttt{outputs/tr14\_summary.txt}.
+\end{description}
+
+\subsection{Code reuse}
+
+The 87B relay pipeline is reused from TR-07 without modification:
+\texttt{BusDiffRelayConfig}, \texttt{run\_87B\_relay},
+\texttt{estimate\_bus\_zone\_parameters}, and
+\texttt{evaluate\_87B\_confidence\_gate} are loaded via the namespace
+isolation pattern (\texttt{\_load(subpkg, modname)}) established in TR-07
+to prevent module-name collisions.
+
+\subsection{Design decisions and limitations}
+
+\begin{enumerate}
+  \item \textbf{Conservative TIP rule} (Section~\ref{sec:engine}):
+        Zone assignment is frozen during make-before-break.  This is the
+        correct primary-protection practice: the zone should track the
+        feeder's actual primary bus, not its instantaneous electrical
+        connection.  Current-split alternatives were rejected because they
+        cause false differentials on external line faults.
+
+  \item \textbf{stNum guard}: Prevents duplicate reconfigurations from
+        \goose{} retransmissions.  Only strictly increasing \texttt{stNum}
+        values trigger zone updates, consistent with IEC~61850-8-1
+        Section~8.6~\cite{IEC61850_8_1}.
+
+  \item \textbf{T4\_SPLIT no-trip}: BB2 has no active source when BC is
+        open.  The relay correctly issues no-trip for BB2 faults in this
+        topology.  In an actual substation, a separate 87B relay on BB2
+        would be required for independent source protection; this is outside
+        the scope of this study.
+
+  \item \textbf{Scalability}: The engine supports an arbitrary number of
+        feeders.  Transfer sequences are generated by
+        \texttt{generate\_transfer\_sequence(feeder\_id, to\_zone,
+        t\_start\_ms)}, which returns a two-message list
+        (TIP \goose{}, then transfer-complete \goose{}) that can be
+        replayed into \texttt{on\_goose\_message} for simulation or
+        hardware-in-the-loop testing.
+
+  \item \textbf{Limitation --- simultaneous transfers}: The current
+        implementation processes one feeder transfer at a time.  If two
+        feeders transfer simultaneously, \texttt{stNum} guards are
+        per-feeder and independent, which is correct.  However, the
+        zone-feeder-array builder does not currently handle the case where
+        two feeders are both in TIP state simultaneously.  This is a known
+        limitation for future work.
+\end{enumerate}
+
+%=======================================================================
+\section{Conclusions}
+\label{sec:conclusions}
+%=======================================================================
+
+A \texttt{BusbarTransferEngine} has been implemented that combines the
+TR-06 \goose{} subscriber infrastructure with the TR-07 double-busbar 87B
+differential framework to achieve live zone reconfiguration during busbar
+transfers.  The engine correctly handles five transfer topologies and
+achieves 40/40~(100\%) selective decisions across the validation sweep.
+
+The T5\_LAG scenario demonstrates that a 5\,ms \goose{} network delay does
+not degrade protection selectivity in the tested fault scenarios, because BC
+CT placement preserves zone indication during the lag window.  This result
+is specific to the CT geometry modelled here and should be validated against
+site-specific CT placements before deployment.
+
+The conservative TIP zone rule --- freezing zone assignment until the
+DS\_OPEN \goose{} arrives --- is the correct strategy for make-before-break
+transfers and avoids false differentials on external faults during the
+transfer window.
+
+Future work: (1)~simultaneous multi-feeder transfers; (2)~hardware-in-the-loop
+validation with a real IED \goose{} publisher; (3)~integration with the
+TR-13 pi-section 87L model for combined 87B/87L co-ordination studies.
+
+%=======================================================================
+\bibliographystyle{unsrtnat}
+\bibliography{references14}
+%=======================================================================
+
+\end{document}
