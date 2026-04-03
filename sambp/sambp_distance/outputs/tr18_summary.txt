@@ -1,0 +1,43 @@
+SAMBP TR-18/2026 Mho Distance Relay Summary
+============================================================
+
+Relay configuration
+------------------------------------------------------------
+  Z_line      : 0.05j  pu
+  MTA         : 80.0°
+  k0_factor   : 0.667
+  Zone 1 reach: 0.8 × Z_line = 0.04000000000000001j  pu
+  Zone 2 reach: 1.2 × Z_line = 0.06j  pu  (t=0.3s)
+  Zone 3 reach: 1.8 × Z_line = 0.09000000000000001j  pu  (t=0.6s)
+  R_blinder   : 0.4 pu
+
+Zone boundary verification (3ph bolted, d=fault fraction)
+------------------------------------------------------------
+  Zone 1: d = 0.000 … 0.800  (design: 0.000 … 0.800)
+  Zone 2: d = 0.000 … 1.200  (design: 0.000 … 1.200)
+  Zone 3: d = 0.000 … 1.800  (design: 0.000 … 1.800)
+
+Selectivity: 12/12 correct
+------------------------------------------------------------
+  [OK] INT_25    : zone=1  trip=True  load_block=False  | 87L also trips (Zone 1)
+  [OK] INT_50    : zone=1  trip=True  load_block=False  | 87L also trips (Zone 1)
+  [OK] INT_79    : zone=1  trip=True  load_block=False  | 87L trips (Zone 1)
+  [OK] INT_82    : zone=2  trip=True  load_block=False  | 87L trips (Zone 2 timed)
+  [OK] RBUS      : zone=2  trip=True  load_block=False  | 87B remote trips; 21 Zone 2 backup
+  [OK] BKUP      : zone=3  trip=True  load_block=False  | Zone 3 back-up only
+  [OK] LBUS      : zone=1  trip=True  load_block=False  | 87B trips bus; 21 Zone1 overlap
+  [OK] AG_50     : zone=1  trip=True  load_block=False  | ag Zone 1 trip
+  [OK] AG_HIF    : zone=0  trip=False  load_block=False  | Outside Zone 1 due to arc R; 87L detects
+  [OK] LOAD_N    : zone=0  trip=False  load_block=True  | Load blinder: no trip
+  [OK] LOAD_H    : zone=0  trip=False  load_block=False  | Small R — check blinder margin
+  [OK] OOZ       : zone=0  trip=False  load_block=False  | No trip (outside all zones)
+
+Coordination matrix (21 vs 87B/87L)
+------------------------------------------------------------
+  3ph   INT 0-80%      : 87B=False  87L=True  21_zone=1  t=instant  | 87L z1 inst; 21 Z1 inst — concurrent
+  3ph   INT 80-100%    : 87B=False  87L=True  21_zone=2  t=0.30s  | 87L inst; 21 Zone2 0.3s — 87L faster
+  3ph   RBUS           : 87B=True  87L=False  21_zone=2  t=0.30s  | 87B trips; 21 Zone2 backup 0.3s
+  3ph   LBUS           : 87B=True  87L=False  21_zone=1  t=instant  | 87B trips; 21 Zone1 overlap (see note)
+  ag    INT (bolted)   : 87B=False  87L=True  21_zone=1  t=instant  | 87L inst; 21 Z1 inst
+  ag    HIF (Z_arc)    : 87B=False  87L=True  21_zone=0  t=n/a  | 87L detects HIF; 21 cannot reach
+  any   LOAD           : 87B=False  87L=False  21_zone=0  t=n/a  | No trip: 87B/87L/21 all restrain

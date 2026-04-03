@@ -1,0 +1,70 @@
+% fig_zone_coordination.tex
+% Single-line diagram showing 87B/87L/21 zones along the protected line
+% Local bus (BB1) --- line --- Remote bus (BB2)
+\begin{tikzpicture}[
+  bus/.style={draw, fill=gray!20, minimum height=10pt, minimum width=8pt,
+              font=\scriptsize},
+  zone/.style={draw, rounded corners=2pt, font=\scriptsize, align=center,
+               inner xsep=4pt, inner ysep=2pt},
+  arr/.style={-latex, thick},
+  darr/.style={latex-latex, thick},
+  sig/.style={font=\scriptsize},
+  lab/.style={font=\scriptsize\itshape},
+]
+
+% ---- Buses -----------------------------------------------------------------
+\node[bus, minimum height=60pt] (LB) at (0, 0) {};
+\node[sig, above=2pt of LB, align=center] {Local bus\\(BB1)};
+\node[bus, minimum height=60pt] (RB) at (9, 0) {};
+\node[sig, above=2pt of RB, align=center] {Remote bus\\(BB2)};
+
+% ---- Line -----------------------------------------------------------------
+\draw[very thick] (LB.east) -- node[above, sig]{$Z_{\rm line} = j0.05$\,pu} (RB.west);
+
+% ---- Fault markers ---------------------------------------------------------
+\foreach \d/\lbl in {2.25/25\%, 4.5/50\%, 7.11/79\%, 7.38/82\%} {
+  \fill[blue!60!black] (\d, 0) circle (2pt);
+  \node[font=\tiny, below=3pt] at (\d, 0) {\lbl};
+}
+% Remote bus fault
+\fill[green!50!black] (9.4, 0) circle (2pt);
+\node[font=\tiny, below=3pt] at (9.4, 0) {RBUS};
+
+% ---- Zone 1 bracket --------------------------------------------------------
+\draw[{latex[length=4pt]}-{latex[length=4pt]}, blue!80!black, very thick]
+  (0, -1.0) -- node[below, font=\scriptsize\bfseries, blue!80!black]{Zone 1 ($0.80 \times Z_{\rm line}$, instant)}
+  (7.2, -1.0);
+
+% ---- Zone 2 bracket --------------------------------------------------------
+\draw[{latex[length=4pt]}-{latex[length=4pt]}, blue!50!black, thick, dashed]
+  (0, -1.7) -- node[below, font=\scriptsize, blue!50!black]{Zone 2 ($1.20 \times Z_{\rm line}$, 0.30\,s)}
+  (10.8, -1.7);
+
+% ---- Zone 3 bracket --------------------------------------------------------
+\draw[{latex[length=4pt]}-{latex[length=4pt]}, blue!30!black, thick, dotted]
+  (0, -2.4) -- node[below, font=\scriptsize, blue!30!black]{Zone 3 ($1.80 \times Z_{\rm line}$, 0.60\,s)}
+  (16.2, -2.4);
+
+% ---- 87L zone annotation ---------------------------------------------------
+\draw[{latex[length=4pt]}-{latex[length=4pt]}, orange!80!black, very thick]
+  (0, 0.9) -- node[above, font=\scriptsize\bfseries, orange!80!black]
+    {87L line differential zone (entire line, instant)}
+  (9, 0.9);
+
+% ---- 87B zone annotations --------------------------------------------------
+\node[zone, fill=green!10, draw=green!50!black]
+  at (0, -3.5) {87B\\Local bus};
+\node[zone, fill=green!10, draw=green!50!black]
+  at (9, -3.5) {87B\\Remote bus};
+
+% ---- Relay location --------------------------------------------------------
+\fill[black] (0, 0) circle (3pt);
+\node[font=\scriptsize\bfseries, align=center] at (-0.6, 0) {Relay\\(21)};
+
+% ---- HIF annotation (outside all zones) ------------------------------------
+\node[draw, fill=red!5, rounded corners=2pt, font=\scriptsize, align=center]
+  at (4.5, 2.0)
+  {ag HIF ($Z_{\rm arc}=1.5j$\,pu)\\outside Zone 1 reach\\87L detects (TR-15)};
+\draw[-latex, red!60!black] (4.5, 1.55) -- (4.5, 0.2);
+
+\end{tikzpicture}
