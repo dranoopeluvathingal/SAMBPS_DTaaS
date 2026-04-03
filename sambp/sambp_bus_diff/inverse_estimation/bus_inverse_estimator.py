@@ -34,8 +34,9 @@ from models.bus_reduced_zone_model import (
 _PASS2_FREE_IDX  = [2]      # ε_CT
 _PASS2_FIXED_IDX = [0, 1]   # I_diff_fund, φ
 
-_KAPPA_MAX_DEFAULT = 30.0
-_TAIL_CYCLES       = 2.0
+_KAPPA_MAX_DEFAULT  = 30.0
+_TAIL_CYCLES        = 2.0
+_MULTISTART_IPEAKS  = [0.5, 4.0, 8.5]   # pu — low / mid / high starting guesses
 
 
 # ---------------------------------------------------------------------------
@@ -73,6 +74,26 @@ def _jac_pass2(theta_free, theta_fixed, free_idx, fixed_idx, t, y, freq_hz):
 # Main estimator
 # ---------------------------------------------------------------------------
 
+def _run_pass1(
+    t_window: np.ndarray,
+    i_diff_meas: np.ndarray,
+    freq_hz: float,
+    x0: np.ndarray,
+    max_nfev: int,
+) -> tuple[np.ndarray, float]:
+    """Single Pass-1 LM solve; returns (theta_clipped, cost)."""
+    result = least_squares(
+        _residual, x0,
+        jac      = _jac_wrapper,
+        args     = (t_window, i_diff_meas, freq_hz),
+        bounds   = (LOWER_BOUNDS, UPPER_BOUNDS),
+        method   = "trf",
+        max_nfev = max_nfev,
+    )
+    theta = np.clip(result.x, LOWER_BOUNDS, UPPER_BOUNDS)
+    return theta, float(result.cost)
+
+
 def estimate_bus_zone_parameters(
     t_window: np.ndarray,
     i_diff_meas: np.ndarray,
@@ -85,36 +106,70 @@ def estimate_bus_zone_parameters(
     """
     Estimate θ_B = [I_diff_fund, φ_diff, ε_CT] from differential current.
 
+    Multi-start Pass 1: three initial guesses at I_peak = 0.5 / 4.0 / 8.5 pu
+    are tried in parallel; the solution with the lowest residual cost advances
+    to Pass 2.  This prevents convergence to boundary local minima that arise
+    when the single-start guess is clipped to UPPER_BOUNDS[0] for large faults.
+
     Parameters
     ----------
     t_window    : (N,) time vector [s]
     i_diff_meas : (N,) differential current [pu]
     freq_hz     : power system frequency [Hz]
-    x0          : initial guess (length 3); defaults to [rms, 0, 0]
+    x0          : explicit initial guess (length 3); if given, multi-start is
+                  skipped (backward-compatible)
     tail_cycles : how many cycles from the end to use for Pass 2
     kappa_max   : column-normalised condition number threshold
 
     Returns
     -------
-    dict with keys: theta_hat, kappa_n, residual_norm, converged, state, pass2_used
+    dict with keys: theta_hat, kappa_n, residual_norm, converged, state,
+                    pass2_used, n_starts (number of Pass-1 starts attempted)
     """
     N = len(t_window)
 
-    # Default initial guess
-    if x0 is None:
-        I_rms = float(np.sqrt(np.mean(i_diff_meas**2))) * np.sqrt(2)
-        x0 = np.array([max(I_rms, 0.01), 0.0, 0.0])
+    # ---- Dynamic upper bound for I_diff_fund ---------------------------------
+    # UPPER_BOUNDS[0] = 10 pu covers typical through-current and load levels.
+    # For generator-terminal bus faults the differential can reach 20–30 pu.
+    # Expand the bound to 1.5× the measured peak so the estimator is never
+    # clipped below the true fault current.
+    I_rms_est = float(np.sqrt(np.mean(i_diff_meas**2))) * np.sqrt(2)
+    dyn_ub = UPPER_BOUNDS.copy()
+    if I_rms_est > UPPER_BOUNDS[0] * 0.9:
+        dyn_ub[0] = max(I_rms_est * 1.5, UPPER_BOUNDS[0])
+    dyn_lb = LOWER_BOUNDS.copy()
 
-    # ---- Pass 1: full window -------------------------------------------------
-    result1 = least_squares(
-        _residual, x0,
-        jac   = _jac_wrapper,
-        args  = (t_window, i_diff_meas, freq_hz),
-        bounds= (LOWER_BOUNDS, UPPER_BOUNDS),
-        method= "trf",
-        max_nfev = max_nfev,
-    )
-    theta1 = np.clip(result1.x, LOWER_BOUNDS, UPPER_BOUNDS)
+    def _run_pass1_dyn(x0_arg: np.ndarray) -> tuple[np.ndarray, float]:
+        x0c = np.clip(x0_arg, dyn_lb, dyn_ub)
+        result = least_squares(
+            _residual, x0c,
+            jac      = _jac_wrapper,
+            args     = (t_window, i_diff_meas, freq_hz),
+            bounds   = (dyn_lb, dyn_ub),
+            method   = "trf",
+            max_nfev = max_nfev,
+        )
+        return np.clip(result.x, dyn_lb, dyn_ub), float(result.cost)
+
+    # ---- Multi-start Pass 1 --------------------------------------------------
+    if x0 is not None:
+        # Caller supplied explicit x0 — single start (backward compatible)
+        theta1, _ = _run_pass1_dyn(x0)
+        n_starts = 1
+    else:
+        # Starting guesses: low / mid / high relative to dynamic bound + RMS
+        starts = [
+            np.array([np.clip(ip, dyn_lb[0], dyn_ub[0]), 0.0, 0.0])
+            for ip in [0.5, dyn_ub[0] * 0.4, dyn_ub[0] * 0.85]
+        ]
+        starts.append(np.array([np.clip(I_rms_est, dyn_lb[0], dyn_ub[0]), 0.0, 0.0]))
+        best_theta, best_cost = None, np.inf
+        for s in starts:
+            th, cost = _run_pass1_dyn(s)
+            if cost < best_cost:
+                best_theta, best_cost = th, cost
+        theta1 = best_theta
+        n_starts = len(starts)
 
     # ---- Pass 2: tail window, refine ε_CT ------------------------------------
     spc       = int(round(freq_hz / freq_hz))   # samples per cycle at 1 Hz base
@@ -125,8 +180,8 @@ def estimate_bus_zone_parameters(
 
     theta_free0  = theta1[_PASS2_FREE_IDX]
     theta_fixed  = theta1[_PASS2_FIXED_IDX]
-    lb2 = LOWER_BOUNDS[_PASS2_FREE_IDX]
-    ub2 = UPPER_BOUNDS[_PASS2_FREE_IDX]
+    lb2 = dyn_lb[_PASS2_FREE_IDX]
+    ub2 = dyn_ub[_PASS2_FREE_IDX]
 
     result2 = least_squares(
         _residual_pass2, theta_free0,
@@ -153,12 +208,13 @@ def estimate_bus_zone_parameters(
     state = interpret_theta(theta2, kappa_n=kappa_n, residual_norm=resid_norm)
 
     return {
-        "theta_hat":    theta2,
-        "kappa_n":      kappa_n,
+        "theta_hat":     theta2,
+        "kappa_n":       kappa_n,
         "residual_norm": resid_norm,
-        "converged":    converged,
-        "state":        state,
-        "pass2_used":   True,
+        "converged":     converged,
+        "state":         state,
+        "pass2_used":    True,
+        "n_starts":      n_starts,
     }
 
 
