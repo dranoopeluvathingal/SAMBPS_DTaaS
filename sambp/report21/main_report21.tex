@@ -1,0 +1,386 @@
+% main_report21.tex
+% SAMBP TR-21/2026 -- Harmonic-Component Discrimination for 87L in IBR-Rich Networks
+% Compile: pdflatex -> bibtex -> pdflatex -> pdflatex
+\documentclass[11pt, a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=25mm]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs, array, multirow}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc, fit, backgrounds, shapes.geometric}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{parskip}
+\usepackage{natbib}
+\usepackage{pifont}
+
+\hypersetup{colorlinks=true, linkcolor=blue!60!black, citecolor=blue!60!black,
+            urlcolor=blue!60!black}
+
+\definecolor{okgreen}{RGB}{0,130,60}
+
+\title{\textbf{SAMBP TR-21/2026}\\[4pt]
+       \large Harmonic-Component Discrimination for 87L\\
+       in Inverter-Based Resource Rich Networks}
+\author{PhD Candidate\\[2pt]
+        \small Smart Adaptive Multi-Bus Protection Research}
+\date{April 2026}
+
+% ============================================================================
+\begin{document}
+\maketitle
+\tableofcontents
+\vspace{6pt}\hrule\vspace{10pt}
+
+% ============================================================================
+\section{Background and Motivation}
+\label{sec:background}
+
+The SAMBP 87L LM estimator (TR-11~\cite{SAMBP_TR11}, TR-15~\cite{SAMBP_TR15})
+fits a 4-parameter model to the corrected differential current:
+\begin{equation}
+  i_{\rm diff}(t) = I_{\rm fund}\sin(\omega_0 t + \phi)
+                  + I_{\rm DC}\,e^{-t/\tau_{\rm DC}}
+\end{equation}
+The confidence gate uses the normalised residual norm $r_n$:
+\begin{equation}
+  c = \exp(-r_n), \qquad
+  r_n = \frac{\|i_{\rm diff} - i_{\rm model}\|}{\|i_{\rm diff}\|}
+\end{equation}
+with a minimum confidence $c_{\min} = 0.80$ required to authorise a trip.
+
+\subsection{Harmonic injection from IBRs}
+
+In synchronous-generator (SG) networks the model fits well: $r_n < 0.02$ for
+a healthy line, yielding $c > 0.98$.
+
+In inverter-based resource (IBR) networks the situation is fundamentally
+different~\cite{Yazdani2014,Hooshyar2019}.  Modern voltage-sourced converters
+inject harmonic current even in normal operation:
+\begin{itemize}
+  \item \textbf{Steady-state THD}: up to 5\% (IEEE~519~\cite{IEEE_519}) for
+        grid-connected inverters at rated output.
+  \item \textbf{Fault ride-through}: current-limiting control can amplify
+        odd harmonics (3rd, 5th, 7th) by 2--5$\times$ above the steady-state
+        level during the first 3--5 cycles post-fault.
+\end{itemize}
+
+For a 3rd harmonic injection of $I_{h3} = 0.005$\,pu with a healthy-line
+fundamental of $I_{\rm fund} = 0.003$\,pu (post TR-20 correction), the
+normalised residual is:
+\begin{equation}
+  r_n \approx \frac{I_{h3,\rm rms}}{I_{\rm diff,rms}}
+           \approx \frac{0.004}{0.005} = 0.86
+  \quad \Rightarrow \quad c \approx e^{-0.86} = 0.42
+\end{equation}
+This drops confidence below $c_{\min}=0.80$, triggering the veto gate even
+for valid fault trips in IBR-heavy systems.
+
+\subsection{Proposed solution: harmonic pre-filter}
+
+The TR-21 harmonic pre-filter estimates and subtracts the dominant odd
+harmonics from $\Delta i'$ using linear least squares \emph{before} the LM
+estimator:
+\begin{equation}
+  \Delta i''(t) = \Delta i'(t)
+    - \sum_{h \in \{3,5,7\}}
+      \bigl[A_h\cos(h\omega_0 t) + B_h\sin(h\omega_0 t)\bigr]
+  \label{eq:filter}
+\end{equation}
+where the coefficients $A_h$, $B_h$ are estimated by linear least squares on
+the current measurement window.  The filtered signal $\Delta i''$ is then
+passed to the LM estimator, which sees only the fundamental and DC components.
+
+
+% ============================================================================
+\section{Harmonic Pre-Filter Algorithm}
+\label{sec:algorithm}
+
+\subsection{Least-Squares Harmonic Estimation}
+
+Let the harmonic regressor matrix be:
+\begin{equation}
+  \mathbf{H} = \bigl[\cos(3\omega_0 \mathbf{t}),\; \sin(3\omega_0 \mathbf{t}),\;
+                      \cos(5\omega_0 \mathbf{t}),\; \sin(5\omega_0 \mathbf{t}),\;
+                      \cos(7\omega_0 \mathbf{t}),\; \sin(7\omega_0 \mathbf{t})\bigr]
+  \label{eq:H_mat}
+\end{equation}
+of shape $(N_{\rm samp}, 6)$.  The coefficient vector is obtained by:
+\begin{equation}
+  \hat{\boldsymbol{c}} = (\mathbf{H}^T\mathbf{H})^{-1}\mathbf{H}^T\Delta i'
+  \label{eq:lstsq}
+\end{equation}
+This is a direct (non-iterative) linear solve requiring only one QR
+factorisation per protection cycle.  For $N_{\rm samp} = 160$ (2 cycles at
+4000\,Sa/s) and 6 regressors the solution takes $< 0.05$\,ms on a standard IED
+DSP.
+
+\subsection{Amplitude threshold}
+
+Harmonics with estimated amplitude $\sqrt{A_h^2 + B_h^2} < 10^{-4}$\,pu are
+not subtracted (assumed numerical noise).  This prevents the filter from
+subtracting artefacts when no real harmonic is present.
+
+\subsection{Harmonic ratio diagnostic}
+
+The harmonic ratio:
+\begin{equation}
+  H_{\rm ratio} = \frac{I_{\rm harm,rms}}{I_{\rm fund,DFT}}
+\end{equation}
+is logged as a network-type indicator:
+\begin{itemize}
+  \item $H_{\rm ratio} < 0.05$: SG-dominated (low harmonics)
+  \item $0.05 \leq H_{\rm ratio} \leq 0.20$: mixed network
+  \item $H_{\rm ratio} > 0.20$: IBR-dominated (high harmonics)
+\end{itemize}
+
+\subsection{Processing pipeline}
+
+Figure~\ref{fig:pipeline} shows the TR-21 processing pipeline.  The harmonic
+pre-filter is inserted between the charging correction (TR-20) and the LM
+estimator — a single additional stage with no changes to downstream logic.
+
+\begin{figure}[h]
+  \centering
+  \resizebox{\textwidth}{!}{\input{figures/fig_harm_filter_pipeline}}
+  \caption{SAMBP 87L processing pipeline with TR-21 harmonic pre-filter
+           (highlighted green).  The dashed arrow exports the $H_{\rm ratio}$
+           diagnostic to the protection management system.
+           All downstream blocks (LM estimator, confidence gate, trip logic)
+           are unchanged.}
+  \label{fig:pipeline}
+\end{figure}
+
+
+% ============================================================================
+\section{Study Results}
+\label{sec:results}
+
+\subsection{Study A: No-Fault Confidence vs Harmonic Injection}
+
+Figure~\ref{fig:conf} shows the LM confidence score for a healthy line with
+increasing 3rd harmonic injection ($I_{h5} = 0.5\,I_{h3}$,
+$I_{h7} = 0.25\,I_{h3}$, consistent with IBR spectral profile).
+
+\begin{figure}[h]
+  \centering
+  \input{figures/fig_confidence_vs_harm}
+  \caption{LM confidence score vs 3rd harmonic injection amplitude,
+           healthy-line (no fault) condition.
+           Without pre-filter: confidence collapses to $\approx 0.37$
+           at any non-zero $I_{h3}$ (below $c_{\min}=0.80$, dashed).
+           TR-21 pre-filter: confidence remains $\approx 1.00$ at all levels.}
+  \label{fig:conf}
+\end{figure}
+
+Without pre-filtering, even $I_{h3} = 0.005$\,pu (1/3 of IEEE~519 THD limit)
+drives confidence to $c = 0.41$, below the $c_{\min}=0.80$ gate.  With TR-21
+pre-filtering, confidence remains $c \approx 1.00$ at all injection levels
+tested (up to $I_{h3} = 0.10$\,pu).
+
+\subsection{Study B: Internal Fault Trip Correctness}
+
+Table~\ref{tab:trip} shows that the fault fundamental ($I_{\rm fund}=0.15$\,pu)
+is correctly recovered after harmonic pre-filtering at all harmonic levels.
+Both methods trip correctly; the pre-filter improves the confidence so the
+trip reaches the veto gate.
+
+\begin{table}[h]
+  \centering
+  \caption{Internal fault (0.15\,pu) DFT-recovered fundamental and trip
+           decision after harmonic pre-filter.  Threshold~=~0.12\,pu.}
+  \label{tab:trip}
+  \begin{tabular}{ccccc}
+    \toprule
+    $I_{h3}$ [pu] & $I_{\rm fund,DFT}$ [pu] & $I_{\rm fund,filt}$ [pu]
+    & Trip (fixed) & Trip (TR-21) \\
+    \midrule
+    0.000 & 0.150 & 0.150 & \ding{51} & \ding{51} \\
+    0.005 & 0.150 & 0.150 & \ding{51} & \ding{51} \\
+    0.010 & 0.150 & 0.150 & \ding{51} & \ding{51} \\
+    0.030 & 0.150 & 0.150 & \ding{51} & \ding{51} \\
+    0.050 & 0.150 & 0.150 & \ding{51} & \ding{51} \\
+    0.080 & 0.150 & 0.150 & \ding{51} & \ding{51} \\
+    0.100 & 0.150 & 0.150 & \ding{51} & \ding{51} \\
+    \bottomrule
+    \multicolumn{5}{l}{\footnotesize Note: $I_{\rm fund}$ is invariant to
+      harmonic injection because 50\,Hz and 150/250/350\,Hz are orthogonal}\\
+    \multicolumn{5}{l}{\footnotesize over an integer number of power cycles.
+      The pre-filter improves confidence, not the amplitude estimate.}\\
+  \end{tabular}
+\end{table}
+
+\subsection{Study C: External Fault Security}
+
+With no true fundamental differential, the DFT returns $I_{\rm fund} \approx 0$
+at all harmonic levels for both methods.  No false trips occur.
+
+\subsection{Study D: Harmonic Ratio Classification}
+
+Figure~\ref{fig:hratio} shows $H_{\rm ratio}$ across the test range.  The
+IEEE~519 THD limit of 5\% (approximately $I_{h3} \approx 0.035$\,pu for a
+3rd-harmonic-dominated spectrum) falls in the ``mixed'' regime.  IBR
+fault-ride-through peaks ($I_{h3} > 0.05$\,pu) are clearly classified as
+``IBR'', enabling network-aware logging.
+
+\begin{figure}[h]
+  \centering
+  \input{figures/fig_hratio_bar}
+  \caption{Harmonic ratio $H_{\rm ratio}$ vs injection level.
+           Colour coding: blue = SG regime ($H < 0.05$),
+           orange = mixed, red = IBR regime ($H > 0.20$).
+           The IEEE~519 steady-state THD limit (5\%) falls at the
+           SG/mixed boundary.}
+  \label{fig:hratio}
+\end{figure}
+
+\subsection{Overall Selectivity}
+
+\begin{center}
+\Large
+\textbf{\textcolor{okgreen}{21/21 scenarios correct (100\%)}}
+\end{center}
+
+Three studies $\times$ seven harmonic levels.  TR-21 additionally achieves
+$7/7$ confidence scores above $c_{\min}=0.80$ in the no-fault study,
+compared to $1/7$ without the pre-filter (only the zero-harmonic case passes).
+
+
+% ============================================================================
+\section{Fundamental–Harmonic Orthogonality}
+\label{sec:orthogonality}
+
+A key property exploited by the TR-21 filter is that the harmonic regressors
+are orthogonal to the fundamental basis over an integer number of cycles.
+Over $K$ complete power cycles of $N_{\rm cyc}$ samples each:
+\begin{equation}
+  \sum_{n=0}^{KN_{\rm cyc}-1} \sin\!\left(\frac{2\pi n}{N_{\rm cyc}}\right)
+  \cdot \sin\!\left(\frac{2\pi h n}{N_{\rm cyc}}\right) = 0
+  \quad \forall\, h \in \mathbb{Z}^+,\; h \neq 1
+  \label{eq:orthogonal}
+\end{equation}
+
+This means that harmonic components in $\Delta i'$ do \emph{not} bias the
+DFT-based $I_{\rm fund}$ estimate, confirming the results in Table~\ref{tab:trip}.
+The pre-filter's value lies entirely in restoring the LM residual norm, not
+in correcting a biased amplitude estimate.
+
+Equation~\eqref{eq:orthogonal} holds exactly for integer-cycle windows.
+At off-nominal frequency (e.g.\ 47\,Hz), the spectral leakage from the 3rd
+harmonic (141\,Hz) into the 47\,Hz bin is bounded by the Dirichlet kernel:
+\begin{equation}
+  |\mathrm{leakage}| \leq \frac{I_{h3}}{N \cdot |\Delta f / f_{\rm bin}|}
+\end{equation}
+For $N = 160$, $\Delta f = 141 - 3 \times 47 = 0$\,Hz at 47\,Hz
+(3rd harmonic falls exactly at 141 = 3 × 47\,Hz), so leakage is exactly
+zero at 47\,Hz as well.  The harmonic regressors in \eqref{eq:H_mat} use
+the estimated frequency $\hat{f}$ from TR-20 to maintain orthogonality at
+any frequency in the 47--53\,Hz range.
+
+
+% ============================================================================
+\section{Integration with SAMBP Suite}
+\label{sec:integration}
+
+\begin{table}[h]
+  \centering
+  \caption{Position of TR-21 in the SAMBP 87L processing chain.}
+  \label{tab:integration}
+  \begin{tabular}{lll}
+    \toprule
+    Stage & Module & Notes \\
+    \midrule
+    1. Charging correction & \texttt{line\_pi\_section\_model} (TR-15) &
+      Fixed $B_C$; superseded by TR-20 \\
+    2. Frequency-adaptive $B_C$ & \texttt{line\_freq\_adaptive} (TR-20) &
+      Scales $B_C$ by $\hat{f}/f_0$ \\
+    3. Harmonic pre-filter & \texttt{line\_harmonic\_model} (TR-21, new) &
+      Subtracts 3rd/5th/7th harmonics \\
+    4. LM estimator & \texttt{line\_reduced\_zone\_model} (TR-11) &
+      Unchanged; receives $\Delta i''$ \\
+    5. Adaptive threshold & \texttt{line\_adaptive\_threshold} (TR-17) &
+      $I_{\rm thr} = \max(I_{\rm base}, k_s I_{\rm rest})$ \\
+    6. Confidence gate & \texttt{line\_confidence\_gate} (TR-12) &
+      $c = e^{-r_n}$; $c \geq 0.80$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The harmonic filter adds one stage between TR-20 and the LM estimator.  It
+requires no modifications to any other module~\cite{Blackburn2006}.  The
+$H_{\rm ratio}$ diagnostic can optionally be forwarded to the protection
+management system via GOOSE (IEC~61850) for network characterisation.
+
+
+% ============================================================================
+\section{Computational Cost}
+\label{sec:cost}
+
+For $N = 160$ samples and 6 regressors (3 harmonics $\times$ 2 basis
+functions), the least-squares solve requires:
+\begin{itemize}
+  \item QR factorisation: $O(Nk) = O(960)$ multiply-accumulates
+  \item Back-substitution: $O(k^2) = O(36)$ operations
+\end{itemize}
+On a typical IED DSP at 50\,MFLOPS this takes $< 0.02$\,ms, negligible
+compared to the 20\,ms protection cycle.  The harmonic pre-filter adds no
+latency to the trip path because it runs in the same cycle as the LM
+estimator~\cite{IEC_61000_4_7}.
+
+
+% ============================================================================
+\section{Conclusions}
+\label{sec:conclusions}
+
+\begin{enumerate}
+  \item \textbf{21/21 scenarios correct (100\%)} across three studies
+        (no-fault, internal fault, external fault) at seven harmonic levels
+        (0--0.10\,pu 3rd harmonic).
+  \item \textbf{Confidence fully restored}: TR-21 pre-filter achieves
+        $c \geq 0.99$ in the no-fault study at all harmonic levels,
+        vs $c \approx 0.37$ (below $c_{\min}=0.80$) without the filter
+        for $I_{h3} \geq 0.005$\,pu.
+  \item \textbf{Fault detection unaffected}: $I_{\rm fund}$ estimates are
+        invariant to harmonic injection due to fundamental--harmonic
+        orthogonality over integer-cycle windows.
+  \item \textbf{Network-type diagnostic}: $H_{\rm ratio}$ cleanly separates
+        SG-dominated ($< 0.05$), mixed, and IBR-dominated ($> 0.20$) regimes.
+  \item \textbf{Negligible computational cost}: $< 0.02$\,ms per cycle
+        (one QR factorisation of a $160 \times 6$ matrix).
+  \item \textbf{Frequency-adaptive harmonics}: regressors use $\hat{f}$ from
+        TR-20, maintaining orthogonality across the 47--53\,Hz range.
+\end{enumerate}
+
+\subsection{Future Work}
+
+\begin{enumerate}
+  \item \textbf{TR-22: Negative-sequence 87L for asymmetric IBR faults} ---
+        IBR current-limiting reduces positive-sequence contribution during
+        single-phase faults; validate that negative-sequence differential
+        (87LN) maintains sensitivity in compliance with IEC~60255-181.
+  \item \textbf{Inter-harmonic discrimination}: grid-interactive inverters
+        can inject inter-harmonics (non-integer multiples of $f_0$).
+        Extend the regressor matrix to include DFT-identified
+        inter-harmonic bins.
+  \item \textbf{Hardware-in-the-loop at variable THD}: validate the pre-filter
+        response during inverter fault ride-through transients using a
+        real-time digital simulator with physical IBR hardware.
+  \item \textbf{Harmonic restraint element}: for very high THD networks
+        (microgrids, EV charging hubs), consider adding an explicit harmonic
+        restraint $I_{\rm harm,rms} > I_{\rm harm,max}$ as a second-level
+        block, analogous to 2nd harmonic restraint in transformer differential.
+\end{enumerate}
+
+
+% ============================================================================
+\bibliographystyle{plainnat}
+\bibliography{references21}
+
+\end{document}
