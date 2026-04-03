@@ -2,7 +2,7 @@
 line_seq_model.py
 =================
 Symmetrical-component extraction for the SAMBP 87LN negative-sequence
-line differential element.
+and 87LN0 zero-sequence line differential elements.
 
 Background
 ----------
@@ -53,12 +53,34 @@ Alternatively, for short windows, estimate the phasor at each terminal via
 DFT, apply the symmetrical component transform, and compute |I₂|.  This is
 the approach implemented here.
 
+TR-25 extension — Zero-Sequence 87LN0
+--------------------------------------
+In a pure IBR microgrid (no synchronous generators) connected through a
+transformer with a solidly or resistance-earthed neutral:
+
+  • The IBR current controller injects only positive-sequence current
+    (I₁ = k_ibr; I₂ ≈ 0; I₀ ≈ 0 for 3-wire inverter topology).
+  • For a single-line-to-ground (SLG) fault, the NETWORK provides zero-
+    sequence current I₀ through the transformer neutral path — independent
+    of the IBR current limiter.
+  • Since I₂_diff ≈ 0 (no SG contribution), the 87LN element (TR-22)
+    cannot trip.  But I₀_diff can be large:
+        - Solidly earthed: I₀_diff ≈ 0.25 pu
+        - Resistance-earthed (Z_n = 20% base): I₀_diff ≈ 0.08 pu
+  • The 87LN0 element detects this: TRIP if |I₀_diff| ≥ I₀_threshold.
+
+Setting I₀_threshold = 0.04 pu provides detection for both earthing types
+while maintaining security for external faults (I₀_diff = 0 by KCL).
+
+Combined trip: 87L ∨ 87LN ∨ 87LN0 ∨ TDCS-87L
+
 References
 ----------
     Stevenson, W.D. (1994). Elements of Power System Analysis, §12.
     IEEE Std C37.243-2015 §8 — Directional comparison for line differential.
     IEC 60255-181:2019 §7 — Negative-sequence overcurrent.
-    SAMBP TR-21/2026 — Harmonic pre-filter for IBR networks.
+    SAMBP TR-22/2026 — 87LN for asymmetric IBR faults.
+    SAMBP TR-25/2026 — Zero-sequence 87LN0 for pure IBR earth faults.
 """
 
 from __future__ import annotations
@@ -129,15 +151,18 @@ def symmetrical_components(
 
 @dataclass
 class NegSeqDiffResult:
-    """Output of the 87LN negative-sequence differential measurement."""
+    """Output of the full sequence differential measurement (87L + 87LN + 87LN0)."""
+    I0_diff: float          # Zero-sequence differential magnitude [pu]
     I1_diff: float          # Positive-sequence differential magnitude [pu]
     I2_diff: float          # Negative-sequence differential magnitude [pu]
+    phi_I0: float           # Phase of I0_diff [rad]
     phi_I1: float           # Phase of I1_diff [rad]
     phi_I2: float           # Phase of I2_diff [rad]
     trip_87L: bool          # Positive-sequence trip
-    trip_87LN: bool         # Negative-sequence trip
-    trip_combined: bool     # 87L OR 87LN
-    network_sig: str        # "SG" | "asymmetric" | "symmetric_ibr" | "healthy"
+    trip_87LN: bool         # Negative-sequence trip (TR-22)
+    trip_87LN0: bool        # Zero-sequence trip (TR-25)
+    trip_combined: bool     # 87L OR 87LN OR 87LN0
+    network_sig: str        # "SG" | "asymmetric" | "symmetric_ibr" | "healthy" | "earth"
 
 
 def measure_neg_seq_diff(
@@ -146,17 +171,19 @@ def measure_neg_seq_diff(
     fs: float = 4000.0,
     I1_threshold: float = 0.12,
     I2_threshold: float = 0.06,
+    I0_threshold: float = 0.04,
 ) -> NegSeqDiffResult:
     """
-    Compute the 87L and 87LN differential measurements.
+    Compute the 87L, 87LN, and 87LN0 differential measurements.
 
     Parameters
     ----------
     i_diff_abc   : (3, N) three-phase differential current [pu]
     freq_hz      : fundamental frequency [Hz]
     fs           : sampling rate [Hz]
-    I1_threshold : 87L trip threshold [pu]   (positive-sequence)
-    I2_threshold : 87LN trip threshold [pu]  (negative-sequence)
+    I1_threshold : 87L   trip threshold [pu]  (positive-sequence)
+    I2_threshold : 87LN  trip threshold [pu]  (negative-sequence)
+    I0_threshold : 87LN0 trip threshold [pu]  (zero-sequence, TR-25)
 
     Returns
     -------
@@ -169,18 +196,21 @@ def measure_neg_seq_diff(
 
     I0, I1, I2 = symmetrical_components(Pa, Pb, Pc)
 
+    I0_mag = float(abs(I0))
     I1_mag = float(abs(I1))
     I2_mag = float(abs(I2))
 
-    trip_87L  = I1_mag >= I1_threshold
-    trip_87LN = I2_mag >= I2_threshold
-    trip_comb = trip_87L or trip_87LN
+    trip_87L   = I1_mag >= I1_threshold
+    trip_87LN  = I2_mag >= I2_threshold
+    trip_87LN0 = I0_mag >= I0_threshold
+    trip_comb  = trip_87L or trip_87LN or trip_87LN0
 
     # Network signature heuristic
-    H_ratio = I2_mag / max(I1_mag, 1e-6)
-    if I1_mag < 0.01 and I2_mag < 0.01:
+    if I1_mag < 0.01 and I2_mag < 0.01 and I0_mag < 0.01:
         sig = "healthy"
-    elif H_ratio > 0.30:
+    elif I0_mag >= I0_threshold and I2_mag < I2_threshold:
+        sig = "earth"         # zero-seq dominant: IBR-only earth fault
+    elif I2_mag / max(I1_mag, 1e-6) > 0.30:
         sig = "asymmetric"
     elif trip_87L and not trip_87LN:
         sig = "SG" if I1_mag > 0.5 else "symmetric_ibr"
@@ -188,12 +218,15 @@ def measure_neg_seq_diff(
         sig = "asymmetric" if trip_87LN else "healthy"
 
     return NegSeqDiffResult(
+        I0_diff       = I0_mag,
         I1_diff       = I1_mag,
         I2_diff       = I2_mag,
+        phi_I0        = float(np.angle(I0)),
         phi_I1        = float(np.angle(I1)),
         phi_I2        = float(np.angle(I2)),
         trip_87L      = trip_87L,
         trip_87LN     = trip_87LN,
+        trip_87LN0    = trip_87LN0,
         trip_combined = trip_comb,
         network_sig   = sig,
     )
@@ -231,23 +264,65 @@ def make_abc_waveform(
     -------
     (3, n_samples) three-phase waveform [pu]
     """
-    t = np.arange(n_samples) / fs
+    return make_abc_waveform_full(I1=I1, I2=I2, I0=0.0,
+                                  freq_hz=freq_hz, fs=fs, n_samples=n_samples,
+                                  phi1=phi1, phi2=phi2, phi0=0.0)
+
+
+def make_abc_waveform_full(
+    I1: float,
+    I2: float,
+    I0: float,
+    freq_hz: float,
+    fs: float,
+    n_samples: int,
+    phi1: float = 0.0,
+    phi2: float = 0.0,
+    phi0: float = 0.0,
+) -> np.ndarray:
+    """
+    Generate 3-phase waveform from all three sequence components.
+
+    The zero-sequence component is identical on all three phases (in-phase,
+    no rotation):
+        ia = I1×sin(ωt+φ1)       + I2×sin(ωt+φ2)       + I0×sin(ωt+φ0)
+        ib = I1×sin(ωt+φ1−2π/3) + I2×sin(ωt+φ2+2π/3)  + I0×sin(ωt+φ0)
+        ic = I1×sin(ωt+φ1+2π/3) + I2×sin(ωt+φ2−2π/3)  + I0×sin(ωt+φ0)
+
+    This correctly models a single-line-to-ground fault differential where
+    the transformer neutral provides a zero-sequence return path.
+
+    Parameters
+    ----------
+    I0, I1, I2  : sequence amplitudes [pu]
+    freq_hz, fs : frequency [Hz] and sampling rate [Hz]
+    n_samples   : number of time samples
+    phi0, phi1, phi2 : phase angles [rad]
+
+    Returns
+    -------
+    (3, n_samples) three-phase waveform [pu]
+    """
+    t     = np.arange(n_samples) / fs
     omega = 2.0 * np.pi * freq_hz
 
     # Positive sequence: phases a, b−120°, c+120°
-    i_pos_a =  I1 * np.sin(omega * t + phi1)
-    i_pos_b =  I1 * np.sin(omega * t + phi1 - 2*np.pi/3)
-    i_pos_c =  I1 * np.sin(omega * t + phi1 + 2*np.pi/3)
+    i_pos_a = I1 * np.sin(omega * t + phi1)
+    i_pos_b = I1 * np.sin(omega * t + phi1 - 2*np.pi/3)
+    i_pos_c = I1 * np.sin(omega * t + phi1 + 2*np.pi/3)
 
     # Negative sequence: phases a, b+120°, c−120° (reversed rotation)
-    i_neg_a =  I2 * np.sin(omega * t + phi2)
-    i_neg_b =  I2 * np.sin(omega * t + phi2 + 2*np.pi/3)
-    i_neg_c =  I2 * np.sin(omega * t + phi2 - 2*np.pi/3)
+    i_neg_a = I2 * np.sin(omega * t + phi2)
+    i_neg_b = I2 * np.sin(omega * t + phi2 + 2*np.pi/3)
+    i_neg_c = I2 * np.sin(omega * t + phi2 - 2*np.pi/3)
+
+    # Zero sequence: same on all phases (common-mode)
+    i_zer   = I0 * np.sin(omega * t + phi0)
 
     return np.array([
-        i_pos_a + i_neg_a,
-        i_pos_b + i_neg_b,
-        i_pos_c + i_neg_c,
+        i_pos_a + i_neg_a + i_zer,
+        i_pos_b + i_neg_b + i_zer,
+        i_pos_c + i_neg_c + i_zer,
     ])
 
 
@@ -262,34 +337,46 @@ if __name__ == "__main__":
     N    = int(FS * 2 / 50)    # 2 cycles at 50 Hz
     FREQ = 50.0
 
+    # (label, I1, I2, I0, exp_87L, exp_87LN, exp_87LN0)
     test_cases = [
-        ("Healthy",           0.003, 0.003, False, False),
-        ("SG 3PH fault",      2.500, 0.000, True,  False),
-        ("IBR SLG, lim 0.14", 0.140, 0.100, True,  True),
-        ("IBR SLG, lim 0.08", 0.080, 0.100, False, True),
-        ("IBR 3PH, lim 0.14", 0.140, 0.000, True,  False),
-        ("IBR 3PH, lim 0.08", 0.080, 0.000, False, False),
+        # Original TR-22 cases (I0=0)
+        ("Healthy",               0.003, 0.003, 0.000, False, False, False),
+        ("SG 3PH fault",          2.500, 0.000, 0.000, True,  False, False),
+        ("IBR SLG, lim 0.14",     0.140, 0.100, 0.000, True,  True,  False),
+        ("IBR SLG, lim 0.08",     0.080, 0.100, 0.000, False, True,  False),
+        ("IBR 3PH, lim 0.14",     0.140, 0.000, 0.000, True,  False, False),
+        ("IBR 3PH, lim 0.08",     0.080, 0.000, 0.000, False, False, False),
+        # TR-25 zero-sequence cases: pure IBR, no I2, solidly earthed
+        ("IBR SLG solid, k=0.07", 0.070, 0.030, 0.250, False, False, True),
+        ("IBR SLG R-earth,k=0.07",0.070, 0.020, 0.080, False, False, True),
+        ("IBR SLG unearth,k=0.07",0.070, 0.010, 0.005, False, False, False),
     ]
 
-    print(f"{'Case':<24} {'I1':>6} {'I2':>6} {'87L':>5} {'87LN':>5} "
-          f"{'trip_87L':>9} {'trip_87LN':>10} {'comb':>6} {'PASS':>5}")
-    print("-" * 82)
+    print(f"{'Case':<27} {'I1':>6} {'I2':>6} {'I0':>6} "
+          f"{'87L':>5} {'87LN':>5} {'87LN0':>6} "
+          f"{'t_87L':>6} {'t_87LN':>6} {'t_87LN0':>7} {'PASS':>5}")
+    print("-" * 96)
 
     all_pass = True
-    for label, I1, I2, exp_87L, exp_87LN in test_cases:
-        abc = make_abc_waveform(I1, I2, FREQ, FS, N)
-        r = measure_neg_seq_diff(abc, FREQ, FS, I1_threshold=0.12, I2_threshold=0.06)
+    for label, I1, I2, I0, exp_87L, exp_87LN, exp_87LN0 in test_cases:
+        abc = make_abc_waveform_full(I1, I2, I0, FREQ, FS, N)
+        r   = measure_neg_seq_diff(abc, FREQ, FS,
+                                   I1_threshold=0.12,
+                                   I2_threshold=0.06,
+                                   I0_threshold=0.04)
 
-        ok = (r.trip_87L == exp_87L) and (r.trip_87LN == exp_87LN)
+        ok = (r.trip_87L == exp_87L and r.trip_87LN == exp_87LN
+              and r.trip_87LN0 == exp_87LN0)
         if not ok:
             all_pass = False
         flag = "PASS" if ok else "FAIL"
 
-        print(f"{label:<24} {r.I1_diff:6.4f} {r.I2_diff:6.4f} "
-              f"{'YES' if exp_87L else ' no':>5} {'YES' if exp_87LN else ' no':>5} "
-              f"{'YES' if r.trip_87L else ' no':>9} "
-              f"{'YES' if r.trip_87LN else ' no':>10} "
-              f"{'YES' if r.trip_combined else ' no':>6} {flag:>5}")
+        print(f"{label:<27} {r.I1_diff:6.4f} {r.I2_diff:6.4f} {r.I0_diff:6.4f} "
+              f"{'Y' if exp_87L else 'n':>5} {'Y' if exp_87LN else 'n':>5} "
+              f"{'Y' if exp_87LN0 else 'n':>6} "
+              f"{'Y' if r.trip_87L else 'n':>6} "
+              f"{'Y' if r.trip_87LN else 'n':>6} "
+              f"{'Y' if r.trip_87LN0 else 'n':>7} {flag:>5}")
 
     print()
     if all_pass:
