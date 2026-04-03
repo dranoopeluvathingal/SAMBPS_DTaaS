@@ -1,0 +1,102 @@
+% fig_coordination_matrix.tex
+% Heat-map style table: 87B and 87L decisions across topologies and fault locations
+% Green = correct trip/no-trip; shows non-conflicting coordination
+\begin{tikzpicture}
+
+% ---- Color definitions (used via \cellcolor) --------------------------------
+% All cells are OK -> uniform green palette
+% Bus faults: 87B trips correct zone; 87L: no trip
+% Line faults: 87L trips; 87B: no trip
+
+\tikzset{
+  hdr/.style={font=\scriptsize\bfseries, align=center},
+  cell/.style={font=\scriptsize, align=center},
+  ok/.style={fill=green!20},
+  okb/.style={fill=blue!15},
+  okl/.style={fill=orange!15},
+  na/.style={fill=gray!10},
+}
+
+\def\CW{1.55cm}  % column width
+\def\RH{0.52cm}  % row height
+
+% ---- Column headers --------------------------------------------------------
+\matrix[
+  matrix of nodes,
+  nodes in empty cells,
+  row sep=0pt,
+  column sep=0pt,
+  nodes={minimum width=\CW, minimum height=\RH, draw=gray!40,
+         text depth=0.3ex, text height=1.5ex, inner xsep=3pt},
+  column 1/.style={nodes={minimum width=2.0cm}},
+  column 2/.style={nodes={minimum width=1.4cm}},
+] (M) {
+  % Row 1 — header
+  |[hdr]| Fault loc.
+  & |[hdr]| Topo
+  & |[hdr, ok]| 87B\\ decision
+  & |[hdr, okl]| 87L\\ trip
+  & |[hdr]| Coord. \\
+  % ---- T1_NORM bus faults ------------------------------------------------
+  |[cell, ok]| bb1
+  & |[cell]| T1\_NORM
+  & |[cell, okb]| BB1
+  & |[cell, ok]| no
+  & |[cell, ok]| \checkmark \\
+  |[cell, ok]| bb2
+  & |[cell]| T1\_NORM
+  & |[cell, okb]| BB2
+  & |[cell, ok]| no
+  & |[cell, ok]| \checkmark \\
+  |[cell, ok]| bc\_internal
+  & |[cell]| T1\_NORM
+  & |[cell, okb]| BC
+  & |[cell, ok]| no
+  & |[cell, ok]| \checkmark \\
+  |[cell, na]| load\_ext
+  & |[cell]| T1\_NORM
+  & |[cell, na]| no\_trip
+  & |[cell, na]| no
+  & |[cell, ok]| \checkmark \\
+  % ---- T1_NORM line faults ------------------------------------------------
+  |[cell, okl]| line\_ext / 3ph
+  & |[cell]| T1\_NORM
+  & |[cell, ok]| no\_trip
+  & |[cell, okl]| \textbf{yes}
+  & |[cell, ok]| \checkmark \\
+  |[cell, okl]| line\_ext / ag
+  & |[cell]| T1\_NORM
+  & |[cell, ok]| no\_trip
+  & |[cell, okl]| \textbf{yes}
+  & |[cell, ok]| \checkmark \\
+  |[cell, okl]| line\_ext / HIF
+  & |[cell]| T1\_NORM
+  & |[cell, ok]| no\_trip
+  & |[cell, okl]| \textbf{yes}
+  & |[cell, ok]| \checkmark \\
+  % ---- T4_SPLIT (representative of other topologies) ---------------------
+  |[cell, ok]| bb1
+  & |[cell]| T4\_SPLIT
+  & |[cell, okb]| BB1
+  & |[cell, ok]| no
+  & |[cell, ok]| \checkmark \\
+  |[cell, na]| bb2
+  & |[cell]| T4\_SPLIT
+  & |[cell, na]| no\_trip$^\dagger$
+  & |[cell, na]| no
+  & |[cell, ok]| \checkmark \\
+  |[cell, okl]| line\_ext / HIF
+  & |[cell]| T4\_SPLIT
+  & |[cell, ok]| no\_trip
+  & |[cell, okl]| \textbf{yes}
+  & |[cell, ok]| \checkmark \\
+};
+
+% ---- Footer note -----------------------------------------------------------
+\node[font=\scriptsize\itshape, anchor=north west, text width=10.5cm]
+  at (M.south west)
+  {$\dagger$ T4\_SPLIT topology: BB2 zone de-energised; 87B correctly gives no\_trip
+   (bus-coupler open, feeder transferred).
+   All 28 scenarios coordinated (100\%).};
+
+\end{tikzpicture}
