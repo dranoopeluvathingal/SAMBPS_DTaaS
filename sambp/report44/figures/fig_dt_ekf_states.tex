@@ -1,0 +1,74 @@
+% fig_dt_ekf_states.tex
+% TR-44: EKF parameter estimation summary bar chart
+%
+% Final estimation errors after N=100 updates:
+%   k_ibr:  1.22%  (good — sequence current directly observable)
+%   Z_line: 27.3%  (poor — insufficient observability from I alone)
+%   alpha:   8.0%  (moderate — apparent impedance noisy)
+%   f_gfm:   2.7%  (good — I2/I1 ratio well observed)
+
+\begin{tikzpicture}
+\begin{axis}[
+  name         = ekfax,
+  width        = 0.82\textwidth,
+  height       = 7.5cm,
+  ybar,
+  bar width    = 1.0cm,
+  xlabel       = {Estimated parameter},
+  ylabel       = {Estimation error [\%] after 100 updates (100\,ms)},
+  xlabel style = {font=\small},
+  ylabel style = {font=\small},
+  ymin=0, ymax=32,
+  ytick        = {0,5,10,15,20,25,30},
+  yticklabel style={font=\scriptsize},
+  xtick        = {1,2,3,4},
+  xticklabels  = {$k_\mathrm{ibr}$ (current ratio),
+                  $Z_\mathrm{line}$ (impedance),
+                  $\alpha$ (fault location),
+                  $f_\mathrm{gfm}$ (GFM fraction)},
+  xticklabel style={font=\scriptsize, rotate=10, anchor=north east},
+  tick style   = {draw=none},
+  axis line style={gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  nodes near coords,
+  nodes near coords style={font=\scriptsize, anchor=south},
+  every node near coord/.append style={
+    /pgf/number format/.cd, fixed, fixed zerofill, precision=1
+  },
+  legend style={at={(0.98,0.98)}, anchor=north east, font=\tiny,
+                draw=gray!60, fill=white},
+  clip=false,
+]
+
+%% Well-estimated parameters (green)
+\addplot[fill=green!45, draw=green!60]
+  coordinates {(1, 1.22) (4, 2.71)};
+\addlegendentry{Well-estimated ($<5\%$)}
+
+%% Moderately estimated (orange)
+\addplot[fill=orange!50, draw=orange!70]
+  coordinates {(3, 8.03)};
+\addlegendentry{Moderate ($<10\%$)}
+
+%% Poorly estimated (red)
+\addplot[fill=red!40, draw=red!60]
+  coordinates {(2, 27.28)};
+\addlegendentry{Poor ($>10\%$) — observability limited}
+
+%% 5% target line
+\addplot[blue!60!black, very thick, dashed]
+  coordinates {(0.4, 5.0) (4.6, 5.0)};
+\addlegendentry{5\% protection-accuracy target}
+
+%% Annotation for Z_line
+\node[draw=red!20, fill=red!5, rounded corners=2pt,
+      font=\tiny, inner sep=3pt, align=center]
+  at (axis cs:2, 22)
+  {$Z_\mathrm{line}$ poorly observable\\
+   from current ratio alone.\\
+   Requires V-phasor pairs at\\
+   two time instants (Study D).};
+
+\end{axis}
+\end{tikzpicture}

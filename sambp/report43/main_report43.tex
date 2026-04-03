@@ -1,0 +1,261 @@
+%% main_report43.tex
+%% SAMBP TR-43/2026: Digital Twin Architecture for IBR Protection Systems
+%%
+%% pdflatex main_report43.tex
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[expansion=false]{microtype}
+\usepackage{lmodern}
+\usepackage[a4paper, top=25mm, bottom=25mm, left=25mm, right=25mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,shapes.geometric,positioning,fit,calc,patterns}
+\usepackage{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+
+\definecolor{sambpblue}{RGB}{0,70,140}
+
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries\color{sambpblue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{sambpblue!80}}{}{0em}{}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small\color{gray} SAMBP TR-43/2026}
+\lhead{\small\color{gray} Digital Twin Architecture}
+\cfoot{\small\thepage}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{sambpblue} SAMBP Technical Report TR-43/2026}\\[6pt]
+  {\large Digital Twin Architecture\\
+    for IBR Protection Systems}\\[10pt]
+  {\normalsize PhD Thesis Supporting Report \quad|\quad 2026}
+\end{center}
+
+\vspace{2pt}\hrule\vspace{8pt}
+
+\begin{abstract}
+\noindent
+This report designs a digital twin (DT) architecture for the SAMBP IBR
+protection scheme.  The DT runs at 1\,kHz, providing 20 state estimates before
+the fastest relay operation (Z1/87L at 20\,ms).  A recursive least-squares
+(RLS) estimator tracks $k_\mathrm{ibr}$ from voltage and current measurements,
+converging to within 3.1\% error after 20 updates (20\,ms) and 0.54\% after
+100 updates (100\,ms).  A pre-computed scenario library of $N=1000$ fault cases
+supports nearest-neighbour lookup in 0.16\,ms, well within the 1\,ms DT cycle
+budget.  The DT acts as a non-blocking post-event auditor: it compares relay
+decisions with expected outcomes from the protection model mirror and flags
+discrepancies for model update.  Estimation RMSE is below 1\% for measurement
+noise $\sigma_I\leq0.020$\,pu (double the nominal class~1P CT error).
+\end{abstract}
+
+\vspace{4pt}\hrule\vspace{10pt}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Digital Twin Architecture}
+\label{sec:arch}
+
+Figure~\ref{fig:arch} shows the four-layer DT architecture.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.96\textwidth}{!}{\input{figures/fig_dt_architecture.tex}}
+  \caption{Digital twin architecture for the SAMBP IBR protection system.
+           Physical layer (blue): IBR fleet, network, and measurement
+           transformers.  Relay layer (orange): physical protection relay
+           operating at event speed ($\leq20$\,ms).  Digital Twin layer (green):
+           RLS estimator + scenario library + protection model mirror, running
+           at 1\,kHz.  Validation layer (purple): decision comparator, post-event
+           auditor, and model update feedback loop.  The DT does not block or
+           delay relay operation.}
+  \label{fig:arch}
+\end{figure}
+
+\noindent
+The critical design principle is that the DT is \textbf{non-blocking}: the
+physical relay operates at its own speed without waiting for DT confirmation.
+The DT's role is entirely post-event --- it provides situational awareness,
+detects model-reality discrepancies, and refines the protection model over time.
+This is a fundamental departure from ``protection-as-a-service'' architectures
+that route trip signals through centralised intelligence.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study A --- DT Update Rate Requirement}
+\label{sec:studyA}
+
+To provide meaningful pre-fault state information before the relay operates,
+the DT must complete at least 2 update cycles within the relay's minimum
+operating time:
+
+\begin{equation}
+  f_\mathrm{DT} \geq \frac{2}{T_\mathrm{relay,min}} = \frac{2}{0.020} = 100\;\mathrm{Hz}
+\end{equation}
+
+\begin{center}
+\begin{tabular}{@{}llll@{}}
+\toprule
+DT rate [Hz] & Samples before Z1/87L & Status & Latency/update \\
+\midrule
+100  & 2   & Marginal & 10.0\,ms \\
+500  & 10  & Adequate & 2.0\,ms \\
+1000 & 20  & Good     & 1.0\,ms \\
+2000 & 40  & Excess   & 0.5\,ms \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+1\,kHz is chosen as the design rate: 20 state estimates before the fastest
+relay trip, with 1\,ms per cycle to execute the RLS update, nearest-neighbour
+lookup, and protection model evaluation.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study B --- RLS k\textsubscript{ibr} State Estimation}
+\label{sec:studyB}
+
+The RLS estimator tracks $k_\mathrm{ibr}$ from the ratio of measured fault
+current to model-predicted infeed.  The forgetting factor $\lambda=0.98$
+weights recent measurements more heavily to track slow parameter drift:
+
+\begin{equation}
+  \hat{k}_{n+1} = \hat{k}_n + K_n \bigl(I_\mathrm{meas} - \hat{k}_n I_\mathrm{model}\bigr),
+  \quad
+  K_n = \frac{P_n}{\lambda + P_n I_\mathrm{model}^2}
+\end{equation}
+
+Figure~\ref{fig:rls} shows the convergence profile.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.86\textwidth}{!}{\input{figures/fig_dt_rls_convergence.tex}}
+  \caption{RLS $k_\mathrm{ibr}$ estimation error vs update count at
+           $\sigma_I=0.010$\,pu.  The vertical dashed line marks the Z1/87L
+           relay trip at 20 updates (20\,ms), where the DT estimate has
+           converged to 3.1\% error.  At 100 updates (100\,ms, corresponding
+           to islanding detection time from TR-39) the error is 0.54\%.}
+  \label{fig:rls}
+\end{figure}
+
+\noindent
+The 3.1\% error at 20\,ms is sufficient to confirm the correct protection
+zone: the error margin ($\pm0.006$\,pu on $k_\mathrm{ibr}=0.20$) is smaller
+than the 87L threshold gap ($0.06$\,pu) and the Z1 activation floor ($0.10$\,pu).
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study C --- Accuracy vs Measurement Noise}
+\label{sec:studyC}
+
+Figure~\ref{fig:noise} shows the RMSE of the DT $k_\mathrm{ibr}$ estimate
+as a function of CT measurement noise.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.86\textwidth}{!}{\input{figures/fig_dt_accuracy_noise.tex}}
+  \caption{RMSE of the RLS $k_\mathrm{ibr}$ estimate vs measurement noise
+           $\sigma_I$ (200 Monte Carlo trials per noise level, 50 RLS updates).
+           Orange dashed line: 1\% error target (0.002\,pu for
+           $k_\mathrm{true}=0.20$).  The DT achieves $<1\%$ RMSE for
+           $\sigma_I\leq0.020$\,pu (double the nominal class~1P CT error
+           of 0.010\,pu).}
+  \label{fig:noise}
+\end{figure}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study D --- Pre-Fault Scenario Library}
+\label{sec:studyD}
+
+The pre-fault scenario library is populated offline using the Monte Carlo
+engine from TR-37~\cite{SAMBP_TR37} ($N=1000$ scenarios,
+$k_\mathrm{ibr}\sim U[0.04,0.50]$, $\alpha\sim U[0,1.05]$, CIGRE fault type
+weights).  Expected outcomes:
+
+\begin{center}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Expected outcome & Count & Fraction \\
+\midrule
+Z1/87L (fast trip, $k\geq0.10$) & 667 & 66.7\% \\
+87L (slower, $k\in[0.06,0.10)$) & 257 & 25.7\% \\
+MISS (structural, $k<0.06$) & 34 & 3.4\% \\
+EXTERNAL ($\alpha>1.0$) & 42 & 4.2\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+At run time, the DT performs a nearest-neighbour lookup on $(k_\mathrm{ibr}, \alpha)$
+to retrieve the pre-computed expected outcome.  For the nominal query
+$(k=0.18, \alpha=0.55)$ the lookup returns the correct Z1/87L outcome in
+0.16\,ms --- six times faster than the 1\,ms DT cycle budget.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study E --- DT-Relay Decision Validation}
+\label{sec:studyE}
+
+The DT compares the relay's trip decision with the scenario-library expected
+outcome after each event.  Discrepancies are flagged for post-event review:
+
+\begin{center}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Case & DT expected & Relay action & Outcome \\
+\midrule
+Normal Z1 trip & Z1/87L & Z1/87L & AGREE \\
+87L trip & 87L & 87L & AGREE \\
+Structural miss ($k<0.06$) & MISS & MISS & AGREE \\
+DT mismatch A & MISS & TRIP & FLAG: possible relay malfunction \\
+DT mismatch B & 87L & MISS & FLAG: possible missed fault \\
+External block & EXTERNAL & EXTERNAL & AGREE \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+The two flagged cases illustrate the DT's primary value: detecting protection
+system anomalies that would not be identified by traditional event review.
+Case A (relay trips where DT predicts miss) could indicate CT saturation,
+crosstalk, or relay misconfiguration.  Case B (relay misses where DT predicts
+87L) could indicate a 87L communications fault or IBR current limiter malfunction.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Summary}
+\label{sec:summary}
+
+\begin{enumerate}
+  \item \textbf{DT rate}: 1\,kHz provides 20 pre-fault estimates before the
+    fastest relay trip; 1\,ms latency per cycle.
+
+  \item \textbf{RLS estimator}: $k_\mathrm{ibr}$ error = 3.1\% at relay trip
+    (20\,ms); 0.54\% at islanding detection (100\,ms); forgetting factor
+    $\lambda=0.98$.
+
+  \item \textbf{Noise robustness}: RMSE $<1\%$ for $\sigma_I\leq0.020$\,pu
+    (double class~1P CT error).
+
+  \item \textbf{Scenario library}: $N=1000$, nearest-neighbour lookup in
+    0.16\,ms; covers Z1/87L, 87L, MISS, EXTERNAL categories.
+
+  \item \textbf{Non-blocking}: DT is a post-event auditor; relay operates at
+    its own speed without DT gate.
+\end{enumerate}
+
+\noindent
+TR-43 establishes the DT architecture.  TR-44 develops the real-time parameter
+estimation and state-tracking extensions; TR-45 performs the DT validation study.
+
+\bibliographystyle{IEEEtranN}
+\bibliography{references43}
+
+\end{document}

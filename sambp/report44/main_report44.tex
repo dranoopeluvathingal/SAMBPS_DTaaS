@@ -1,0 +1,261 @@
+%% main_report44.tex
+%% SAMBP TR-44/2026: Real-Time Parameter Estimation and State Tracking
+%%
+%% pdflatex main_report44.tex
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[expansion=false]{microtype}
+\usepackage{lmodern}
+\usepackage[a4paper, top=25mm, bottom=25mm, left=25mm, right=25mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,shapes.geometric,positioning,fit,calc,patterns}
+\usepackage{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+
+\definecolor{sambpblue}{RGB}{0,70,140}
+
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries\color{sambpblue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{sambpblue!80}}{}{0em}{}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small\color{gray} SAMBP TR-44/2026}
+\lhead{\small\color{gray} Real-Time Parameter Estimation}
+\cfoot{\small\thepage}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{sambpblue} SAMBP Technical Report TR-44/2026}\\[6pt]
+  {\large Real-Time Parameter Estimation\\
+    and State Tracking for the IBR Digital Twin}\\[10pt]
+  {\normalsize PhD Thesis Supporting Report \quad|\quad 2026}
+\end{center}
+
+\vspace{2pt}\hrule\vspace{8pt}
+
+\begin{abstract}
+\noindent
+This report develops the real-time estimation algorithms for the digital twin
+(DT) introduced in TR-43~\cite{SAMBP_TR43}.  A three-state extended Kalman
+filter (EKF) jointly estimates $k_\mathrm{ibr}$, $Z_\mathrm{line}$, and
+fault location $\alpha$ from sequence current and apparent impedance
+measurements at 1\,kHz.  $k_\mathrm{ibr}$ converges to 1.2\% error within
+100\,ms; $Z_\mathrm{line}$ and $\alpha$ are poorly observable from current
+ratio alone and require additional voltage-phasor pairs for reliable estimation.
+GFM fleet fraction $f_\mathrm{gfm}$ is accurately tracked via the $I_2/I_1$
+ratio method (error $<0.03$\,pu across all scenarios).  Pre-fault warm-starting
+reduces EKF convergence time by $7\times$ compared to a cold start.  The total
+DT cycle cost is 285\,$\mu$s, leaving 71.5\% of the 1\,ms budget as margin.
+\end{abstract}
+
+\vspace{4pt}\hrule\vspace{10pt}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study A --- EKF Multi-Parameter Estimation}
+\label{sec:studyA}
+
+The extended Kalman filter estimates the state vector
+$\mathbf{x} = [k_\mathrm{ibr},\; Z_\mathrm{line},\; \alpha]^\top$ from
+the measurement vector
+$\mathbf{y} = [I_1,\; I_2,\; Z_\mathrm{m}]^\top$:
+
+\begin{equation}
+  \mathbf{h}(\mathbf{x}) =
+  \begin{bmatrix}
+    k_\mathrm{ibr} \\[3pt]
+    \rho_2 \, k_\mathrm{ibr} \\[3pt]
+    \alpha Z_\mathrm{line}(1 + 1/k_\mathrm{ibr})
+  \end{bmatrix}
+\end{equation}
+
+where $\rho_2 = I_2/I_1$ is the fleet-average negative-sequence ratio
+(tracked independently via Study~C).  Figure~\ref{fig:ekf} summarises
+the estimation errors after 100 updates.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.88\textwidth}{!}{\input{figures/fig_dt_ekf_states.tex}}
+  \caption{EKF estimation error [\%] for each state variable after 100
+           updates (100\,ms) at nominal noise $\sigma_I=0.010$\,pu.
+           $k_\mathrm{ibr}$ (green): 1.22\%, well within the 5\% target.
+           $\alpha$ (orange): 8.03\%, marginal.  $Z_\mathrm{line}$ (red):
+           27.3\%, poor --- insufficient observability from sequence-current
+           measurements alone.  $f_\mathrm{gfm}$ (green): 2.71\% via
+           independent $I_2/I_1$ method.  Blue dashed line: 5\% protection
+           accuracy target.}
+  \label{fig:ekf}
+\end{figure}
+
+\noindent
+The observability analysis explains the $Z_\mathrm{line}$ result: in the
+three-state EKF, both $Z_\mathrm{line}$ and $\alpha$ appear only in the
+apparent impedance measurement $Z_\mathrm{m} = \alpha Z_\mathrm{line}(1+1/k)$.
+The product $\alpha Z_\mathrm{line}$ is observable but the individual factors
+are not separable from a single measurement type.  Improved $Z_\mathrm{line}$
+estimation requires:
+\begin{enumerate}
+  \item Voltage-phasor measurements at two time instants (pre-fault and
+    in-fault), giving independent equations for $\alpha$ and $Z_\mathrm{line}$;
+  \item Or a fixed $Z_\mathrm{line}$ prior from offline parameter identification.
+\end{enumerate}
+
+For protection purposes, $k_\mathrm{ibr}$ (directly controlling element
+activation thresholds) is the highest-priority state --- and it converges
+reliably.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study B --- Impedance Trajectory Tracking}
+\label{sec:studyB}
+
+The apparent impedance trajectory from pre-fault load to in-fault condition
+provides fault location information.  The DT tracks this trajectory by
+comparing the measured $Z_\mathrm{m}$ with the expected value
+$\alpha Z_{1L}(1+1/k_\mathrm{ibr})$.
+
+In pre-fault steady state, $Z_\mathrm{m}$ reflects load impedance ($\sim10$\,pu);
+at fault inception it drops abruptly to the fault value.  The EKF's state
+transition model treats $\alpha$ as constant during the fault (once established),
+with the fault inception detected by a threshold on $\Delta Z_\mathrm{m}/\Delta t$.
+
+The $\alpha$ estimation error of 8\% at 100 updates corresponds to
+$\Delta\alpha = 0.048$ on a line of $Z_{1L}=0.050$\,pu, equivalent to a fault
+location error of $\pm2.4$\% of line length --- adequate for zone confirmation
+but insufficient for precise fault location (which requires dedicated fault
+locators).
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study C --- GFM Fraction Tracking}
+\label{sec:studyC}
+
+The GFM fleet fraction $f_\mathrm{gfm}$ is estimated from the measured
+$I_2/I_1$ ratio using the analytic inversion from TR-38~\cite{SAMBP_TR38}:
+
+\begin{equation}
+  \hat{f}_\mathrm{gfm} = \frac{I_2/I_1 - 0.10}{0.50}
+\end{equation}
+
+Figure~\ref{fig:fgfm} shows the estimation accuracy across six fleet scenarios.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.88\textwidth}{!}{\input{figures/fig_dt_fgfm_tracking.tex}}
+  \caption{DT $f_\mathrm{gfm}$ estimate vs true value.  Blue circles: DT
+           estimates; grey dashed: perfect estimate.  Maximum error 0.027
+           (at $f_\mathrm{gfm}=0.50$); all estimates within $\pm0.03$\,pu.
+           The 67Q activation threshold ($f^*=0.34$, orange dashed) is
+           correctly classified in all six scenarios.}
+  \label{fig:fgfm}
+\end{figure}
+
+\noindent
+The $f_\mathrm{gfm}$ estimation is robust because it uses a direct algebraic
+inversion of the known $I_2/I_1$ model rather than iterative EKF convergence.
+The $\pm0.03$\,pu error means the DT can correctly classify whether the fleet
+is above or below the 67Q activation threshold ($f^*=0.34$) with a buffer of
+$\pm9\%$ relative error.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study D --- Pre-Fault Warm-Starting}
+\label{sec:studyD}
+
+The DT continuously tracks $k_\mathrm{ibr}$ and $f_\mathrm{gfm}$ in pre-fault
+normal operation using low-signal measurements (residual unbalance, harmonic
+injection tests).  When a fault occurs, the pre-fault estimates provide a warm
+start for the in-fault EKF, dramatically reducing convergence time:
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Start condition & Initial $k_0$ error & Convergence to $<3\%$ \\
+\midrule
+Cold start & $\Delta k = 0.10$\,pu (50\%) & 13.3 updates (13.3\,ms) \\
+Warm start & $\Delta k = 0.01$\,pu (5\%) & 1.9 updates (1.9\,ms) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+The $7\times$ convergence speedup means that with warm-starting, the DT
+$k_\mathrm{ibr}$ estimate is reliable within 2\,ms of fault inception ---
+well before the Z1/87L relay operation at 20\,ms.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study E --- DT Cycle Performance}
+\label{sec:studyE}
+
+Figure~\ref{fig:budget} shows the DT computation budget for a 1\,ms cycle.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.90\textwidth}{!}{\input{figures/fig_dt_cycle_budget.tex}}
+  \caption{DT computation budget breakdown for a 1000\,µs cycle at 1\,kHz.
+           Total computational cost: 285\,µs (28.5\%).  The library lookup
+           dominates at 107\,µs (10.7\%); GOOSE framing at 100\,µs (10.0\%).
+           The 71.5\% margin provides headroom for model extensions,
+           diagnostics, and communication latency jitter.}
+  \label{fig:budget}
+\end{figure}
+
+\begin{center}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+DT task & Time [$\mu$s] & Budget [\%] \\
+\midrule
+EKF update (3-state) & 17.6 & 1.8 \\
+Scenario library lookup ($N=1000$) & 107.2 & 10.7 \\
+Protection model evaluation & 50.0 & 5.0 \\
+Decision comparison & 10.0 & 1.0 \\
+GOOSE/IEC~61850 framing & 100.0 & 10.0 \\
+\midrule
+Total used & 284.8 & 28.5 \\
+Margin & 715.2 & 71.5 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+The dominant tasks are library lookup and GOOSE framing --- both of which can
+be optimised further.  A hash-indexed scenario library would reduce lookup
+to $<10\,\mu$s; GOOSE can be pre-framed in a static buffer and stamped at
+transmission time.  These optimisations would reduce the cycle budget below
+10\%, leaving 90\% headroom.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Summary}
+\label{sec:summary}
+
+\begin{enumerate}
+  \item \textbf{EKF}: $k_\mathrm{ibr}$ estimated to 1.2\% error in 100\,ms;
+    $Z_\mathrm{line}$ requires voltage-phasor pairs for reliable estimation.
+
+  \item \textbf{$f_\mathrm{gfm}$ tracking}: Algebraic $I_2/I_1$ inversion
+    achieves $<0.03$\,pu error; 67Q threshold correctly classified.
+
+  \item \textbf{Warm-starting}: $7\times$ convergence speedup; $k_\mathrm{ibr}$
+    reliable within 2\,ms of fault inception.
+
+  \item \textbf{Cycle budget}: 285\,$\mu$s of 1000\,$\mu$s used (28.5\%);
+    71.5\% margin for extensions.
+\end{enumerate}
+
+\noindent
+TR-44 completes the estimation engine.  TR-45 performs the full DT validation
+study, integrating TR-43 and TR-44 against the SAMBP protection scheme.
+
+\bibliographystyle{IEEEtranN}
+\bibliography{references44}
+
+\end{document}
