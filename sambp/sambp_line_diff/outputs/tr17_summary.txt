@@ -1,0 +1,49 @@
+SAMBP TR-17/2026 Adaptive Threshold Summary
+========================================================
+
+Threshold law: I_thresh = max(0.08, 0.15 × I_rest)  [pu]
+
+Threshold characteristic (k_slope = 0.15)
+--------------------------------------------------------
+  I_rest=0.00  fixed=0.080  k=0.15:0.080  CT_err=0.0000
+  I_rest=0.25  fixed=0.080  k=0.15:0.080  CT_err=0.0013
+  I_rest=0.50  fixed=0.080  k=0.15:0.080  CT_err=0.0025
+  I_rest=0.75  fixed=0.080  k=0.15:0.113  CT_err=0.0037
+  I_rest=1.00  fixed=0.080  k=0.15:0.150  CT_err=0.0050
+  I_rest=1.50  fixed=0.080  k=0.15:0.225  CT_err=0.0075
+  I_rest=2.00  fixed=0.080  k=0.15:0.300  CT_err=0.0100
+  I_rest=3.00  fixed=0.080  k=0.15:0.450  CT_err=0.0150
+  I_rest=4.00  fixed=0.080  k=0.15:0.600  CT_err=0.0200
+
+α₅₀ vs I_rest  (ag, k_slope=0.15)
+--------------------------------------------------------
+  I_rest=0.0 pu : α₅₀ = 0.030  (TR-15 unchanged)
+  I_rest=1.0 pu : α₅₀ = 0.056  (I_thresh=0.150 pu)
+  I_rest=2.0 pu : α₅₀ = 0.113  (I_thresh=0.300 pu)
+
+Security margin (k=0.15, ε_CT=0.005)
+--------------------------------------------------------
+  I_rest=0.00  I_thresh=0.080  margin=inf×
+  I_rest=0.25  I_thresh=0.080  margin=64.0×
+  I_rest=0.50  I_thresh=0.080  margin=32.0×
+  I_rest=0.75  I_thresh=0.113  margin=30.0×
+  I_rest=1.00  I_thresh=0.150  margin=30.0×
+  I_rest=1.50  I_thresh=0.225  margin=30.0×
+  I_rest=2.00  I_thresh=0.300  margin=30.0×
+  I_rest=3.00  I_thresh=0.450  margin=30.0×
+  I_rest=4.00  I_thresh=0.600  margin=30.0×
+
+Coordination sweep: 28/28 (100%) correct
+
+Heavy-load no-fault security
+--------------------------------------------------------
+  LOAD_1.0  : I_rest=1.0  I_thresh=0.150  CT_err=0.0050  trip=False  margin=30.0×  OK
+  LOAD_2.0  : I_rest=2.0  I_thresh=0.300  CT_err=0.0100  trip=False  margin=30.0×  OK
+  LOAD_4.0  : I_rest=4.0  I_thresh=0.600  CT_err=0.0200  trip=False  margin=30.0×  OK
+
+HIF line scenarios (alpha=0.05 ag) — coordination re-check
+--------------------------------------------------------
+  T1_NORM     : trip=True  I_fund=0.432  I_thresh=0.080  f_int=1.000  OK
+  T2_TIP      : trip=True  I_fund=0.432  I_thresh=0.080  f_int=1.000  OK
+  T3_POST     : trip=True  I_fund=0.432  I_thresh=0.080  f_int=1.000  OK
+  T4_SPLIT    : trip=True  I_fund=0.432  I_thresh=0.080  f_int=1.000  OK
