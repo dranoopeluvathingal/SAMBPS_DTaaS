@@ -1,0 +1,334 @@
+% =============================================================================
+% SAMBP TR-26/2026
+% IBR Parametric Monte Carlo Robustness Study
+% =============================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=25mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{siunitx}
+
+% ---------------------------------------------------------------------------
+\title{%
+  \textbf{SAMBP TR-26/2026}\\[4pt]
+  IBR Parametric Monte Carlo Robustness Study\\
+  for the Combined 87L Protection Chain}
+\author{PhD Candidate\\PhD Thesis Supporting Report}
+\date{April 2026}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\vspace{6pt}\hrule\vspace{10pt}
+
+% =============================================================================
+\section{Introduction}
+% =============================================================================
+
+TR-20 through TR-25 designed and validated individual protection elements
+against deterministic scenarios.  The combined trip logic developed over
+this arc is:
+\begin{equation}
+  \text{TRIP} =
+    \underbrace{|I_1| \geq 0.12}_{\text{87L}}
+    \vee\;
+    \underbrace{|I_2| \geq 0.06}_{\text{87LN}}
+    \vee\;
+    \underbrace{|I_0| \geq 0.04}_{\text{87LN0}}
+    \vee\;
+    \underbrace{\Delta I_{\rm adapt} \geq \Delta_{\rm thr}}_{\text{TDCS-87L}},
+    \label{eq:combined}
+\end{equation}
+where $\Delta_{\rm thr} = 0.025 + 3\hat{\sigma}_{\rm pre}$ (adaptive, TR-24).
+
+\textbf{Question for TR-26}: Does \eqref{eq:combined} maintain TPR $\geq 0.99$
+and FPR $\leq 0.005$ when the following IBR parameters vary
+\emph{simultaneously} over their full operating ranges?
+
+% =============================================================================
+\section{Monte Carlo Design}
+% =============================================================================
+
+\subsection{Parametric Envelope}
+
+Table~\ref{tab:params} defines the uncertainty space.  All parameters are
+drawn independently from uniform distributions at each trial.
+
+\begin{table}[h!]
+\centering
+\caption{IBR parametric envelope — Monte Carlo sampling distributions.}
+\label{tab:params}
+\begin{tabular}{llll}
+\toprule
+Parameter & Symbol & Distribution & Physical meaning \\
+\midrule
+IBR current limit & $k_{\rm ibr}$ & $\mathcal{U}[0.06,\,0.20]$\,pu
+  & Post-fault IBR positive-seq output \\
+System frequency  & $f$           & $\mathcal{U}[47,\,53]$\,Hz
+  & Island/transient off-nominal freq.\ \\
+3rd harmonic inj. & $I_{h3}$      & $\mathcal{U}[0,\,0.10]$\,pu
+  & IBR harmonic content in differential \\
+CT ratio error    & $\varepsilon_{\rm CT}$ & $\mathcal{U}[0,\,0.005]$
+  & Class 5P: max 0.5\% ratio error \\
+Pre-fault baseline & $\hat{\mu}_{\rm pre}$ & $\mathcal{U}[0.002,\,0.010]$\,pu
+  & Seasonal/drift variation \\
+Baseline std       & $\hat{\sigma}_{\rm pre}$ & $\mathcal{U}[0.0003,\,0.0020]$\,pu
+  & Rolling history volatility \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Scenario Groups}
+
+\begin{enumerate}
+  \item \textbf{Group A} — Symmetric 3PH internal faults ($N = 5\,000$
+    trials).  The TDCS-87L or 87L element must trip; 87LN and 87LN0 cannot
+    ($I_2 = I_0 = 0$ for symmetric faults).
+  \item \textbf{Group B} — SLG internal faults ($N = 5\,000$).  Earthing
+    type drawn from $\{$solidly (40\%), resistance-earthed (40\%),
+    unearthed (20\%)$\}$.  In the solidly/resistance earthed cases, 87LN0
+    should trip; in the unearthed case, TDCS is the last resort.
+    $I_2 \sim \mathcal{U}[0.01,\,0.04]$\,pu (pure IBR, no SG injection).
+  \item \textbf{Group C} — External faults ($N = 5\,000$).  No element
+    should trip.  Differential arises solely from CT ratio mismatch:
+    $I_{\rm diff,CT} = \varepsilon_{\rm CT}\,I_{\rm ext}/3$ (per sequence).
+\end{enumerate}
+
+\subsection{Modelling Notes}
+
+\begin{itemize}
+  \item After TR-21 harmonic filter (95\% attenuation): residual harmonic
+    in differential $= I_{h3} \times 0.05$\,pu.  This inflates
+    $\mathrm{rms}_{\rm post}$ slightly but not enough to affect detection.
+  \item After TR-20 frequency-adaptive $B_C$ correction: DFT bin misalign-
+    ment at $\pm 3$\,Hz introduces $<0.2\%$ phasor amplitude error —
+    negligible for the protection thresholds used.
+  \item The adaptive TDCS threshold (TR-24) is implemented exactly as
+    $\Delta_{\rm thr} = 0.025 + 3\hat{\sigma}_{\rm pre}$.
+\end{itemize}
+
+% =============================================================================
+\section{Results}
+% =============================================================================
+
+\subsection{Overall Performance}
+
+Table~\ref{tab:results} shows the primary outcome: all three groups achieve
+rates that meet or exceed the performance targets with 95\% Wilson
+confidence intervals entirely above 0.999.
+
+\begin{table}[h!]
+\centering
+\caption{TR-26 Monte Carlo results ($N = 5\,000$ trials per group).}
+\label{tab:results}
+\begin{tabular}{lrrrrrr}
+\toprule
+Group & $N$ & Correct & Rate & 95\% CI (lo) & 95\% CI (hi) & Target \\
+\midrule
+A — 3PH internal (TPR)       & 5000 & 5000 & 1.000 & 0.9992 & 1.000 & $\geq 0.990$ \\
+B — SLG internal (TPR)       & 5000 & 5000 & 1.000 & 0.9992 & 1.000 & $\geq 0.990$ \\
+C — External (security rate) & 5000 & 5000 & 1.000 & 0.9992 & 1.000 & $\geq 0.995$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Detection by k\_ibr Bin (Group A)}
+
+Figure~\ref{fig:kbins} shows the per-bin detection rate and element
+breakdown for Group A.  Bins below $k_{\rm ibr} = 0.12$\,pu are detected
+exclusively by TDCS-87L; bins at or above 0.12\,pu are detected by 87L
+(and simultaneously by TDCS).  All seven bins achieve TPR = 1.000
+with 95\% CI lower bound $\geq 0.9947$.
+
+\begin{figure}[h!]
+  \centering
+  \input{figures/fig_mc_tpr_kbins.tex}
+  \caption{Detection rate by $k_{\rm ibr}$ bin (Group A, 3PH symmetric).
+           Yellow bars: TDCS-87L only (below 87L threshold).
+           Green bars: 87L primary detection.  Wilson 95\% CI whiskers
+           shown at each bin; all lower bounds $\geq 0.9947$.}
+  \label{fig:kbins}
+\end{figure}
+
+\subsection{External Fault Security (Group C)}
+
+Figure~\ref{fig:security} shows the worst-case TDCS apparent $\Delta I$
+vs the adaptive threshold across the $I_{\rm ext}$ range.  At the maximum
+external current (7\,pu) with worst-case CT mismatch (0.5\%), the apparent
+$\Delta I = 0.022$\,pu remains below $\Delta_{\rm thr,min} = 0.026$\,pu
+— a minimum security margin of \textbf{15.5\%}.  No trial in 5\,000
+caused a false trip.
+
+\begin{figure}[h!]
+  \centering
+  \input{figures/fig_mc_security.tex}
+  \caption{External fault TDCS $\Delta I$ vs threshold (Group C).  The
+           blue line shows the 95th-percentile envelope of $\Delta I$
+           across all 5\,000 external fault trials.  Both threshold
+           lines (minimum and mean $\hat{\sigma}$) remain above the
+           $\Delta I$ envelope at all current levels.  Minimum margin:
+           15.5\% at $I_{\rm ext} = 6.95$\,pu.}
+  \label{fig:security}
+\end{figure}
+
+\subsection{Confidence Interval Summary}
+
+Figure~\ref{fig:ci} shows the 95\% Wilson CI for all three groups
+on a common axis.  The CI lower bounds (0.9992 for all groups at
+$N = 5\,000$) exceed the targets by a substantial margin.
+
+\begin{figure}[h!]
+  \centering
+  \input{figures/fig_mc_ci_summary.tex}
+  \caption{95\% Wilson CI for each Monte Carlo group.  Horizontal lines
+           show the performance targets.  All observed rates achieve
+           1.000 with CI lower bounds at 0.9992, well above the
+           $\geq 0.990$ and $\geq 0.995$ targets.}
+  \label{fig:ci}
+\end{figure}
+
+\subsection{Group B Element Breakdown}
+
+For the 5\,000 SLG trials, the detecting element was:
+
+\begin{table}[h!]
+\centering
+\caption{Group B — detecting element breakdown (SLG, 5\,000 trials).}
+\label{tab:group_b}
+\begin{tabular}{lrr}
+\toprule
+Element & Count & Fraction \\
+\midrule
+87L ($|I_1| \geq 0.12$)   & 2861 & 57.2\% \\
+87LN ($|I_2| \geq 0.06$)  &    0 &  0.0\% \\
+87LN0 ($|I_0| \geq 0.04$) & 4039 & 80.8\% \\
+TDCS-87L only              &  961 & 19.2\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+As expected in the pure-IBR scenario, the 87LN element never operates
+($I_2 \leq 0.04$\,pu always, below threshold).  The 87LN0 element is the
+primary discriminator for earthed SLG faults (80\% of all SLG trials —
+consistent with the 80\% earthed probability in the sampling distribution).
+TDCS covers the remaining 19.2\% (unearthed SLG + low-$k_{\rm ibr}$
+earthed cases where 87LN0 also trips but TDCS is listed as sole detector
+when $I_0 < I_{0,\rm thr}$).
+
+% =============================================================================
+\section{Robustness Analysis}
+% =============================================================================
+
+\subsection{TDCS Detection Limit Under Joint Uncertainty}
+
+The theoretical worst case for TDCS missing a 3PH fault requires:
+\begin{equation}
+  \frac{k_{\rm ibr}}{\sqrt{2}} < \hat{\mu}_{\rm pre} + \Delta_{\rm floor}
+    + k_{\sigma}\hat{\sigma}_{\rm pre}.
+  \label{eq:tdcs_miss_condition}
+\end{equation}
+Substituting the maximum allowable values
+($\hat{\mu}_{\rm pre} = 0.010$, $\hat{\sigma}_{\rm pre} = 0.0020$,
+$\Delta_{\rm floor} = 0.025$, $k_{\sigma} = 3$):
+\begin{equation}
+  k_{\rm ibr} < (0.010 + 0.025 + 0.006)\times\sqrt{2} = 0.041\times 1.414
+              = 0.058\,\text{pu}.
+  \label{eq:tdcs_miss_kibr}
+\end{equation}
+Since the Monte Carlo samples $k_{\rm ibr} \geq 0.06$\,pu, condition
+\eqref{eq:tdcs_miss_condition} is \textbf{never satisfied} — the TDCS
+element is guaranteed to trip for all sampled parameter combinations.
+This explains the analytically exact TPR = 1.000 for Group A.
+
+\subsection{TDCS Security Bound Under Joint Uncertainty}
+
+The worst-case CT mismatch step for external faults is:
+\begin{equation}
+  \Delta I_{\rm ext,max} = \frac{\varepsilon_{\rm CT,max}\,I_{\rm ext,max}}{\sqrt{2}}
+    - \hat{\mu}_{\rm pre,min}
+  = \frac{0.005\times 7}{\sqrt{2}} - 0.002 = 0.0228\,\text{pu}.
+  \label{eq:ext_max}
+\end{equation}
+The minimum adaptive threshold is:
+\begin{equation}
+  \Delta_{\rm thr,min} = \Delta_{\rm floor} + k_{\sigma}\hat{\sigma}_{\rm pre,min}
+  = 0.025 + 3\times 0.0003 = 0.0259\,\text{pu}.
+  \label{eq:thr_min}
+\end{equation}
+Since $\Delta I_{\rm ext,max} = 0.0228 < \Delta_{\rm thr,min} = 0.0259$,
+external faults can \textbf{never} cause a false TDCS trip — confirmed by
+FPR = 0 across 5\,000 trials.
+
+% =============================================================================
+\section{Comparison with TR-09 Monte Carlo}
+% =============================================================================
+
+Table~\ref{tab:tr09_vs_tr26} compares the scope of the two SAMBP
+Monte Carlo studies.
+
+\begin{table}[h!]
+\centering
+\caption{TR-09 vs TR-26 Monte Carlo comparison.}
+\label{tab:tr09_vs_tr26}
+\begin{tabular}{lll}
+\toprule
+Aspect & TR-09 & TR-26 \\
+\midrule
+Protection chain & Full SAMBP (87T,87B,87L,21,OC) & IBR line diff chain only \\
+Network model  & Full radial network simulator & Parametric analytic model \\
+Parameter space & Fault current, DC offset, $\varphi$ & $k_{\rm ibr}$, $f$, $I_{h3}$,
+                                                         $\varepsilon_{\rm CT}$, $\hat{\mu}$, $\hat{\sigma}$ \\
+Trials per group & 200 & 5\,000 \\
+Primary focus & Veto gate (Stage-2) robustness & IBR-specific element coverage \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Together, TR-09 and TR-26 provide complementary validation: TR-09 tests
+the full protection system on a realistic network model; TR-26 tests the
+new IBR-specific elements (TR-20 through TR-25) against the specific
+parameter space where they were designed to operate.
+
+% =============================================================================
+\section{Conclusion}
+% =============================================================================
+
+The combined IBR line differential protection chain
+(87L + 87LN + 87LN0 + TDCS-87L with adaptive threshold) achieves:
+
+\begin{itemize}
+  \item \textbf{TPR = 1.000} for both 3PH and SLG internal fault groups
+    (5\,000 trials each), with 95\% Wilson CI lower bound $\geq 0.9992$.
+  \item \textbf{FPR = 0.000} for external faults (5\,000 trials), with
+    minimum TDCS security margin of 15.5\%.
+  \item The protection is analytically guaranteed: the TDCS detection
+    limit ($k_{\rm ibr,min} = 0.058$\,pu) lies below the sampled
+    envelope ($k_{\rm ibr} \geq 0.060$\,pu), and the CT mismatch step
+    ($\Delta I_{\rm ext,max} = 0.023$\,pu) is always below the minimum
+    adaptive threshold ($\Delta_{\rm thr,min} = 0.026$\,pu).
+\end{itemize}
+
+\subsection{Future Work}
+
+\begin{enumerate}
+  \item \textbf{TR-27 — Updated System Integration}: validate the full
+    combined element in the SAMBP radial network context, replacing the
+    pre-TR-20 87L in the TR-05 system integration study.
+  \item \textbf{TR-28 — Master Synthesis}: compile all TR-03 through TR-27
+    results into a single thesis-ready summary document.
+\end{enumerate}
+
+% =============================================================================
+\bibliographystyle{IEEEtran}
+\bibliography{references26}
+
+\end{document}
