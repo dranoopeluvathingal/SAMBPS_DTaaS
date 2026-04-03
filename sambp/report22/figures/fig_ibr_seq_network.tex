@@ -1,0 +1,80 @@
+% fig_ibr_seq_network.tex
+% Sequence network diagram for SLG fault with IBR at local end
+% Shows: positive-sequence network (IBR limited), negative-sequence (NOT limited)
+% and zero-sequence (depends on earthing)
+\begin{tikzpicture}[
+  bus/.style={draw, thick, minimum width=0.3cm, minimum height=1.6cm,
+              fill=gray!20},
+  src/.style={draw, circle, minimum size=0.7cm, font=\scriptsize, fill=blue!8},
+  ibr/.style={draw, diamond, minimum size=0.9cm, font=\tiny, fill=orange!10,
+              align=center},
+  zt/.style={font=\scriptsize, align=center},
+  arr/.style={-latex, thick},
+  lim/.style={font=\tiny, red!70!black},
+]
+
+% ---- Positive-sequence network (top) ----------------------------------------
+\node[font=\small\bfseries] at (6.5, 4.8) {Positive-sequence network ($Z_1$)};
+
+% IBR at left (local)
+\node[ibr] (ibr1) at (0, 3.5) {IBR\\$Z_{S1}$};
+\node[lim, align=center] at (0, 2.5) {Current-limited\\to $k_{\rm ibr}$ pu};
+\draw[red!50, dashed, thick] (ibr1.south) -- (0, 2.9);
+
+% Bus 1 (local)
+\node[bus] (bus1a) at (2, 3.5) {};
+\node[font=\tiny, above] at (2, 4.35) {Bus L};
+\draw[arr] (ibr1.east) -- node[above, zt]{$Z_1^L$} (bus1a.west);
+
+% Line impedance Z_L1
+\draw[arr] (bus1a.east) -- node[above, zt]{$Z_{\rm line,1}$} (5.5, 3.5);
+
+% Fault point F
+\node[font=\scriptsize\bfseries, red!70!black] at (5.5, 3.5) {F};
+\fill[red!70!black] (5.5, 3.5) circle (2.5pt);
+\draw[arr, red!60!black] (5.5, 3.5) -- node[right, zt]{$I_1$} (5.5, 2.8);
+
+% Bus 2 (remote)
+\node[bus] (bus2a) at (8.5, 3.5) {};
+\node[font=\tiny, above] at (8.5, 4.35) {Bus R};
+\draw (5.5, 3.5) -- node[above, zt]{$Z_{\rm line,1}$} (bus2a.west);
+
+% Grid source at remote
+\node[src] (sg1) at (10.5, 3.5) {$E_1$};
+\draw[arr] (bus2a.east) -- node[above, zt]{$Z_{S1}^R$} (sg1.west);
+
+% ---- Negative-sequence network (middle) -------------------------------------
+\node[font=\small\bfseries] at (6.5, 1.8) {Negative-sequence network ($Z_2$)};
+
+% IBR negative-sequence source (typically zero or small)
+\node[ibr] (ibr2) at (0, 0.8) {IBR\\$Z_{S2}$};
+\node[lim, align=center] at (0, -0.2) {I$_2$ NOT directly\\current-limited};
+
+% Bus 1 (neg seq)
+\node[bus] (bus1b) at (2, 0.8) {};
+\draw[arr] (ibr2.east) -- node[above, zt]{$Z_2^L$} (bus1b.west);
+
+% Line + fault
+\draw[arr] (bus1b.east) -- node[above, zt]{$Z_{\rm line,2}$} (5.5, 0.8);
+\fill[red!70!black] (5.5, 0.8) circle (2.5pt);
+\node[font=\scriptsize\bfseries, red!70!black] at (5.5, 0.8) {};
+\draw[arr, red!60!black] (5.5, 0.8) -- node[right, zt]{$I_2$} (5.5, 0.1);
+
+% Bus 2 (neg seq) + remote
+\node[bus] (bus2b) at (8.5, 0.8) {};
+\draw (5.5, 0.8) -- (bus2b.west);
+\node[src] (sg2) at (10.5, 0.8) {0};
+\draw[arr] (bus2b.east) -- node[above, zt]{$Z_{S2}^R$} (sg2.west);
+
+% ---- Connection at fault point (SLG: I1=I2=I0) ----------------------------
+\draw[red!60!black, thick, dashed]
+  (5.5, 2.8) -- node[right, font=\tiny, red!70!black]{$I_1=I_2=I_0$} (5.5, 1.4);
+\draw[red!60!black, thick, dashed] (5.5, 0.1) -- (5.5, -0.5);
+
+% ---- Measurement points annotation -----------------------------------------
+\node[font=\tiny, blue!60!black, align=center]
+  at (2.0, 4.8) {$\Delta I_1 = I_1^L + I_1^R$\\limited by IBR};
+\node[font=\tiny, green!60!black, align=center]
+  at (2.0, 1.8) {$\Delta I_2 = I_2^L + I_2^R$\\NOT IBR-limited};
+
+\end{tikzpicture}
