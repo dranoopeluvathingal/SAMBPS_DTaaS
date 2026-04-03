@@ -1,0 +1,43 @@
+SAMBP TR-15 Simulation Summary
+==================================================
+
+alpha_50 (TPR >= 0.50) by configuration and fault type
+--------------------------------------------------
+  B_prefault              ag    alpha_50 = 0.05
+  B_prefault              3ph   alpha_50 = 0.05
+  D_voltage               ag    alpha_50 = 0.03
+  D_voltage               3ph   alpha_50 = 0.02
+  E_voltage_override      ag    alpha_50 = 0.03
+  E_voltage_override      3ph   alpha_50 = 0.02
+
+Mean charging residual RMS [pu] by configuration
+--------------------------------------------------
+  B_prefault              mean=0.00093 pu  p95=0.00119 pu
+  D_voltage               mean=0.65904 pu  p95=0.68129 pu
+  E_voltage_override      mean=0.65904 pu  p95=0.68129 pu
+
+TPR detail: Config D (voltage, no override) — ag faults
+--------------------------------------------------
+  alpha=0.01  TPR=0.000  I_fund_mean=0.055 pu  f_int_mean=0.000
+  alpha=0.02  TPR=0.000  I_fund_mean=0.111 pu  f_int_mean=0.386
+  alpha=0.03  TPR=1.000  I_fund_mean=0.166 pu  f_int_mean=1.000
+  alpha=0.05  TPR=1.000  I_fund_mean=0.277 pu  f_int_mean=1.000
+  alpha=0.07  TPR=1.000  I_fund_mean=0.388 pu  f_int_mean=1.000
+  alpha=0.10  TPR=1.000  I_fund_mean=0.554 pu  f_int_mean=1.000
+  alpha=0.15  TPR=1.000  I_fund_mean=0.831 pu  f_int_mean=1.000
+  alpha=0.20  TPR=1.000  I_fund_mean=1.109 pu  f_int_mean=1.000
+  alpha=0.30  TPR=1.000  I_fund_mean=1.662 pu  f_int_mean=1.000
+  alpha=0.50  TPR=1.000  I_fund_mean=2.766 pu  f_int_mean=1.000
+
+TPR detail: Config D (voltage, no override) — 3ph faults
+--------------------------------------------------
+  alpha=0.01  TPR=0.000  I_fund_mean=0.075 pu
+  alpha=0.02  TPR=1.000  I_fund_mean=0.150 pu
+  alpha=0.03  TPR=1.000  I_fund_mean=0.224 pu
+  alpha=0.05  TPR=1.000  I_fund_mean=0.375 pu
+  alpha=0.07  TPR=1.000  I_fund_mean=0.524 pu
+  alpha=0.10  TPR=1.000  I_fund_mean=0.750 pu
+  alpha=0.15  TPR=1.000  I_fund_mean=1.124 pu
+  alpha=0.20  TPR=1.000  I_fund_mean=1.501 pu
+  alpha=0.30  TPR=1.000  I_fund_mean=2.249 pu
+  alpha=0.50  TPR=1.000  I_fund_mean=3.750 pu

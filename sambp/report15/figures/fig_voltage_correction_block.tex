@@ -1,0 +1,71 @@
+% fig_voltage_correction_block.tex
+% Block diagram: voltage-based pi-section correction pipeline (TR-15)
+% Shows: v_S, v_R -> Hilbert/B_C block -> i_C_est -> subtractor -> i_diff_corr -> LM estimator
+\begin{tikzpicture}[
+  blk/.style={draw, fill=blue!8, rounded corners=3pt,
+              minimum width=52pt, minimum height=22pt,
+              font=\scriptsize, align=center},
+  sum/.style={draw, circle, fill=orange!10, minimum size=18pt,
+              font=\small, inner sep=0pt},
+  sig/.style={font=\scriptsize},
+  arr/.style={-latex, thick},
+  darr/.style={-latex, thick, dashed, gray!60},
+  lab/.style={font=\scriptsize\itshape},
+]
+
+% ---- Input signals ---------------------------------------------------------
+\node[sig] (iS) at (0, 1.6) {$i_{\rm diff}(t)$};
+\node[sig] (vS) at (0, 0.0) {$v_S(t)$};
+\node[sig] (vR) at (0,-0.9) {$v_R(t)$};
+
+% ---- Average block ---------------------------------------------------------
+\node[blk] (avg) at (2.4, -0.45) {Average\\$\frac{v_S+v_R}{2}$};
+\draw[arr] (vS.east) -- ++(0.6,0) |- (avg.west);
+\draw[arr] (vR.east) -- ++(0.6,0) |- (avg.west);
+
+% ---- Hilbert / B_C block ---------------------------------------------------
+\node[blk] (hil) at (5.0, -0.45) {$B_C \cdot \mathrm{Im}\{\mathcal{H}[\,\cdot\,]\}$};
+\draw[arr] (avg.east) -- (hil.west);
+\node[lab, below=2pt] at (3.7, -0.45) {$v_{\rm avg}$};
+
+% ---- Charging estimate label -----------------------------------------------
+\node[lab] (iClab) at (6.7, -0.45) {$\hat{i}_C(t)$};
+\draw[arr] (hil.east) -- (iClab.west);
+
+% ---- Summation node --------------------------------------------------------
+\node[sum] (sub) at (8.0, 1.6) {$-$};
+\draw[arr] (iClab.east) -| (sub.south);
+\draw[arr] (iS.east) -| (sub.west);
+\node[lab, left=2pt] at (sub.west) {};
+
+% Small + label at the main path entry
+\node[sig] at ($(sub.west)+(-3pt,3pt)$) {$+$};
+\node[sig] at ($(sub.south)+(0,-3pt)$) {$-$};
+
+% ---- Corrected differential ------------------------------------------------
+\node[blk] (lm) at (10.6, 1.6) {LM\\estimator};
+\draw[arr] (sub.east) -- node[above, lab]{$i_{\rm diff,corr}(t)$} (lm.west);
+
+% ---- LM output -------------------------------------------------------------
+\node[blk, fill=green!8] (gate) at (13.2, 1.6) {Confidence\\gate};
+\draw[arr] (lm.east) -- node[above, lab]{$\hat{I}_{\rm fund},\,f_{\rm int}$} (gate.west);
+\node[sig] at (14.8, 1.6) {Trip};
+\draw[arr] (gate.east) -- (14.5, 1.6);
+
+% ---- PT noise annotation ---------------------------------------------------
+\node[draw, fill=red!5, rounded corners=2pt, font=\scriptsize, align=center]
+  (ptnoise) at (2.4, -2.0)
+  {PT class 0.1\%\\$\sigma_{\rm PT}=0.001\,\mathrm{pu}$};
+\draw[darr] (ptnoise.north) -- (avg.south);
+
+% ---- Threshold box ---------------------------------------------------------
+\node[draw, fill=gray!8, rounded corners=2pt, font=\scriptsize, align=center]
+  (thresh) at (10.6, 0.3)
+  {$I_{\rm thresh}=0.08\,\mathrm{pu}$\\$k_{\rm max}=2.0$};
+\draw[darr] (thresh.north) -- (lm.south);
+
+% ---- Method label ----------------------------------------------------------
+\node[font=\scriptsize\bfseries, blue!60!black]
+  at (5.0, -1.55) {Voltage-based (Mode~1) --- no pre-fault window required};
+
+\end{tikzpicture}

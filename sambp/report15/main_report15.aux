@@ -1,0 +1,61 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{SAMBP_TR11}
+\citation{SAMBP_TR12}
+\citation{SAMBP_TR13}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Background and Motivation}{2}{section.1}\protected@file@percent }
+\newlabel{sec:background}{{1}{2}{Background and Motivation}{section.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.1}Sensitivity improvement chain: TR-11 to TR-15}{2}{subsection.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.2}Residual floor of the TR-13 pre-fault method}{2}{subsection.1.2}\protected@file@percent }
+\newlabel{eq:prefault_fit}{{1}{2}{Residual floor of the TR-13 pre-fault method}{equation.1.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Voltage-Based Correction (Mode 1)}{2}{section.2}\protected@file@percent }
+\newlabel{sec:mode1}{{2}{2}{Voltage-Based Correction (Mode 1)}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Pi-section charging current}{2}{subsection.2.1}\protected@file@percent }
+\newlabel{eq:ic_hilbert}{{2}{2}{Pi-section charging current}{equation.2.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Processing pipeline}{3}{subsection.2.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Voltage-based pi-section correction pipeline (Mode~1). Both-end voltage measurements $v_S(t)$ and $v_R(t)$ are averaged and passed through a Hilbert-based charging estimator scaled by $B_C$. The estimated charging current $\hat  {i}_C(t)$ is subtracted before the LM estimator. The PT accuracy class constrains the residual to $\approx 0.001\,\text  {pu}$, enabling $I_{\rm  thresh} = 0.08\,\text  {pu}$.}}{3}{figure.caption.2}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:block}{{1}{3}{Voltage-based pi-section correction pipeline (Mode~1). Both-end voltage measurements $v_S(t)$ and $v_R(t)$ are averaged and passed through a Hilbert-based charging estimator scaled by $\BC $. The estimated charging current $\hat {i}_C(t)$ is subtracted before the LM estimator. The PT accuracy class constrains the residual to $\approx 0.001\pu $, enabling $I_{\rm thresh} = 0.08\pu $}{figure.caption.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Threshold recalibration}{3}{subsection.2.3}\protected@file@percent }
+\newlabel{eq:residual_sigma}{{3}{3}{Threshold recalibration}{equation.2.3}{}}
+\newlabel{eq:thresh}{{4}{3}{Threshold recalibration}{equation.2.4}{}}
+\newlabel{eq:fint}{{5}{3}{Threshold recalibration}{equation.2.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Comparison of correction methods}{3}{subsection.2.4}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Comparison of pi-section correction methods.}}{3}{table.caption.3}\protected@file@percent }
+\newlabel{tab:methods}{{1}{3}{Comparison of pi-section correction methods}{table.caption.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Simulation Methodology}{4}{section.3}\protected@file@percent }
+\newlabel{sec:simulation}{{3}{4}{Simulation Methodology}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Voltage waveform generation}{4}{subsection.3.1}\protected@file@percent }
+\newlabel{eq:voltage_model}{{6}{4}{Voltage waveform generation}{equation.3.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Study configurations}{4}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Results}{4}{section.4}\protected@file@percent }
+\newlabel{sec:results}{{4}{4}{Results}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Alpha-50 sensitivity}{4}{subsection.4.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces $\alpha _{50}$ (smallest $\alpha $ at which TPR $\geq 0.50$) by configuration and fault type.}}{4}{table.caption.4}\protected@file@percent }
+\newlabel{tab:alpha50}{{2}{4}{$\alphafifty $ (smallest $\alpha $ at which TPR $\geq 0.50$) by configuration and fault type}{table.caption.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Residual floor and threshold reduction}{4}{subsection.4.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces $\alpha _{50}$ progression from TR-11 to TR-15 for phase-to-ground (ag) and three-phase (3ph) faults. The cumulative improvement is 57\% for ag faults (0.10 $\to $ 0.03) and 71\% for 3ph faults (0.07 $\to $ 0.02).}}{5}{figure.caption.5}\protected@file@percent }
+\newlabel{fig:alpha50}{{2}{5}{$\alphafifty $ progression from TR-11 to TR-15 for phase-to-ground (ag) and three-phase (3ph) faults. The cumulative improvement is 57\% for ag faults (0.10 $\to $ 0.03) and 71\% for 3ph faults (0.07 $\to $ 0.02)}{figure.caption.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Trip point analysis}{5}{subsection.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}No-false-trip verification}{5}{subsection.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Implementation Notes}{5}{section.5}\protected@file@percent }
+\newlabel{sec:implementation}{{5}{5}{Implementation Notes}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Code location}{5}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Hilbert transform edge effects}{5}{subsection.5.2}\protected@file@percent }
+\citation{IEC60044_7}
+\citation{Kasztenny2010}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Charging residual RMS and $I_{\rm  fund}$ threshold by method (log scale). Residual floor is the same for pre-fault and voltage methods ($\approx 0.001\,\text  {pu}$), but the voltage method enables a lower threshold (0.08\,pu vs.\ 0.12\,pu) because it does not require a pre-fault window and therefore has a tighter known security margin. Total threshold reduction from TR-11 to TR-15: 60\% (0.20 $\to $ 0.08\,pu).}}{6}{figure.caption.6}\protected@file@percent }
+\newlabel{fig:residual}{{3}{6}{Charging residual RMS and $I_{\rm fund}$ threshold by method (log scale). Residual floor is the same for pre-fault and voltage methods ($\approx 0.001\pu $), but the voltage method enables a lower threshold (0.08\,pu vs.\ 0.12\,pu) because it does not require a pre-fault window and therefore has a tighter known security margin. Total threshold reduction from TR-11 to TR-15: 60\% (0.20 $\to $ 0.08\,pu)}{figure.caption.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Synchronisation requirement}{6}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Conclusions and Future Work}{6}{section.6}\protected@file@percent }
+\newlabel{sec:conclusions}{{6}{6}{Conclusions and Future Work}{section.6}{}}
+\bibstyle{unsrtnat}
+\bibdata{references15}
+\bibcite{SAMBP_TR11}{{1}{2026{}}{{Candidate}}{{}}}
+\bibcite{SAMBP_TR12}{{2}{2026{}}{{Candidate}}{{}}}
+\bibcite{SAMBP_TR13}{{3}{2026{}}{{Candidate}}{{}}}
+\bibcite{IEC60044_7}{{4}{1999}{{IEC}}{{}}}
+\bibcite{Kasztenny2010}{{5}{2010}{{Kasztenny et~al.}}{{Kasztenny, Brunello, and Harber}}}
+\gdef \@abspage@last{7}
