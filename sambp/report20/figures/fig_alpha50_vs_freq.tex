@@ -1,0 +1,71 @@
+% fig_alpha50_vs_freq.tex
+% Line plot: α₅₀ vs system frequency for Fixed vs Adaptive correction
+% α₅₀ = ε_C / I_nom; horizontal limit line at 0.030 (TR-17 target)
+\begin{tikzpicture}
+\begin{axis}[
+  name         = a50ax,
+  width        = 0.78\textwidth,
+  height       = 6.5cm,
+  ylabel       = {Normalised residual $\alpha_{50}$ [pu/pu]},
+  ylabel style = {font=\small},
+  xlabel       = {System frequency $f$ [Hz]},
+  xlabel style = {font=\small},
+  ymin=-0.0002, ymax=0.0070,
+  ytick        = {0, 0.001, 0.002, 0.003, 0.004, 0.005, 0.006},
+  yticklabels  = {0, 0.001, 0.002, 0.003, 0.004, 0.005, 0.006},
+  yticklabel style={font=\scriptsize},
+  xtick        = {47, 48, 49, 50, 51, 52, 53},
+  xticklabels  = {47, 48, 49, 50, 51, 52, 53},
+  xticklabel style={font=\scriptsize},
+  legend style={at={(0.50, 0.95)}, anchor=north,
+                font=\scriptsize, draw=gray!60},
+  grid          = major,
+  grid style    = {gray!20, dashed},
+  tick style    = {draw=none},
+  axis line style={gray!60},
+  mark size=2.5pt,
+]
+
+% Fixed (TR-15): α₅₀ = |1 - f/50| × B_C × V_avg / I_nom
+\addplot[red!70!black, thick, mark=square*,
+         mark options={fill=red!40}]
+  coordinates {
+    (47, 0.003312)
+    (48, 0.002210)
+    (49, 0.001106)
+    (50, 0.000000)
+    (51, 0.001106)
+    (52, 0.002210)
+    (53, 0.003313)
+  };
+\addlegendentry{Fixed correction (TR-15)}
+
+% Adaptive (TR-20): ≈ 0 at all frequencies
+\addplot[green!60!black, thick, mark=*,
+         mark options={fill=green!30}]
+  coordinates {
+    (47, 0.0)
+    (48, 0.0)
+    (49, 0.0)
+    (50, 0.0)
+    (51, 0.0)
+    (52, 0.0)
+    (53, 0.0)
+  };
+\addlegendentry{Adaptive correction (TR-20)}
+
+% TR-17 α₅₀ target = 0.030 (off chart — annotation)
+\node[font=\scriptsize, blue!60!black, align=center]
+  at (axis cs:50.0, 0.0058)
+  {TR-17 target: $\alpha_{50} \leq 0.030$ (off chart)};
+\draw[-latex, blue!50!black, thin]
+  (axis cs:50.0, 0.0052) -- (axis cs:50.0, 0.0040);
+
+% ENTSO-E range annotation
+\draw[{latex[length=3.5pt]}-{latex[length=3.5pt]}, orange!70!black, thick]
+  (axis cs:47.5, 0.0062) -- node[above, font=\tiny, orange!80!black]
+    {ENTSO-E normal: 47.5--51.5\,Hz}
+  (axis cs:51.5, 0.0062);
+
+\end{axis}
+\end{tikzpicture}
