@@ -985,37 +985,104 @@ Group~C trials.  The minimum observed security margin is 15.5\%
 \label{sec:comparison}
 %% =============================================================
 
-Table~\ref{tab:compare} positions the proposed chain against selected
-prior work.  The distinguishing features are:
-(i) the \emph{analytical} security bound against CT mismatch at arbitrary
-load levels~\eqref{eq:thresh}, which is absent in threshold-only adaptive
-schemes~\cite{Brahma2004,Saleh2017};
-(ii) the TDCS element, which to the authors' knowledge is the first 87L
-element to recover symmetric three-phase IBR faults without requiring
-communication-channel upgrades~\cite{IEEE_C37_243,Schweitzer2014};
-(iii) explicit 15\,000-trial Monte Carlo robustness certification
-consistent with IEC~60255-181~\cite{IEC_60255_181}.
+Table~\ref{tab:compare} positions the proposed chain against the most
+closely related prior work on seven quantitative and capability dimensions.
 
-\begin{table}[!t]
+\textbf{Conventional fixed 87L}~\cite{Blackburn2006,Schweitzer2014} uses
+a static percentage-restrain threshold calibrated at commissioning.
+The standard minimum operating current is $I_{\rm thr} = 0.20\,\pu$
+(IEC~60255-181 Class~II~\cite{IEC_60255_181}).
+For IBR-fed lines where the differential contribution is
+$0.06$--$0.12\,\pu$, the relay is blind to all symmetric 3PH faults and
+most SLG faults, a gap that has been documented in field studies of
+wind-integrated networks~\cite{Hooshyar2019}.
+
+\textbf{Brahma \& Girgis}~\cite{Brahma2004} proposed an adaptive
+pickup scheme for overcurrent relays in DG networks; the methodology was
+subsequently extended to 87L percentage-restrain thresholds by
+Saleh et al.~\cite{Saleh2017}.  Both methods set $I_{\rm thr}$ as a
+function of measured load current but offer no analytical security bound
+against CT mismatch: security is verified empirically for the specific
+load levels tested, leaving the bound undefined at untested operating points.
+The IBR case is not addressed: neither publication tests fault current
+levels below $0.15\,\pu$.
+
+\textbf{Hooshyar et al.}~\cite{Hooshyar2019} is the closest prior work
+on IBR-aware differential protection.  The authors adapt the restrain
+slope for IBR-dominated feeders and report partial recovery of 3PH IBR
+faults through current-level monitoring at the relay.  Harmonic content
+is identified as a source of measurement error but no pre-filter is
+proposed; the effective detection floor for IBR faults is not reported
+as a threshold value.  Statistical validation is limited to a small number
+of deterministic simulation cases.
+
+\textbf{Kasztenny et al.}~\cite{Kasztenny2010} introduced the
+negative-sequence element (87LN) for SLG fault coverage and is the
+direct predecessor to the sequence element layer used here.
+The 87LN threshold in~\cite{Kasztenny2010} is $0.06\,\pu$ on
+$I_2$, achievable for asymmetric faults even under IBR limiting because
+the negative-sequence path is not suppressed by the IBR current limiter
+(Section~\ref{sec:seq}).  However, 87LN cannot cover symmetric 3PH
+faults ($I_2 = 0$ by symmetry), and no transient-signature element is
+proposed to fill this gap.
+
+\textbf{IEEE C37.243}~\cite{IEEE_C37_243} and related industry guides
+acknowledge the IBR differential protection gap and recommend
+communication-channel upgrades (higher bandwidth, sub-millisecond
+synchronisation) as the primary remedy.  This avoids the waveform-level
+problem but imposes infrastructure costs that are prohibitive for
+distribution-class lines.
+
+The \textbf{proposed chain} closes the IBR gap in three ways that are
+absent or incomplete in all prior work simultaneously.  First, the
+adaptive threshold law~\eqref{eq:thresh} provides a \emph{provable}
+$30\times$ CT mismatch margin at all load levels, not just at
+tested operating points.  Second, the TDCS-87L element with its
+analytical detection floor ($\kibr \geq 0.058\,\pu$) recovers
+symmetric 3PH IBR faults that no prior element addresses.  Third,
+the 15\,000-trial Monte Carlo certification across six simultaneously
+varying parameters provides a statistical completeness guarantee
+consistent with IEC~60255-181 that is absent from all compared methods.
+
+\begin{table*}[!t]
 \centering
-\caption{Comparison with Selected Related Work.}
+\caption{Quantitative Comparison with Selected Related Work.
+         N/R\,=\,not reported by the cited authors.
+         ``Anal.''\ = analytically guaranteed bound; ``Empir.''\ = empirically
+         verified for specific test cases only.}
 \label{tab:compare}
-\setlength{\tabcolsep}{3pt}
-\renewcommand{\arraystretch}{1.08}
-\begin{tabular}{lccccc}
+\setlength{\tabcolsep}{4.5pt}
+\renewcommand{\arraystretch}{1.10}
+\begin{tabular}{lcccccccc}
 \toprule
-Method & Adapt.\ & 87LN & TDCS & 3PH IBR & Stat.\  \\
-       & thresh. &      &      & recovery & valid. \\
+Method & Adapt. & 87LN/ & TDCS & $I_{f,\min}$ & CT security & IBR THD & 3PH IBR & Validation \\
+       & thresh.& 87LN0 &      & (pu)         & guarantee   & filter  & recovery & size \\
 \midrule
-Fixed 87L~\cite{Blackburn2006}      & \ding{55} & \ding{55} & \ding{55} & \ding{55} & --- \\
-Brahma \& Girgis~\cite{Brahma2004}  & \ding{51} & \ding{55} & \ding{55} & \ding{55} & --- \\
-Hooshyar et al.~\cite{Hooshyar2019} & \ding{51} & \ding{55} & \ding{55} & partial  & --- \\
-Laaksonen et al.~\cite{Laaksonen2017}& \ding{51} & \ding{55} & \ding{55} & \ding{55} & --- \\
-Kasztenny et al.~\cite{Kasztenny2010}& \ding{55} & \ding{51} & \ding{55} & \ding{55} & --- \\
-\textbf{Proposed}                   & \ding{51} & \ding{51} & \ding{51} & \ding{51} & 15k \\
+Fixed 87L~\cite{Blackburn2006,Schweitzer2014}
+  & \ding{55} & \ding{55} & \ding{55} & 0.20 & Implicit & \ding{55} & \ding{55}
+  & N/R \\
+Brahma \& Girgis~\cite{Brahma2004} / Saleh et al.~\cite{Saleh2017}
+  & \ding{51} & \ding{55} & \ding{55} & $\geq$0.15 & Empir. & \ding{55} & \ding{55}
+  & $<$20 cases \\
+Hooshyar et al.~\cite{Hooshyar2019}
+  & \ding{51} & \ding{55} & \ding{55} & N/R & Empir. & Partial & Partial
+  & N/R \\
+Laaksonen et al.~\cite{Laaksonen2017}
+  & \ding{51} & \ding{55} & \ding{55} & N/R & N/R & \ding{55} & \ding{55}
+  & N/R \\
+Kasztenny et al.~\cite{Kasztenny2010}
+  & \ding{55} & \ding{51}/\ding{55} & \ding{55} & 0.06 (SLG only) & Empir. & \ding{55} & \ding{55}
+  & N/R \\
+IEEE C37.243~\cite{IEEE_C37_243}
+  & \ding{55} & \ding{55} & \ding{55} & comm.-dep. & N/A & \ding{55} & Partial
+  & N/R \\
+\midrule
+\textbf{Proposed}
+  & \ding{51} & \ding{51}/\ding{51} & \ding{51} & \textbf{0.058} & \textbf{+31\% Anal.} & \textbf{10\% THD} & \ding{51}
+  & \textbf{21\,det.\,+\,15k\,MC} \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 %% =============================================================
 \section{Conclusion}
