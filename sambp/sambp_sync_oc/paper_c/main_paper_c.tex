@@ -80,7 +80,7 @@
         (e-mail: ee21d017@smail.iitm.ac.in; swarup@ee.iitm.ac.in).}}
 
 \markboth{IEEE Transactions on Power Systems,~Vol.~XX, No.~XX, XXXX~2026}%
-{Eluvathingal \& Swarup: SAMBP — Unified Inverse Estimation Framework}
+{Eluvathingal \& Swarup: SAMBP — Unified Inverse Estimation Framework (Phase~1: SG Networks)}
 
 \maketitle
 
@@ -97,7 +97,7 @@ physics-constrained reduced-parameter zone model (Layer~2), a two-pass
 Levenberg--Marquardt estimator (Layer~3), a composite confidence gate
 (Layer~4), and a function-specific fallback or coordination layer (Layer~5).
 The key architectural invariant is a physics-parameter-reduction discipline
-— each zone model eliminates one collinear or collinear-via-physics parameter
+--- each zone model eliminates one collinear or collinear-via-physics parameter
 by derivation rather than fitting, reducing the Jacobian condition number
 from $\mathcal{O}(10^8)$ (unconstrained) to $\kappa_n < 30$ across all
 four functions.
@@ -105,18 +105,27 @@ The Stage-2 model veto ($\kappa_n < \kappa_{thresh}$ AND $f_{int} <
 f_{thresh}$) provides a generalised mechanism for CT saturation rejection
 (87T, 87B) and channel anomaly rejection (87L) without function-specific
 hard-coding.
-Validated across 28 simulation scenarios (3 OC, 7~87T, 12~87L, 6~87B),
-the framework achieves correct classification in 26/28 cases; the 2
-exceptions are a known architectural boundary (CT open-circuit on 87B)
-and an expected no-trip case (channel-loss internal fault on 87L).
+Validated across 28 simulation scenarios (3 OC, 7~87T, 12~87L, 6~87B)
+for synchronous-generator (SG) source networks, the framework achieves
+correct classification in 26/28 cases; the 2 exceptions are a known
+architectural boundary (CT open-circuit on 87B) and an expected no-trip
+case (channel-loss internal fault on 87L).
 Combined compute time is below 20\,ms for all four functions, meeting
 sub-cycle embedded relay requirements.
+\emph{Phase~2 extension} (target early 2027): the framework is extended to
+inverter-based resource (IBR) networks by adding five IBR-specific zone
+models --- a 10-parameter DFIG model (TR-56), a Bayesian SPRT 87T function
+(TR-57/TR-64), an IBR-corrected Relay~78 blinder (TR-58), a 2-parameter PV
+model (TR-62), and a comprehensive generator protection suite across
+40/64G/78/81/87G (TR-65) --- raising the combined scenario count to
+$\geq$\,62.
 \end{abstract}
 
 \begin{IEEEkeywords}
 adaptive protection, inverse parameter estimation, Levenberg--Marquardt,
 transformer differential, line differential, busbar differential,
-overcurrent relay, CT saturation, confidence gate, unified framework.
+overcurrent relay, CT saturation, confidence gate, unified framework,
+inverter-based resources, DFIG, solar PV, out-of-step protection.
 \end{IEEEkeywords}
 
 % =============================================================================
@@ -165,7 +174,8 @@ adaptive relay classification but require large labelled datasets, offer
 limited interpretability, and have no established certification path
 under IEC~60255 and IEEE~C37 standards.
 
-This paper makes four contributions:
+This paper makes four contributions for SG networks (Phase~1), with a
+fifth contribution describing the planned IBR extension (Phase~2):
 
 \begin{enumerate}
   \item A \textbf{unified five-layer \textsc{sambp} architecture} applicable
@@ -181,6 +191,12 @@ This paper makes four contributions:
   \item A \textbf{cross-function quantitative comparison}: parameter count,
         $\kappa_n$ range, event classification accuracy, and compute cost
         across all four functions (Table~\ref{tab:model_compare}).
+  \item \textbf{(Phase~2, early 2027)} Extension of the framework to
+        IBR-augmented networks via five new zone models spanning DFIG
+        wind turbine 87L/87G, Bayesian 87T inrush discrimination,
+        IBR-corrected Relay~78 out-of-step, solar PV 87L, and the full
+        generator protection suite 40/64G/78/81/87G
+        (§\ref{sec:ibr_extension}, Table~\ref{tab:ibr_models}).
 \end{enumerate}
 
 % =============================================================================
@@ -643,6 +659,122 @@ multi-generator cascade), but all remain below 20\,ms.
 \end{table}
 
 % =============================================================================
+\section{Extension to IBR-Augmented Networks (Phase~2, Early~2027)}
+\label{sec:ibr_extension}
+% =============================================================================
+
+The four SG zone models in Table~\ref{tab:model_compare} share a common
+assumption: the source behind the relay is a synchronous machine whose
+fault current can be fully characterised by a decaying sinusoid plus
+DC offset.
+This assumption fails for inverter-based resources (IBRs), whose fault
+current is determined by the converter control loop rather than
+electromagnetic induction.
+Five new zone models, developed in companion technical
+reports~\cite{TR56,TR57,TR58,TR62,TR64,TR65}, extend the SAMBP framework
+to IBR-augmented networks.
+Table~\ref{tab:ibr_models} lists them alongside their key parameter counts
+and $\kappa_n$ ranges; full derivations and validation data are reserved
+for the 2027 revision.
+
+\begin{table}[!t]
+  \renewcommand{\arraystretch}{1.20}
+  \caption{Planned IBR zone models for the 2027 Paper~C revision
+           (Phase~2). Parameter counts and $\kappa_n$ from
+           TR self-test results; scenario counts are design targets.}
+  \label{tab:ibr_models}
+  \centering
+  \small
+  \begin{tabular}{llccc}
+    \toprule
+    Function & Zone model & Params & $\kappa_n$ & Scenarios \\
+    \midrule
+    87L/87G (DFIG) & 10-param piecewise-ODE (TR-56)
+                   & 10 & $13$--$68$ & 10 \\
+    87T (IBR-aware)& Bayesian SPRT + asymmetry index (TR-57/TR-64)
+                   & 5$+$3 hyp. & $5$--$7$ & 12 \\
+    Relay~78 (OOS) & Generalised EAC, conservative CUEP
+                     bound (TR-58)
+                   & 4 & --- & 10 \\
+    87L (solar PV) & 2-param zero-DC sinusoid (TR-62)
+                   & 2 & $1.0$ & 8 \\
+    Gen.\ suite    & 40/64G/78/81/87G unified (TR-65)
+                   & --- & --- & 22 \\
+    \midrule
+    \multicolumn{2}{l}{\textit{Phase~2 total}} & & & $\geq$62 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{DFIG 87L/87G Zone Model (TR-56)}
+\label{sec:ibr:dfig}
+
+When the DFIG crowbar fires, the stator fault current transitions from a
+two-parameter IBR-like sinusoid (RSC-active phase) to a three-component
+post-crowbar waveform:
+$i = I_{\mathrm{fund}}\sin(\omega_0 t + \phi)
+     + I_{\mathrm{nat}}e^{-t_{\mathrm{rel}}/\tau_s}\sin(\omega_{\mathrm{slip}}t_{\mathrm{rel}}+\phi_{\mathrm{nat}})
+     + I_{\mathrm{DC}}e^{-t_{\mathrm{rel}}/\tau_s}$.
+The 10-parameter model uses $\tau_{\mathrm{DC}} = \tau_s$ (physics-based
+collinearity reduction: both components share the stator transient time
+constant), giving $\kappa_n \in [13, 68]$ across slip $s \in [3\%, 35\%]$.
+A CUSUM crowbar detector (2-cycle windows, 2048-point zero-padded FFT)
+provides the crowbar time estimate $\hat{t}_{\mathrm{cb}}$ used as the
+LM initial point, achieving 10\,ms detection latency at 12\% slip.
+
+\subsection{IBR-Aware 87T (TR-57/TR-64)}
+\label{sec:ibr:87t}
+
+The conventional 2nd-harmonic inrush blocking fails for IBR-fed
+transformers: IBR fault current contains no 2nd harmonic ($< 2\%$),
+so the blocking condition is never met, leaving the relay permanently
+unblocked.
+TR-57 replaces the harmonic comparator with a Bayesian three-hypothesis
+SPRT on the per-half-cycle waveform asymmetry index
+$A_k = (I^+_{\mathrm{pk}} - |I^-_{\mathrm{pk}}|)/(I^+_{\mathrm{pk}} + |I^-_{\mathrm{pk}}|)$.
+The three hypotheses --- inrush ($\mathcal{N}(+0.70, 0.15^2)$), IBR fault
+($\mathcal{N}(0.00, 0.08^2)$), CT saturation ($\mathcal{N}(-0.50, 0.20^2)$)
+--- are derived from Jiles--Atherton core simulation and SRF bandwidth
+analysis.
+With Wald boundaries $\log A = \pm 6.91$ ($\alpha = \beta = 0.001$),
+trip decisions are reached in $\leq 2$ half-cycles (20\,ms), vs.\ $\geq
+60$\,ms for IEC~60255-111 harmonic blocking.
+TR-64 integrates the SPRT into the full 87T LM chain and validates
+across 12 scenarios with 5000-trial Monte Carlo.
+
+\subsection{IBR-Corrected Relay~78 (TR-58)}
+\label{sec:ibr:relay78}
+
+GFL IBRs current-limit during LVRT, reducing post-fault synchronising
+power and shifting the true CUEP inward from $\pi - \delta_0$.
+The standard blinder at $\pi - \delta_0 - 5^\circ$ lies outside the
+true stability region whenever the GFL power deficit
+$\Delta P_{\max}^{\mathrm{GFL}} > 0$ --- a non-conservative setting.
+TR-58 provides a closed-form lower bound:
+\begin{equation}
+  \delta_{\mathrm{LB}} = \pi - \arcsin\!\left(
+    \frac{P_m}{P_{\max}^{\mathrm{SG}} - \Delta P_{\max}^{\mathrm{GFL}}}
+  \right), \quad
+  \delta_{\mathrm{blinder}} = \delta_{\mathrm{LB}} - 5^\circ,
+  \label{eq:cuep}
+\end{equation}
+provably conservative ($\delta_{\mathrm{LB}} \leq \delta_u$ by
+Proposition~1 of TR-58) and computable entirely from commissioning data.
+
+\subsection{Solar PV 87L Zone Model (TR-62)}
+\label{sec:ibr:pv}
+
+PV inverters with SRF current control drive the DC offset to zero within
+15\,ms~\cite{Blaabjerg2006}.
+The 2-parameter zone model $i(t) = I_{\mathrm{fund}}\sin(\omega_0 t + \phi)$
+gives $\kappa_n = 1.00$ exactly on integer-cycle windows (analytically
+proven via the Jacobian structure $\mat{J}^\top\!\mat{J} = \frac{N}{2}\mathrm{diag}(1, I_{\mathrm{fund}}^2)$),
+compared with $\kappa_n = 35.9$ for the SG 4-parameter model at 0.5 cycles.
+A DDR selector (DC-to-fundamental ratio $< 0.15$, delta-ratio veto $\geq 2.0$)
+routes incoming waveforms to the PV or SG estimator without requiring
+prior knowledge of the source type.
+
+% =============================================================================
 \section{Discussion}
 \label{sec:disc}
 % =============================================================================
@@ -680,16 +812,33 @@ The trade-off is that \textsc{sambp} requires a physics-derivable
 zone model for each new protection function — a constraint that is
 straightforwardly satisfied for the four functions presented here.
 
-\subsection{Hardware-in-the-Loop Validation Roadmap}
+\subsection{Hardware-in-the-Loop Validation Roadmap and Revision Schedule}
 \label{sec:disc:hil}
 
-Fig.~\ref{fig:hil} shows the planned M5 HIL validation timeline.
+Fig.~\ref{fig:hil} shows the two-phase validation roadmap.
+
+\textbf{Phase~1 (current paper — SG networks).}
 Software preparation (C port of the LM estimator,
 IEC~61850~\cite{IEC61850} sampled-value interface) is ongoing.
 RTDS hardware acquisition is planned for mid-2026~Q3;
-HIL experiments across all four functions are targeted for 2026~Q4.
-A revised Paper~C submission incorporating HIL results is planned
-for early 2027.
+HIL experiments across the four SG functions (OC, 87T, 87L, 87B)
+are targeted for 2026~Q4.
+
+\textbf{Phase~2 (revised Paper~C — IBR-augmented networks, early 2027).}
+The revised submission will supersede this paper and incorporate:
+\begin{enumerate}
+  \item TR-64 (IBR-aware 87T, 5k MC) and TR-65 (generator suite 40/64G/78/81/87G)
+        numerical results, currently pending PSCAD/EMTP-RV validation.
+  \item HIL results for the DFIG zone model (TR-56) using a 2~MW DFIG
+        emulator on the RTDS platform.
+  \item HIL results for the PV zone model (TR-62) using a single-phase
+        PV inverter emulator.
+  \item Proof-of-concept relay~78 blinder setting verification (TR-58)
+        against an SEL-300G or GE~D60 relay test set.
+\end{enumerate}
+The combined Phase~1+Phase~2 paper is expected to cover $\geq$\,62
+simulation scenarios across 9 protection functions, representing the
+complete SAMBP generator and network protection suite.
 
 \begin{figure}[!t]
   \centering
@@ -707,24 +856,32 @@ for early 2027.
 % =============================================================================
 
 \begin{enumerate}
-  \item The \textsc{sambp} five-layer architecture unifies adaptive
+  \item The \textsc{sambp} five-layer architecture (Phase~1) unifies adaptive
         protection across OC, 87T, 87L, and 87B functions under a
         common design discipline, sharing the two-pass LM estimator
         and composite confidence gate.
   \item The Physics-Reduction Proposition (Proposition~\ref{prop:reduction})
         establishes that deriving one collinear parameter from network
         physics reduces $\kappa_n$ by at least one order of magnitude,
-        enabling reliable LM convergence; this is demonstrated empirically
-        across all four zone models ($\kappa_n < 30$ in all 28 scenarios).
+        enabling reliable LM convergence; demonstrated across all four
+        SG zone models ($\kappa_n < 30$ in all 28 Phase~1 scenarios).
   \item The Stage-2 model veto~\eqref{eq:veto} generalises CT saturation
         rejection (87T, 87B) and channel anomaly rejection (87L) as
         a single identifiability condition, correctly firing in 3/28
         scenarios without any false suppression of genuine internal faults.
-  \item Combined classification accuracy is 26/28 correct;
+  \item Combined Phase~1 classification accuracy is 26/28 correct;
         the 2 exceptions are a known architectural boundary (87B CT
         open-circuit) and a designed no-trip case (87L channel-loss).
-  \item All four functions operate within 20\,ms on standard hardware.
-        HIL validation on an RTDS platform is planned for 2026~Q4.
+  \item All four Phase~1 functions operate within 20\,ms on standard
+        hardware.  HIL validation (Phase~1) is planned for 2026~Q4.
+  \item \textbf{(Phase~2, early 2027)} Five IBR zone models
+        --- DFIG 87L/87G (10-param, $\kappa_n < 68$), Bayesian SPRT 87T
+        ($\leq$20\,ms trip), IBR-corrected Relay~78 (closed-form
+        conservative CUEP bound), solar PV 87L ($\kappa_n = 1.00$), and
+        generator suite 40/64G/78/81/87G --- extend the framework to
+        IBR-augmented networks.
+        The Phase~2 paper targets $\geq$\,62 simulation scenarios and
+        RTDS HIL validation with DFIG and PV emulators.
 \end{enumerate}
 
 % =============================================================================
