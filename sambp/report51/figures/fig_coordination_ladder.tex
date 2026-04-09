@@ -1,0 +1,73 @@
+% fig_coordination_ladder.tex
+% TR-51: Time-grading ladder diagram for the R09→R08→R07→R06→R05→R01 path
+
+\begin{tikzpicture}
+\begin{axis}[
+  name         = ladax,
+  width        = 0.88\textwidth,
+  height       = 7.0cm,
+  xlabel       = {Fault current at relay $I_\mathrm{fault}$ [pu]},
+  ylabel       = {Operating time $t_\mathrm{op}$ [s]},
+  xlabel style = {font=\small},
+  ylabel style = {font=\small},
+  xmin=0, xmax=16,
+  ymin=0, ymax=1.6,
+  xtick        = {0,2,4,6,8,10,12,14,16},
+  ytick        = {0,0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.6},
+  xticklabel style = {font=\scriptsize},
+  yticklabel style = {font=\scriptsize},
+  tick style   = {draw=none},
+  axis line style = {gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  legend style = {at={(0.99,0.99)}, anchor=north east,
+                  font=\scriptsize, draw=gray!50},
+  legend cell align = left,
+]
+
+%% IEC Standard Inverse: t = TMS * 0.14 / (M^0.02 - 1), M = I/Ip, Ip=1.5
+
+%% R09 (TMS=0.050)
+\addplot[red!60!black, thick, domain=2.0:16, samples=60,
+         restrict y to domain=0:1.6]
+  {0.050 * 0.14 / ((x/1.5)^0.02 - 1)};
+\addlegendentry{R09 (TMS=0.050)}
+
+%% R08 (TMS=0.082)
+\addplot[orange!80!black, thick, domain=2.0:16, samples=60,
+         restrict y to domain=0:1.6]
+  {0.082 * 0.14 / ((x/1.5)^0.02 - 1)};
+\addlegendentry{R08 (TMS=0.082)}
+
+%% R07 (TMS=0.119)
+\addplot[green!50!black, thick, domain=2.0:16, samples=60,
+         restrict y to domain=0:1.6]
+  {0.119 * 0.14 / ((x/1.5)^0.02 - 1)};
+\addlegendentry{R07 (TMS=0.119)}
+
+%% R06 (TMS=0.164)
+\addplot[blue!60!black, thick, domain=2.0:16, samples=60,
+         restrict y to domain=0:1.6]
+  {0.164 * 0.14 / ((x/1.5)^0.02 - 1)};
+\addlegendentry{R06 (TMS=0.164)}
+
+%% R05 (TMS=0.218)
+\addplot[sambpblue, very thick, domain=2.0:16, samples=60,
+         restrict y to domain=0:1.6]
+  {0.218 * 0.14 / ((x/1.5)^0.02 - 1)};
+\addlegendentry{R05 (TMS=0.218)}
+
+%% R01 (TMS=0.281, backup at source)
+\addplot[gray!60, thick, dashed, domain=2.0:16, samples=60,
+         restrict y to domain=0:1.6]
+  {0.281 * 0.14 / ((x/1.5)^0.02 - 1)};
+\addlegendentry{R01 (TMS=0.281, source)}
+
+%% CTI annotation at I=5 pu
+\draw[{Stealth[length=4pt]}-{Stealth[length=4pt]}, red!50, thick]
+  (axis cs:12, 0.308) -- (axis cs:12, 0.449);
+\node[red!60!black, font=\tiny, anchor=west, align=left]
+  at (axis cs:12.2, 0.375) {CTI = 0.20 s\\(R09$\to$R08)};
+
+\end{axis}
+\end{tikzpicture}

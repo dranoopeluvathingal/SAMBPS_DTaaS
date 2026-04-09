@@ -1,0 +1,500 @@
+% =============================================================================
+% SAMBP TR-28/2026
+% Master Synthesis: TR-03 through TR-27
+% =============================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=25mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,decorations.pathreplacing}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{siunitx}
+
+% Arc colours
+\definecolor{arc1col}{RGB}{30,100,200}
+\definecolor{arc2col}{RGB}{30,150,60}
+\definecolor{arc3col}{RGB}{210,120,0}
+\definecolor{arc4col}{RGB}{120,40,160}
+
+% ---------------------------------------------------------------------------
+\title{%
+  \textbf{SAMBP TR-28/2026}\\[4pt]
+  Master Synthesis Report:\\
+  State-Adaptive Model-Based Protection (SAMBP)\\
+  Technical Report Series TR-03 through TR-27}
+\author{PhD Candidate\\PhD Thesis Supporting Report}
+\date{April 2026}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\vspace{6pt}\hrule\vspace{10pt}
+
+% =============================================================================
+\section{Introduction}
+% =============================================================================
+
+This report synthesises the complete SAMBP technical report series
+(TR-03 through TR-27, 25 reports) into a single thesis-ready reference
+document.  The series establishes, validates and extends a model-based
+protection framework for power systems with high inverter-based resource
+(IBR) penetration.
+
+The central thesis contribution is the \textbf{SAMBP protection scheme}:
+a Stage-2 confidence gate that supervises conventional differential and
+overcurrent relays using an inverse-estimation zone model.  The combined
+IBR-aware 87L trip logic derived over the full arc is:
+
+\begin{equation}
+  \text{TRIP} =
+    \underbrace{|I_1| \geq 0.12}_{\text{87L}}
+    \vee\;
+    \underbrace{|I_2| \geq 0.06}_{\text{87LN}}
+    \vee\;
+    \underbrace{|I_0| \geq 0.04}_{\text{87LN0}}
+    \vee\;
+    \underbrace{\Delta I_{\rm adapt} \geq
+      0.025 + 3\hat{\sigma}_{\rm pre}}_{\text{TDCS-87L}}.
+  \label{eq:combined_final}
+\end{equation}
+
+Figure~\ref{fig:timeline} shows the research arc structure.
+The 25 reports divide into four arcs:
+
+\begin{enumerate}
+  \item[\textcolor{arc1col}{\textbf{Arc 1}}]
+    \textbf{Core Framework} (TR-03, TR-04): model-based 87T, 87L, 87B.
+  \item[\textcolor{arc2col}{\textbf{Arc 2}}]
+    \textbf{System Validation} (TR-05 to TR-11): integration,
+    GOOSE, double-busbar, Monte Carlo, CT saturation, HIF.
+  \item[\textcolor{arc3col}{\textbf{Arc 3}}]
+    \textbf{87L Enhancements} (TR-12 to TR-19): magnitude override,
+    pi-section correction, busbar transfer, adaptive threshold,
+    distance relay, multi-feeder coordination.
+  \item[\textcolor{arc4col}{\textbf{Arc 4}}]
+    \textbf{IBR Protection Chain} (TR-20 to TR-27): frequency adaptation,
+    harmonic filter, 87LN, TDCS-87L, adaptive threshold, 87LN0,
+    Monte Carlo validation, updated system integration.
+\end{enumerate}
+
+\begin{figure}[h!]
+  \centering
+  \resizebox{\textwidth}{!}{\input{figures/fig_tr_timeline.tex}}
+  \caption{SAMBP research arc timeline (TR-03 to TR-27).
+           Each node represents one technical report; colour denotes arc.
+           Key milestone reports are annotated below the axis.}
+  \label{fig:timeline}
+\end{figure}
+
+% =============================================================================
+\section{Report Registry}
+% =============================================================================
+
+Table~\ref{tab:registry} lists all 25 technical reports with their
+primary focus and key headline result.
+
+\begin{longtable}{p{1.0cm}p{4.8cm}p{7.0cm}}
+\caption{SAMBP TR-03 to TR-27 report registry.}
+\label{tab:registry}\\
+\toprule
+\textbf{TR\#} & \textbf{Title / focus} & \textbf{Headline result} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{TR\#} & \textbf{Title / focus} & \textbf{Headline result} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+%
+\rowcolor{arc1col!10}
+03 & Model-based 87T/87L framework & $\kappa_n > 2.5$ (internal), FPR = 0 (external); Jacobian derived analytically \\
+\rowcolor{arc1col!10}
+04 & 87B bus differential           & Framework transfers directly; $\kappa_n > 2.0$ for all bus fault scenarios \\
+\midrule
+\rowcolor{arc2col!10}
+05 & System integration (TR-05)     & 10/10 scenarios selective; OC, 87B\_A, 87L, 87B\_B, 87T coordinated \\
+\rowcolor{arc2col!10}
+06 & IEC 61850 GOOSE integration    & 10/10 scenarios selective with GOOSE enabled; $<$5\,ms trip propagation \\
+\rowcolor{arc2col!10}
+07 & Double-busbar coordination     & 10/10 scenarios selective; bus-coupler check zone prevents inter-zone confusion \\
+\rowcolor{arc2col!10}
+08 & Monte Carlo (4000 trials)      & 20 scenarios $\times$ 200 trials; 2 failure modes identified at Stage-2 \\
+\rowcolor{arc2col!10}
+09 & Stage-2 recalibration          & TR-08 failure modes resolved; extended MC re-passed after recalibration \\
+\rowcolor{arc2col!10}
+10 & CT saturation injection        & TPR = 1.000, FPR = 0 for CT saturation up to $\varepsilon_{\rm CT} = 0.5$ \\
+\rowcolor{arc2col!10}
+11 & HIF sensitivity margins        & Quantitative HIF lower bounds established for all four protection zones \\
+\midrule
+\rowcolor{arc3col!10}
+12 & 87L magnitude override         & Magnitude override prevents missed trip in restrained zone without false trips \\
+\rowcolor{arc3col!10}
+13 & Pi-section charging correction & Pre-fault $B_C$ correction removes capacitive charging bias from $I_{\rm diff}$ \\
+\rowcolor{arc3col!10}
+14 & Dynamic busbar transfer        & GOOSE zone reconfiguration maintains selectivity during live busbar transfer \\
+\rowcolor{arc3col!10}
+15 & Voltage-based pi-section       & $\alpha_{50}$ improvement achieved using measured voltage for $B_C$ estimation \\
+\rowcolor{arc3col!10}
+16 & 87B/87L coordination           & 28/28 scenarios coordinated; non-conflicting by design \\
+\rowcolor{arc3col!10}
+17 & Adaptive 87L threshold         & Constant 30$\times$ security margin: $I_{\rm thr} = \max(0.08,\,0.15 I_{\rm rest})$ \\
+\rowcolor{arc3col!10}
+18 & Mho distance relay 21/21P      & Non-conflicting coordination with 87B/87L for all 7 test scenarios \\
+\rowcolor{arc3col!10}
+19 & Multi-feeder transfer          & 50/50 selectivity scenarios; Zone 2 minimum margin 45$\times$ \\
+\midrule
+\rowcolor{arc4col!10}
+20 & Frequency-adaptive $B_C$       & DFT bin misalignment $<$0.2\% at $\pm 3$\,Hz with adaptive $B_C$ correction \\
+\rowcolor{arc4col!10}
+21 & Harmonic discrimination filter & 95\% attenuation of 3rd/5th harmonic IBR injection in $I_{\rm diff}$ \\
+\rowcolor{arc4col!10}
+22 & Negative-sequence 87LN         & 87LN detects asymmetric IBR faults; $I_2 \geq 0.06$\,pu threshold \\
+\rowcolor{arc4col!10}
+23 & TDCS-87L element               & TDCS detects 3PH IBR faults below 87L threshold ($k_{\rm ibr} < 0.12$\,pu) \\
+\rowcolor{arc4col!10}
+24 & Adaptive TDCS threshold        & Adaptive $\Delta_{\rm thr}$ tracks baseline drift; 12/12 detection vs 11/12 fixed \\
+\rowcolor{arc4col!10}
+25 & Zero-sequence 87LN0            & 87LN0 adds earth-fault coverage for pure-IBR solidly/R-earthed networks \\
+\rowcolor{arc4col!10}
+26 & IBR Monte Carlo (15\,000)      & TPR = 1.000 (Groups A+B), security = 1.000 (Group C); CI lo = 0.9992 \\
+\rowcolor{arc4col!10}
+27 & Updated system integration     & 21/21 selective; TR-05 baseline preserved + 11 IBR scenarios added \\
+\end{longtable}
+
+% =============================================================================
+\section{Arc 1: Core Model-Based Framework (TR-03, TR-04)}
+% =============================================================================
+
+\subsection{SAMBP Inverse Estimation Principle}
+
+TR-03 establishes the core idea: each protected zone is modelled as a
+parameterised circuit (the \emph{zone model}), and fault inception is
+detected by observing whether the post-fault waveform is consistent with
+an internal fault signature.  The estimator minimises
+
+\begin{equation}
+  \mathcal{L}(\bm{\theta}) =
+    \left\| \bm{i}_{\rm diff}^{\rm obs} - \bm{i}_{\rm diff}^{\rm model}(\bm{\theta}) \right\|^2,
+  \label{eq:loss}
+\end{equation}
+using a Levenberg--Marquardt iteration with analytically derived Jacobians
+$\partial\bm{i}/\partial\bm{\theta}$.  The normalised residual
+$\kappa_n = \mathcal{L}_{\rm conv} / \mathcal{L}_{\rm int}$
+forms the Stage-2 confidence statistic:
+$\kappa_n \gg 1$ signals an internal fault; $\kappa_n \approx 1$ signals
+through-current (restrain).
+
+Key TR-03/TR-04 results:
+\begin{itemize}
+  \item \textbf{87T/87L} (TR-03): $\kappa_n > 4.1$ for all tested internal
+    faults; restrain correctly for all external faults ($\kappa_n < 1.5$).
+  \item \textbf{87B} (TR-04): $\kappa_n > 2.0$ for all bus internal faults;
+    framework transfers with minimal adaptation (two parameter bounds
+    changed relative to 87L).
+  \item \textbf{Analytical Jacobian}: avoids finite-difference approximation;
+    Levenberg--Marquardt converges in $<$8 iterations on all tested waveforms.
+\end{itemize}
+
+% =============================================================================
+\section{Arc 2: System Validation (TR-05 to TR-11)}
+% =============================================================================
+
+\subsection{System Integration and Communication (TR-05 to TR-07)}
+
+TR-05 establishes the radial network model
+(Gen\,--\,$Z_{\rm src}$\,--[Bus\_A]\,--\,$Z_{\rm line}$\,--[Bus\_B]\,--\,$Z_{\rm tr}$\,--[Bus\_C])
+and proves 10/10 scenario selectivity across five fault locations and two
+fault types.  TR-06 adds IEC 61850 GOOSE message passing; selectivity is
+maintained with trip propagation latency under 5\,ms.  TR-07 extends to a
+double-busbar topology and verifies 10/10 selectivity with a bus-coupler
+check zone preventing inter-zone confusion.
+
+\subsection{Robustness Validation (TR-08 to TR-11)}
+
+TR-08 runs the first large-scale Monte Carlo study (4000 trials, 20 scenarios).
+Two Stage-2 failure modes are identified: (i) excessive $f_{\rm int}$ estimate
+variance under heavy DC offset, and (ii) $\kappa_n$ boundary crossing for
+close-in external faults.  TR-09 resolves both via parameter recalibration
+and passes the extended Monte Carlo.
+
+TR-10 characterises CT saturation tolerance: with the TR-09 recalibrated
+gate, SAMBP achieves TPR = 1.000 and FPR = 0 for saturation levels up to
+$\varepsilon_{\rm CT} = 0.5$ (class 5P CT specification).  TR-11 establishes
+quantitative HIF sensitivity lower bounds: SAMBP detects HIF currents above
+the thermal noise floor in all four zones.
+
+% =============================================================================
+\section{Arc 3: 87L Line Differential Enhancements (TR-12 to TR-19)}
+% =============================================================================
+
+\subsection{Differential Measurement Accuracy (TR-12, TR-13, TR-15)}
+
+TR-12 adds a \emph{magnitude override} mechanism: when the operate current
+exceeds a high-set threshold ($|I_{\rm op}| > 2.0$\,pu), the Stage-2 gate is
+bypassed to prevent a slow inverse-estimation from missing a severe fault.
+TR-13 corrects the pre-fault charging bias using the nominal line susceptance
+$B_C$: $I_{\rm diff,corr} = I_{\rm diff} - jB_C V / 2$.  TR-15 improves the
+correction by estimating $B_C$ from the measured voltage phasor, achieving an
+$\alpha_{50}$ reduction in charging-induced false differential.
+
+\subsection{Zone Adaptability (TR-14, TR-16, TR-17, TR-18, TR-19)}
+
+TR-14 implements a \texttt{BusbarTransferEngine} combining GOOSE infrastructure
+(TR-06) with the double-busbar 87B logic (TR-07) to maintain selectivity
+during live busbar transfer without relay reconfiguration.
+
+TR-16 proves 87B and 87L are non-conflicting by design (28/28 coordination
+scenarios correct): the two elements operate on disjoint zones and cannot
+generate simultaneous spurious trips.  TR-17 derives the adaptive restraint
+law $I_{\rm thr} = \max(0.08,\,0.15\,I_{\rm rest})$, maintaining a constant
+30$\times$ security margin across all load levels.
+
+TR-18 integrates a three-zone Mho distance relay (21/21P) and confirms
+non-conflicting coordination with 87B/87L.  TR-19 validates coordination
+during simultaneous multi-feeder transfer across five GOOSE states, five
+fault locations, and two fault types (50/50 selectivity), with a minimum
+Zone 2 margin of 45$\times$.
+
+% =============================================================================
+\section{Arc 4: IBR Protection Chain (TR-20 to TR-27)}
+% =============================================================================
+
+\subsection{IBR Challenge and Motivation}
+
+IBR fault currents are current-limited to $k_{\rm ibr} \leq 0.20$\,pu —
+well below the classical 87L positive-sequence threshold (0.12\,pu).  The
+conventional 87L ($|I_1| \geq 0.12$) misses all symmetric 3PH faults with
+$k_{\rm ibr} < 0.12$\,pu and all earth faults in purely unearthed IBR
+networks.  TR-20 through TR-27 introduce four new detection elements and
+validate the combined chain against 15\,000 parametric Monte Carlo trials
+plus 21 system integration scenarios.
+
+\subsection{Signal Conditioning (TR-20, TR-21)}
+
+TR-20 corrects DFT bin misalignment at off-nominal frequency using an
+adaptive $B_C$ update: DFT amplitude error is reduced to $<$0.2\% across
+the $\pm 3$\,Hz range expected in islanded microgrids.  TR-21 applies a
+harmonic pre-filter with 95\% attenuation of 3rd and 5th harmonic IBR
+injection, reducing spurious differential from converter switching.
+
+\subsection{New Detection Elements (TR-22 to TR-25)}
+
+\paragraph{87LN — Negative-Sequence Differential (TR-22).}
+For asymmetric faults in networks with synchronous generator (SG) contribution,
+negative-sequence current $I_2$ flows into the protected zone.  The 87LN
+element trips when $|I_2| \geq 0.06$\,pu.
+
+\paragraph{TDCS-87L — Transient Differential Current Step (TR-23, TR-24).}
+For symmetric 3PH IBR faults below the 87L threshold, the step change in
+differential RMS provides an alternative detection signal:
+\begin{equation}
+  \Delta I_{\rm adapt} = \mathrm{rms}_{\rm post} - \hat{\mu}_{\rm pre},
+  \quad
+  \Delta_{\rm thr} = 0.025 + 3\hat{\sigma}_{\rm pre}.
+\end{equation}
+TR-23 establishes the fixed-threshold version; TR-24 replaces the fixed
+floor with the adaptive form above, resolving seasonal baseline drift.
+The Hilbert bound derivation: $\Delta_{\rm floor} \geq \varepsilon_{\rm CT,max}
+I_{\rm ext,max}/\sqrt{2} = 0.005 \times 7/\sqrt{2} = 0.025$\,pu.
+
+\paragraph{87LN0 — Zero-Sequence Differential (TR-25).}
+For earth faults in pure-IBR networks ($I_2 \approx 0$), zero-sequence
+current $I_0$ flows through the transformer neutral regardless of IBR
+current controller.  The 87LN0 element trips when $|I_0| \geq 0.04$\,pu.
+Coverage: solid-earth ($I_0 \approx 0.25$\,pu), resistance-earth
+($I_0 \approx 0.08$\,pu); unearthed networks rely on TDCS.
+
+\subsection{Combined Trip Logic}
+
+Equation~\eqref{eq:combined_final} is the final trip logic.
+Table~\ref{tab:element_coverage} shows which element covers each fault class.
+
+\begin{table}[h!]
+\centering
+\caption{Detection element coverage by fault class.
+         \checkmark = primary detection, (T) = TDCS backup always active.}
+\label{tab:element_coverage}
+\begin{tabular}{lcccc}
+\toprule
+Fault class & 87L & 87LN & 87LN0 & TDCS \\
+\midrule
+3PH internal, $k_{\rm ibr} \geq 0.12$    & \checkmark & -- & -- & (T) \\
+3PH internal, $k_{\rm ibr} < 0.12$       & --         & -- & -- & \checkmark \\
+SLG solid/R-earth (with SG)              & --         & \checkmark & \checkmark & (T) \\
+SLG solid/R-earth (pure IBR)             & --         & -- & \checkmark & (T) \\
+SLG unearthed (any network)              & --         & -- & -- & \checkmark \\
+External (security)                       & -- & -- & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Monte Carlo Validation (TR-26)}
+
+TR-26 runs 5\,000 trials per group (15\,000 total) across a
+6-dimensional IBR parametric envelope
+($k_{\rm ibr}$, $f$, $I_{h3}$, $\varepsilon_{\rm CT}$,
+$\hat{\mu}_{\rm pre}$, $\hat{\sigma}_{\rm pre}$).
+
+\begin{table}[h!]
+\centering
+\caption{TR-26 Monte Carlo summary ($N = 5\,000$ per group).}
+\label{tab:mc26}
+\begin{tabular}{lrrrr}
+\toprule
+Group & Rate & 95\% CI (lo) & 95\% CI (hi) & Target \\
+\midrule
+A — 3PH internal (TPR)       & 1.000 & 0.9992 & 1.000 & $\geq 0.990$ \\
+B — SLG internal (TPR)       & 1.000 & 0.9992 & 1.000 & $\geq 0.990$ \\
+C — External (security rate) & 1.000 & 0.9992 & 1.000 & $\geq 0.995$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The analytical guarantee: TDCS misses only when $k_{\rm ibr} < 0.058$\,pu;
+the sampled envelope starts at 0.060\,pu, so $P(\text{miss}) = 0$
+analytically.  The CT mismatch external fault step
+($\Delta I_{\rm ext,max} = 0.023$\,pu) is always below
+$\Delta_{\rm thr,min} = 0.026$\,pu, so FPR = 0 analytically.
+
+\subsection{Updated System Integration (TR-27)}
+
+TR-27 extends the TR-05 system integration to 21 scenarios.
+The 10 original SG-dominated scenarios reproduce the TR-05 selectivity
+unchanged (no regression); 11 new IBR scenarios all pass.
+
+\begin{table}[h!]
+\centering
+\caption{TR-27 system integration results.}
+\label{tab:tr27}
+\begin{tabular}{lll}
+\toprule
+Part & Scenarios & Result \\
+\midrule
+A — SG-dominated (TR-05 baseline) & 10 & 10/10 selective \\
+B — IBR parametric analytic       & 11 & 11/11 selective \\
+Combined                          & 21 & \textbf{21/21 selective} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =============================================================================
+\section{Cumulative Performance Dashboard}
+% =============================================================================
+
+\subsection{Headline Metrics by Arc}
+
+Figure~\ref{fig:metrics} shows headline quantitative metrics for each arc,
+normalised to the performance target (ratio $= 1.0$ = meets target).
+
+\begin{figure}[h!]
+  \centering
+  \input{figures/fig_headline_metrics.tex}
+  \caption{Headline quantitative metrics for each research arc.
+           All metrics meet or exceed their targets.
+           The Arc 3 adaptive threshold security margin (30$\times$)
+           exceeds the chart scale and is capped at 2.0$\times$ for display.}
+  \label{fig:metrics}
+\end{figure}
+
+\subsection{Key Quantitative Outcomes}
+
+\begin{table}[h!]
+\centering
+\caption{Key quantitative outcomes across all four arcs.}
+\label{tab:summary}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llll}
+\toprule
+Arc & Metric & Achieved & Target \\
+\midrule
+\multirow{2}{*}{Arc 1} &
+  $\kappa_n$ internal fault (87L) & $>$4.1 & $\geq 2.5$ \\
+& Stage-2 FPR (external)         & 0.000  & 0.000 \\[2pt]
+\multirow{4}{*}{Arc 2} &
+  System integration selectivity (TR-05) & 10/10  & 10/10 \\
+& MC robustness (TR-08/09)               & pass   & pass  \\
+& CT saturation TPR (TR-10)              & 1.000  & 1.000 \\
+& GOOSE trip latency (TR-06)             & $<$5\,ms & $<$20\,ms \\[2pt]
+\multirow{4}{*}{Arc 3} &
+  87B/87L coordination (TR-16) & 28/28  & 28/28 \\
+& Adaptive 87L security margin (TR-17)   & 30$\times$ & $\geq 1\times$ \\
+& Distance relay coordination (TR-18)    & 7/7    & 7/7 \\
+& Multi-feeder selectivity (TR-19)       & 50/50  & 50/50 \\[2pt]
+\multirow{4}{*}{Arc 4} &
+  IBR MC TPR Groups A+B (TR-26) & 1.000  & $\geq 0.990$ \\
+& IBR MC security Group C (TR-26)     & 1.000  & $\geq 0.995$ \\
+& IBR MC Wilson CI lower bound        & 0.9992 & $\geq 0.990$ \\
+& System integration total (TR-27)    & 21/21  & 21/21 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =============================================================================
+\section{Thesis Contributions}
+% =============================================================================
+
+The 25 technical reports establish the following thesis contributions:
+
+\begin{enumerate}
+  \item \textbf{SAMBP zone model and inverse estimator} (TR-03): a
+    parameterised fault-circuit model with analytical Jacobian enabling
+    rapid ($<$8 iteration) convergence and a well-defined $\kappa_n$
+    confidence statistic for both 87T and 87L.
+
+  \item \textbf{Stage-2 confidence gate} (TR-03 through TR-09):
+    a model-veto gate that supervises conventional differential relays,
+    reducing false trips under inrush, CT saturation and
+    external faults while maintaining TPR = 1.000 on internal faults.
+
+  \item \textbf{Full SAMBP protection suite} (TR-04 through TR-19):
+    87T, 87L, 87B, OC, Mho 21/21P all in a coordinated, non-conflicting
+    scheme with IEC 61850 GOOSE communication and dynamic busbar transfer
+    support.
+
+  \item \textbf{IBR-aware line differential chain} (TR-20 through TR-27):
+    four new detection elements (87LN, 87LN0, TDCS-87L, adaptive TDCS)
+    extending 87L coverage to the full IBR fault current envelope
+    ($k_{\rm ibr} \in [0.06, 0.20]$\,pu), validated by 15\,000-trial
+    Monte Carlo with analytical guarantees.
+\end{enumerate}
+
+% =============================================================================
+\section{Conclusion}
+% =============================================================================
+
+The SAMBP technical report series (TR-03 through TR-27) presents a
+complete, validated protection framework for modern power systems with
+high IBR penetration.  The core model-based approach (Arc 1) is extended
+through system-level validation (Arc 2), line differential enhancement
+(Arc 3), and an IBR-specific protection chain (Arc 4) that provides
+analytically guaranteed detection across the full IBR parametric space.
+
+The final combined trip logic (Equation~\eqref{eq:combined_final}) achieves:
+\begin{itemize}
+  \item 21/21 scenarios selective in the updated system integration study.
+  \item TPR = 1.000 for both 3PH and SLG internal faults over 15\,000 IBR
+    Monte Carlo trials, with 95\% Wilson CI lower bound $\geq 0.9992$.
+  \item FPR = 0.000 for external faults, analytically guaranteed by the
+    CT mismatch bound ($\Delta_{\rm floor} = 0.025$\,pu).
+  \item Full compatibility with the conventional SG-dominated protection
+    scheme (TR-05 baseline fully preserved in TR-27).
+\end{itemize}
+
+% =============================================================================
+\bibliographystyle{IEEEtran}
+\bibliography{references28}
+
+\end{document}

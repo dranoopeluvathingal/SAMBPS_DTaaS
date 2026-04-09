@@ -1,0 +1,63 @@
+% fig_wapc_latency.tex
+% TR-50: WAPC vs distributed relay latency breakdown (Study D)
+% Horizontal stacked bar chart
+
+\begin{tikzpicture}
+\begin{axis}[
+  name         = latax,
+  width        = 0.88\textwidth,
+  height       = 5.5cm,
+  xbar stacked,
+  bar width    = 18pt,
+  xlabel       = {Cumulative latency [ms]},
+  xlabel style = {font=\small},
+  ytick        = {1,2},
+  yticklabels  = {Distributed\\relay, WAPC\\centralised},
+  yticklabel style = {font=\small, align=right},
+  xmin=0, xmax=12,
+  xtick        = {0,1,2,3,4,5,6,7,8,9,10,11,12},
+  xticklabel style = {font=\scriptsize},
+  tick style   = {draw=none},
+  axis line style = {gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  legend style = {at={(0.50,-0.32)}, anchor=north,
+                  font=\scriptsize, draw=gray!50,
+                  legend columns=3},
+  legend cell align = left,
+]
+
+%% Distributed path (row 1):
+%% [IED local 2ms] [GOOSE trip 2ms]
+\addplot[fill=sambpblue!70, draw=sambpblue]
+  coordinates {(2,1) (0,2)};
+\addlegendentry{IED local decision}
+
+\addplot[fill=orange!60, draw=orange!80!black]
+  coordinates {(2,1) (2,2)};
+\addlegendentry{GOOSE (IED→WAPC / trip)}
+
+\addplot[fill=green!50!black!60, draw=green!50!black]
+  coordinates {(0,1) (4,2)};
+\addlegendentry{PMU report (250 Hz)}
+
+\addplot[fill=red!40, draw=red!60!black]
+  coordinates {(0,1) (0.5,2)};
+\addlegendentry{Fault localisation}
+
+\addplot[fill=gray!40, draw=gray!60]
+  coordinates {(0,1) (0.5,2)};
+\addlegendentry{N-1 check + ML advisory}
+
+%% Total labels
+\node[font=\small\bfseries, sambpblue]
+  at (axis cs:4.5, 1) {4.0 ms total};
+\node[font=\small\bfseries, sambpblue]
+  at (axis cs:10.0, 2) {9.0 ms total};
+
+%% Trip budget reference
+\draw[red!50, thick, dashed]
+  (axis cs:50,0.4) -- (axis cs:50,2.6);
+
+\end{axis}
+\end{tikzpicture}

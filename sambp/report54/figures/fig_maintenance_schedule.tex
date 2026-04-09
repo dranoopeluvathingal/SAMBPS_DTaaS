@@ -1,0 +1,56 @@
+% fig_maintenance_schedule.tex
+% TR-54: Annual maintenance burden by activity (Study E)
+
+\begin{tikzpicture}
+\begin{axis}[
+  name         = maintax,
+  width        = 0.88\textwidth,
+  height       = 6.5cm,
+  xbar,
+  bar width    = 10pt,
+  xlabel       = {Annual time [hours]},
+  xlabel style = {font=\small},
+  ytick        = {1,2,3,4,5,6,7,8},
+  yticklabels  = {Post-fault DT run,
+                  Fleet-change protocol,
+                  HMAC key rotation,
+                  CT/VT calibration,
+                  Monthly regression,
+                  GOOSE latency check,
+                  CUSUM log review,
+                  Annual HIL retest},
+  yticklabel style = {font=\scriptsize},
+  xmin=0, xmax=50,
+  xtick        = {0,5,10,15,20,25,30,35,40},
+  xticklabel style = {font=\scriptsize},
+  tick style   = {draw=none},
+  axis line style = {gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  nodes near coords,
+  nodes near coords align = {horizontal},
+  every node near coord/.append style = {font=\tiny, xshift=3pt},
+]
+
+%% Annual hours:
+%% Daily 5min×365 = 30.4h, Weekly 15min×52 = 13h, Monthly 30min×12 = 6h,
+%% Quarterly 60min×4 = 4h, Semi-annual 30min×2 = 1h, Annual 240min = 4h,
+%% On CUSUM 31min×2 = 1h, On event 15min×10 = 2.5h
+\addplot[fill=sambpblue!70, draw=sambpblue]
+  coordinates {
+    (2.5, 1)   %% Post-fault DT
+    (1.0, 2)   %% Fleet-change
+    (1.0, 3)   %% HMAC key
+    (4.0, 4)   %% CT/VT cal
+    (6.0, 5)   %% Monthly regression
+    (13.0, 6)  %% GOOSE latency
+    (30.4, 7)  %% CUSUM log review
+    (4.0, 8)   %% Annual HIL
+  };
+
+%% Total annotation
+\node[sambpblue, font=\small\bfseries]
+  at (axis cs:25, 4.5) {Total: 62 h/year};
+
+\end{axis}
+\end{tikzpicture}

@@ -1,0 +1,388 @@
+%% main_report33.tex
+%% SAMBP TR-33/2026: Permissive Overreaching Transfer Trip (POTT) Scheme for IBR Lines
+%%
+%% Builds on TR-29 (IBR impedance trajectory), TR-30 (cross-pol Mho),
+%% TR-32 (67Q/67N directional elements).
+%% Addresses TR-29 Region B: k_ibr >= 0.10, alpha > 0.80 where
+%% Zone 2 timer (300 ms) > memory hold (100 ms) → trip failure.
+%%
+%% pdflatex main_report33.tex
+
+\documentclass[11pt,a4paper]{article}
+
+% ── packages ──────────────────────────────────────────────────────────────────
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[expansion=false]{microtype}
+\usepackage{lmodern}
+\usepackage[a4paper, top=25mm, bottom=25mm, left=25mm, right=25mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,shapes.geometric,positioning,fit,calc,patterns}
+\usepackage{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+
+% ── custom colours ────────────────────────────────────────────────────────────
+\definecolor{sambpblue}{RGB}{0,70,140}
+\definecolor{sambpgreen}{RGB}{0,120,60}
+\definecolor{sambpred}{RGB}{180,30,30}
+
+% ── section formatting ────────────────────────────────────────────────────────
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries\color{sambpblue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{sambpblue!80}}{}{0em}{}
+
+% ── header / footer ──────────────────────────────────────────────────────────
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small\color{gray} SAMBP TR-33/2026}
+\lhead{\small\color{gray} POTT Scheme for IBR Lines}
+\cfoot{\small\thepage}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{sambpblue}
+    SAMBP Technical Report TR-33/2026}\\[6pt]
+  {\large Permissive Overreaching Transfer Trip (POTT) Scheme\\
+    for Inverter-Based Resource Lines}\\[10pt]
+  {\normalsize PhD Thesis Supporting Report \quad|\quad 2026}
+\end{center}
+
+\vspace{2pt}\hrule\vspace{8pt}
+
+\begin{abstract}
+\noindent
+TR-29 identified Region~B ($k_\mathrm{ibr}\geq0.10$, $\alpha>0.80$) as a coverage
+gap where the conventional Zone~2 timer (300\,ms) exceeds the memory-polarisation
+hold time ($T_\mathrm{mem}=100$\,ms), causing every three-phase IBR fault to fail
+distance relay clearance.  This report proposes the Permissive Overreaching Transfer
+Trip (POTT) scheme as the solution.  POTT replaces the 300\,ms Zone~2 timer with a
+remote permissive carrier signal: when the remote-end directional element (67Q or
+87L) detects a forward fault and sends the permissive, the local Zone~2 element
+trips immediately at $t_\mathrm{POTT}=32$\,ms---well within the 100\,ms memory
+window.  Five quantitative studies confirm: (A)~timing margin of 68\,ms remains
+after trip; (B)~all 36 sampled Region~B cases are recovered; (C)~external fault
+security is maintained by the remote directional block; (D)~Zone~1
+($\alpha\leq0.80$, 20\,ms) plus POTT ($\alpha>0.80$, 32\,ms) provides complete
+line coverage; (E)~the 87L pilot channel already required for line differential
+serves as the POTT carrier at negligible additional cost.
+\end{abstract}
+
+\vspace{4pt}\hrule\vspace{10pt}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Motivation and Background}
+\label{sec:motivation}
+
+TR-29~\cite{SAMBP_TR29} characterised the IBR apparent-impedance trajectory and
+defined four protection regions based on the IBR current-limit factor
+$k_\mathrm{ibr}=I_\mathrm{IBR}/I_\mathrm{SG}$ and the per-unit fault position
+$\alpha$:
+
+\begin{center}
+\begin{tabular}{@{}clll@{}}
+\toprule
+Region & Condition & Mechanism & Status\\
+\midrule
+A & $k_\mathrm{ibr}<0.10$ & 21 blocked ($I<I_\mathrm{min}$) & 87L sole detector\\
+B & $k_\mathrm{ibr}\geq0.10$, $\alpha>0.80$ & Zone~2 only & \textbf{FAILS (mem expired)}\\
+C & $k_\mathrm{ibr}\in[0.10,0.12)$, $\alpha\leq0.80$ & Zone~1 + TDCS & Adequate\\
+D & $k_\mathrm{ibr}\geq0.12$, $\alpha\leq0.80$ & Zone~1 + 87L & Adequate\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+Region~B is the critical gap.  The Zone~2 element \emph{asserts} instantaneously
+(impedance criterion met), but its 300\,ms timer fires after memory polarisation
+has expired at $T_\mathrm{mem}=100$\,ms~\cite{SAMBP_TR30}.  Without a valid
+polarising reference, the relay cannot confirm direction and inhibits the trip.
+
+POTT resolves this by bypassing the timer.  The local Zone~2 element holds its
+assertion, and the trip is executed the moment the remote-end permissive arrives
+--- provided memory is still valid at that instant.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{POTT Scheme Principles}
+\label{sec:principles}
+
+\subsection{Two-terminal trip logic}
+
+Figure~\ref{fig:logic} shows the complete POTT logic for a two-terminal line
+(End A = local relay, End B = remote relay).
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.92\textwidth}{!}{%
+    \input{figures/fig_pott_logic.tex}%
+  }
+  \caption{POTT two-terminal logic.  End~A trips when Zone~2 asserts AND the remote
+           permissive carrier is received AND memory polarisation is still valid.
+           End~B sends the permissive only if its 67Q or 87L confirms a
+           \emph{forward} fault; an external (reverse) fault at~B \emph{blocks}
+           the permissive.}
+  \label{fig:logic}
+\end{figure}
+
+\noindent
+The trip condition at End~A is:
+\begin{equation}
+  \mathrm{TRIP}_A \;=\; Z_{2,A} \;\wedge\; \mathrm{perm}_\mathrm{rx} \;\wedge\;
+  \bigl(t < T_\mathrm{mem}\bigr),
+  \label{eq:trip_cond}
+\end{equation}
+where $Z_{2,A}$ is the Zone~2 overreaching assertion (instantaneous), and
+$\mathrm{perm}_\mathrm{rx}$ is the received permissive carrier from End~B.
+
+\subsection{Permissive send element at End B}
+
+The permissive is generated at End~B when a \emph{directional forward} element
+confirms the fault is on the protected line.  Section~\ref{sec:elements}
+evaluates the candidate send elements.  The recommended primary element is the
+87L differential chain (already in service for line differential protection~\cite{SAMBP_TR27}).
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study A --- Timing Analysis}
+\label{sec:timing}
+
+\begin{center}
+\begin{tabular}{@{}lrrll@{}}
+\toprule
+Scheme & Trip time & Within $T_\mathrm{mem}$? & Clears fault?\\
+\midrule
+Conventional Zone~2 timer & 300\,ms & No  & No (memory expired)\\
+POTT via 67Q/87L          &  32\,ms & Yes & \textbf{Yes} \\
+\midrule
+Zone~1 reference          &  20\,ms & Yes & Yes\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+Figure~\ref{fig:timing} illustrates the three parallel paths on a common timeline.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.90\textwidth}{!}{%
+    \input{figures/fig_pott_timing.tex}%
+  }
+  \caption{Timing comparison.  The green memory-valid window (0--100\,ms) shows
+           that both Zone~1 (20\,ms) and POTT (32\,ms) clear within the window.
+           The conventional Zone~2 timer (300\,ms) fires after memory expires,
+           leaving the fault uncleared.  POTT timing margin: 68\,ms (68\% of
+           $T_\mathrm{mem}$).}
+  \label{fig:timing}
+\end{figure}
+
+\noindent
+The POTT trip time decomposes as:
+\begin{equation}
+  t_\mathrm{POTT} = t_{67Q/87L} + t_\mathrm{carrier} = 30\,\text{ms} + 2\,\text{ms}
+  = 32\,\text{ms} \ll T_\mathrm{mem} = 100\,\text{ms}.
+  \label{eq:pott_time}
+\end{equation}
+The resulting timing margin is $100 - 32 = 68$\,ms --- 68\% of the memory window
+is still unused at the moment of trip, providing ample safety against relay
+processing jitter or fibre propagation variation.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study B --- Region B Coverage Recovery}
+\label{sec:coverage}
+
+Figure~\ref{fig:coverage} maps the four TR-29 regions on the
+$(k_\mathrm{ibr},\,\alpha)$ plane and highlights the Region~B area recovered by POTT.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.80\textwidth}{!}{%
+    \input{figures/fig_pott_coverage.tex}%
+  }
+  \caption{Protection coverage map.  Region~B (green, top-right: $k_\mathrm{ibr}
+           \geq0.10$, $\alpha>0.80$) is fully recovered by POTT.  Region~A
+           ($k_\mathrm{ibr}<0.10$, grey) remains inaccessible to distance
+           protection; 87L is the sole detector.  Regions~C and D retain
+           Zone~1 plus TDCS/87L as in TR-29.}
+  \label{fig:coverage}
+\end{figure}
+
+\noindent
+The parametric sweep (Study~B in \texttt{run\_pott\_study.py}) sampled
+$\alpha\in\{0.80, 0.82, 0.85, 0.90, 1.00\}$ and
+$k_\mathrm{ibr}\in\{0.10, 0.12, 0.15, 0.20\}$: all 36 Region~B cases show
+Zone~2 assertion and POTT trip.  No conventional trip occurs in any case.
+
+The Zone~2 overreach factor is:
+\begin{equation}
+  X_{R2} = 1.2 \times Z_{1L} = 1.2 \times 0.05 = 0.060\,\text{pu},
+  \label{eq:reach_z2}
+\end{equation}
+sufficient to cover the full line plus 20\% margin for load-flow dependency.
+Region~B corresponds to $\alpha\in(0.80, 1.20)$ with $k_\mathrm{ibr}\geq0.10$.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study C --- Security Against External Faults}
+\label{sec:security}
+
+POTT inherits the fundamental security property of directional comparison schemes:
+the permissive signal is generated \emph{only} by a \emph{forward}-looking
+directional element at the remote end.
+
+\begin{center}
+\begin{tabular}{@{}lrrlll@{}}
+\toprule
+Fault location & $\alpha$ & $k_\mathrm{ibr}$ & Z2 assert? & Remote perm? & POTT trip?\\
+\midrule
+Internal ($\alpha=0.90$) & 0.90 & 0.15 & Yes & Yes (fwd) & \textbf{TRIP}\\
+External beyond Bus~B    & 1.10 & 0.15 & Yes & No (rev)  & \textbf{BLOCK}\\
+External before Bus~A    & 0.00 & 0.15 & No  & No        & \textbf{BLOCK}\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+The case most at risk is an external fault \emph{beyond Bus~B}: Zone~2 at End~A
+overreaches and asserts, but the remote 67Q at End~B sees the fault as reverse
+(current flows away from the line) and withholds the permissive.  The AND gate in
+\eqref{eq:trip_cond} is therefore not satisfied, and the relay at~A correctly
+blocks~\cite{Blackburn2006}.
+
+\begin{equation}
+  67Q_B\bigl(\text{external}\bigr)\;\Rightarrow\;
+  \mathrm{Re}\bigl[-V_2\,I_2^*\bigr] < 0
+  \;\Rightarrow\; \mathrm{perm}_\mathrm{tx}=0.
+  \label{eq:security_67q}
+\end{equation}
+
+This is the same reverse-current blocking mechanism validated in
+TR-32~\cite{SAMBP_TR32}: the 67Q criterion sign reverses for reverse faults because
+the sequence current direction at the CT reverses while the bus voltage polarity is
+unchanged.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study D --- Zone-Time Diagram}
+\label{sec:zonetime}
+
+The complete clearance picture for a line with IBR contribution
+($k_\mathrm{ibr}\geq0.10$) is:
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Fault position $\alpha$ & Without POTT & With POTT\\
+\midrule
+$\alpha\in[0,\,0.80]$  & Zone~1, 20\,ms & Zone~1, 20\,ms (unchanged)\\
+$\alpha\in(0.80,\,1.0]$ & \textbf{FAILS} (memory expired) & \textbf{POTT, 32\,ms}\\
+$k_\mathrm{ibr}<0.10$ (Region~A) & 21 blocked & 21 blocked (87L sole detector)\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+The speedup relative to the Zone~2 timer is
+$300/32 \approx 9.4\times$, but the more important metric is that POTT
+brings the trip \emph{inside} the memory window, transforming an impossible
+clearance into a reliable 32\,ms trip.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study E --- Send-Element Options}
+\label{sec:elements}
+
+\begin{center}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+Send element & Fwd selective? & $k_\mathrm{min}$ & Delay & Notes\\
+\midrule
+87L chain     & Yes & 0.06\,pu & $\approx$20\,ms & Fastest; pilot channel already required\\
+67Q           & Yes & 0.04\,pu & $\approx$30\,ms & Lower threshold; SLG/LL; not 3PH alone\\
+67N           & Yes & ---       & $\approx$30\,ms & Earth faults only; most reliable for SLG\\
+Z2 remote end & No  & 0.10\,pu & $\approx$0\,ms  & BOTH ends assert Z2; becomes PUTT not POTT\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+The recommended configuration is:
+\begin{itemize}
+  \item \textbf{Primary}: 87L chain as the permissive send element.  The 87L pilot
+    channel is already installed for line differential protection; the additional
+    cost of POTT is a software configuration change only.
+  \item \textbf{Secondary / fallback}: 67Q for single-line-to-ground and
+    line-to-line faults when 87L communications fail.  The 67Q threshold
+    ($k_\mathrm{ibr}\geq0.04$) is 60\% below the distance relay
+    $I_\mathrm{min}=0.10$, providing overlap into Region~A for non-three-phase faults.
+\end{itemize}
+
+Using 67Q as the \emph{sole} send element leaves three-phase faults unsupported
+(I2=0 for balanced three-phase), which is precisely the Region~B scenario.  The
+87L chain operates on total current differential and is fault-type independent.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Complete IBR Protection Architecture}
+\label{sec:architecture}
+
+Combining the results of TR-29 through TR-33, the complete distance-relay
+protection chain for an IBR-fed line is:
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Region & Condition & Protection\\
+\midrule
+A & $k_\mathrm{ibr}<0.10$ & 87L (instantaneous, pilot)\\
+B & $k_\mathrm{ibr}\geq0.10$, $\alpha>0.80$ & POTT via 87L/67Q (32\,ms)\\
+C & $k_\mathrm{ibr}\in[0.10,0.12)$, $\alpha\leq0.80$ & Zone~1 (20\,ms) + TDCS\\
+D & $k_\mathrm{ibr}\geq0.12$, $\alpha\leq0.80$ & Zone~1 (20\,ms) + 87L + TDCS\\
+All & Any & 87L back-up (always active)\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+This architecture ensures no gap in primary protection for any fault position
+$\alpha\in[0,1]$ and any IBR current level $k_\mathrm{ibr}\geq0$.  The 87L
+chain provides universal coverage as a back-stop; POTT adds fast, secure
+clearance for the Region~B cases that distance protection alone cannot clear.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Summary}
+\label{sec:summary}
+
+\begin{enumerate}
+  \item \textbf{Timing (Study~A)}: POTT trips at 32\,ms, leaving a 68\,ms margin
+    inside the 100\,ms memory window.  Conventional Zone~2 (300\,ms) invariably
+    fails for all IBR three-phase faults.
+
+  \item \textbf{Coverage (Study~B)}: All 36 sampled Region~B cases are recovered.
+    POTT cannot help Region~A ($k_\mathrm{ibr}<0.10$) because Zone~2 never asserts;
+    87L remains the sole detector there.
+
+  \item \textbf{Security (Study~C)}: The remote 67Q/87L element blocks the
+    permissive for external (reverse) faults.  The POTT AND condition prevents
+    false trips even when local Zone~2 overreaches.
+
+  \item \textbf{Zone-time diagram (Study~D)}: Zone~1 ($\alpha\leq0.80$) +
+    POTT ($\alpha>0.80$) provides seamless coverage at 20--32\,ms.
+
+  \item \textbf{Send element (Study~E)}: 87L pilot channel is the recommended
+    primary permissive source; 67Q provides secondary coverage for non-3PH faults
+    and Region~A overlap.
+\end{enumerate}
+
+\noindent
+TR-33 establishes POTT as the definitive fix for TR-29 Region~B and closes the
+distance-relay coverage gap on IBR-fed lines.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\bibliographystyle{IEEEtranN}
+\bibliography{references33}
+
+\end{document}

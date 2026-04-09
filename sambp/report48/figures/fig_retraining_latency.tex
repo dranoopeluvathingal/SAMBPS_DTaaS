@@ -1,0 +1,81 @@
+% fig_retraining_latency.tex
+% TR-48: Retraining latency (Study D) and catastrophic forgetting (Study E)
+
+\begin{tikzpicture}
+%% Study D: Accuracy vs retrain samples
+\begin{axis}[
+  name         = rtax,
+  width        = 0.54\textwidth,
+  height       = 6.0cm,
+  xlabel       = {Retraining samples from Fleet-2},
+  ylabel       = {Accuracy on Fleet-2 [\%]},
+  xlabel style = {font=\small},
+  ylabel style = {font=\small},
+  xmode        = log,
+  xmin=8, xmax=250,
+  ymin=35, ymax=80,
+  ytick        = {35,45,55,65,75},
+  yticklabel style = {font=\scriptsize},
+  xticklabel style = {font=\scriptsize},
+  tick style   = {draw=none},
+  axis line style = {gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  title        = {Study D: Retraining Latency},
+  title style  = {font=\small\bfseries},
+]
+
+\addplot[sambpblue, thick, mark=*, mark size=3pt]
+  coordinates {(10,53.0) (25,63.5) (50,48.5) (100,46.0) (200,49.0)};
+
+%% 50-sample marker
+\draw[red!60!black, dashed, thick]
+  (axis cs:8, 63.5) -- (axis cs:25, 63.5);
+\node[red!60!black, font=\tiny, anchor=east]
+  at (axis cs:9, 65) {63.5\% at 25 samples};
+
+\end{axis}
+
+%% Study E: Catastrophic forgetting bar chart
+\begin{axis}[
+  name         = cfax,
+  at           = {(rtax.south east)},
+  anchor       = south west,
+  xshift       = 6mm,
+  width        = 0.42\textwidth,
+  height       = 6.0cm,
+  ylabel       = {Accuracy [\%]},
+  ylabel style = {font=\small},
+  xlabel       = {Evaluation dataset},
+  xlabel style = {font=\small},
+  ybar,
+  bar width    = 16pt,
+  xtick        = {1,2},
+  xticklabels  = {Fleet-1\\before, Fleet-1\\after},
+  xticklabel style = {font=\scriptsize, align=center},
+  xmin=0.4, xmax=2.6,
+  ymin=0, ymax=60,
+  ytick        = {0,10,20,30,40,50,60},
+  yticklabels  = {},
+  tick style   = {draw=none},
+  axis line style = {gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  nodes near coords,
+  nodes near coords align = {vertical},
+  every node near coord/.append style = {font=\small, yshift=3pt},
+  title        = {Study E: Catastrophic Forgetting},
+  title style  = {font=\small\bfseries},
+]
+
+\addplot[fill=sambpblue!70, draw=sambpblue]
+  coordinates {(1,42.0) (2,40.0)};
+
+%% Forgetting annotation
+\draw[{Stealth[length=4pt]}-{Stealth[length=4pt]}, red!60!black, thick]
+  (axis cs:2.3, 40.0) -- (axis cs:2.3, 42.0);
+\node[red!60!black, font=\tiny, anchor=west]
+  at (axis cs:2.35, 41) {2\,pp};
+
+\end{axis}
+\end{tikzpicture}

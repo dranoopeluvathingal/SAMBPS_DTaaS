@@ -1,0 +1,81 @@
+% fig_hil_architecture.tex
+% TR-53: HIL test harness block diagram
+
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  hw/.style={draw=sambpblue, thick, rounded corners=4pt, fill=blue!5,
+             minimum width=2.4cm, minimum height=0.85cm, align=center},
+  sw/.style={draw=green!50!black, thick, rounded corners=4pt, fill=green!5,
+             minimum width=2.4cm, minimum height=0.85cm, align=center},
+  net/.style={draw=gray!50, thick, rounded corners=4pt, fill=gray!5,
+              minimum width=2.0cm, minimum height=0.85cm, align=center},
+  arrow/.style={-{Stealth[length=5pt]}, thick},
+  dbl/.style={{Stealth[length=4pt]}-{Stealth[length=4pt]}, thick},
+]
+
+%% RTDS / real-time simulator
+\node[hw, minimum width=3.2cm] (rtds) at (0, 3.5)
+  {RTDS / OPAL-RT\\{\tiny Real-time sim}};
+
+%% IEDs row
+\node[hw] (ied1) at (-3.5, 1.5) {IED R01\\{\tiny physical}};
+\node[hw] (ied2) at (-1.0, 1.5) {IED R05\\{\tiny physical}};
+\node[hw] (ied3) at ( 1.5, 1.5) {\ldots\\{\tiny ×11}};
+
+%% WAPC server
+\node[hw] (wapc) at ( 4.5, 1.5) {WAPC\\{\tiny RPi4/IPC}};
+
+%% PINN FPGA
+\node[hw, minimum height=0.75cm] (fpga) at (4.5, 3.5) {PINN\\{\tiny FPGA}};
+
+%% Managed switch
+\node[net, minimum width=3.6cm] (sw) at (0, 0)
+  {IEC 61850 Managed Switch\\{\tiny VLAN + rate-limit}};
+
+%% Test PC
+\node[sw, minimum width=2.8cm] (testpc) at (-4.5, -1.2)
+  {Test PC\\{\tiny Python harness}};
+
+%% PMU block
+\node[net] (pmu) at (4.5, 0) {PMU\\{\tiny 250 Hz}};
+
+%% Connections: RTDS → IEDs (CT/VT)
+\draw[arrow, orange!70!black, dashed]
+  (rtds.west) -- ++(-3.0,0) |- (ied1.north)
+  node[midway, above, font=\tiny, orange!70!black]{CT/VT};
+\draw[arrow, orange!70!black, dashed]
+  (rtds) -- (ied2.north);
+\draw[arrow, orange!70!black, dashed]
+  (rtds.east) -- ++(0.5,0) |- (ied3.north);
+
+%% RTDS → PMU
+\draw[arrow, orange!70!black, dashed]
+  (rtds.east) -- (fpga.west);
+\draw[arrow, orange!70!black, dashed]
+  (rtds.east |- pmu.north) -- (pmu.north)
+  node[midway, right, font=\tiny]{Vsync};
+
+%% IEDs ↔ switch
+\foreach \ied in {ied1,ied2,ied3} {
+  \draw[dbl, sambpblue!60] (\ied.south) -- (\ied.south |- sw.north);
+}
+\draw[dbl, sambpblue!60] (wapc.south) -- (wapc.south |- sw.north);
+\draw[dbl, sambpblue!60] (pmu.north) -- (pmu.north |- sw.south);
+
+%% FPGA ↔ WAPC
+\draw[dbl, green!50!black] (fpga.south) -- (wapc.north)
+  node[midway, right, font=\tiny]{0.15 ms};
+
+%% Test PC ↔ switch
+\draw[dbl, green!50!black] (testpc.east) -- (sw.west);
+
+%% Labels
+\node[font=\tiny, sambpblue, above=2pt] at (sw.north west) {GOOSE/MMS};
+\node[font=\tiny, orange!70!black] at (-2.8, 2.7) {Analogue};
+
+%% Bounding boxes
+\draw[gray!30, dashed, thick, rounded corners=6pt]
+  (-5.0, -0.4) rectangle (5.8, 4.2);
+\node[gray!50, font=\tiny] at (-4.5, 4.1) {HIL test cell};
+
+\end{tikzpicture}

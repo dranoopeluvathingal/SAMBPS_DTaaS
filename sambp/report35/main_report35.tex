@@ -1,0 +1,376 @@
+%% main_report35.tex
+%% SAMBP TR-35/2026: Full IBR Distance Protection Coordination Study
+%%
+%% Integration of TR-29 through TR-34 into a unified, verified
+%% protection scheme for inverter-based resource lines.
+%%
+%% pdflatex main_report35.tex
+
+\documentclass[11pt,a4paper]{article}
+
+% ── packages ──────────────────────────────────────────────────────────────────
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[expansion=false]{microtype}
+\usepackage{lmodern}
+\usepackage[a4paper, top=25mm, bottom=25mm, left=25mm, right=25mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,shapes.geometric,positioning,fit,calc,patterns}
+\usepackage{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+
+% ── custom colours ────────────────────────────────────────────────────────────
+\definecolor{sambpblue}{RGB}{0,70,140}
+\definecolor{sambpgreen}{RGB}{0,120,60}
+\definecolor{sambpred}{RGB}{180,30,30}
+
+% ── section formatting ────────────────────────────────────────────────────────
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries\color{sambpblue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{sambpblue!80}}{}{0em}{}
+
+% ── header / footer ──────────────────────────────────────────────────────────
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small\color{gray} SAMBP TR-35/2026}
+\lhead{\small\color{gray} Full IBR Distance Protection Coordination}
+\cfoot{\small\thepage}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{sambpblue}
+    SAMBP Technical Report TR-35/2026}\\[6pt]
+  {\large Full IBR Distance Protection Coordination Study:\\
+    Integration of TR-29 to TR-34}\\[10pt]
+  {\normalsize PhD Thesis Supporting Report \quad|\quad 2026}
+\end{center}
+
+\vspace{2pt}\hrule\vspace{8pt}
+
+\begin{abstract}
+\noindent
+This report integrates the individual protection elements developed in
+TR-29--TR-34 into a unified, quantitatively verified protection scheme for
+inverter-based resource (IBR) lines.  A Python simulation framework evaluates
+five protection functions---Zone~1 quadrilateral, 87L differential, 67N/67Q
+directional overcurrent, Zone~2/POTT, and TDCS backup---across 48 sampled
+($\alpha$, $k_\mathrm{ibr}$) operating points, nine fault scenario types, and
+three external-fault selectivity cases.  Key results: (A)~zero coverage gaps for
+metallic three-phase faults across all TR-29 regions; (B)~67N provides
+$k_\mathrm{ibr}$-independent SLG coverage; (C)~all three external-fault cases
+correctly block; (D)~the transition from 87L-only to dual (Z1 + 87L) coverage
+occurs at $k_\mathrm{ibr}=0.10$; (E)~the five-element time ladder ensures
+complete, selective fault clearance within the 100\,ms memory window.  The sole
+structural limit---no protection function below $k_\mathrm{ibr}=0.06$---is
+inherent to IBR physics, not a scheme deficiency.
+\end{abstract}
+
+\vspace{4pt}\hrule\vspace{10pt}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Background and Scope}
+\label{sec:background}
+
+TR-29~\cite{SAMBP_TR29} established the four-region coverage map for IBR
+distance protection.  Subsequent reports addressed each identified gap:
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Report & Subject & Gap addressed\\
+\midrule
+TR-30~\cite{SAMBP_TR30} & Cross-polarised Mho & Memory timing and load encroachment\\
+TR-31~\cite{SAMBP_TR31} & Zero-seq compensation (21G) & SLG relay under-reach with IBR\\
+TR-32~\cite{SAMBP_TR32} & 67N/67Q directional OC & Region~A SLG/LL and IBR discrimination\\
+TR-33~\cite{SAMBP_TR33} & POTT scheme & Region~B Zone~2 timer failure\\
+TR-34~\cite{SAMBP_TR34} & Quadrilateral characteristic & Arc-resistance coverage under infeed\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+This report verifies that the assembled scheme is both complete (no unprotected
+faults) and selective (no false trips for external faults).
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Complete Protection Architecture}
+\label{sec:architecture}
+
+Figure~\ref{fig:arch} shows the five protection functions, their inputs, and
+the OR-logic driving the circuit-breaker trip coil.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.95\textwidth}{!}{%
+    \input{figures/fig_coord_architecture.tex}%
+  }
+  \caption{IBR line protection architecture.  Five functions form a layered
+           defence.  Zone~1 quad and 87L both trip at 20\,ms (independent
+           paths); 67N/67Q provide sequence-based backup at 30\,ms;
+           Z2/POTT extends fast clearance to Region~B at 32\,ms.  TDCS
+           (400\,ms) is the last-resort backup.  The 87L pilot channel
+           doubles as the POTT carrier, eliminating dedicated hardware.
+           Structural limit: $k_\mathrm{ibr}<0.06$ --- IBR fault current
+           below all detection thresholds; no scheme can protect.}
+  \label{fig:arch}
+\end{figure}
+
+\noindent
+The complete parameter set is:
+\begin{center}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+Function & Reach/threshold & Trip time & Coverage & TR\\
+\midrule
+Zone~1 Quad & $X_{R1}=0.040$, $R_\mathrm{fwd1}=0.030$\,pu & 20\,ms &
+  3PH/SLG/LL, $\alpha\leq0.80$, $k\geq0.10$ & 30, 34\\
+87L differ. & $I_\mathrm{min}=0.06$\,pu & 20\,ms &
+  All types, all $\alpha$, $k\geq0.06$ & 27\\
+67N direct. & Network $I_0$ (indep.) & 30\,ms &
+  SLG, all $\alpha$, all $k$ & 32\\
+67Q direct. & $I_\mathrm{min}=0.04$\,pu & 30\,ms &
+  SLG/LL, $k\geq0.04$ & 32\\
+Z2/POTT & $X_{R2}=0.060$, $R_\mathrm{fwd2}=0.050$\,pu & 32\,ms &
+  3PH, $\alpha\in(0.80,1.20)$, $k\geq0.10$ & 33, 34\\
+TDCS & $I_\mathrm{min}=0.10$\,pu & 400\,ms &
+  Last resort & 29\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study A --- Complete Coverage Matrix (Metallic 3PH)}
+\label{sec:studyA}
+
+Figure~\ref{fig:coverage} maps the primary protection function for each
+($\alpha$, $k_\mathrm{ibr}$) cell.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.82\textwidth}{!}{%
+    \input{figures/fig_coord_coverage.tex}%
+  }
+  \caption{Full protection coverage map.  Each shaded zone shows the primary
+           protection function.  The 87L channel (green band, $k\geq0.06$)
+           runs in parallel with all distance elements and provides the
+           universal back-stop.  Region~B (top-right, green) is covered by
+           Z2/POTT at 32\,ms with 87L as co-primary.  Below $k=0.06$ (dark
+           grey) no detection is possible: this is a fundamental IBR physics
+           limit.  The 67N strip (dashed orange) at the top indicates that
+           67N is active for SLG faults across the entire IBR range.}
+  \label{fig:coverage}
+\end{figure}
+
+\noindent
+The parametric sweep (\texttt{run\_coordination\_study.py}, Study~A) sampled
+$\alpha\in\{0.20,0.40,0.60,0.70,0.80,0.85,0.90,1.00\}$ and
+$k_\mathrm{ibr}\in\{0.06,0.08,0.10,0.12,0.15,0.20\}$:
+\textbf{zero coverage gaps} were found across all 48 cells.
+
+In Region~B ($\alpha>0.80$, $k\geq0.10$), Zone~1 correctly does not assert
+(fault beyond Zone~1 reach), and Z2/POTT provides the fast path.  87L acts as
+an equal-speed co-primary, so Region~B clearance is not dependent on the pilot
+channel alone for redundancy.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study B --- Fault Type Coverage}
+\label{sec:studyB}
+
+\begin{center}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+Scenario & Z1 & 67N/Q & Z2/POTT & 87L\\
+\midrule
+SLG metallic, Region~A ($k=0.05$)     & -- & 67N~\checkmark & -- & --\\
+SLG metallic, $k=0.10$, $\alpha=0.50$ & \checkmark & \checkmark & \checkmark & \checkmark\\
+SLG metallic, Region~B ($k=0.15$)     & -- & 67N~\checkmark & \checkmark & \checkmark\\
+LL metallic, Region~A ($k=0.05$)      & -- & 67Q~\checkmark & -- & --\\
+LL arc ($k=0.15$, $R_\mathrm{arc}=0.008$) & -- & 67Q~\checkmark & -- & \checkmark\\
+3PH arc ($k=0.15$, $R_\mathrm{arc}=0.004$) & -- & -- & \checkmark & \checkmark\\
+3PH arc ($k=0.10$, $R_\mathrm{arc}=0.004$) & -- & -- & \checkmark & \checkmark\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+Two observations merit emphasis:
+\begin{enumerate}
+  \item \textbf{SLG Region~A}: The 67N element uses the network zero-sequence
+    current ($I_0$ from the synchronous-generation end), which is independent of
+    $k_\mathrm{ibr}$ (TR-32~\cite{SAMBP_TR32}).  67N therefore covers
+    SLG faults even when $k_\mathrm{ibr}=0$ --- the delta winding of the IBR
+    transformer provides a zero-sequence path from the network side regardless
+    of IBR output.
+
+  \item \textbf{3PH arc with $k=0.10$}: $R_m=0.044$\,pu falls within
+    $R_\mathrm{fwd2}=0.050$\,pu, so Z2/POTT covers this case.  For
+    $k=0.10$ and $R_\mathrm{arc}>0.0045$\,pu the apparent resistance exceeds
+    $R_\mathrm{fwd2}$ and 87L is the sole detector --- consistent with the
+    structural limit derived in TR-34~\cite{SAMBP_TR34}.
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study C --- Selectivity for External Faults}
+\label{sec:studyC}
+
+Three external fault cases were verified:
+
+\begin{center}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Case & Z1 & Z2/POTT & Result\\
+\midrule
+External beyond Bus~B ($\alpha=1.10$) &
+  \textemdash\ (Z1 reach = 0.80) &
+  Blocked (perm withheld) & \textbf{BLOCK}\\
+External beyond Bus~B ($\alpha=1.15$) &
+  \textemdash &
+  Blocked & \textbf{BLOCK}\\
+External behind Bus~A ($\alpha=-0.10$) &
+  Blocked (dir.~element, $X_m<0$) &
+  Blocked & \textbf{BLOCK}\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+Security is maintained by three independent mechanisms:
+\begin{itemize}
+  \item Zone~1 reach is 80\% of the line --- cannot reach beyond Bus~B.
+  \item Zone~2/POTT: even if Z2 asserts for external faults, the POTT
+    permissive signal requires the remote 67Q/87L to confirm a
+    \emph{forward} fault at End~B.  An external fault is reverse at End~B
+    and the permissive is withheld (TR-33~\cite{SAMBP_TR33}).
+  \item 87L: the differential element measures $I_\mathrm{diff}=I_A+I_B$;
+    for a through-fault $I_A=-I_B$ and $I_\mathrm{diff}=0$ --- inherently
+    immune to external faults.
+  \item Reverse direction: the directional element ($X_m\geq0$ constraint
+    and $\angle Z_m>\phi_\mathrm{min}$) blocks Zone~1 for faults behind
+    Bus~A.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study D --- IBR Penetration Sensitivity}
+\label{sec:studyD}
+
+Table~\ref{tab:sweep} summarises the transition behaviour as $k_\mathrm{ibr}$
+varies from 0.02 to 0.50 for a fixed fault at $\alpha=0.70$ (metallic 3PH).
+
+\begin{table}[htbp]
+\centering
+\caption{Protection coverage vs IBR penetration level ($\alpha=0.70$, 3PH metallic).}
+\label{tab:sweep}
+\begin{tabular}{@{}rlllll@{}}
+\toprule
+$k_\mathrm{ibr}$ & Z1 & 87L & Status & First element & $t$ [ms]\\
+\midrule
+0.02--0.04 & -- & -- & \textbf{No protection} & --- & ---\\
+0.06--0.08 & -- & \checkmark & 87L only & 87L & 20\\
+$\geq$0.10 & \checkmark & \checkmark & Dual (Z1+87L) & Z1 or 87L & 20\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent
+The transition at $k=0.06$ (87L threshold) and $k=0.10$ (distance relay
+$I_\mathrm{min}$) are the two critical penetration levels for the protection
+scheme.  For $k_\mathrm{ibr}\geq0.10$ the scheme has full redundancy: Z1 and
+87L are independent paths both operating at 20\,ms.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study E --- Protection Time Hierarchy}
+\label{sec:studyE}
+
+Figure~\ref{fig:ladder} shows all five protection functions on a common
+timeline against the 100\,ms memory window.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.95\textwidth}{!}{%
+    \input{figures/fig_coord_ladder.tex}%
+  }
+  \caption{Protection time ladder.  All primary functions (87L, Z1, 67N/67Q,
+           Z2/POTT) clear within the green memory-valid window
+           ($T_\mathrm{mem}=100$\,ms).  The conventional Zone~2 timer at
+           300\,ms (red, dashed) is shown for reference: it fires after
+           memory expires and is superseded by POTT in the SAMBP scheme.
+           TDCS at 400\,ms is the back-stop for scenarios where all
+           primary functions are unavailable.}
+  \label{fig:ladder}
+\end{figure}
+
+\noindent
+The maximum primary clearance time is 32\,ms (Z2/POTT), leaving a 68\,ms
+margin inside $T_\mathrm{mem}$.  All functions that rely on memory
+polarisation (Zone~1 and Zone~2) therefore have their polarising reference
+intact at the instant of trip.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Structural Limit and Thesis Implications}
+\label{sec:limit}
+
+The sole uncovered scenario is $k_\mathrm{ibr}<I_\mathrm{min,87L}=0.06$: at
+this penetration level the IBR contributes so little fault current that no
+protection function --- distance, differential, or directional --- can reliably
+detect the fault.  This is not a scheme design gap; it is a physical consequence
+of IBR current limiting.
+
+From a thesis standpoint, this result establishes:
+\begin{enumerate}
+  \item A \textbf{hard lower bound} on grid-code IBR fault current contribution
+    for protection purposes: $k_\mathrm{ibr}\geq0.06$ is necessary for 87L
+    operability, and $k_\mathrm{ibr}\geq0.10$ for distance protection.
+
+  \item The \textbf{87L as the indispensable element}: across all IBR penetration
+    levels where protection is physically possible ($k\geq0.06$), 87L provides
+    fast, reliable clearance with no dependence on polarisation memory.
+
+  \item \textbf{Quad + POTT as the distance layer}: together they achieve the
+    same 20--32\,ms clearance as 87L, with independent hardware, for all
+    metallic and moderate arc-resistance faults where $k\geq0.10$.
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Summary}
+\label{sec:summary}
+
+\begin{enumerate}
+  \item \textbf{Coverage (Study~A)}: Zero gaps for metallic 3PH faults across
+    all 48 sampled cells spanning TR-29 Regions~A--D.
+
+  \item \textbf{Fault types (Study~B)}: 67N eliminates the SLG Region~A gap;
+    67Q covers LL for $k\geq0.04$; 87L is the universal back-stop for all types.
+
+  \item \textbf{Selectivity (Study~C)}: All three external fault cases block
+    correctly via Z1 reach limit, POTT permissive gate, 87L differential
+    principle, and directional angle supervision.
+
+  \item \textbf{Penetration sensitivity (Study~D)}: Two transition thresholds
+    at $k=0.06$ (87L) and $k=0.10$ (distance). Below 0.06: no protection.
+
+  \item \textbf{Time hierarchy (Study~E)}: All primary elements clear within
+    32\,ms, 68\,ms inside the memory window.  Conventional Zone~2 (300\,ms)
+    is entirely superseded by the POTT scheme.
+\end{enumerate}
+
+\noindent
+TR-35 closes the SAMBP distance-protection series (TR-29 to TR-35) with a
+verified, complete, selective IBR line protection scheme.  The next SAMBP
+reports address auto-reclosing strategy for IBR lines (TR-36) and the
+full-system Monte Carlo reliability assessment (TR-37).
+
+% ─────────────────────────────────────────────────────────────────────────────
+\bibliographystyle{IEEEtranN}
+\bibliography{references35}
+
+\end{document}

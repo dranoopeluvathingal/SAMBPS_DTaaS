@@ -1,0 +1,83 @@
+% fig_fleet_change_protocol.tex
+% TR-54: Fleet-change re-trigger protocol timeline (Study D)
+
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  evt/.style={circle, draw=sambpblue, fill=blue!10,
+              minimum size=0.45cm, inner sep=0pt, thick},
+  box/.style={draw=sambpblue, thick, rounded corners=3pt,
+              fill=blue!5, minimum width=2.6cm,
+              minimum height=0.70cm, align=center, font=\tiny},
+  autobox/.style={draw=green!50!black, thick, rounded corners=3pt,
+                  fill=green!5, minimum width=2.6cm,
+                  minimum height=0.70cm, align=center, font=\tiny},
+  warnbox/.style={draw=orange!70!black, thick, rounded corners=3pt,
+                  fill=orange!5, minimum width=2.6cm,
+                  minimum height=0.70cm, align=center, font=\tiny},
+  arrow/.style={-{Stealth[length=4pt]}, thick},
+]
+
+%% Timeline axis
+\draw[thick, gray!50, -{Stealth[length=5pt]}]
+  (-0.5, 0) -- (12.5, 0) node[right, font=\small]{Wall-clock time};
+
+%% Time markers
+\foreach \t/\lab in {0/0, 1.0/1, 2.1/21\,min, 5.1/31\,min} {
+  \draw[gray!40, dashed] (\t*2, -1.8) -- (\t*2, 1.8);
+  \node[gray!60, font=\tiny, anchor=north] at (\t*2, -1.9) {\lab};
+}
+
+%% Events on timeline
+\node[evt, fill=red!20, draw=red!60!black] (e1) at (0, 0) {};
+\node[evt] (e2) at (2.0, 0) {};
+\node[evt] (e3) at (4.2, 0) {};
+\node[evt, fill=green!20, draw=green!50!black] (e4) at (4.3, 0) {};
+\node[evt, fill=green!20, draw=green!50!black] (e5) at (10.2, 0) {};
+
+%% Step boxes above timeline
+\node[warnbox, above=0.7cm] (b1) at (0, 0)
+  {CUSUM alarm\\fleet shift detected};
+\node[box, above=0.7cm] (b2) at (2.0, 0)
+  {Collect 50\\fault samples};
+\node[autobox, above=0.7cm] (b3) at (4.15, 0)
+  {Settings engine\\TR-51, <1 ms};
+\node[autobox, above=0.7cm] (b4) at (7.5, 0)
+  {GOOSE MMS\\setting dispatch};
+\node[autobox, above=0.7cm] (b5) at (10.2, 0)
+  {Regression\\10 scenarios};
+
+%% Below timeline
+\node[font=\tiny, gray!60, below=0.5cm] at (0, 0) {t = 0};
+\node[font=\tiny, gray!60, below=0.5cm] at (2.0, 0) {+21 min};
+\node[font=\tiny, gray!60, below=0.5cm] at (4.2, 0) {+21 min};
+\node[font=\tiny, gray!60, below=0.5cm] at (7.5, 0) {+21 min};
+\node[font=\tiny, gray!60, below=0.5cm] at (10.2, 0) {+31 min};
+
+%% Arrows
+\draw[arrow, sambpblue] (e1) -- (b1.south);
+\draw[arrow, sambpblue] (e2) -- (b2.south);
+\draw[arrow, sambpblue] (e3) -- (b3.south);
+\draw[arrow, sambpblue] (b4.south) -- ++(0,-0.4) -- (e4.north);
+\draw[arrow, green!50!black] (e5) -- (b5.south);
+
+%% Horizontal flow arrows
+\draw[arrow, sambpblue!60, dashed]
+  (b1.east) -- (b2.west);
+\draw[arrow, sambpblue!60, dashed]
+  (b2.east) -- (b3.west);
+\draw[arrow, green!50!black, dashed]
+  (b3.east) -- (b4.west);
+\draw[arrow, green!50!black, dashed]
+  (b4.east) -- (b5.west);
+
+%% Duration bracket
+\draw[{Stealth[length=3pt]}-{Stealth[length=3pt]}, sambpblue!60, thick]
+  (0, -1.5) -- (10.2, -1.5);
+\node[sambpblue!70, font=\small\bfseries, anchor=north]
+  at (5.1, -1.55) {$\approx$31 min total (dominated by 21 min CUSUM latency)};
+
+%% Legend
+\node[warnbox, right=0.5cm] at (10.6, 1.4) {Auto (WAPC)};
+\node[autobox, right=0.5cm] at (10.6, 0.6) {Auto (system)};
+
+\end{tikzpicture}

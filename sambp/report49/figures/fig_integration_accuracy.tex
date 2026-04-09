@@ -1,0 +1,50 @@
+% fig_integration_accuracy.tex
+% TR-49: Per-class accuracy comparison — relay vs ML vs combined
+
+\begin{tikzpicture}
+\begin{axis}[
+  name         = intax,
+  width        = 0.88\textwidth,
+  height       = 6.5cm,
+  ybar,
+  bar width    = 8pt,
+  ylabel       = {Accuracy [\%]},
+  ylabel style = {font=\small},
+  xlabel       = {Protection class},
+  xlabel style = {font=\small},
+  xtick        = {1,2,3,4},
+  xticklabels  = {MISS, 87L, Z1, EXT},
+  xticklabel style = {font=\small},
+  xmin=0.4, xmax=4.6,
+  ymin=40, ymax=110,
+  ytick        = {40,50,60,70,80,90,100},
+  yticklabel style = {font=\scriptsize},
+  tick style   = {draw=none},
+  axis line style = {gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  legend style = {at={(0.02,0.98)}, anchor=north west,
+                  font=\scriptsize, draw=gray!50},
+  legend cell align = left,
+  nodes near coords,
+  nodes near coords align = {vertical},
+  every node near coord/.append style = {font=\tiny, yshift=2pt},
+]
+
+%% Relay-physics baseline (100% for all classes)
+\addplot[fill=gray!40, draw=gray!60]
+  coordinates {(1,100.0) (2,100.0) (3,100.0) (4,100.0)};
+\addlegendentry{Relay baseline}
+
+%% ML-only (PINN with noise)
+\addplot[fill=sambpblue!70, draw=sambpblue]
+  coordinates {(1,89.5) (2,73.9) (3,57.3) (4,75.0)};
+\addlegendentry{PINN (noisy sensors)}
+
+%% Degraded mode: ML fallback (CT+VT degraded)
+\addplot[fill=orange!60, draw=orange!80!black]
+  coordinates {(1,82.0) (2,74.2) (3,80.1) (4,81.5)};
+\addlegendentry{ML fallback (CT+VT $2\times$ noise)}
+
+\end{axis}
+\end{tikzpicture}

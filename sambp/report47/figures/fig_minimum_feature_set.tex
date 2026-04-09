@@ -1,0 +1,83 @@
+% fig_minimum_feature_set.tex
+% TR-47: Accuracy vs number of features / feature set type (Studies D & E)
+
+\begin{tikzpicture}
+\begin{axis}[
+  name         = mfax,
+  width        = 0.72\textwidth,
+  height       = 6.0cm,
+  xlabel       = {Feature set},
+  ylabel       = {Classification accuracy [\%]},
+  xlabel style = {font=\small},
+  ylabel style = {font=\small},
+  xtick        = {1,2,3,4,5},
+  xticklabels  = {3-raw, 2-raw\\(no $R_a$), 1-raw\\($k$ only),
+                  2-phys, 3-phys},
+  xticklabel style = {font=\scriptsize, align=center},
+  xmin=0.4, xmax=5.6,
+  ymin=30, ymax=105,
+  ytick        = {40,50,60,70,80,90,100},
+  yticklabel style = {font=\scriptsize},
+  tick style   = {draw=none},
+  axis line style = {gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  nodes near coords,
+  nodes near coords align = {vertical},
+  every node near coord/.append style = {font=\tiny, yshift=3pt},
+]
+
+%% Study D bars
+\addplot[fill=sambpblue!70, draw=sambpblue, bar width=14pt,
+         ybar, ybar legend]
+  coordinates {(1,100.0) (2,85.5) (3,58.0) (4,44.1) (5,39.9)};
+
+%% Minimum effective set annotation
+\draw[green!50!black, thick, dashed]
+  (axis cs:0.4, 85.5) -- (axis cs:5.6, 85.5);
+\node[green!50!black, font=\tiny, anchor=west]
+  at (axis cs:0.5, 87) {2-feature threshold: 85.5\%};
+
+%% Reference line at 100%
+\draw[red!40, thick, dashed]
+  (axis cs:0.4, 100) -- (axis cs:5.6, 100);
+\node[red!50!black, font=\tiny, anchor=west]
+  at (axis cs:3.5, 101.5) {Full set 100\%};
+
+\end{axis}
+
+%% Study E panel (sensor noise)
+\begin{axis}[
+  name         = seax,
+  at           = {(mfax.south east)},
+  anchor       = south west,
+  xshift       = 8mm,
+  width        = 0.26\textwidth,
+  height       = 6.0cm,
+  ylabel       = {},
+  xlabel       = {Sensor scenario},
+  xlabel style = {font=\small},
+  xtick        = {1,2,3,4},
+  xticklabels  = {OK, CT\\$2\times$, VT\\$2\times$, CT\\miss},
+  xticklabel style = {font=\scriptsize, align=center},
+  xmin=0.4, xmax=4.6,
+  ymin=30, ymax=105,
+  ytick        = {40,50,60,70,80,90,100},
+  yticklabels  = {},
+  tick style   = {draw=none},
+  axis line style = {gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  nodes near coords,
+  nodes near coords align = {vertical},
+  every node near coord/.append style = {font=\tiny, yshift=3pt},
+  title        = {Study E: Sensor robustness},
+  title style  = {font=\small\bfseries},
+]
+
+\addplot[fill=orange!60, draw=orange!70!black, bar width=10pt,
+         ybar]
+  coordinates {(1,100.0) (2,96.3) (3,94.0) (4,85.3)};
+
+\end{axis}
+\end{tikzpicture}

@@ -1,0 +1,65 @@
+% fig_ml_pipeline.tex
+% TR-49: ML protection intelligence layer pipeline diagram
+
+\begin{tikzpicture}[
+  every node/.style={font=\small},
+  box/.style={draw=sambpblue, thick, rounded corners=4pt, fill=blue!5,
+              minimum width=2.4cm, minimum height=0.9cm, align=center,
+              font=\scriptsize},
+  redbox/.style={draw=red!60!black, thick, rounded corners=4pt, fill=red!5,
+                 minimum width=2.4cm, minimum height=0.9cm, align=center,
+                 font=\scriptsize},
+  greenbox/.style={draw=green!50!black, thick, rounded corners=4pt,
+                   fill=green!5, minimum width=2.6cm, minimum height=0.9cm,
+                   align=center, font=\scriptsize},
+  orangebox/.style={draw=orange!70!black, thick, rounded corners=4pt,
+                    fill=orange!5, minimum width=2.4cm, minimum height=0.9cm,
+                    align=center, font=\scriptsize},
+  arrow/.style={-{Stealth[length=5pt]}, thick},
+  lat/.style={font=\tiny, gray!70, above, yshift=2pt},
+]
+
+%% Input
+\node[box] (feat)   at (0,   0) {Feature\\extraction\\0.05 ms};
+\node[box] (pinn)   at (3.2, 0) {PINN\\inference\\0.15 ms};
+\node[redbox] (veto) at (6.4, 0) {Physics\\veto\\0.01 ms};
+\node[box] (ekf)    at (0,  -2) {EKF\\state update\\0.018 ms};
+\node[box] (dtlib)  at (3.2,-2) {DT library\\lookup\\0.107 ms};
+\node[greenbox] (goose) at (6.4,-2) {GOOSE\\publication\\2.00 ms};
+
+%% Relay (primary)
+\node[orangebox] (relay) at (9.8, 0) {Relay-physics\\(primary)\\deterministic};
+\node[greenbox]  (out)   at (9.8,-2) {Combined\\output\\$\leq50$ ms trip};
+
+%% Arrows
+\draw[arrow] (feat.east)  -- (pinn.west)  node[lat]{};
+\draw[arrow] (pinn.east)  -- (veto.west);
+\draw[arrow] (veto.east)  -- (relay.west) node[lat, above]{ML advisory};
+\draw[arrow] (relay.south) -- (out.north);
+
+\draw[arrow] (ekf.east)   -- (dtlib.west);
+\draw[arrow] (dtlib.east) -- (goose.west);
+\draw[arrow] (goose.east) -- (out.west)   node[lat]{};
+
+%% Sensor input arrows
+\draw[arrow, dashed, gray!50] (-2, 0) node[left, font=\tiny]{$k,\alpha,r,f_t$}
+  -- (feat.west);
+\draw[arrow, dashed, gray!50] (-2,-2) node[left, font=\tiny]{$k,\alpha,z,t$}
+  -- (ekf.west);
+
+%% Degraded mode bypass
+\draw[arrow, dashed, red!50] (veto.south) -- (goose.north)
+  node[midway, right, font=\tiny, align=left, red!60!black]
+  {degraded\\fallback};
+
+%% Total latency annotation
+\node[draw=gray!40, fill=gray!5, rounded corners=3pt,
+      font=\tiny, inner sep=4pt, align=center]
+  at (9.8, -4.0)
+  {Total ML budget: 2.335 ms\\= 4.7\% of 50 ms trip window};
+
+%% Layer labels
+\node[font=\tiny\bfseries, sambpblue] at (3.2, 1.2)  {ML intelligence layer};
+\node[font=\tiny\bfseries, gray!60]   at (3.2, -3.2) {Digital twin layer};
+
+\end{tikzpicture}

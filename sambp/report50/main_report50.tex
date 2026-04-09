@@ -1,0 +1,313 @@
+%% main_report50.tex
+%% SAMBP TR-50/2026: Wide-Area Protection Coordinator (WAPC)
+%%
+%% pdflatex main_report50.tex
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[expansion=false]{microtype}
+\usepackage{lmodern}
+\usepackage[a4paper, top=25mm, bottom=25mm, left=25mm, right=25mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,shapes.geometric,positioning,fit,calc}
+\usepackage{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+
+\definecolor{sambpblue}{RGB}{0,70,140}
+
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries\color{sambpblue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{sambpblue!80}}{}{0em}{}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small\color{gray} SAMBP TR-50/2026}
+\lhead{\small\color{gray} Wide-Area Protection Coordinator}
+\cfoot{\small\thepage}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{sambpblue} SAMBP Technical Report TR-50/2026}\\[6pt]
+  {\large Wide-Area Protection Coordinator (WAPC)}\\[10pt]
+  {\normalsize PhD Thesis Supporting Report \quad|\quad 2026}
+\end{center}
+
+\vspace{2pt}\hrule\vspace{8pt}
+
+\begin{abstract}
+\noindent
+This report develops the Wide-Area Protection Coordinator (WAPC), a
+centralised decision engine that aggregates IED relay reports and PMU
+synchrophasor data across a 10-bus IBR test network to deliver four
+capabilities unavailable to individual relays: (i) network-wide fault
+localisation, (ii) N-1 security verification before tripping, (iii)
+PINN ML advisory integration, and (iv) coordinated GOOSE messaging.
+Study B demonstrates 94.5\% correct-line fault localisation at standard
+IEC\,Class\,P1 PMU noise ($\sigma_V=0.01$\,pu), degrading to 77.5\% at
+$4\times$ noise.  Study C establishes that 10/11 relays can be tripped
+without islanding risk; R01 (the only grid infeed) requires operator
+confirmation.  Study D shows the WAPC centralised path adds 5.0\,ms over
+distributed relaying (9.0\,ms vs 4.0\,ms), consuming 18\% of the 50\,ms
+trip budget.  Study E integration test achieves 90\% WAPC accuracy and 92\%
+distributed accuracy; critically, zero scenarios were wrong by both systems,
+confirming that WAPC and distributed relaying are complementary rather than
+competing decision paths.
+\end{abstract}
+
+\vspace{4pt}\hrule\vspace{10pt}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{WAPC Architecture and Test Network}
+\label{sec:arch}
+
+Figure~\ref{fig:topo} shows the 10-bus test network and WAPC communication
+architecture.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.80\textwidth}{!}{\input{figures/fig_wapc_topology.tex}}
+  \caption{10-bus SAMBP test network.  Green buses: generation sources
+           (bus~0 = grid infeed, bus~5 = GFM IBR).  Each line carries one
+           relay ($\mathrm{R01}$--$\mathrm{R11}$).  Orange~P boxes: PMU
+           locations at six buses.  Blue dashed arrows: IED/PMU reports to
+           the centralised WAPC server.  Red annotation: R01 requires operator
+           confirmation (N-1 insecure; tripping would isolate the grid infeed).}
+  \label{fig:topo}
+\end{figure}
+
+\noindent
+The WAPC performs four sequential steps on each fault event:
+\begin{enumerate}
+  \item \textbf{Aggregation}: collect IED GOOSE reports and PMU frames
+    (250\,Hz, 4\,ms latency).
+  \item \textbf{Localisation}: voltage-dip triangulation identifies the
+    faulted line and fault location $\hat\alpha$.
+  \item \textbf{N-1 check}: breadth-first search (BFS) on the relay-zone
+    graph verifies that tripping the identified relay leaves the network
+    connected.
+  \item \textbf{Trip/escalate}: issue GOOSE trip command (N-1 secure) or
+    raise operator advisory (N-1 insecure).
+\end{enumerate}
+
+The PINN advisory from TR-49 is incorporated at step~3 as a soft check:
+if the PINN classification is inconsistent with the PMU-localised zone,
+the discrepancy is logged as a diagnostic flag before the deterministic
+N-1 decision is issued.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study A --- Network Topology and Zone Adjacency}
+\label{sec:studyA}
+
+The 10-bus network has 11 lines (11 relays) and two generation sources.
+The relay-zone adjacency graph has 15 shared-bus pairs (mean degree
+$2.73$, max degree $4$).  The high adjacency of bus~1 (connecting R01, R02,
+R05) creates the principal coordination challenge: a fault on R01 affects
+the voltage profile at three adjacent relay zones.
+
+\begin{center}
+\begin{tabular}{@{}lr@{}}
+\toprule
+Topology metric & Value \\
+\midrule
+Buses & 10 \\
+Lines / relays & 11 \\
+PMU placements & 6 buses \\
+Relay adjacency pairs & 15 \\
+Mean relay degree & 2.73 \\
+Max relay degree & 4 (bus~1: R01, R02, R05) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study B --- Synchrophasor Fault Localisation}
+\label{sec:studyB}
+
+Figure~\ref{fig:localisation} shows the localisation accuracy and location
+error across four PMU noise levels.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.96\textwidth}{!}{\input{figures/fig_localisation_accuracy.tex}}
+  \caption{Left: correct-line localisation accuracy (\%) vs PMU voltage noise
+           $\sigma_V$.  The design operating point (IEC\,Class\,P1,
+           $\sigma_V=0.01$\,pu) achieves 94.5\%.  The 80\% threshold (grey
+           dashed) is crossed at $\sigma_V\approx0.035$\,pu.  Right: mean
+           fault location error $|\hat\alpha-\alpha|$ in \% of line length for
+           correctly-localised cases.  The $\approx$24\% mean error reflects
+           that the voltage-dip triangulation resolves the correct line but
+           not the exact fault position; absolute location requires two-ended
+           current-differential measurement.}
+  \label{fig:localisation}
+\end{figure}
+
+\noindent
+The localisation criterion — maximise the sum of voltage dips at the two
+endpoint buses of the candidate line — is robust to moderate noise because
+both endpoint dips increase proportionally as noise rises.  The criterion
+fails when two adjacent lines share a highly connected bus (e.g.\ a fault
+on R02 partially dips bus~1, which is also an endpoint of R01 and R05).
+In the 10-bus network this ambiguity accounts for the 5.5\% misclassification
+at the design noise level.
+
+\subsection*{Fault Location Estimate}
+
+For correctly-localised cases, the fault position is estimated from the ratio
+of endpoint voltage dips:
+\begin{equation}
+  \hat\alpha = \frac{\Delta V_a}{\Delta V_a + \Delta V_b}
+  \quad\text{where}\quad
+  \Delta V_j = \max(0,\; 1 - V_j^\mathrm{PMU})
+\end{equation}
+The 24\% mean error indicates that $\hat\alpha$ is accurate to within
+$\pm0.24\,Z_L$ (approximately $\pm12$\,km for a 50\,km line).  For protection
+purposes the exact fault position is not required; the correct line
+identification (94.5\%) is the critical output.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study C --- N-1 Security Check}
+\label{sec:studyC}
+
+The N-1 check is a BFS on the 10-bus graph after removing the candidate
+relay's line.  Results:
+
+\begin{center}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Relay & N-1 connected? & Action & Physical reason \\
+\midrule
+R01 & \textbf{No} & Operator confirmation & Sole grid infeed; tripping isolates the network \\
+R02--R11 & Yes & Direct WAPC trip & Meshed network remains connected \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+R01 is the only grid infeed line (bus~0 $\to$ bus~1).  Tripping R01 disconnects
+all generation from the load network, creating a system-wide blackout rather
+than a selective fault isolation.  The WAPC correctly flags this as an
+escalation case: it raises an operator advisory and holds the trip command
+pending confirmation.  In a real deployment, a pre-authorised inter-trip to
+the grid-side breaker (via direct transfer trip, DTT) would replace the manual
+operator step.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study D --- Latency Analysis}
+\label{sec:studyD}
+
+Figure~\ref{fig:latency} compares the two decision paths.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.96\textwidth}{!}{\input{figures/fig_wapc_latency.tex}}
+  \caption{Stacked latency breakdown for distributed relay (top, 4.0\,ms
+           total) and WAPC centralised path (bottom, 9.0\,ms total).  The
+           PMU data collection step (4.0\,ms, green) dominates the WAPC
+           overhead; the compute steps (localisation + N-1 + ML) add only
+           0.8\,ms in aggregate.  Both paths are well within the 50\,ms relay
+           trip budget.}
+  \label{fig:latency}
+\end{figure}
+
+\noindent
+The WAPC path is 5.0\,ms longer than the distributed relay path.  The entire
+overhead originates from the PMU report latency (4.0\,ms at 250\,Hz sampling).
+Increasing PMU rate to 1\,kHz would reduce the PMU step to 1\,ms, bringing
+the WAPC total to 6.0\,ms (12\% of budget) at the cost of increased
+communication bandwidth.  For the IBR protection context, the 9.0\,ms WAPC
+path (18\% of budget) is entirely adequate.
+
+\begin{center}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Step & Distributed [ms] & WAPC [ms] \\
+\midrule
+IED local decision & 2.0 & --- \\
+GOOSE (IED$\to$WAPC / trip) & 2.0 & 2.0 + 2.0 \\
+PMU data collection (250\,Hz) & --- & 4.0 \\
+Fault localisation & --- & 0.5 \\
+N-1 BFS check & --- & 0.2 \\
+PINN ML advisory & --- & 0.3 \\
+\midrule
+\textbf{Total} & \textbf{4.0} & \textbf{9.0} \\
+\% of 50\,ms trip budget & 8\% & 18\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study E --- Integration Test}
+\label{sec:studyE}
+
+The 50-scenario integration test evaluates WAPC and distributed relay
+accuracy side-by-side, with N-1 security applied to WAPC decisions.
+
+\begin{center}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Metric & Distributed & WAPC \\
+\midrule
+Overall accuracy & 92.0\% & 90.0\% \\
+N-1 blocks issued & --- & 4/50 \\
+Cases correct by at least one system & \multicolumn{2}{c}{50/50 (100\%)} \\
+Cases wrong by both systems & \multicolumn{2}{c}{0/50} \\
+\midrule
+WAPC corrects distributed error & --- & 4 cases \\
+Distributed correct, WAPC wrong & --- & 5 cases \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+The key result is the complementarity: zero scenarios were wrong by both
+systems.  The WAPC and distributed relay make independent errors on different
+scenarios.  A supervisory voting scheme (trip if either system agrees with
+the physics constraints) achieves 100\% coverage on this test suite.  The
+4 N-1 security blocks — all correctly identifying insecure tripping conditions
+— demonstrate that the WAPC provides a safety layer that the distributed relay
+cannot replicate.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Summary}
+\label{sec:summary}
+
+\begin{enumerate}
+  \item \textbf{Fault localisation}: 94.5\% correct-line at IEC\,Class\,P1
+    PMU noise ($\sigma_V=0.01$\,pu); degrades to 77.5\% at $4\times$ noise.
+    Location error $\approx$24\% of line length (direction-only).
+
+  \item \textbf{N-1 security}: 10/11 relays directly trippable; R01 (grid
+    infeed) requires operator confirmation or pre-authorised DTT.
+
+  \item \textbf{Latency}: WAPC total 9.0\,ms (18\% of 50\,ms budget);
+    overhead entirely from PMU 250\,Hz report latency.  Non-blocking relative
+    to relay trip path.
+
+  \item \textbf{Complementarity}: WAPC and distributed relay are complementary
+    — 100\% scenario coverage when either is correct; 0 scenarios wrong by
+    both.
+
+  \item \textbf{Integration}: PINN ML advisory from TR-49 incorporated as
+    a soft diagnostic flag, adding 0.3\,ms with no impact on trip timing.
+\end{enumerate}
+
+\noindent
+TR-50 establishes the WAPC as the system-level coordinator.  TR-51 addresses
+automatic protection settings optimisation; TR-52 evaluates cybersecurity
+of the IEC\,61850 GOOSE communication layer.
+
+\bibliographystyle{IEEEtranN}
+\bibliography{references50}
+
+\end{document}

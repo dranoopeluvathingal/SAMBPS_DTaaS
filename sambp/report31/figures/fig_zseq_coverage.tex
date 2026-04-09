@@ -1,0 +1,89 @@
+% fig_zseq_coverage.tex
+% TR-31: Protection coverage comparison — 3PH vs SLG faults on IBR-fed line
+%
+% Three-column summary table showing how SLG coverage differs from 3PH (TR-29).
+% Key differences:
+%   I_min: 3PH blocked for k_ibr<0.10; SLG never blocked (I0 from network)
+%   Distance relay reach: 3PH Z1 (within memory); SLG only Z3 for close-in faults
+%   Cross-pol: 3PH memory only; SLG permanent (healthy phases)
+%   87L chain: both 100% covered
+
+\renewcommand{\arraystretch}{1.55}
+\setlength{\tabcolsep}{6pt}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}m{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}m{#1}}
+
+\begin{tabular}{@{}L{3.0cm}|C{3.5cm}|C{3.5cm}|C{3.5cm}@{}}
+\hline
+\rowcolor{gray!18}
+\textbf{Criterion}        &
+\textbf{3PH IBR fault}    &
+\textbf{SLG IBR fault}    &
+\textbf{Advantage}        \\
+\hline
+
+$I_\mathrm{min}$ blocking
+  & \cellcolor{red!15}$I_a = k_\mathrm{ibr}$\newline
+    Blocked if $k<0.10$\newline
+    (Region A, 29\% envelope)
+  & \cellcolor{green!20}$I_a = I_1{+}I_2{+}I_0$\newline
+    Never blocked\newline
+    ($I_0$ from network)
+  & \cellcolor{green!15}SLG: no Region~A \\
+
+\hline
+
+Distance relay $Z_m$
+  & \cellcolor{green!25}$Z_m = \alpha Z_{1L}$\newline
+    (k.i.b.r. cancels)\newline
+    Correct measurement
+  & \cellcolor{orange!20}$Z_m \gg \alpha Z_{1L}$\newline
+    ($I_0{\gg}I_1$: ratio broken)\newline
+    $Z_m$ over-estimated
+  & \cellcolor{yellow!20}3PH better $Z_m$ accuracy \\
+
+\hline
+
+Distance relay zones
+  & \cellcolor{green!25}Zone~1 always\newline
+    ($\alpha\leq 0.80$, $k\geq 0.10$)\newline
+    Zone~2/3 fail (3PH mem)
+  & \cellcolor{orange!20}Zone~3 only\newline
+    ($\alpha \lesssim 0.35$)\newline
+    Zone~1/2: never reached
+  & \cellcolor{yellow!20}3PH: better zone coverage \\
+
+\hline
+
+Polarisation source
+  & \cellcolor{orange!20}Memory only\newline
+    ($T_\mathrm{mem}=100$\,ms)\newline
+    Zone~2/3 fail
+  & \cellcolor{green!25}Permanent\newline
+    (healthy phases)\newline
+    All zones viable
+  & \cellcolor{green!15}SLG: better pol. source \\
+
+\hline
+
+87L chain coverage
+  & \cellcolor{green!30}100\% selective\newline
+    (21/21 TR-27)\newline
+    $t\approx 20$\,ms
+  & \cellcolor{green!30}100\% selective\newline
+    (via 87LN0, TDCS)\newline
+    $t\approx 20$\,ms
+  & \cellcolor{green!20}Both: 87L primary \\
+
+\hline
+
+\textbf{Net result}
+  & \cellcolor{green!15}\textbf{87L + Z1}\newline
+    (Z2/3 via POTT TR-34)
+  & \cellcolor{green!15}\textbf{87L + Z3$^*$}\newline
+    ($^*$close-in only)
+  & 87L sole fast detector\newline for both types \\
+
+\hline
+\end{tabular}

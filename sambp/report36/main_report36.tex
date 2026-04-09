@@ -1,0 +1,319 @@
+%% main_report36.tex
+%% SAMBP TR-36/2026: Auto-Reclosing Strategy for IBR Lines
+%%
+%% pdflatex main_report36.tex
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[expansion=false]{microtype}
+\usepackage{lmodern}
+\usepackage[a4paper, top=25mm, bottom=25mm, left=25mm, right=25mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,shapes.geometric,positioning,fit,calc,
+                patterns,decorations.pathreplacing}
+\usepackage{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+
+\definecolor{sambpblue}{RGB}{0,70,140}
+
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries\color{sambpblue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{sambpblue!80}}{}{0em}{}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small\color{gray} SAMBP TR-36/2026}
+\lhead{\small\color{gray} Auto-Reclosing Strategy for IBR Lines}
+\cfoot{\small\thepage}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{sambpblue} SAMBP Technical Report TR-36/2026}\\[6pt]
+  {\large Auto-Reclosing Strategy for Inverter-Based Resource Lines}\\[10pt]
+  {\normalsize PhD Thesis Supporting Report \quad|\quad 2026}
+\end{center}
+
+\vspace{2pt}\hrule\vspace{8pt}
+
+\begin{abstract}
+\noindent
+Auto-reclosing (AR) on IBR-fed transmission lines creates a fundamental conflict:
+the arc deionisation dead time always exceeds the memory-polarisation hold time
+($T_\mathrm{mem}=100$\,ms), so the protection elements relied upon for the first
+trip (Zone~1 quadrilateral, Z2/POTT) are unavailable when the breaker recloses
+onto a permanent fault.  This report quantifies the tension using a
+current-dependent arc model ($T_\mathrm{arc}\propto\sqrt{k_\mathrm{ibr}}$) and
+finds that IBR-limited fault current actually reduces arc deionisation time
+relative to synchronous-machine faults: at $k_\mathrm{ibr}=0.15$, $T_\mathrm{dead}=205$\,ms
+versus 450\,ms for a SG-only line.  All dead times remain within the IBR
+under-voltage ride-through window of 625\,ms.  However, $T_\mathrm{dead}$
+always exceeds $T_\mathrm{mem}$, so the second-trip path on reclose-onto-permanent-fault
+relies exclusively on 87L (primary, 20\,ms) and 67Q/67N (backup, 30\,ms),
+both of which are memory-independent.  Three-phase, single-shot AR with
+synchrocheck is recommended; single-phase AR is inappropriate due to
+sustained negative-sequence injection into IBR current controllers during
+the open-phase interval.
+\end{abstract}
+
+\vspace{4pt}\hrule\vspace{10pt}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Motivation}
+\label{sec:motivation}
+
+Approximately 80\% of transmission-line faults are transient (lightning
+overvoltages, temporary conductor contact) and can be cleared by opening the
+circuit breaker and reclosing after the arc self-extinguishes.  AR therefore
+recovers most fault events without a prolonged outage.
+
+For IBR-fed lines the AR process has two complicating features not present on
+conventional SG lines:
+\begin{enumerate}
+  \item \textbf{Memory polarisation expiry}: the first trip correctly uses Zone~1
+    or Z2/POTT (TR-30, TR-33~\cite{SAMBP_TR30,SAMBP_TR33}), which depend on
+    memory polarisation valid within $T_\mathrm{mem}=100$\,ms.  The CB dead
+    time ($>T_\mathrm{mem}$) means memory has expired before the breaker closes.
+    If the fault is permanent, the second trip must use only memory-independent
+    elements.
+
+  \item \textbf{IBR current limiting during fault}: the IBR contributes reduced
+    fault current ($I_\mathrm{IBR}=k_\mathrm{ibr}\cdot I_\mathrm{SG}$), which
+    lowers arc energy and --- usefully --- shortens the arc deionisation time.
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Arc Deionisation Model}
+\label{sec:arcmodel}
+
+The arc deionisation time depends on the ionisation level in the arc channel,
+which is proportional to the fault current.  Higher current injects more energy
+into the arc, producing a more ionised gas column that takes longer to
+deionise~\cite{Blackburn2006}:
+\begin{equation}
+  T_\mathrm{arc}(I_\mathrm{fault}) = T_\mathrm{arc,0}
+  \sqrt{\frac{I_\mathrm{fault}}{I_\mathrm{base}}},
+  \label{eq:t_arc}
+\end{equation}
+where $T_\mathrm{arc,0}=400$\,ms at the synchronous-generation base fault current
+$I_\mathrm{base}=10$\,kA (230\,kV line, ANSI/IEEE C37.04 reference).  For an
+IBR line, $I_\mathrm{fault}=k_\mathrm{ibr}\cdot I_\mathrm{base}$, so:
+\begin{equation}
+  T_\mathrm{arc,IBR} = T_\mathrm{arc,0}\sqrt{k_\mathrm{ibr}}
+  \;\;<\;\; T_\mathrm{arc,SG} = T_\mathrm{arc,0}.
+  \label{eq:t_arc_ibr}
+\end{equation}
+
+The minimum required dead time includes a 50\,ms safety margin:
+\begin{equation}
+  T_\mathrm{dead}(k_\mathrm{ibr})
+  = T_\mathrm{arc,0}\sqrt{k_\mathrm{ibr}} + 50\,\text{ms}.
+  \label{eq:t_dead}
+\end{equation}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study A --- Dead Time vs IBR Penetration}
+\label{sec:studyA}
+
+Figure~\ref{fig:tdead} plots $T_\mathrm{arc}$ and $T_\mathrm{dead}$ versus
+$k_\mathrm{ibr}$, with the memory expiry threshold and IBR ride-through limit
+overlaid.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.85\textwidth}{!}{\input{figures/fig_ar_tdead.tex}}
+  \caption{Arc deionisation and dead time vs $k_\mathrm{ibr}$.  The IBR
+           advantage (lower fault current $\Rightarrow$ shorter $T_\mathrm{arc}$)
+           is clear: $T_\mathrm{dead}$ drops from 450\,ms at SG level to
+           176\,ms at $k_\mathrm{ibr}=0.10$.  All dead times are below the
+           IBR ride-through limit of 575\,ms (green shaded region), confirming
+           AR feasibility for $k_\mathrm{ibr}\geq0.10$.  However, all dead times
+           exceed $T_\mathrm{mem}=100$\,ms (red dashed), so memory is always
+           expired before reclose.}
+  \label{fig:tdead}
+\end{figure}
+
+\noindent
+Representative dead times:
+\begin{center}
+\begin{tabular}{@{}rrrrll@{}}
+\toprule
+$k_\mathrm{ibr}$ & $I_\mathrm{fault}$ [kA] & $T_\mathrm{arc}$ [ms] &
+  $T_\mathrm{dead}$ [ms] & $\leq575$\,ms? & IBR connected?\\
+\midrule
+0.10 & 1.0 & 127 & 177 & Yes & Yes\\
+0.15 & 1.5 & 155 & 205 & Yes & Yes\\
+0.20 & 2.0 & 179 & 229 & Yes & Yes\\
+0.50 & 5.0 & 283 & 333 & Yes & Yes\\
+1.00 & 10.0 & 400 & 450 & Yes & Yes\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study B --- Protection Availability at Second Trip}
+\label{sec:studyB}
+
+When the CB recloses onto a permanent fault, the protection relay must trip
+a second time.  At this point:
+\begin{itemize}
+  \item $T_\mathrm{mem}$ expired: Zone~1 and Z2/POTT lack a valid polarising
+    reference $\Rightarrow$ \textbf{unavailable}.
+  \item 87L differential: operates on instantaneous current differential ---
+    no polarisation memory required $\Rightarrow$ \textbf{available, 20\,ms}.
+  \item 67Q/67N: operate on sequence current direction --- no memory
+    required $\Rightarrow$ \textbf{available, 30\,ms}.
+\end{itemize}
+
+\begin{center}
+\begin{tabular}{@{}lrllll@{}}
+\toprule
+$\alpha$ & $k_\mathrm{ibr}$ & Z1 avail.? & Z2/POTT? & 67N/67Q? & 87L? \\
+\midrule
+0.50 & 0.10 & No & No & Yes & Yes \\
+0.50 & 0.15 & No & No & Yes & Yes \\
+0.50 & 0.20 & No & No & Yes & Yes \\
+0.90 & 0.15 & No & No & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+87L is the definitive second-trip element.  This reinforces the TR-35
+conclusion~\cite{SAMBP_TR35} that 87L is indispensable: it functions both as a
+first-trip co-primary and as the only distance-independent clearance path on
+reclose-onto-permanent-fault.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study C --- IBR Ride-Through Feasibility}
+\label{sec:studyC}
+
+The total voltage-depression duration seen by the IBR is:
+\begin{equation}
+  \Delta t_\mathrm{UVT} = t_\mathrm{first\_trip} + t_\mathrm{CB\_open}
+  + T_\mathrm{dead}
+  = 32 + 50 + T_\mathrm{dead}\;\text{ms}.
+  \label{eq:uvt}
+\end{equation}
+Grid code (IEC 61727~\cite{IEC_61727}) requires IBR to ride through low voltage
+for at least 625\,ms.  With the values in Section~\ref{sec:studyA},
+$\Delta t_\mathrm{UVT}\leq414$\,ms for $k_\mathrm{ibr}\leq0.50$ and
+$\leq532$\,ms for $k_\mathrm{ibr}=1.00$ --- all within the 625\,ms limit.
+The IBR remains connected through the full AR cycle and resumes full output
+within approximately 100\,ms of successful reclose.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study D --- Single-Phase vs Three-Phase AR}
+\label{sec:studyD}
+
+Single-phase (1PH) AR is common on EHV networks with SG infeed, as it maintains
+power transfer on the two healthy phases.  For IBR-fed lines it is inadvisable:
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Criterion & 1PH AR & 3PH AR\\
+\midrule
+Transient fault clearance & Adequate & Adequate\\
+Negative-seq during open phase & $V_2$ sustained for $T_\mathrm{dead}$ & None\\
+IBR $I_2$ stress & Continuous injection risk (TR-32) & Eliminated\\
+Reclose onto permanent SLG & Re-energises faulted phase & Trips all phases cleanly\\
+Synchrocheck & 2-phase reference simpler & Full 3-phase check needed\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+The sustained $V_2$ during the 1PH open interval drives the IBR 67Q negative-
+sequence directional element (TR-32~\cite{SAMBP_TR33}) into a continuous
+forward assertion, potentially stressing the IBR's current-control loops for
+200--450\,ms.  IBR manufacturers do not typically certify this operating mode.
+Three-phase AR avoids all asymmetric-loading effects.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study E --- Complete AR Scheme}
+\label{sec:studyE}
+
+Figure~\ref{fig:scheme} shows the AR state machine; Figure~\ref{fig:timeline}
+shows the event timeline for $k_\mathrm{ibr}=0.15$.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.95\textwidth}{!}{\input{figures/fig_ar_scheme.tex}}
+  \caption{AR state machine.  First trip uses memory-polarised elements
+           (Z1 / Z2/POTT / 87L).  During the dead time, $T_\mathrm{mem}$
+           expires.  On reclose: transient fault $\Rightarrow$ service
+           restored; permanent fault $\Rightarrow$ second trip by 87L/67Q
+           (memory-independent), then lock-out.  Single-shot scheme: no
+           second reclose attempt.}
+  \label{fig:scheme}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.90\textwidth}{!}{\input{figures/fig_ar_timeline.tex}}
+  \caption{AR event timeline for $k_\mathrm{ibr}=0.15$
+           ($T_\mathrm{dead}=205$\,ms).  Lane~(a): transient fault ---
+           arc quenches during dead time, reclose at 275\,ms succeeds.
+           Lane~(b): permanent fault --- reclose at 275\,ms re-applies fault,
+           87L clears at 315\,ms (memory long expired), relay locks out.
+           Note the memory expiry at 170\,ms (70\,ms after CB opens) ---
+           well before the reclose.}
+  \label{fig:timeline}
+\end{figure}
+
+\noindent
+The recommended AR scheme for IBR-fed lines:
+\begin{enumerate}
+  \item \textbf{Mode}: 3-phase, single-shot.
+  \item \textbf{Dead time}: $T_\mathrm{dead}=T_\mathrm{arc,0}\sqrt{k_\mathrm{ibr}}
+    + 50$\,ms, adaptive to IBR penetration level.
+  \item \textbf{Synchrocheck}: angle difference $|\Delta\delta|\leq20°$,
+    voltage difference $|\Delta V|\leq5\%$ before reclose permitted.
+  \item \textbf{Second-trip elements}: 87L (primary) and 67Q/67N (backup);
+    Zone~1 and Z2/POTT inhibited until fresh-fault memory is established.
+  \item \textbf{Lock-out}: after one failed reclose; manual restoration required.
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Summary}
+\label{sec:summary}
+
+\begin{enumerate}
+  \item \textbf{Dead time (Study~A)}: IBR-limited fault current reduces
+    $T_\mathrm{arc}$ relative to SG faults: 127\,ms at $k=0.10$ versus
+    400\,ms at SG level.  Dead times are 177--450\,ms --- all feasible within
+    the IBR 625\,ms ride-through limit.
+
+  \item \textbf{Memory expiry (Studies A, B)}: $T_\mathrm{dead}$ invariably
+    exceeds $T_\mathrm{mem}=100$\,ms.  Zone~1 and Z2/POTT are unavailable at
+    second trip.  87L (20\,ms) and 67Q/67N (30\,ms) are the sole reliable
+    clearance paths after reclose.
+
+  \item \textbf{IBR ride-through (Study~C)}: The full AR cycle
+    ($t_\mathrm{trip}+t_\mathrm{CB}+T_\mathrm{dead}$) stays within 625\,ms
+    for all $k_\mathrm{ibr}$; IBR remains connected.
+
+  \item \textbf{3PH AR (Study~D)}: Three-phase reclosing is preferred;
+    single-phase AR imposes sustained negative-sequence stress on IBR
+    current-control loops during the open-phase interval.
+
+  \item \textbf{Scheme (Study~E)}: Single-shot 3PH AR with adaptive dead time,
+    synchrocheck, and 87L/67Q as second-trip elements completes the
+    SAMBP auto-reclosing design.
+\end{enumerate}
+
+\bibliographystyle{IEEEtranN}
+\bibliography{references36}
+
+\end{document}

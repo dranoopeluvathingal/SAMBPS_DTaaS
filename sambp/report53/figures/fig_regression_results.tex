@@ -1,0 +1,58 @@
+% fig_regression_results.tex
+% TR-53: 100-scenario regression test pass rates by category (Study D)
+
+\begin{tikzpicture}
+\begin{axis}[
+  name         = regax,
+  width        = 0.88\textwidth,
+  height       = 7.0cm,
+  xbar,
+  bar width    = 9pt,
+  xlabel       = {Pass rate [\%]},
+  xlabel style = {font=\small},
+  ytick        = {1,2,3,4,5,6,7,8,9,10},
+  yticklabels  = {N-1 security check,
+                  Fleet change transition,
+                  GOOSE spoof (HMAC blocked),
+                  GOOSE delay (5 ms extra),
+                  CT degraded ($2\times$ noise),
+                  GFM fleet ($k{=}0.60$),
+                  External faults (EXT),
+                  High-impedance faults,
+                  Single-line-to-ground,
+                  Bolted 3-phase faults},
+  yticklabel style = {font=\scriptsize},
+  xmin=85, xmax=105,
+  xtick        = {85,88,90,92,94,96,98,100},
+  xticklabel style = {font=\scriptsize},
+  tick style   = {draw=none},
+  axis line style = {gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  nodes near coords,
+  nodes near coords align = {horizontal},
+  every node near coord/.append style = {font=\scriptsize, xshift=3pt},
+]
+
+\addplot[fill=sambpblue!70, draw=sambpblue]
+  coordinates {
+    (100, 1)  %% N-1 security
+    ( 94, 2)  %% Fleet change
+    (100, 3)  %% GOOSE spoof
+    (100, 4)  %% GOOSE delay
+    ( 94, 5)  %% CT degraded
+    ( 96, 6)  %% GFM
+    (100, 7)  %% EXT
+    ( 92, 8)  %% HIZ
+    ( 98, 9)  %% SLG
+    (100,10)  %% Bolted
+  };
+
+%% 90% PASS threshold
+\draw[red!60!black, thick, dashed]
+  (axis cs:90, 0.4) -- (axis cs:90, 10.6);
+\node[red!60!black, font=\small, rotate=90, anchor=south]
+  at (axis cs:90.2, 0.5) {Pass threshold 90\%};
+
+\end{axis}
+\end{tikzpicture}

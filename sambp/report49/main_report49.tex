@@ -1,0 +1,261 @@
+%% main_report49.tex
+%% SAMBP TR-49/2026: ML Protection System Integration and Validation
+%%
+%% pdflatex main_report49.tex
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[expansion=false]{microtype}
+\usepackage{lmodern}
+\usepackage[a4paper, top=25mm, bottom=25mm, left=25mm, right=25mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,shapes.geometric,positioning,fit,calc}
+\usepackage{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+
+\definecolor{sambpblue}{RGB}{0,70,140}
+
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries\color{sambpblue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{sambpblue!80}}{}{0em}{}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small\color{gray} SAMBP TR-49/2026}
+\lhead{\small\color{gray} ML Protection System Integration}
+\cfoot{\small\thepage}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{sambpblue} SAMBP Technical Report TR-49/2026}\\[6pt]
+  {\large ML Protection System Integration\\
+    and Validation}\\[10pt]
+  {\normalsize PhD Thesis Supporting Report \quad|\quad 2026}
+\end{center}
+
+\vspace{2pt}\hrule\vspace{8pt}
+
+\begin{abstract}
+\noindent
+This report integrates the PINN classifier (TR-46), physics-constrained feature
+engineering (TR-47), and online learning framework (TR-48) into the unified
+SAMBP ML protection intelligence layer.  The architecture places the relay-physics
+engine as the primary trip authority and the PINN as a physics-vetted advisory
+layer, with the ML fallback activated only under relay sensor degradation.
+Study A quantifies the end-to-end pipeline latency at 2.335\,ms (4.7\% of the
+50\,ms relay trip budget), dominated by GOOSE publication at 2.00\,ms (85.7\%).
+Study B validates the integration architecture on $N=500$ scenarios: the relay
+achieves 100\% accuracy; the PINN under realistic sensor noise achieves 66.8\%
+standalone.  Study C confirms that the physics veto prevents 3/500 physics
+violations (0.6\%) in ML-advisory mode, achieving 0\% physics violation rate
+in the combined output.  Study D shows that the ML fallback achieves
+85.4--77.8\% accuracy across five sensor degradation scenarios, establishing
+a serviceable floor when relay sensor inputs are unavailable.
+\end{abstract}
+
+\vspace{4pt}\hrule\vspace{10pt}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Integration Architecture}
+\label{sec:arch}
+
+Figure~\ref{fig:pipeline} shows the two-layer ML protection intelligence
+pipeline.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.96\textwidth}{!}{\input{figures/fig_ml_pipeline.tex}}
+  \caption{SAMBP ML protection intelligence pipeline.  The ML intelligence
+           layer (blue, top) runs feature extraction, PINN inference, and
+           physics veto in series; total compute 0.335\,ms.  The digital twin
+           layer (bottom) performs EKF state estimation and scenario library
+           lookup.  GOOSE publication (2.00\,ms) delivers the combined
+           advisory to downstream relays via IEC~61850.  A dashed bypass path
+           (red) routes ML output directly to GOOSE when relay sensor input is
+           absent (degraded-mode fallback).}
+  \label{fig:pipeline}
+\end{figure}
+
+\noindent
+The architecture preserves the relay-physics engine as the trip decision
+authority.  The ML layer operates in \emph{shadow mode}: it continuously
+classifies faults, checks the output against the three physics constraints
+from TR-46, and publishes an advisory GOOSE message.  The advisory is used
+in two ways: (1) as a second opinion for post-event analysis and digital twin
+validation, and (2) as the primary classification when relay sensor channels
+are degraded or missing.
+
+\subsection*{Physics Veto Logic}
+
+The physics veto checks three hard constraints before publishing the ML output:
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Constraint & Violation condition & Action \\
+\midrule
+C1 & ML predicts Z1 but $k_\mathrm{ibr}<0.06$ & Revert to relay \\
+C2 & ML predicts MISS but $k_\mathrm{ibr}\geq0.10$ & Revert to relay \\
+C3 & ML predicts EXT but $\alpha\leq0.80$ & Revert to relay \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study A --- Pipeline Latency}
+\label{sec:studyA}
+
+\begin{center}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Pipeline step & Latency [ms] & \% of total \\
+\midrule
+Feature extraction (13 features) & 0.050 & 2.1\% \\
+PINN inference ($3\times64$ layers) & 0.150 & 6.4\% \\
+Physics veto check (3 constraints) & 0.010 & 0.4\% \\
+EKF state update ($3\times3$ system) & 0.018 & 0.8\% \\
+DT library lookup ($N=1000$ scenarios) & 0.107 & 4.6\% \\
+GOOSE publication (IEC~61850) & 2.000 & 85.7\% \\
+\midrule
+\textbf{Total ML intelligence budget} & \textbf{2.335} & \textbf{100\%} \\
+\midrule
+Relay trip time budget & 50.0 & --- \\
+ML budget as fraction & 2.335 & 4.7\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+GOOSE publication dominates the latency budget at 85.7\%.  The ML compute
+steps (feature extraction + PINN + veto + EKF + DT lookup = 0.335\,ms)
+contribute only 0.67\% of the 50\,ms relay trip window.  This confirms
+the non-blocking design requirement established in TR-43: the ML intelligence
+layer adds zero latency to the relay decision path.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study B and C --- Integration Validation and Physics Veto}
+\label{sec:studyBC}
+
+Figure~\ref{fig:accuracy} shows the per-class accuracy comparison across the
+three system configurations.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.96\textwidth}{!}{\input{figures/fig_integration_accuracy.tex}}
+  \caption{Per-class classification accuracy ($N=500$ scenarios).  Grey:
+           relay-physics baseline (100\%, primary trip authority).  Blue:
+           PINN standalone with realistic sensor noise ($\sigma_k=0.03$,
+           $\sigma_\alpha=0.045$); MISS achieves 89.5\% due to C1 constraint
+           enforcement; Z1 is most degraded at 57.3\%.  Orange: ML fallback
+           under degraded CT+VT sensors (both at $2\times$ nominal noise),
+           demonstrating sustained 80+\% performance across all classes.}
+  \label{fig:accuracy}
+\end{figure}
+
+\noindent
+The PINN's 66.8\% standalone accuracy under sensor noise is lower than
+the 93.6\% in TR-46 because the noise level in the integration study
+($\sigma_k=0.03$) is higher than the training noise ($\sigma_k=0.005$).
+This reflects a deliberate stress test: the integration study evaluates
+out-of-distribution sensor noise to quantify the ML layer's worst-case
+advisory quality.  For the relay-physics engine (which uses noise-free
+phasor inputs from the IED), accuracy remains 100\%.
+
+The physics veto intercepted 3 of 500 (0.6\%) advisory outputs:
+\begin{itemize}
+  \item All 3 vetoed events were C1 violations (ML predicted Z1 with
+    $k_\mathrm{ibr}<0.06$ due to noise-induced upward bias in $k$).
+  \item Post-veto, zero physics violations in the combined output.
+  \item The relay was correct on all 3 vetoed events, confirming the
+    veto recovery logic.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study D --- Degraded-Mode Fallback}
+\label{sec:studyD}
+
+Figure~\ref{fig:degraded} presents the ML fallback accuracy across five sensor
+degradation scenarios.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.96\textwidth}{!}{\input{figures/fig_degraded_mode.tex}}
+  \caption{ML fallback accuracy (physics-vetoed PINN output) under five
+           sensor degradation scenarios ($N=500$ each).  The green dashed
+           line at 80\% indicates the SAMBP serviceable threshold --- below
+           which a manual override flag is raised.  Only the CT-missing
+           scenario (77.8\%) falls below threshold, where mean-value
+           imputation of $k_\mathrm{ibr}$ is insufficient.}
+  \label{fig:degraded}
+\end{figure}
+
+\begin{center}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Sensor scenario & ML fallback accuracy & Serviceable? \\
+\midrule
+All sensors OK & 85.4\% & Yes \\
+CT degraded ($2\times$ noise) & 83.6\% & Yes \\
+VT degraded ($2\times$ noise) & 80.4\% & Yes \\
+CT+VT degraded & 82.4\% & Yes \\
+CT missing (imputed) & 77.8\% & No ($<80\%$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+Four of five degradation scenarios remain above the 80\% serviceable threshold.
+The CT-missing scenario (77.8\%) falls below threshold because the
+$k_\mathrm{ibr}$ channel carries 27.1\,pp importance (TR-47) and mean
+imputation introduces a systematic bias toward the population mean
+($k\approx0.29$\,pu), which incorrectly biases marginal MISS cases toward
+87L and Z1 classifications.  The recommended response is to raise a
+manual-override advisory GOOSE alarm and defer to the relay-physics engine.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Summary}
+\label{sec:summary}
+
+\begin{enumerate}
+  \item \textbf{Architecture}: Two-layer system --- relay-physics (trip
+    authority, 100\% accuracy) and PINN advisory (shadow mode with physics
+    veto).  Total ML budget 2.335\,ms (4.7\% of 50\,ms relay window).
+
+  \item \textbf{Physics veto}: 3/500 (0.6\%) advisory outputs vetoed;
+    zero physics violations in combined output.  GOOSE-dominated latency
+    at 2.00\,ms.
+
+  \item \textbf{Degraded fallback}: ML fallback serviceable ($\geq80\%$)
+    for 4/5 sensor failure scenarios.  CT-missing scenario (77.8\%) triggers
+    manual-override advisory.
+
+  \item \textbf{Validation}: PINN standalone achieves 66.8\% under
+    stress-test noise; relay-physics baseline 100\%.  The ML layer adds
+    diagnostic and fallback value without risk to primary trip decision.
+
+  \item \textbf{Integration}: The PINN (TR-46), feature engineering (TR-47),
+    online learning (TR-48), EKF (TR-44), and digital twin (TR-43) form a
+    coherent ML intelligence stack that is non-blocking, physics-compliant,
+    and adaptable to fleet changes.
+\end{enumerate}
+
+\noindent
+TR-49 completes the physics-informed ML phase (TR-46--49).  The subsequent
+reports (TR-50--55) address the centralised protection and control layer,
+including substation-wide coordination and system-level integration.
+
+\bibliographystyle{IEEEtranN}
+\bibliography{references49}
+
+\end{document}

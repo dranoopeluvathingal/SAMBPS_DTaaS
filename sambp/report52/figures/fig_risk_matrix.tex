@@ -1,0 +1,86 @@
+% fig_risk_matrix.tex
+% TR-52: 5×5 risk matrix showing four attack vectors before/after HMAC
+
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  cell/.style={minimum width=1.6cm, minimum height=1.0cm, align=center},
+]
+
+%% Colour the risk levels
+% Low (1-4): green, Medium (5-9): yellow, High (10-14): orange, Extreme (15-25): red
+\newcommand{\cellcolour}[1]{%
+  \ifnum#1<5 green!20\else
+  \ifnum#1<10 yellow!30\else
+  \ifnum#1<15 orange!30\else
+  red!25\fi\fi\fi}
+
+%% Grid: x=Likelihood (1-5), y=Impact (1-5)
+\foreach \l in {1,...,5} {
+  \foreach \imp in {1,...,5} {
+    \pgfmathtruncatemacro{\risk}{\l*\imp}
+    \pgfmathtruncatemacro{\xx}{(\l-1)*160 + 80}   %% x centre in pt
+    \pgfmathtruncatemacro{\yy}{(\imp-1)*100 + 50}  %% y centre in pt
+    \node[cell, fill=\cellcolour{\risk}, draw=white, thick]
+      at (\l*1.6cm - 0.8cm, \imp*1.0cm - 0.5cm) {\risk};
+  }
+}
+
+%% Axis labels
+\foreach \l/\lab in {1/Rare,2/Unlikely,3/Possible,4/Likely,5/Certain} {
+  \node[font=\tiny, rotate=30, anchor=east]
+    at (\l*1.6cm - 0.8cm, -0.3cm) {\lab};
+}
+\foreach \imp/\lab in {1/Negligible,2/Minor,3/Moderate,4/Major,5/Catastrophic} {
+  \node[font=\tiny, anchor=east]
+    at (-0.1cm, \imp*1.0cm - 0.5cm) {\lab};
+}
+\node[font=\small, anchor=north] at (4.0cm, -0.9cm) {Likelihood →};
+\node[font=\small, rotate=90, anchor=south] at (-1.5cm, 2.5cm) {Impact →};
+
+%% Before-HMAC attack markers
+\node[circle, draw=red!70!black, fill=red!30, minimum size=0.35cm,
+      font=\tiny, inner sep=0pt]
+  at (4*1.6cm - 0.8cm, 5*1.0cm - 0.5cm) {};  %% Spoofing L=4,I=5
+\node[circle, draw=red!70!black, fill=red!30, minimum size=0.35cm,
+      font=\tiny, inner sep=0pt]
+  at (3*1.6cm - 0.8cm, 4*1.0cm - 0.5cm) {};  %% Replay L=3,I=4
+\node[circle, draw=orange!80!black, fill=orange!40, minimum size=0.35cm,
+      font=\tiny, inner sep=0pt]
+  at (3*1.6cm - 0.8cm, 3*1.0cm - 0.5cm) {};  %% Flooding L=3,I=3
+\node[circle, draw=red!70!black, fill=red!30, minimum size=0.35cm,
+      font=\tiny, inner sep=0pt]
+  at (2*1.6cm - 0.8cm, 5*1.0cm - 0.5cm) {};  %% MitM L=2,I=5
+
+%% After-HMAC markers (smaller, green)
+\node[circle, draw=green!50!black, fill=green!30, minimum size=0.28cm,
+      font=\tiny, inner sep=0pt]
+  at (1*1.6cm - 0.8cm, 5*1.0cm - 0.5cm) {};  %% Spoofing→L=1
+\node[circle, draw=green!50!black, fill=green!30, minimum size=0.28cm,
+      font=\tiny, inner sep=0pt]
+  at (1*1.6cm - 0.8cm, 4*1.0cm - 0.5cm) {};  %% Replay→L=1
+\node[circle, draw=orange!80!black, fill=orange!30, minimum size=0.28cm,
+      font=\tiny, inner sep=0pt]
+  at (3*1.6cm - 0.8cm, 3*1.0cm - 0.5cm) {};  %% Flooding unchanged
+\node[circle, draw=green!50!black, fill=green!30, minimum size=0.28cm,
+      font=\tiny, inner sep=0pt]
+  at (1*1.6cm - 0.8cm, 5*1.0cm - 0.5cm) {};  %% MitM→L=1
+
+%% Legend
+\node[circle, draw=red!70!black, fill=red!30, minimum size=0.30cm,
+      inner sep=0pt] at (9.5cm, 4.2cm) {};
+\node[anchor=west, font=\tiny] at (9.8cm, 4.2cm) {Before HMAC};
+\node[circle, draw=green!50!black, fill=green!30, minimum size=0.24cm,
+      inner sep=0pt] at (9.5cm, 3.7cm) {};
+\node[anchor=west, font=\tiny] at (9.8cm, 3.7cm) {After HMAC};
+
+%% Attack labels
+\node[red!60!black, font=\tiny, anchor=west] at (4*1.6cm, 5*1.0cm - 0.2cm)
+  {Spoofing};
+\node[red!60!black, font=\tiny, anchor=west] at (3*1.6cm, 4*1.0cm + 0.1cm)
+  {Replay};
+\node[orange!70!black, font=\tiny, anchor=west] at (3*1.6cm, 3*1.0cm + 0.1cm)
+  {Flooding};
+\node[red!60!black, font=\tiny, anchor=west] at (2*1.6cm - 0.3cm, 5*1.0cm + 0.3cm)
+  {MitM};
+
+\end{tikzpicture}

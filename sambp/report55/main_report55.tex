@@ -1,0 +1,306 @@
+%% main_report55.tex
+%% SAMBP TR-55/2026: Thesis Synthesis and Contribution Map
+%%
+%% pdflatex main_report55.tex
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[expansion=false]{microtype}
+\usepackage{lmodern}
+\usepackage[a4paper, top=25mm, bottom=25mm, left=25mm, right=25mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,shapes.geometric,positioning,calc,decorations.pathreplacing}
+\usepackage{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+
+\definecolor{sambpblue}{RGB}{0,70,140}
+
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries\color{sambpblue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{sambpblue!80}}{}{0em}{}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small\color{gray} SAMBP TR-55/2026}
+\lhead{\small\color{gray} Thesis Synthesis and Contribution Map}
+\cfoot{\small\thepage}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{sambpblue} SAMBP Technical Report TR-55/2026}\\[6pt]
+  {\large Thesis Synthesis and Contribution Map}\\[10pt]
+  {\normalsize PhD Thesis Supporting Report \quad|\quad 2026}
+\end{center}
+
+\vspace{2pt}\hrule\vspace{8pt}
+
+\begin{abstract}
+\noindent
+This report synthesises the complete SAMBP technical report series as
+a map of original contributions, cross-report dependencies, and a
+publication roadmap.  Study~A inventories 34 technical reports across
+six thesis chapters (Chapters~4--9) and classifies each as Novel,
+System, Validation, or Component.  Study~B enumerates 18 original
+contributions with novelty and significance scores; 6 achieve Tier-1
+status (novelty $\geq 5$, significance $\geq 5$) and span all five
+research thrusts: line differential, microgrid, digital twin, machine
+learning, and centralised protection.  Study~C traces 9 key
+cross-report dependencies, establishing that the Physics-Informed Neural
+Network (TR-46) and the Digital Twin (TR-43) are the two critical
+upstream dependencies for the centralised control phase.  Study~D
+proposes 5 journal papers targeting IEEE Transactions, 2 of which are
+draft-ready and 2 in preparation.  Study~E identifies 7 future-work
+gaps, 2 high-priority: multi-substation WAPC scaling and real-field
+PINN validation data.
+\end{abstract}
+
+\vspace{4pt}\hrule\vspace{10pt}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study A --- Report Inventory and Chapter Mapping}
+\label{sec:studyA}
+
+Figure~\ref{fig:chaptermap} maps all 34 technical reports to their
+respective thesis chapters.  Chapter~4 carries the largest novel
+report count (5 of 7), reflecting the 87L line differential phase as the
+core theoretical contribution.  Chapter~5 has the broadest coverage
+(10 reports) but is dominated by Component and System reports,
+consolidating the distance protection baseline.  Chapters~7--9 each
+contain a dense cluster of Novel reports, consistent with the
+progressively original contributions of the digital twin, machine
+learning, and centralised protection phases.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.98\textwidth}{!}{\input{figures/fig_chapter_map.tex}}
+  \caption{Chapter-to-report map for all 34 SAMBP technical reports.
+           Colour encodes contribution type: \textbf{blue} = Novel,
+           teal = System, orange = Validation, grey = Component.
+           Row width reflects the number of reports per chapter;
+           Chapter~5 is widest (10 reports, 4 component baseline elements).}
+  \label{fig:chaptermap}
+\end{figure}
+
+\begin{center}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Chapter & Reports & Novel & System & Validation & Component \\
+\midrule
+Ch 4: Line Differential (87L) & 7 & 5 & 1 & 0 & 1 \\
+Ch 5: Distance Protection (21) & 10 & 1 & 4 & 1 & 4 \\
+Ch 6: IBR Microgrid            & 5 & 4 & 1 & 0 & 0 \\
+Ch 7: Digital Twin             & 3 & 2 & 0 & 1 & 0 \\
+Ch 8: Physics-Inf. ML          & 4 & 3 & 1 & 0 & 0 \\
+Ch 9: Centralised Protection   & 5 & 3 & 1 & 1 & 0 \\
+\midrule
+Total & 34 & 18 & 8 & 3 & 5 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study B --- Original Contributions}
+\label{sec:studyB}
+
+Figure~\ref{fig:contribmatrix} plots the 18 original contributions on
+a novelty--significance plane.  The upper-right Tier-1 quadrant (both
+scores $= 5$) contains 6 contributions: C1, C7, C10, C12, C15, and C18.
+These span the entire thesis arc from the physics-constrained 87L
+threshold (Chapter~4) through the closed-loop adaptive protection
+protocol (Chapter~9).
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.80\textwidth}{!}{\input{figures/fig_contributions_matrix.tex}}
+  \caption{Novelty--significance matrix for 18 original contributions.
+           Circle colour encodes thesis chapter (see legend).
+           The shaded upper-right quadrant (Tier-1: $N=5$, $S=5$) contains
+           6 contributions representing the principal claims of the thesis.
+           C13 (permutation importance) scores lowest, reflecting its
+           role as a methodological step rather than a system contribution.}
+  \label{fig:contribmatrix}
+\end{figure}
+
+\begin{center}
+\small
+\begin{tabular}{@{}llp{8cm}cc@{}}
+\toprule
+ID & Ch & Contribution & $N$ & $S$ \\
+\midrule
+C1  & 4 & Physics-constrained adaptive 87L threshold for IBR line differential & 5 & 5 \\
+C2  & 4 & Harmonic-discrimination filter for IBR multi-inverter differential    & 4 & 4 \\
+C3  & 4 & Negative-sequence 87LN for asymmetric IBR fleet faults                & 4 & 4 \\
+C4  & 4 & Transient differential TDCS-87L for 3-phase IBR faults                & 4 & 5 \\
+C5  & 5 & Quadrilateral distance characteristic adapted to IBR current profiles  & 4 & 4 \\
+C6  & 5 & Monte Carlo reliability framework for IBR protection schemes           & 3 & 5 \\
+C7  & 6 & GFL/GFM dual-mode characterisation for protection coordination         & 5 & 5 \\
+C8  & 6 & ROCOF-based islanding with IEC~61850 mode-switch in 120\,ms           & 4 & 4 \\
+C9  & 6 & Adaptive OC setting-group switching tied to IBR mode                   & 4 & 4 \\
+C10 & 7 & Non-blocking digital twin architecture for real-time protection audit   & 5 & 5 \\
+C11 & 7 & EKF joint estimation of ($k_\mathrm{ibr}$, $Z_\mathrm{line}$, $\alpha$) from current ratio & 5 & 4 \\
+C12 & 8 & PINN fault classifier with embedded protection-physics constraints      & 5 & 5 \\
+C13 & 8 & Permutation-importance of physics-derived protection features           & 3 & 3 \\
+C14 & 8 & CUSUM-triggered online learning for fleet composition drift             & 4 & 4 \\
+C15 & 9 & Wide-area PMU fault localisation with N-1 security verification        & 5 & 5 \\
+C16 & 9 & Automatic CTI-graded relay settings engine with fleet-change dispatch   & 4 & 5 \\
+C17 & 9 & HMAC-SHA256 countermeasure for IEC~61850 GOOSE protection channels     & 3 & 4 \\
+C18 & 9 & Closed-loop CUSUM$\to$settings$\to$GOOSE adaptive protection protocol  & 5 & 5 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study C --- Cross-Report Dependencies}
+\label{sec:studyC}
+
+The dependency graph reveals two critical upstream reports.  TR-46
+(PINN Classifier) is a prerequisite for TR-47, TR-48, TR-49, and
+TR-53 --- a fan-out of 4.  TR-43 (Digital Twin) feeds both TR-49 and
+TR-50.  Any error in these two reports propagates through the entire
+machine learning and centralised control phases.  The single critical
+path is: TR-35 $\to$ TR-37 $\to$ TR-46 $\to$ TR-49 $\to$ TR-50 $\to$
+TR-51 $\to$ TR-52 $\to$ TR-53 $\to$ TR-54.
+
+\begin{center}
+\begin{tabular}{@{}llp{7cm}@{}}
+\toprule
+Report & Depends on & Reason \\
+\midrule
+TR-46 & TR-37, TR-35     & PINN trained on MC data from distance study \\
+TR-47 & TR-46            & Feature importance for PINN classifier \\
+TR-48 & TR-47, TR-46     & Online update of PINN with fleet drift \\
+TR-49 & TR-46--48, TR-43, TR-44 & Full ML stack integration \\
+TR-50 & TR-43, TR-49     & WAPC uses DT $+$ PINN advisory \\
+TR-51 & TR-50, TR-40     & Settings engine feeds WAPC \\
+TR-52 & TR-50, TR-51     & Secures GOOSE channels carrying trips/settings \\
+TR-53 & TR-46, TR-49--52 & Validates all ML $+$ CPC modules \\
+TR-54 & TR-51--53, TR-48 & Field guide uses all prior deliverables \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study D --- Publication Roadmap}
+\label{sec:studyD}
+
+Figure~\ref{fig:roadmap} shows the five planned journal papers.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.95\textwidth}{!}{\input{figures/fig_publication_roadmap.tex}}
+  \caption{Publication roadmap.  Green bars indicate draft-ready papers
+           (P1, P2); orange bars indicate papers in preparation (P3, P4);
+           grey bars indicate planned papers (P5).  Each bar corresponds
+           to one technical report; paper width reflects the number of
+           contributing reports.}
+  \label{fig:roadmap}
+\end{figure}
+
+\begin{center}
+\small
+\begin{tabular}{@{}llp{6.5cm}l@{}}
+\toprule
+ID & Target journal & Paper title & Status \\
+\midrule
+P1 & IEEE Trans. Power Delivery
+   & IBR Line Differential: Adaptive Threshold and Harmonic Discrimination
+   & Draft ready \\
+P2 & IEEE Trans. Smart Grid
+   & GFL/GFM Microgrid Protection: Mode-Switch and Adaptive OC
+   & Draft ready \\
+P3 & IEEE Trans. Industrial Informatics
+   & Digital Twin for IBR Protection Audit with EKF State Estimation
+   & In preparation \\
+P4 & IEEE Trans. Power Systems
+   & Physics-Informed Neural Network for IBR Fault Classification
+   & In preparation \\
+P5 & IEEE Trans. Power Delivery
+   & Wide-Area Coordinator with Automatic Settings and GOOSE Security
+   & Planned \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Study E --- Gap Analysis and Future Work}
+\label{sec:studyE}
+
+\begin{center}
+\begin{tabular}{@{}lllp{6.5cm}@{}}
+\toprule
+ID & Priority & Gap & Notes \\
+\midrule
+G1 & Medium & Physical HIL on real SEL-411L IEDs
+   & TR-53 defines protocol; hardware not yet available \\
+G2 & Medium & Variable-$\lambda$ adaptive forgetting
+   & Fixed $\lambda=0.99$ used; adaptive version deferred \\
+G3 & Low    & $Z_\mathrm{line}$ observability in EKF
+   & Requires two-ended voltage phasor; identified but unresolved \\
+G4 & \textbf{High} & Multi-substation WAPC scaling
+   & TR-50 limited to single substation; wide-area extension needed \\
+G5 & Medium & GOOSE flooding mitigation validation
+   & TR-52 notes switch-level control; not tested \\
+G6 & Low    & GFM virtual synchronous machine model
+   & Full VSM dynamics deferred; IBR model simplified \\
+G7 & \textbf{High} & Real field fault data for PINN validation
+   & All training data synthetic; field validation required \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+The two high-priority gaps define the recommended post-PhD continuation
+programme.  G4 (multi-substation WAPC) requires a wide-area bus topology
+beyond the 10-bus single-substation model of TR-50, and likely demands
+hierarchical coordination between substation-level and transmission-level
+protection systems.  G7 (real field data) is a prerequisite for
+deployment readiness: the PINN in TR-46 achieves 96.1\% accuracy on
+synthetic data, but field validation on recorded fault waveforms from
+a live IBR substation is essential for regulatory acceptance.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Summary}
+\label{sec:summary}
+
+\begin{enumerate}
+  \item \textbf{34 reports} mapped across six thesis chapters;
+    18 Novel, 8 System, 3 Validation, 5 Component.
+
+  \item \textbf{18 original contributions} identified;
+    6 Tier-1 (novelty $= 5$, significance $= 5$): C1, C7, C10, C12,
+    C15, C18 --- spanning the full thesis arc from physics-constrained
+    87L threshold (Chapter~4) to closed-loop adaptive protection
+    protocol (Chapter~9).
+
+  \item \textbf{9 cross-report dependencies} mapped; TR-46 (PINN) and
+    TR-43 (Digital Twin) are the two critical upstream nodes with
+    fan-out $\geq 4$.
+
+  \item \textbf{5 journal papers} planned for IEEE Transactions;
+    2 draft-ready (P1, P2), 2 in preparation (P3, P4), 1 planned (P5).
+
+  \item \textbf{7 future-work gaps}; 2 high-priority: multi-substation
+    WAPC scaling and real-field PINN validation.
+\end{enumerate}
+
+\noindent
+TR-55 closes the SAMBP technical report series.  The 34 reports
+collectively constitute the simulation, analysis, and validation
+evidence base for a PhD thesis on \emph{IBR-Aware Self-Adaptive
+Multi-Bus Protection} of inverter-dominated power systems.
+
+\bibliographystyle{IEEEtranN}
+\bibliography{references55}
+
+\end{document}

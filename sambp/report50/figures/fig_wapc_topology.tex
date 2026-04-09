@@ -1,0 +1,81 @@
+% fig_wapc_topology.tex
+% TR-50: 10-bus test network with relay locations and WAPC architecture
+
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  bus/.style={circle, draw=sambpblue, fill=blue!8,
+              minimum size=0.55cm, inner sep=0pt, thick},
+  src/.style={circle, draw=green!50!black, fill=green!8,
+              minimum size=0.55cm, inner sep=0pt, thick},
+  relay/.style={rectangle, draw=red!60!black, fill=red!5,
+                minimum size=0.32cm, inner sep=1pt,
+                font=\tiny, thick},
+  wapc/.style={draw=sambpblue, thick, rounded corners=5pt,
+               fill=blue!5, minimum width=2.2cm,
+               minimum height=0.9cm, align=center, font=\scriptsize},
+  line/.style={thick, gray!60},
+  arrow/.style={-{Stealth[length=4pt]}, thick},
+]
+
+%% ── Bus positions ──────────────────────────────────────────────────────
+\node[src]  (b0) at (0,   4)   {\textbf{0}};
+\node[bus]  (b1) at (2,   4)   {1};
+\node[bus]  (b2) at (4,   4)   {2};
+\node[bus]  (b3) at (6,   4)   {3};
+\node[bus]  (b4) at (8,   4)   {4};
+\node[src]  (b5) at (2,   2)   {\textbf{5}};
+\node[bus]  (b6) at (4,   2)   {6};
+\node[bus]  (b7) at (6,   2)   {7};
+\node[bus]  (b8) at (8,   2)   {8};
+\node[bus]  (b9) at (8,   0)   {9};
+
+%% ── Lines ──────────────────────────────────────────────────────────────
+\draw[line] (b0) -- (b1) node[midway, above, font=\tiny]{R01};
+\draw[line] (b1) -- (b2) node[midway, above, font=\tiny]{R02};
+\draw[line] (b2) -- (b3) node[midway, above, font=\tiny]{R03};
+\draw[line] (b3) -- (b4) node[midway, above, font=\tiny]{R04};
+\draw[line] (b1) -- (b5) node[midway, left, font=\tiny]{R05};
+\draw[line] (b5) -- (b6) node[midway, below, font=\tiny]{R06};
+\draw[line] (b6) -- (b7) node[midway, below, font=\tiny]{R07};
+\draw[line] (b7) -- (b8) node[midway, below, font=\tiny]{R08};
+\draw[line] (b8) -- (b9) node[midway, right, font=\tiny]{R09};
+\draw[line] (b4) -- (b9) node[midway, right, font=\tiny]{R10};
+\draw[line] (b3) -- (b7) node[midway, right, font=\tiny]{R11};
+
+%% ── Source labels ──────────────────────────────────────────────────────
+\node[above=4pt, green!50!black, font=\tiny] at (b0) {Grid};
+\node[below=4pt, green!50!black, font=\tiny] at (b5) {GFM IBR};
+
+%% ── PMU symbols (at every bus) ─────────────────────────────────────────
+\foreach \b/\x/\y in {b0/0/4, b1/2/4, b3/6/4, b5/2/2, b7/6/2, b9/8/0} {
+  \node[draw=orange!70!black, fill=orange!5, minimum size=0.22cm,
+        inner sep=1pt, font=\tiny, rounded corners=1pt]
+    at (\x+0.35, \y-0.35) {P};
+}
+
+%% ── WAPC server ────────────────────────────────────────────────────────
+\node[wapc] (wapc) at (4, -1.5) {WAPC Server\\(centralised)};
+
+%% ── WAPC communication links ───────────────────────────────────────────
+\draw[arrow, sambpblue!60, dashed] (b1.south) -- ++(0,-0.4) -| (wapc.north);
+\draw[arrow, sambpblue!60, dashed] (b5.south) -- ++(0,-0.2) -| (wapc.north);
+\draw[arrow, sambpblue!60, dashed] (b7.south) -| (wapc.east);
+
+%% ── N-1 insecure relay annotation ─────────────────────────────────────
+\node[draw=red!40, fill=red!5, rounded corners=2pt,
+      font=\tiny, inner sep=2pt, align=center]
+  at (1, 5.0)
+  {R01: N-1 insecure\\(islanding risk)};
+\draw[-{Stealth[length=3pt]}, red!50, thick]
+  (1, 4.65) -- (1, 4.35);
+
+%% ── Legend ─────────────────────────────────────────────────────────────
+\node[src, scale=0.7] at (-1, 1)   {};
+\node[right=3pt, font=\tiny] at (-0.65, 1) {Source bus};
+\node[bus, scale=0.7] at (-1, 0.4) {};
+\node[right=3pt, font=\tiny] at (-0.65, 0.4) {Load bus};
+\node[draw=orange!70!black, fill=orange!5, minimum size=0.18cm,
+      font=\tiny, rounded corners=1pt] at (-1, -0.2) {P};
+\node[right=3pt, font=\tiny] at (-0.65, -0.2) {PMU};
+
+\end{tikzpicture}

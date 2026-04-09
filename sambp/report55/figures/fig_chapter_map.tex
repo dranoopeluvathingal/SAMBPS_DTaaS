@@ -1,0 +1,125 @@
+% fig_chapter_map.tex
+% TR-55: Report-to-chapter mapping heatmap (Study A)
+
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+]
+
+%% Chapter labels (y-axis, bottom=Ch4, top=Ch9)
+\foreach \ch/\lab/\yi in {
+  4/{Ch 4: Line Diff (87L)}/0,
+  5/{Ch 5: Distance (21)}/1,
+  6/{Ch 6: IBR Microgrid}/2,
+  7/{Ch 7: Digital Twin}/3,
+  8/{Ch 8: PIML}/4,
+  9/{Ch 9: Centralised}/5%
+}{
+  \node[anchor=east, font=\tiny] at (-0.3, \yi*1.1+0.45) {\lab};
+}
+
+%% Report blocks: (TR_label, chapter_index 0-5, type_colour)
+%% type colours: Novel=blue, System=teal, Validation=orange, Component=gray
+\def\bw{0.85}  % block width
+\def\bh{0.80}  % block height
+
+%% Chapter 4 (yi=0): TR-10(comp), TR-16(sys), TR-17(nov), TR-20(nov), TR-21(nov), TR-22(nov), TR-23(nov)
+\foreach \xi/\lab/\col in {
+  0/TR-10/gray!40,
+  1/TR-16/teal!40,
+  2/TR-17/sambpblue!50,
+  3/TR-20/sambpblue!50,
+  4/TR-21/sambpblue!50,
+  5/TR-22/sambpblue!50,
+  6/TR-23/sambpblue!50%
+}{
+  \fill[\col, draw=gray!60, rounded corners=2pt]
+    (\xi*0.95, 0) rectangle (\xi*0.95+\bw, \bh);
+  \node[font=\tiny] at (\xi*0.95+\bw/2, \bh/2) {\lab};
+}
+
+%% Chapter 5 (yi=1): TR-18(comp), TR-19(sys), TR-30(comp), TR-31(comp), TR-32(comp), TR-33(sys), TR-34(nov), TR-35(sys), TR-36(sys), TR-37(val)
+\foreach \xi/\lab/\col in {
+  0/TR-18/gray!40,
+  1/TR-19/teal!40,
+  2/TR-30/gray!40,
+  3/TR-31/gray!40,
+  4/TR-32/gray!40,
+  5/TR-33/teal!40,
+  6/TR-34/sambpblue!50,
+  7/TR-35/teal!40,
+  8/TR-36/teal!40,
+  9/TR-37/orange!50%
+}{
+  \fill[\col, draw=gray!60, rounded corners=2pt]
+    (\xi*0.95, 1.1) rectangle (\xi*0.95+\bw, 1.1+\bh);
+  \node[font=\tiny] at (\xi*0.95+\bw/2, 1.1+\bh/2) {\lab};
+}
+
+%% Chapter 6 (yi=2): TR-38(nov), TR-39(nov), TR-40(nov), TR-41(nov), TR-42(sys)
+\foreach \xi/\lab/\col in {
+  0/TR-38/sambpblue!50,
+  1/TR-39/sambpblue!50,
+  2/TR-40/sambpblue!50,
+  3/TR-41/sambpblue!50,
+  4/TR-42/teal!40%
+}{
+  \fill[\col, draw=gray!60, rounded corners=2pt]
+    (\xi*0.95, 2.2) rectangle (\xi*0.95+\bw, 2.2+\bh);
+  \node[font=\tiny] at (\xi*0.95+\bw/2, 2.2+\bh/2) {\lab};
+}
+
+%% Chapter 7 (yi=3): TR-43(nov), TR-44(nov), TR-45(val)
+\foreach \xi/\lab/\col in {
+  0/TR-43/sambpblue!50,
+  1/TR-44/sambpblue!50,
+  2/TR-45/orange!50%
+}{
+  \fill[\col, draw=gray!60, rounded corners=2pt]
+    (\xi*0.95, 3.3) rectangle (\xi*0.95+\bw, 3.3+\bh);
+  \node[font=\tiny] at (\xi*0.95+\bw/2, 3.3+\bh/2) {\lab};
+}
+
+%% Chapter 8 (yi=4): TR-46(nov), TR-47(nov), TR-48(nov), TR-49(sys)
+\foreach \xi/\lab/\col in {
+  0/TR-46/sambpblue!50,
+  1/TR-47/sambpblue!50,
+  2/TR-48/sambpblue!50,
+  3/TR-49/teal!40%
+}{
+  \fill[\col, draw=gray!60, rounded corners=2pt]
+    (\xi*0.95, 4.4) rectangle (\xi*0.95+\bw, 4.4+\bh);
+  \node[font=\tiny] at (\xi*0.95+\bw/2, 4.4+\bh/2) {\lab};
+}
+
+%% Chapter 9 (yi=5): TR-50(nov), TR-51(nov), TR-52(nov), TR-53(val), TR-54(sys)
+\foreach \xi/\lab/\col in {
+  0/TR-50/sambpblue!50,
+  1/TR-51/sambpblue!50,
+  2/TR-52/sambpblue!50,
+  3/TR-53/orange!50,
+  4/TR-54/teal!40%
+}{
+  \fill[\col, draw=gray!60, rounded corners=2pt]
+    (\xi*0.95, 5.5) rectangle (\xi*0.95+\bw, 5.5+\bh);
+  \node[font=\tiny] at (\xi*0.95+\bw/2, 5.5+\bh/2) {\lab};
+}
+
+%% Legend
+\node[font=\tiny\bfseries, sambpblue] at (4.5, 7.0) {Report type:};
+\fill[sambpblue!50, draw=gray!60, rounded corners=2pt]
+  (5.5, 6.85) rectangle (6.3, 7.15);
+\node[font=\tiny, anchor=west] at (6.35, 7.0) {Novel};
+
+\fill[teal!40, draw=gray!60, rounded corners=2pt]
+  (7.0, 6.85) rectangle (7.8, 7.15);
+\node[font=\tiny, anchor=west] at (7.85, 7.0) {System};
+
+\fill[orange!50, draw=gray!60, rounded corners=2pt]
+  (8.7, 6.85) rectangle (9.5, 7.15);
+\node[font=\tiny, anchor=west] at (9.55, 7.0) {Validation};
+
+\fill[gray!40, draw=gray!60, rounded corners=2pt]
+  (10.6, 6.85) rectangle (11.4, 7.15);
+\node[font=\tiny, anchor=west] at (11.45, 7.0) {Component};
+
+\end{tikzpicture}

@@ -1,0 +1,61 @@
+% fig_fleet_change_settings.tex
+% TR-51: TMS settings comparison k=0.35 vs k=0.60 (Study D)
+
+\begin{tikzpicture}
+\begin{axis}[
+  name         = fcsax,
+  width        = 0.88\textwidth,
+  height       = 6.5cm,
+  ybar,
+  bar width    = 7pt,
+  ylabel       = {TMS setting},
+  ylabel style = {font=\small},
+  xlabel       = {Relay},
+  xlabel style = {font=\small},
+  xtick        = {1,2,3,4,5,6,7,8,9,10,11},
+  xticklabels  = {R01,R02,R03,R04,R05,R06,R07,R08,R09,R10,R11},
+  xticklabel style = {font=\scriptsize},
+  xmin=0.4, xmax=11.6,
+  ymin=0, ymax=0.38,
+  ytick        = {0,0.05,0.10,0.15,0.20,0.25,0.30,0.35},
+  yticklabel style = {font=\scriptsize},
+  tick style   = {draw=none},
+  axis line style = {gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  legend style = {at={(0.02,0.98)}, anchor=north west,
+                  font=\scriptsize, draw=gray!50},
+  legend cell align = left,
+]
+
+%% k_ibr = 0.35
+\addplot[fill=sambpblue!70, draw=sambpblue]
+  coordinates {(1,0.281)(2,0.171)(3,0.123)(4,0.082)
+               (5,0.218)(6,0.164)(7,0.119)(8,0.082)
+               (9,0.050)(10,0.050)(11,0.050)};
+\addlegendentry{$k_\mathrm{ibr}=0.35$ (current)}
+
+%% k_ibr = 0.60
+\addplot[fill=orange!60, draw=orange!80!black]
+  coordinates {(1,0.305)(2,0.185)(3,0.133)(4,0.087)
+               (5,0.237)(6,0.179)(7,0.129)(8,0.087)
+               (9,0.050)(10,0.050)(11,0.050)};
+\addlegendentry{$k_\mathrm{ibr}=0.60$ (new fleet)}
+
+%% "No change" annotation for extremity relays
+\node[gray!60, font=\tiny, rotate=90, anchor=south]
+  at (axis cs:9.14, 0.055) {unchanged};
+\node[gray!60, font=\tiny, rotate=90, anchor=south]
+  at (axis cs:10.14, 0.055) {unchanged};
+\node[gray!60, font=\tiny, rotate=90, anchor=south]
+  at (axis cs:11.14, 0.055) {unchanged};
+
+%% Changed relays bracket
+\draw[red!50!black, thick, decorate,
+      decoration={brace, amplitude=4pt, raise=2pt, mirror}]
+  (axis cs:0.6, 0) -- (axis cs:7.4, 0)
+  node[midway, below=8pt, font=\tiny, red!60!black]
+  {6 relays require TMS update};
+
+\end{axis}
+\end{tikzpicture}

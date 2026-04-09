@@ -1,0 +1,104 @@
+% fig_contributions_matrix.tex
+% TR-55: Original contributions novelty × significance bubble chart (Study B)
+
+\begin{tikzpicture}
+\begin{axis}[
+  name         = contribax,
+  width        = 0.80\textwidth,
+  height       = 8.5cm,
+  xlabel       = {Novelty score (1 = incremental, 5 = first-of-kind)},
+  ylabel       = {Significance score (1 = minor, 5 = system-level)},
+  xlabel style = {font=\small},
+  ylabel style = {font=\small},
+  xmin=2.3, xmax=5.7,
+  ymin=2.3, ymax=5.7,
+  xtick        = {3,4,5},
+  ytick        = {3,4,5},
+  xticklabel style = {font=\scriptsize},
+  yticklabel style = {font=\scriptsize},
+  tick style   = {draw=none},
+  axis line style = {gray!50},
+  grid         = both,
+  grid style   = {gray!15, dashed},
+]
+
+%% Tier-1 zone shading (N>=5, S>=5)
+\fill[sambpblue!8]
+  (axis cs:4.5, 4.5) rectangle (axis cs:5.7, 5.7);
+\node[sambpblue!50, font=\tiny\itshape]
+  at (axis cs:5.3, 5.55) {Tier-1};
+
+%% Bubbles: (novelty, significance, label, fill)
+%% Chapter 4 - blue
+\addplot[only marks,
+  mark=*, mark size=14pt,
+  mark options={fill=sambpblue!30, draw=sambpblue, thick}]
+  coordinates {(5,5)(4,4)(4,4)(4,5)};
+\node[font=\tiny\bfseries] at (axis cs:5,5) {C1};
+\node[font=\tiny\bfseries] at (axis cs:4,4.15) {C2};
+\node[font=\tiny\bfseries] at (axis cs:4,3.85) {C3};
+\node[font=\tiny\bfseries] at (axis cs:4.2,5) {C4};
+
+%% Chapter 5 - teal
+\addplot[only marks,
+  mark=*, mark size=14pt,
+  mark options={fill=teal!30, draw=teal!70!black, thick}]
+  coordinates {(4,4)(3,5)};
+\node[font=\tiny\bfseries] at (axis cs:3.9,4) {C5};
+\node[font=\tiny\bfseries] at (axis cs:3,5) {C6};
+
+%% Chapter 6 - green
+\addplot[only marks,
+  mark=*, mark size=14pt,
+  mark options={fill=green!25!white, draw=green!60!black, thick}]
+  coordinates {(5,5)(4,4)(4,4)};
+\node[font=\tiny\bfseries] at (axis cs:5.15,4.85) {C7};
+\node[font=\tiny\bfseries] at (axis cs:4,4.15) {};
+\node[font=\tiny\bfseries] at (axis cs:3.7,4.1) {C8};
+\node[font=\tiny\bfseries] at (axis cs:4.3,3.9) {C9};
+
+%% Chapter 7 - orange
+\addplot[only marks,
+  mark=*, mark size=14pt,
+  mark options={fill=orange!30, draw=orange!70!black, thick}]
+  coordinates {(5,5)(5,4)};
+\node[font=\tiny\bfseries] at (axis cs:4.8,5.15) {C10};
+\node[font=\tiny\bfseries] at (axis cs:5.15,4) {C11};
+
+%% Chapter 8 - purple
+\addplot[only marks,
+  mark=*, mark size=14pt,
+  mark options={fill=violet!25, draw=violet!70!black, thick}]
+  coordinates {(5,5)(3,3)(4,4)};
+\node[font=\tiny\bfseries] at (axis cs:5.15,5.15) {C12};
+\node[font=\tiny\bfseries] at (axis cs:3,3) {C13};
+\node[font=\tiny\bfseries] at (axis cs:4.15,3.85) {C14};
+
+%% Chapter 9 - red
+\addplot[only marks,
+  mark=*, mark size=14pt,
+  mark options={fill=red!20, draw=red!60!black, thick}]
+  coordinates {(5,5)(4,5)(3,4)(5,5)};
+\node[font=\tiny\bfseries] at (axis cs:4.8,4.85) {C15};
+\node[font=\tiny\bfseries] at (axis cs:3.85,5) {C16};
+\node[font=\tiny\bfseries] at (axis cs:3,4) {C17};
+\node[font=\tiny\bfseries] at (axis cs:5.15,5.15) {C18};
+
+\end{axis}
+
+%% Legend (chapter colours)
+\node[font=\tiny\bfseries] at (8.5, 8.0) {Chapter:};
+\fill[sambpblue!30, draw=sambpblue, thick] (9.0,7.85) circle (5pt);
+\node[font=\tiny, anchor=west] at (9.15, 7.85) {Ch 4};
+\fill[teal!30, draw=teal!70!black, thick] (9.8,7.85) circle (5pt);
+\node[font=\tiny, anchor=west] at (9.95, 7.85) {Ch 5};
+\fill[green!25!white, draw=green!60!black, thick] (10.6,7.85) circle (5pt);
+\node[font=\tiny, anchor=west] at (10.75, 7.85) {Ch 6};
+\fill[orange!30, draw=orange!70!black, thick] (11.4,7.85) circle (5pt);
+\node[font=\tiny, anchor=west] at (11.55, 7.85) {Ch 7};
+\fill[violet!25, draw=violet!70!black, thick] (12.2,7.85) circle (5pt);
+\node[font=\tiny, anchor=west] at (12.35, 7.85) {Ch 8};
+\fill[red!20, draw=red!60!black, thick] (13.0,7.85) circle (5pt);
+\node[font=\tiny, anchor=west] at (13.15, 7.85) {Ch 9};
+
+\end{tikzpicture}

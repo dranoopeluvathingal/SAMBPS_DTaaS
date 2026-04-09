@@ -1,0 +1,75 @@
+% fig_crosspol_fault_matrix.tex
+% TR-30: Protection coverage matrix (fault type × protection element × zone)
+%
+% Rows: 3PH, SLG, LL, LLG
+% Columns: Pol source | Zone 1 | Zone 2 | Zone 3 | 87L | Final verdict
+%
+% Cell colours:
+%   green!30  = available / trips
+%   red!20    = unavailable / fails
+%   gray!12   = not applicable
+
+\renewcommand{\arraystretch}{1.45}
+\setlength{\tabcolsep}{6pt}
+
+\newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+
+\begin{tabular}{%
+  M{2.0cm}|M{2.4cm}|M{1.4cm}|M{1.6cm}|M{1.6cm}|M{1.4cm}|M{2.2cm}%
+}
+\hline
+\rowcolor{gray!18}
+\textbf{Fault}       &
+\textbf{Pol.\ source} &
+\textbf{Zone 1}      &
+\textbf{Zone 2}      &
+\textbf{Zone 3}      &
+\textbf{87L}         &
+\textbf{Verdict}     \\
+\hline
+
+%% ── 3PH ──────────────────────────────────────────────────────────────────────
+3-phase
+  & \cellcolor{orange!20}Memory only\newline ($T_\mathrm{mem}=100$\,ms)
+  & \cellcolor{green!30}\checkmark\newline 20\,ms
+  & \cellcolor{red!20}{\small FAILS}\newline mem expired
+  & \cellcolor{red!20}{\small FAILS}\newline mem expired
+  & \cellcolor{green!30}\checkmark\newline 20\,ms
+  & \cellcolor{green!20}{\small Z1 + 87L}\\
+
+\hline
+
+%% ── SLG ──────────────────────────────────────────────────────────────────────
+Single\newline line-to-gnd
+  & \cellcolor{green!30}2 healthy\newline phases\newline (permanent)
+  & \cellcolor{green!30}\checkmark\newline 20\,ms
+  & \cellcolor{green!30}\checkmark\newline 300\,ms
+  & \cellcolor{green!30}\checkmark\newline 600\,ms
+  & \cellcolor{green!30}\checkmark\newline 20\,ms
+  & \cellcolor{green!40}\textbf{Full}\newline Z1+Z2+Z3+87L\\
+
+\hline
+
+%% ── LL ───────────────────────────────────────────────────────────────────────
+Line-to-line
+  & \cellcolor{green!30}1 healthy\newline phase + mutual\newline (permanent)
+  & \cellcolor{green!30}\checkmark\newline 20\,ms
+  & \cellcolor{green!30}\checkmark\newline 300\,ms
+  & \cellcolor{green!30}\checkmark\newline 600\,ms
+  & \cellcolor{green!30}\checkmark\newline 20\,ms
+  & \cellcolor{green!40}\textbf{Full}\newline Z1+Z2+Z3+87L\\
+
+\hline
+
+%% ── LLG ──────────────────────────────────────────────────────────────────────
+Double\newline line-to-gnd
+  & \cellcolor{green!30}1 healthy\newline phase\newline (permanent)
+  & \cellcolor{green!30}\checkmark\newline 20\,ms
+  & \cellcolor{green!30}\checkmark\newline 300\,ms
+  & \cellcolor{green!30}\checkmark\newline 600\,ms
+  & \cellcolor{green!30}\checkmark\newline 20\,ms
+  & \cellcolor{green!40}\textbf{Full}\newline Z1+Z2+Z3+87L\\
+
+\hline
+
+\end{tabular}

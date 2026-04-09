@@ -1,0 +1,85 @@
+% fig_localisation_accuracy.tex
+% TR-50: Fault localisation accuracy vs PMU noise level (Study B)
+
+\begin{tikzpicture}
+\begin{axis}[
+  name         = locax,
+  width        = 0.56\textwidth,
+  height       = 6.0cm,
+  xlabel       = {PMU voltage noise $\sigma_V$ [pu]},
+  ylabel       = {Correct line identification [\%]},
+  xlabel style = {font=\small},
+  ylabel style = {font=\small},
+  xmode        = log,
+  xmin=0.003, xmax=0.06,
+  ymin=60, ymax=100,
+  xtick        = {0.005, 0.010, 0.020, 0.040},
+  xticklabels  = {0.005, 0.010, 0.020, 0.040},
+  xticklabel style = {font=\scriptsize},
+  ytick        = {60,70,80,90,100},
+  yticklabel style = {font=\scriptsize},
+  tick style   = {draw=none},
+  axis line style = {gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  legend style = {at={(0.97,0.05)}, anchor=south east,
+                  font=\scriptsize, draw=gray!50},
+]
+
+%% Localisation accuracy curve
+\addplot[sambpblue, very thick, mark=*, mark size=3pt]
+  coordinates {(0.005,90.0) (0.010,94.5) (0.020,91.5) (0.040,77.5)};
+\addlegendentry{Correct line (\%)}
+
+%% Operating point annotation
+\draw[red!60!black, dashed, thick]
+  (axis cs:0.003,94.5) -- (axis cs:0.010,94.5);
+\draw[red!60!black, dashed, thick]
+  (axis cs:0.010,60) -- (axis cs:0.010,94.5);
+\node[red!60!black, font=\tiny, anchor=south west, align=left]
+  at (axis cs:0.0105,82) {Design point\\94.5\% at $\sigma=0.01$};
+
+%% IEC synchrophasor class annotations
+\draw[gray!50, thick, dashed]
+  (axis cs:0.003,80) -- (axis cs:0.06,80);
+\node[gray!50, font=\tiny, anchor=east]
+  at (axis cs:0.055,81.5) {80\% threshold};
+
+\end{axis}
+
+%% Alpha error sub-panel
+\begin{axis}[
+  name         = alphax,
+  at           = {(locax.south east)},
+  anchor       = south west,
+  xshift       = 5mm,
+  width        = 0.40\textwidth,
+  height       = 6.0cm,
+  xlabel       = {$\sigma_V$ [pu]},
+  ylabel       = {Mean $|\hat\alpha - \alpha|$ [\%]},
+  xlabel style = {font=\small},
+  ylabel style = {font=\small},
+  xmode        = log,
+  xmin=0.003, xmax=0.06,
+  ymin=15, ymax=35,
+  xtick        = {0.005,0.010,0.020,0.040},
+  xticklabels  = {0.005,0.010,0.020,0.040},
+  xticklabel style = {font=\scriptsize},
+  ytick        = {15,20,25,30,35},
+  yticklabel style = {font=\scriptsize},
+  tick style   = {draw=none},
+  axis line style = {gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  title        = {Location error},
+  title style  = {font=\small\bfseries},
+]
+
+\addplot[orange!80!black, very thick, mark=square*, mark size=2pt]
+  coordinates {(0.005,24.70) (0.010,24.76) (0.020,22.84) (0.040,23.89)};
+
+\node[orange!70!black, font=\tiny, anchor=north, align=center]
+  at (axis cs:0.010, 24.0) {$\approx$24\%\\of line};
+
+\end{axis}
+\end{tikzpicture}
