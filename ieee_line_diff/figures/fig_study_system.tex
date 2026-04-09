@@ -1,0 +1,52 @@
+% fig_study_system.tex
+% Study system: Gen -- Z_src -- Bus_A -- Z_line -- Bus_B -- Z_tr -- Bus_C
+% IBR connected at Bus_B; measurement points CT_A (left) and CT_B (right)
+\begin{tikzpicture}[
+  bus/.style={draw,fill=gray!20,minimum width=0.35cm,minimum height=2.0cm},
+  comp/.style={draw,fill=white,rounded corners=2pt,minimum width=1.2cm,
+               minimum height=0.55cm,font=\scriptsize,align=center},
+  lbl/.style={font=\tiny,align=center},
+  >=latex
+]
+% Buses
+\node[bus] (busA) at (0,0)   {};
+\node[bus] (busB) at (5.0,0) {};
+\node[bus] (busC) at (8.5,0) {};
+\node[lbl,above=2pt] at (busA.north) {Bus A};
+\node[lbl,above=2pt] at (busB.north) {Bus B};
+\node[lbl,above=2pt] at (busC.north) {Bus C};
+
+% Generator
+\node[comp,left=1.4cm of busA] (gen) {SG\\$X''_d$};
+\draw[-] (gen.east) -- node[above,font=\tiny]{$Z_{\rm src}$} (busA.west|-gen);
+
+% Transmission line with CT markers
+\draw[-] (busA.east|-{(0,0)}) -- node[pos=0.15,above,font=\tiny]{CT$_A$}
+         node[pos=0.15,fill=white,circle,draw,inner sep=1pt]{}
+         node[midway,above,font=\tiny]{$Z_{\rm line}$}
+         node[pos=0.85,above,font=\tiny]{CT$_B$}
+         node[pos=0.85,fill=white,circle,draw,inner sep=1pt]{}
+         (busB.west|-{(0,0)});
+
+% 87L relay box (below line)
+\node[comp,below=0.7cm of {(2.5,0)}] (relay) {87L\\relay};
+\draw[dashed,->] (2.5,-0.03) -- (relay.north);
+
+% Transformer
+\node[comp] (tr) at (6.75,0) {$Z_{\rm tr}$\\Tr};
+\draw[-] (busB.east|-{(0,0)}) -- (tr.west|-{(0,0)});
+\draw[-] (tr.east|-{(0,0)}) -- (busC.west|-{(0,0)});
+
+% IBR source at Bus B (below)
+\node[comp,below=1.2cm of busB] (ibr) {IBR\\$k_{\rm ibr}$\,pu};
+\draw[->] (ibr.north) -- node[right,font=\tiny]{$I_{\rm ibr}$} (busB.south);
+
+% Load at Bus C
+\node[comp,right=0.6cm of busC] (load) {Load};
+\draw[-] (busC.east|-{(0,0)}) -- (load.west|-{(0,0)});
+
+% Fault location marker
+\draw[red!70!black,very thick,dashed]
+  (2.5,0.3) -- (2.5,-0.3)
+  node[below,font=\tiny,red!70!black]{$F$};
+\end{tikzpicture}
