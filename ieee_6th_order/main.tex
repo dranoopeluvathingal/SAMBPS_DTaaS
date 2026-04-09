@@ -1,0 +1,1327 @@
+% ============================================================
+%  IEEE Transactions on Power Systems  (or Power Delivery)
+%  "Validation Boundaries of Reduced-Order Inverse Protection
+%   Models Under Sixth-Order Synchronous Machine Dynamics"
+%  Author: J. Eluvathingal
+%  Build:  pdflatex × 3 + bibtex
+% ============================================================
+\documentclass[journal,twoside,letterpaper]{IEEEtran}
+
+%% --- packages ---------------------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{cite}
+\usepackage{url}
+\usepackage{siunitx}
+\usepackage{gensymb}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{positioning,shapes.geometric,shapes.misc,
+                arrows.meta,chains,decorations.pathreplacing,
+                calc,fit}
+\usepgfplotslibrary{groupplots,fillbetween}
+
+%% --- helpers ---------------------------------------------------
+\newcommand{\vect}[1]{\bm{#1}}
+\newcommand{\est}[1]{\hat{#1}}
+\newcommand{\norm}[1]{\lVert#1\rVert}
+\DeclareMathOperator{\clip}{clip}
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+
+%% =============================================================
+\begin{document}
+
+\title{Validation Boundaries of Reduced-Order Inverse Protection
+       Models Under Sixth-Order Synchronous Machine Dynamics}
+
+\author{Anoop~V.~Eluvathingal,~\IEEEmembership{Student Member,~IEEE,}
+        and~K.~Shanti~Swarup,~\IEEEmembership{Senior Member,~IEEE}%
+\thanks{Manuscript received \today.
+        This work establishes the physics-faithful truth-model
+        validation framework (Stage-2) for the SAMBP-SyncOC adaptive
+        protection series and is part of the PhD research programme at
+        the Department of Electrical Engineering, Indian Institute of
+        Technology Madras, Chennai~600~036, India.}%
+\thanks{A.~V.~Eluvathingal and K.~S.~Swarup are with the Department of
+        Electrical Engineering, IIT Madras, Chennai~600~036, India
+        (e-mail: ee21d017@smail.iitm.ac.in; swarup@ee.iitm.ac.in).}}
+
+\markboth{IEEE Transactions on Power Systems,~Vol.~XX,
+No.~X, \MakeUppercase{Month}~2026}%
+{Eluvathingal \& Swarup: Validation Boundaries of Reduced-Order Inverse
+Protection Models}
+
+\maketitle
+
+%% =============================================================
+\begin{abstract}
+Reduced-order inverse models are attractive for real-time
+adaptive overcurrent protection because they identify
+relay-relevant source parameters within a protection operating
+interval.
+Their reliability, however, depends on the degree to which the
+true generator fault response remains representable by the
+reduced waveform model over the estimation window.
+This paper develops a physics-faithful forward benchmark based
+on a sixth-order synchronous-machine Park~$dq$ model with
+automatic voltage regulator (AVR), power system stabilizer
+(PSS), and governor dynamics, and uses it to quantify the
+validity limits of the Stage-1 reduced-order inverse protection
+model.
+The forward benchmark is formulated as a nine-state stiff
+ordinary differential equation (ODE) system, coupled to a
+stator algebraic interface and inverse Park transformation to
+generate relay-observable three-phase currents.
+Window-dependent model mismatch is evaluated using four
+complementary metrics: waveform residual norm, parameter bias,
+normalised Jacobian condition number, and confidence-gate
+behaviour.
+Results show that the reduced model remains relay-valid for
+estimation windows up to approximately~150~ms, achieving
+waveform residuals below~0.05~p.u.\ and confidence scores
+above the acceptance threshold~$\gamma_{th}=0.70$.
+Beyond this boundary, AVR-driven evolution of the sustained
+current component progressively biases the estimated
+steady-state current~$\hat{I}_{ss}$ downward and inflates the
+estimated AC time constant~$\hat{\tau}_{ac}$, causing pickup
+errors exceeding 10\% and trip-time deviations exceeding
+the grading margin requirement.
+A relay-validity map is presented that delineates the
+window-length and operating-point region over which reduced
+inverse adaptation may be trusted, cautioned, or blocked.
+The paper thus provides a protection-oriented
+identifiability and fidelity framework for the deployment of
+reduced inverse estimators in adaptive relay IEDs.
+\end{abstract}
+
+\begin{IEEEkeywords}
+adaptive overcurrent protection, synchronous generator,
+Park $dq$ model, sixth-order machine model, inverse estimation,
+window validity, Levenberg--Marquardt, condition number,
+confidence gate, AVR, PSS, governor.
+\end{IEEEkeywords}
+
+%% =============================================================
+\section{Introduction}
+\label{sec:intro}
+
+\subsection{Motivation}
+
+Online parameter estimation offers a principled route to
+adaptive overcurrent protection: rather than selecting from a
+discrete table of pre-computed settings, the relay fits a
+parametric fault-current model to the observed waveform and
+maps the result directly to protective relay settings
+\cite{Eluvathingal2025_TR01,Lazkano2000}.
+The Stage-1 SAMBP-SyncOC framework demonstrated that a
+six-parameter reduced inverse model, fitted by a two-pass
+Levenberg--Marquardt (LM) estimator, can extract relay-relevant
+quantities within the first few cycles after fault
+inception~\cite{Eluvathingal2025_TR01}.
+
+The reduced model captures the dominant waveform features:
+an AC transient driven by the direct-axis transient time
+constant, a DC offset decaying with the armature circuit time
+constant, and a steady-state sinusoidal component whose
+magnitude approximates the post-fault rms current.
+These features are fully present within the first 100--150~ms
+of a fault.
+
+Over longer windows, however, the true generator response is
+shaped by controller dynamics that the reduced model
+deliberately omits:
+\begin{itemize}
+  \item The AVR boosts field voltage $E_{fd}$ within
+    $\sim$0.1~s, causing the sustained current $I_{ss}$ to
+    rise progressively after the initial subtransient period.
+  \item The governor adjusts mechanical torque $T_m$ on a
+    $\sim$0.5~s time scale, modifying the air-gap torque
+    balance and rotor speed.
+  \item The PSS injects a damping signal into the AVR to
+    suppress rotor oscillations, creating superimposed
+    oscillatory components in the fault current.
+\end{itemize}
+None of these dynamics appear in the six-parameter reduced
+model.
+When the estimation window extends into the range where these
+dynamics are active, the reduced model is mis-specified: the
+LM estimator minimises residuals by distorting the inferred
+parameters, introducing systematic bias that may degrade relay
+decisions.
+
+\subsection{Gap in the literature}
+
+Prior work on adaptive overcurrent protection addresses
+estimator design~\cite{Lazkano2000,Sachdev1985} or relay
+logic~\cite{Urdaneta1988,So2000}, but rarely asks the
+foundational question: \emph{over what window is the reduced
+model a sufficiently faithful representation of the true fault
+current for adaptive relay decisions}?
+
+Physics-based synchronous-machine models of the sixth-order
+Park~$dq$ form are well-established in power system
+stability analysis~\cite{Kundur1994,Anderson1977}.
+They have not, however, been systematically employed as
+truth-model benchmarks for evaluating relay-relevant
+identifiability boundaries.
+This paper bridges that gap.
+
+\subsection{Paper objective}
+
+The central objective is to \emph{quantify the relay-validity
+boundary of the reduced inverse protection model under
+sixth-order synchronous-machine dynamics with AVR, PSS, and
+governor}.
+The sixth-order model is not proposed as an alternative
+estimator --- it is computationally prohibitive for real-time
+IED use --- but as a physics-faithful ground truth against
+which the simpler model's accuracy is measured.
+Fig.~\ref{fig:concept} illustrates the three-layer
+architecture of this study.
+
+\begin{figure}[!t]
+  \centering
+  \input{diagrams/fig1_concept}
+  \caption{Paper framework: the sixth-order truth model
+    generates relay-observable fault currents that benchmark
+    the reduced inverse estimator.
+    The validity boundary defines where the estimator remains
+    accurate enough for adaptive relay decisions.}
+  \label{fig:concept}
+\end{figure}
+
+\subsection{Contributions}
+
+The main contributions are as follows.
+\begin{enumerate}
+  \item A physics-faithful sixth-order Park~$dq$ forward
+    benchmark for synchronous-generator fault-current
+    simulation, augmented with AVR, PSS, and governor
+    dynamics, coupled to a stator algebraic interface and
+    inverse Park transformation to generate relay-observable
+    abc currents (Section~\ref{sec:sixthorder}).
+  \item A protection-oriented validation methodology
+    comparing the reduced inverse model against the
+    sixth-order benchmark across window lengths, fault types,
+    and operating conditions, using four
+    relay-relevant metrics (Section~\ref{sec:methodology}).
+  \item A window-validity analysis identifying the time
+    horizon up to which the reduced inverse model is relay
+    valid ($L^\ast \approx 150$~ms), and beyond which
+    neglected AVR/PSS/governor dynamics materially bias
+    estimated parameters (Section~\ref{sec:results}).
+  \item An identifiability and confidence study linking
+    residual growth to Jacobian conditioning, parameter bias,
+    and confidence-gate behaviour in the Stage-1 inverse
+    estimator (Section~\ref{sec:results}).
+  \item A relay-validity map and practical deployment
+    guidelines specifying when reduced inverse adaptation
+    may be trusted, flagged, or blocked
+    (Sections~\ref{sec:results} and~\ref{sec:discussion}).
+\end{enumerate}
+
+%% =============================================================
+\section{Baseline Reduced-Order Inverse Protection Model}
+\label{sec:baseline}
+
+\subsection{Analytical waveform model}
+
+The Stage-1 reduced inverse model represents the phase-A
+fault current as~\cite{Eluvathingal2025_TR01}
+\begin{equation}
+  i_a^{(1)}(t) = \bigl[I_{ss} + (I_{sub} - I_{ss})\,
+                  e^{-t_{\mathrm{rel}}/\tau_{ac}}\bigr]
+                  \sin(\omega t + \varphi_a)
+                - I_{sub}\sin(\varphi_a)\,
+                  e^{-t_{\mathrm{rel}}/\tau_{dc}},
+  \quad t \geq t_0,
+\label{eq:reduced_model}
+\end{equation}
+where $t_{\mathrm{rel}} = t - t_0$, $I_{ss}$ is the sustained
+(steady-state) current magnitude, $I_{sub}$ is the subtransient
+peak, $\tau_{ac}$ is the AC decay time constant (approximately
+$T'_{d0}$), $\tau_{dc}$ is the DC offset decay constant, and
+$\varphi_a$ is the fault inception angle for phase~A.
+The term $-I_{sub}\sin(\varphi_a)\,e^{-t/\tau_{dc}}$ provides
+the maximum possible DC offset consistent with
+$i_a(t_0) = 0$~\cite{Anderson1977}.
+
+The six-parameter vector is
+\begin{equation}
+  \vect\theta = \bigl[t_0,\;I_{ss},\;I_{sub},\;
+                      \tau_{ac},\;\tau_{dc},\;\varphi_a\bigr]^\top.
+\label{eq:theta}
+\end{equation}
+
+\subsection{Two-pass Levenberg--Marquardt estimator}
+
+Pass~1 seeds $I_{ss}$ from the pre-fault rms current and
+minimises
+\begin{equation}
+  \hat{\vect\theta}^{(1)} = \arg\min_{\vect\theta}\;
+    \sum_{n \in \mathcal{W}}\bigl[i_a(t_n) -
+    i_a^{(1)}(\vect\theta, t_n)\bigr]^2,
+\label{eq:lm}
+\end{equation}
+over window $\mathcal{W} = \{t_n : t_0 \leq t_n \leq t_0+L\}$.
+Pass~2 uses $\hat{\vect\theta}^{(1)}$ as a warm start and
+refines the estimate.
+Fig.~\ref{fig:estimator_recap} shows the estimator
+architecture.
+
+\begin{figure}[!t]
+  \centering
+  \input{diagrams/fig2_estimator_recap}
+  \caption{Stage-1 reduced inverse estimator: two-pass
+    Levenberg--Marquardt fit followed by confidence gating
+    and adaptive relay mapping.}
+  \label{fig:estimator_recap}
+\end{figure}
+
+\subsection{Confidence gate and adaptive mapping}
+
+The scalar confidence score is computed as
+\begin{equation}
+  \gamma = w_r\,s_r + w_c\,s_c + w_b\,s_b + w_p\,s_p,
+\label{eq:confidence}
+\end{equation}
+where $s_r$ is a normalised residual score, $s_c$ is a
+condition-number score, $s_b$ is a bound-proximity score,
+and $s_p$ is a prior-consistency score~\cite{Eluvathingal2025_TR01}.
+Adaptation proceeds only if $\gamma \geq \gamma_{th} = 0.70$.
+
+When accepted, the relay settings are updated as
+\begin{align}
+  I_p^\ast &= \alpha_I\,\hat{I}_{ss},  \label{eq:ip_adapt}\\
+  TMS^\ast &= \clip\!\bigl(\alpha_{TMS}\,\hat\tau_{ac},\;
+               TMS_{\min},\;TMS_{\max}\bigr), \label{eq:tms_adapt}
+\end{align}
+with bounded incremental update
+\begin{align}
+  \Delta I_p &= \clip\!\bigl(I_p^\ast - I_{p,\mathrm{cur}},\;
+                [-\delta,+\delta]\bigr),\label{eq:bounded_a}\\
+  I_{p,\mathrm{final}} &= \clip\!\bigl(I_{p,\mathrm{cur}} + \Delta I_p,\;
+                [I_p^{\min},\;I_p^{\max}]\bigr).\label{eq:bounded_b}
+\end{align}
+This bounded update law prevents single-event runaway
+adaptation~\cite{Eluvathingal2025_TR01}.
+
+Table~\ref{tab:baseline_params} summarises the baseline
+reduced-model parameters used in this study.
+
+\begin{table}[!t]
+\caption{Baseline reduced inverse model: parameters and
+         estimation outputs (3PH fault, nominal operating point)}
+\label{tab:baseline_params}
+\centering
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{lcc}
+\toprule
+Parameter & Symbol & Nominal value \\
+\midrule
+Steady-state current      & $I_{ss}$      & 1.35~p.u. \\
+Subtransient current      & $I_{sub}$     & 3.20~p.u. \\
+AC decay constant         & $\tau_{ac}$   & 0.83~s \\
+DC offset constant        & $\tau_{dc}$   & 0.07~s \\
+Fault inception angle     & $\varphi_a$   & $-30\degree$ \\
+Pickup scaling            & $\alpha_I$    & 0.80 \\
+TMS scaling               & $\alpha_{TMS}$& 0.12 \\
+Confidence threshold      & $\gamma_{th}$ & 0.70 \\
+Bounded step              & $\delta$      & 0.10~p.u. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%% =============================================================
+\section{Sixth-Order Park \boldmath{$dq$} Forward Truth Model}
+\label{sec:sixthorder}
+
+\subsection{Model overview}
+
+The sixth-order model is the \emph{forward truth benchmark}.
+It simulates the physical generator fault response including
+all significant electromechanical and controller dynamics,
+and produces relay-observable abc currents that serve as the
+ground truth against which the reduced inverse model is
+evaluated.
+It is emphatically not used online in the relay: its
+nine-state stiff ODE system and Radau integration are
+computationally unsuitable for IED-grade real-time use.
+
+Fig.~\ref{fig:sixthorder_model} shows the complete block
+structure.
+
+\begin{figure}[!t]
+  \centering
+  \input{diagrams/fig3_sixthorder_model}
+  \caption{Sixth-order Park~$dq$ truth-model architecture:
+    four electromagnetic EMF states, two electromechanical
+    swing states, and three controller states, coupled to the
+    stator algebraic interface and inverse Park transformation.}
+  \label{fig:sixthorder_model}
+\end{figure}
+
+\subsection{Electromagnetic state equations}
+
+The transient and subtransient EMF states are governed
+by~\cite{Kundur1994,Anderson1977}:
+\begin{align}
+  \dot{E}'_q &= \frac{1}{T'_{d0}}\bigl(E_{fd} - E'_q
+                + (X_d - X'_d)\,i_d\bigr),
+\label{eq:E_q_prime}\\
+  \dot{E}'_d &= \frac{1}{T'_{q0}}\bigl(-E'_d
+                - (X_q - X'_q)\,i_q\bigr),
+\label{eq:E_d_prime}\\
+  \dot{E}''_q &= \frac{1}{T''_{d0}}\bigl(E'_q - E''_q
+                - (X'_d - X''_d)\,i_d\bigr),
+\label{eq:E_q_2prime}\\
+  \dot{E}''_d &= \frac{1}{T''_{q0}}\bigl(E'_d - E''_d
+                + (X'_q - X''_q)\,i_q\bigr).
+\label{eq:E_d_2prime}
+\end{align}
+The subtransient EMFs $E''_q$, $E''_d$ are the driving
+quantities for the stator algebraic interface.
+The transient EMFs $E'_q$, $E'_d$ evolve on the transient
+time constants $T'_{d0} \approx 5.0$~s and
+$T'_{q0} \approx 1.5$~s, respectively, making them
+significantly affected by AVR action within the first 0.5~s.
+
+\subsection{Electromechanical dynamics}
+
+The rotor angle and angular velocity satisfy
+\begin{align}
+  \dot\delta &= \omega - \omega_s, \label{eq:delta}\\
+  \dot\omega  &= \frac{\omega_s}{2H}\biggl[T_m - T_e
+                - \frac{D(\omega - \omega_s)}{\omega_s}
+                \biggr], \label{eq:omega}
+\end{align}
+where $H$ is the inertia constant, $D$ is the damping
+coefficient, $\omega_s = 2\pi f_s$ is the synchronous
+frequency, and the electrical torque is
+\begin{equation}
+  T_e = E''_d\,i_d + E''_q\,i_q. \label{eq:Te}
+\end{equation}
+
+\subsection{Controller dynamics}
+
+\paragraph{Automatic Voltage Regulator (AVR)}
+\begin{equation}
+  \dot{E}_{fd} = \frac{1}{\tau_a}\bigl[K_a(V_{\mathrm{ref}}
+                - V_t - V_{pss}) - E_{fd}\bigr],
+\label{eq:avr}
+\end{equation}
+where $V_t = \sqrt{v_d^2 + v_q^2}$ is the terminal voltage
+magnitude, $K_a$ is the AVR gain, and $\tau_a$ is the AVR
+time constant.
+During a fault, $V_t$ collapses toward zero, causing the AVR
+to boost $E_{fd}$ and hence $E'_q$ on the transient time
+scale.
+This is the primary mechanism by which $I_{ss}$ rises beyond
+the initial subtransient value, invalidating the
+constant-$I_{ss}$ assumption of the reduced model.
+
+\paragraph{Power System Stabilizer (PSS)}
+\begin{equation}
+  \dot{V}_{pss} = \frac{1}{\tau_2}\biggl[K_{pss}
+                  \frac{\tau_1}{\tau_w}\Delta\omega
+                  - V_{pss}\biggr],
+\label{eq:pss}
+\end{equation}
+where $\Delta\omega = \omega - \omega_s$ is the speed
+deviation and $\tau_w$ is the washout time constant.
+The PSS injects a signal proportional to speed deviation into
+the AVR summing junction, superimposing damped oscillations
+onto the fault-current waveform.
+
+\paragraph{Governor}
+\begin{equation}
+  \dot{T}_m = \frac{1}{\tau_{ch}}\biggl[P_{\mathrm{ref}}
+              + \frac{\omega_s - \omega}{R_d\,\omega_s}
+              - T_m\biggr],
+\label{eq:gov}
+\end{equation}
+where $R_d$ is the droop coefficient and $\tau_{ch}$ is the
+steam-chest time constant.
+The governor responds to rotor deceleration by ramping up
+mechanical power, which affects the torque balance and
+hence the sustained-current level over a 0.5--2.0~s window.
+
+\subsection{Stator algebraic interface}
+
+During a fault, the stator voltages and currents satisfy the
+algebraic constraint
+\begin{equation}
+  \vect{v}_{dq} = R_s\,\vect{i}_{dq} + \vect{e}_{dq}(\vect{x}),
+\label{eq:stator}
+\end{equation}
+where $\vect{e}_{dq}(\vect{x}) = [E''_d - X''_q\,i_q,\;
+E''_q + X''_d\,i_d]^\top$ is the subtransient EMF vector and
+$\vect{x}$ denotes the ODE state vector.
+For a bolted three-phase fault with fault resistance $R_f$,
+the terminal voltage $\vect{v}_{dq}$ is determined by the
+faulted network admittance, and $i_d$, $i_q$ are solved
+algebraically at each integration step.
+
+\subsection{Inverse Park transformation}
+
+The relay-observable phase currents are obtained via
+\begin{equation}
+  \begin{bmatrix}i_a \\ i_b \\ i_c\end{bmatrix}
+  = \vect{T}_{\mathrm{Park}}^{-1}(\delta)\,
+  \begin{bmatrix}i_d \\ i_q \\ i_0\end{bmatrix},
+\label{eq:park_inv}
+\end{equation}
+where $\vect{T}_{\mathrm{Park}}^{-1}(\delta)$ is the
+inverse Park matrix evaluated at the instantaneous rotor
+angle~$\delta(t)$~\cite{Kundur1994}.
+For balanced three-phase faults, $i_0 = 0$.
+The resulting $i_a(t)$ is the waveform presented to the
+relay CT input.
+Fig.~\ref{fig:dq_to_abc} shows the complete signal chain from
+ODE states to relay-observable currents.
+
+\begin{figure}[!t]
+  \centering
+  \input{diagrams/fig4_dq_to_abc}
+  \caption{Signal chain from nine ODE states to
+    relay-observable abc currents: stator algebraic
+    interface solves $i_{dq}$; inverse Park transform
+    produces $i_{abc}(t)$ at the relay CT sampling rate
+    (10~kHz).}
+  \label{fig:dq_to_abc}
+\end{figure}
+
+\subsection{Nine-state ODE system and numerical integration}
+
+Collecting \eqref{eq:E_q_prime}--\eqref{eq:gov}, the
+full state vector is
+\begin{equation}
+  \vect{x} = \bigl[E'_q,\;E'_d,\;E''_q,\;E''_d,\;
+                   \delta,\;\omega,\;E_{fd},\;V_{pss},\;T_m
+             \bigr]^\top \in \mathbb{R}^9.
+\label{eq:state_vector}
+\end{equation}
+The ODE system $\dot{\vect{x}} = \vect{f}(\vect{x},t)$ is
+stiff because $T''_{d0} = 0.05$~s and $T''_{q0} = 0.09$~s
+are~$\sim$100$\times$ faster than the machine transient
+constants.
+A Radau solver (fifth-order implicit Runge--Kutta) is used
+with adaptive step control and a fixed logging step of
+$\Delta t = 0.1$~ms for relay comparison.
+Simulation results are stored for window lengths up to
+$L_{\max} = 500$~ms.
+
+Table~\ref{tab:sixthorder_params} gives the model parameters.
+
+\begin{table}[!t]
+\caption{Sixth-order Park $dq$ model parameters}
+\label{tab:sixthorder_params}
+\centering
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{llc}
+\toprule
+Parameter & Symbol & Value \\
+\midrule
+\multicolumn{3}{l}{\textit{Generator (5~MVA, 11~kV)}} \\
+d-axis synchronous reactance     & $X_d$          & 1.60~p.u. \\
+d-axis transient reactance       & $X'_d$         & 0.25~p.u. \\
+d-axis subtransient reactance    & $X''_d$        & 0.18~p.u. \\
+q-axis synchronous reactance     & $X_q$          & 1.55~p.u. \\
+q-axis transient reactance       & $X'_q$         & 0.46~p.u. \\
+q-axis subtransient reactance    & $X''_q$        & 0.20~p.u. \\
+d-axis open-circuit transient TC & $T'_{d0}$      & 5.0~s \\
+d-axis open-circuit subtrans. TC & $T''_{d0}$     & 0.05~s \\
+q-axis open-circuit transient TC & $T'_{q0}$      & 1.5~s \\
+q-axis open-circuit subtrans. TC & $T''_{q0}$     & 0.09~s \\
+Armature resistance              & $R_a$          & 0.015~p.u. \\
+Inertia constant                 & $H$            & 3.5~MWs/MVA \\
+Damping coefficient              & $D$            & 2.0~p.u. \\
+\midrule
+\multicolumn{3}{l}{\textit{Network}} \\
+Thévenin impedance               & $Z_{th}$       & $0.04+j0.15$~p.u. \\
+Transformer reactance            & $X_T$          & 0.10~p.u. \\
+\midrule
+\multicolumn{3}{l}{\textit{AVR}} \\
+Gain                             & $K_a$          & 50 \\
+Time constant                    & $\tau_a$       & 0.05~s \\
+\midrule
+\multicolumn{3}{l}{\textit{PSS}} \\
+Gain                             & $K_{pss}$      & 20 \\
+Lead time constant               & $\tau_1$       & 0.20~s \\
+Lag time constant                & $\tau_2$       & 0.05~s \\
+Washout time constant            & $\tau_w$       & 10.0~s \\
+\midrule
+\multicolumn{3}{l}{\textit{Governor}} \\
+Droop                            & $R_d$          & 0.05 \\
+Steam-chest time constant        & $\tau_{ch}$    & 0.50~s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%% =============================================================
+\section{Validation Methodology}
+\label{sec:methodology}
+
+\subsection{Benchmark philosophy}
+
+The validation procedure, illustrated in
+Fig.~\ref{fig:validation_workflow}, consists of three steps:
+\begin{enumerate}
+  \item Generate truth waveform $i_a^{(6\text{th})}(t)$ by
+    integrating the nine-state ODE system over
+    $[t_0,\,t_0+L_{\max}]$ and transforming $i_{dq}(t)$
+    via~\eqref{eq:park_inv}.
+  \item Fit the reduced inverse model~\eqref{eq:reduced_model}
+    to the truth waveform over each window
+    $\mathcal{W}_L = [t_0,\,t_0+L]$ using the two-pass LM
+    estimator, obtaining $\hat{\vect\theta}(L)$.
+  \item Evaluate relay-validity metrics as functions
+    of~$L$.
+\end{enumerate}
+
+\begin{figure}[!t]
+  \centering
+  \input{diagrams/fig5_validation_workflow}
+  \caption{Validation methodology: sixth-order truth waveforms
+    are compared against reduced inverse fits over variable
+    window lengths to extract waveform, parameter,
+    identifiability, and relay-consequence metrics.}
+  \label{fig:validation_workflow}
+\end{figure}
+
+\subsection{Windowing strategy}
+
+Event-relative window lengths are defined as
+\begin{equation}
+  L \in \{20,\;40,\;80,\;150,\;300,\;500\}~\text{ms},
+\label{eq:windows}
+\end{equation}
+corresponding approximately to 1, 2, 4, 7.5, 15, and 25
+power-frequency cycles at 50~Hz.
+Fig.~\ref{fig:window_hierarchy} illustrates the window
+nesting strategy and the expected validity boundary
+$L^\ast \approx 150$~ms.
+
+\begin{figure}[!t]
+  \centering
+  \input{diagrams/fig6_window_hierarchy}
+  \caption{Window hierarchy: six nested estimation windows
+    $W_1$--$W_6$ centred on fault inception~$t_0$.
+    The validity boundary $L^\ast \approx 150$~ms separates
+    the relay-valid zone (green) from the caution/invalid
+    zone (red) where AVR and governor dynamics degrade
+    reduced-model fidelity.}
+  \label{fig:window_hierarchy}
+\end{figure}
+
+\subsection{Relay-valid waveform mismatch metrics}
+
+The primary mismatch metrics are the RMS waveform residual
+\begin{equation}
+  \varepsilon_{\mathrm{RMS}}(L) =
+    \sqrt{\frac{1}{N_L}\sum_{n \in \mathcal{W}_L}
+    \bigl[i_a^{(6\text{th})}(t_n) -
+     \hat{i}_a^{(\mathrm{red})}(t_n)\bigr]^2}
+\label{eq:eps_rms}
+\end{equation}
+and the peak absolute residual
+\begin{equation}
+  \varepsilon_\infty(L) = \max_{n \in \mathcal{W}_L}
+    \bigl|i_a^{(6\text{th})}(t_n) -
+     \hat{i}_a^{(\mathrm{red})}(t_n)\bigr|,
+\label{eq:eps_inf}
+\end{equation}
+where $\hat{i}_a^{(\mathrm{red})}(t_n) =
+i_a^{(1)}(\hat{\vect\theta}(L), t_n)$ is the
+reduced-model reconstruction evaluated at the LM estimate.
+An acceptance threshold $\varepsilon_{\max} = 0.05$~p.u.\
+is defined as the maximum residual consistent with
+relay-valid adaptation.
+
+\subsection{Parameter bias metrics}
+
+Because the truth model does not yield closed-form reference
+parameter values, operational reference values are obtained
+by fitting the reduced model to a very short
+window~($L = 5$~ms) that is too short for controller dynamics
+to develop, giving
+$I_{ss}^{\mathrm{ref}} = \hat{I}_{ss}(5~\text{ms})$ and
+$\tau_{ac}^{\mathrm{ref}} = \hat\tau_{ac}(5~\text{ms})$.
+The window-dependent biases are then
+\begin{align}
+  b_{I_{ss}}(L) &= \hat{I}_{ss}(L) - I_{ss}^{\mathrm{ref}}, \\
+  b_{\tau_{ac}}(L) &= \hat\tau_{ac}(L) - \tau_{ac}^{\mathrm{ref}}.
+\end{align}
+
+\subsection{Identifiability metric}
+
+The Jacobian condition number at the LM solution is
+\begin{equation}
+  \kappa_n(J) = \kappa\!\bigl(J\,D^{-1}\bigr),
+\label{eq:kappa_n}
+\end{equation}
+where $J = \partial\vect{r}/\partial\vect\theta$ is the
+residual Jacobian at $\hat{\vect\theta}$ and
+$D = \mathrm{diag}(\norm{J_k}_2)_k$ is the column
+normalisation matrix~\cite{Eluvathingal2025_TR01}.
+Large $\kappa_n$ indicates that the data no longer
+strongly distinguishes the parameters, a precursor to
+parameter bias.
+
+\subsection{Confidence gate and relay-consequence metrics}
+
+The confidence score~\eqref{eq:confidence} automatically
+incorporates $\kappa_n$ (via $s_c$) and the residual
+(via $s_r$).
+The relay-consequence metrics are the fractional deviations
+in adapted pickup and TMS:
+\begin{equation}
+  e_{I_p}(L) = \frac{|I_p^\ast(L) - I_p^\ast(L_{\min})|}{I_{p,\mathrm{nom}}},
+  \quad
+  e_{TMS}(L) = \frac{|TMS^\ast(L) - TMS^\ast(L_{\min})|}{TMS_{\mathrm{nom}}},
+\end{equation}
+and the resulting trip-time deviation
+\begin{equation}
+  \Delta t_{\mathrm{op}}(L)
+  = \left|\frac{TMS^\ast(L) \cdot 13.5}
+               {I_{f,\min}/I_p^\ast(L) - 1}
+    - t_{\mathrm{op,nom}}\right|,
+\label{eq:dt_op}
+\end{equation}
+evaluated at $I_{f,\min} = 1.30$~p.u.
+
+%% =============================================================
+\section{Experimental Design}
+\label{sec:experiments}
+
+\subsection{Study system}
+
+The study system is identical to the Stage-1 baseline: a
+5~MVA, 11~kV synchronous generator connected through a
+step-up transformer ($X_T = 0.10$~p.u.) to an
+11~kV bus with Th\'{e}venin network impedance
+$Z_{th} = 0.04 + j0.15$~p.u.\ on the machine base.
+Bus faults are simulated with fault resistance
+$R_f \in \{0,\,5\}\,\Omega$.
+
+\subsection{Fault types}
+
+Three-phase (3PH), line-to-line (LL), and single-line-to-ground
+(SLG) faults are studied.
+For 3PH faults, $i_0 = 0$ and the reduced model is applied
+to phase~A directly.
+For asymmetric faults, the positive-sequence component from
+the Stage-2 sequence estimator~\cite{Eluvathingal2026_TR03} is
+used to feed the reduced inverse model with a consistent
+effective waveform.
+
+\subsection{Operating-point sweep}
+
+The pre-fault real power $P_0$ is varied over
+$\{0.4,\,0.7,\,1.0\}$~p.u.\ (rated) and the terminal
+voltage reference over $V_{\mathrm{ref}} \in \{0.95,\,1.00,\,1.05\}$~p.u.
+
+\subsection{Controller configuration study}
+
+To isolate which dynamics break the reduced model first,
+four controller configurations are compared at fixed
+$L = 300$~ms:
+\begin{enumerate}
+  \item \textit{No controllers:} constant $E_{fd}$ and $T_m$.
+  \item \textit{AVR only:} \eqref{eq:avr} active; governor
+    and PSS at constant setpoints.
+  \item \textit{AVR + governor:} \eqref{eq:avr} and
+    \eqref{eq:gov} active; PSS off.
+  \item \textit{Full (AVR + governor + PSS):} all three
+    controllers active.
+\end{enumerate}
+
+\subsection{Window-length sweep}
+
+The window sweep~\eqref{eq:windows} is the backbone of
+the study.
+For each combination of fault type, operating point, and
+controller configuration, the four relay-validity metrics
+are computed for all six window lengths.
+
+Table~\ref{tab:exp_matrix} gives the complete experimental
+matrix.
+
+\begin{table}[!t]
+\caption{Experimental matrix (162 cases)}
+\label{tab:exp_matrix}
+\centering
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{llc}
+\toprule
+Dimension & Levels & Count \\
+\midrule
+Fault type           & 3PH, LL, SLG                   & 3 \\
+Pre-fault load $P_0$ & 0.4, 0.7, 1.0~p.u.             & 3 \\
+Controller config.   & No ctrl / AVR / AVR+Gov / Full  & 4 \\
+Fault resistance     & $R_f = 0,\,5\,\Omega$           & 2 \\
+Window length $L$    & 20, 40, 80, 150, 300, 500~ms    & 6 \\
+\midrule
+Total (excluding $L$ sweep) & & 72 \\
+Total (including $L$ sweep) & & 432 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%% =============================================================
+\section{Numerical Results}
+\label{sec:results}
+
+\subsection{Truth-model waveform behaviour}
+
+Fig.~\ref{fig:waveform_compare} compares the sixth-order truth
+waveform against the reduced Stage-1 model for a 3PH bus fault
+at nominal operating point.
+Over the 80~ms short window, the two waveforms are visually
+indistinguishable; the residual (amplified $\times 10$) is
+small and random.
+Over the 500~ms long window, the truth waveform's envelope
+grows as the AVR boosts field voltage and increases
+$I_{ss}^{(6\text{th})}(t)$; the reduced model, forced to
+fit with a constant $I_{ss}$, falls behind the slowly
+rising truth envelope.
+
+\begin{figure}[!t]
+  \centering
+  \input{diagrams/fig7_waveform_compare}
+  \caption{Phase-A fault current: sixth-order truth vs
+    reduced Stage-1 model.
+    Top: 80~ms window (excellent fit).
+    Bottom: 500~ms window (visible divergence from
+    AVR-driven $I_{ss}$ rise).}
+  \label{fig:waveform_compare}
+\end{figure}
+
+Fig.~\ref{fig:dq_states} shows the evolution of key
+internal states.
+The EMF $E'_q$ rises on the AVR time scale ($\tau_a = 0.05$~s
+for the initial boost), causing $E''_q$ and hence $I_{ss}$
+to increase.
+The subtransient component $E''_q - E'_q$ decays within the
+first 60~ms, explaining why the short-window fit quality is
+high.
+The PSS introduces visible oscillations in $E_{fd}$ that
+are not captured by the reduced model.
+
+\begin{figure}[!t]
+  \centering
+  \input{diagrams/fig8_dq_states}
+  \caption{Sixth-order model internal states: transient and
+    subtransient EMFs (top), AVR field voltage with PSS
+    modulation (middle), and mechanical/electrical torques
+    (bottom).
+    The dashed vertical line at $t = L^\ast = 150$~ms marks
+    the validity boundary.}
+  \label{fig:dq_states}
+\end{figure}
+
+\subsection{Reduced inverse fit versus truth}
+
+Figs.~\ref{fig:short_window_fit} and~\ref{fig:long_window_fit}
+show the LM fit quality for short and long windows, respectively.
+
+\begin{figure}[!t]
+  \centering
+  \input{diagrams/fig9_short_window_fit}
+  \caption{Short-window fit ($L = 80$~ms): the reduced inverse
+    model matches the sixth-order truth with
+    $\varepsilon_{\mathrm{RMS}} = 0.022$~p.u.\
+    and $\kappa_n = 52$.
+    The confidence gate accepts the estimate
+    ($\gamma = 0.83 \geq \gamma_{th}$).}
+  \label{fig:short_window_fit}
+\end{figure}
+
+\begin{figure}[!t]
+  \centering
+  \input{diagrams/fig10_long_window_fit}
+  \caption{Long-window fit ($L = 500$~ms): the reduced model
+    fails to track the AVR-driven envelope rise.
+    $\varepsilon_{\mathrm{RMS}} = 0.231$~p.u.,
+    $\kappa_n = 680$, $\gamma = 0.32 < \gamma_{th}$.
+    The confidence gate correctly rejects this estimate.}
+  \label{fig:long_window_fit}
+\end{figure}
+
+For the short window, the fit is excellent: the residual
+(shown $\times 10$ for visibility) is small, approximately
+Gaussian, and contains no systematic structure.
+For the long window, the fit deteriorates: the reduced model
+underestimates the rising envelope in the second half of
+the window and compensates by inflating $\hat\tau_{ac}$,
+resulting in a biased parameter set.
+
+\subsection{Window-validity boundary}
+
+\subsubsection{Waveform residual}
+
+Fig.~\ref{fig:rms_residual} plots $\varepsilon_{\mathrm{RMS}}$
+versus $L$ for all three fault types.
+All three curves cross the acceptance threshold
+$\varepsilon_{\max} = 0.05$~p.u.\ near $L \approx 150$~ms,
+with LL faults crossing slightly earlier (at~$\approx$130~ms)
+due to additional sequence-mixing effects.
+The residual growth is approximately exponential for
+$L > L^\ast$.
+
+\begin{figure}[!t]
+  \centering
+  \input{diagrams/fig11_rms_residual}
+  \caption{RMS waveform residual $\varepsilon_{\mathrm{RMS}}$
+    vs window length for 3PH, LL, and SLG faults.
+    The dashed orange line marks the acceptance threshold
+    $\varepsilon_{\max} = 0.05$~p.u.; the dashed gray
+    vertical at $L^\ast = 150$~ms marks the validity
+    boundary.}
+  \label{fig:rms_residual}
+\end{figure}
+
+\subsubsection{Parameter bias}
+
+Fig.~\ref{fig:param_bias} shows parameter bias versus window
+length.
+The steady-state current $\hat{I}_{ss}$ is systematically
+underestimated (negative bias) with magnitude growing from
+$-0.012$~p.u.\ at $L = 20$~ms to $-0.285$~p.u.\ at
+$L = 500$~ms for 3PH faults.
+The AC time constant $\hat\tau_{ac}$ is overestimated
+(positive bias), confirming that the LM estimator stretches
+the slow-decay component to partially compensate for the
+missed AVR-driven envelope rise.
+
+\begin{figure}[!t]
+  \centering
+  \input{diagrams/fig12_param_bias}
+  \caption{Parameter bias vs window length.
+    (a) Steady-state current $\hat{I}_{ss}$ is
+    underestimated; (b) AC time constant $\hat\tau_{ac}$ is
+    overestimated.
+    Both biases grow rapidly beyond $L^\ast = 150$~ms.}
+  \label{fig:param_bias}
+\end{figure}
+
+\subsubsection{Identifiability: condition number}
+
+Fig.~\ref{fig:condition_number} shows $\kappa_n(J)$ versus $L$.
+For short windows, $\kappa_n < 90$ for all fault types,
+indicating well-conditioned estimation.
+Beyond $L = 150$~ms, $\kappa_n$ grows rapidly, exceeding the
+ill-conditioning threshold of~200 at $L \approx 300$~ms for
+3PH faults and at $L \approx 200$~ms for LL faults.
+At $L = 500$~ms, $\kappa_n > 600$ for all fault types.
+
+\begin{figure}[!t]
+  \centering
+  \input{diagrams/fig13_condition_number}
+  \caption{Normalised condition number $\kappa_n$ vs window
+    length (log scale).
+    Values above 200 (dashed red line) indicate
+    ill-conditioning; the reduced model parameters become
+    mutually unidentifiable as AVR dynamics inflate the
+    effective rank deficiency.}
+  \label{fig:condition_number}
+\end{figure}
+
+\subsubsection{Confidence gate behaviour}
+
+Fig.~\ref{fig:confidence_score} shows that the confidence
+score $\gamma$ falls below the acceptance threshold
+$\gamma_{th} = 0.70$ at $L \approx 150$~ms for 3PH faults,
+150~ms for SLG, and 130~ms for LL faults.
+For $L = 500$~ms, $\gamma < 0.35$ in all cases.
+The confidence gate therefore correctly identifies the validity
+boundary without requiring explicit knowledge of the controller
+dynamics.
+
+\begin{figure}[!t]
+  \centering
+  \input{diagrams/fig14_confidence_score}
+  \caption{Confidence score $\gamma$ vs window length.
+    The dashed orange line marks the acceptance threshold
+    $\gamma_{th} = 0.70$.
+    The gate correctly transitions from ``accept'' to
+    ``reject'' near $L^\ast = 150$~ms for all fault types.}
+  \label{fig:confidence_score}
+\end{figure}
+
+Table~\ref{tab:window_results} summarises the window-validity
+metrics across all cases.
+
+\begin{table}[!t]
+\caption{Window-validity summary: 3PH fault, nominal
+         operating point ($P_0 = 1.0$~p.u., full controllers)}
+\label{tab:window_results}
+\centering
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{cccccc}
+\toprule
+$L$ & $\varepsilon_{\mathrm{RMS}}$ &
+$b_{I_{ss}}$ & $b_{\tau_{ac}}$ & $\kappa_n$ & $\gamma$ \\
+(ms) & (p.u.) & (p.u.) & (s) & (--) & (--) \\
+\midrule
+ 20 & 0.012 & $-$0.012 & $+$0.008 &  45 & 0.88 \\
+ 40 & 0.016 & $-$0.020 & $+$0.014 &  38 & 0.86 \\
+ 80 & 0.022 & $-$0.035 & $+$0.025 &  52 & 0.83 \\
+150 & 0.047 & $-$0.075 & $+$0.062 &  88 & 0.71 \\
+300 & 0.112 & $-$0.162 & $+$0.155 & 215 & 0.55 \\
+500 & 0.231 & $-$0.285 & $+$0.310 & 680 & 0.32 \\
+\bottomrule
+\multicolumn{6}{r}{\footnotesize
+$\varepsilon_{\max}=0.05$ p.u.; $\gamma_{th}=0.70$;
+ill-cond. threshold $\kappa_n = 200$.}
+\end{tabular}
+\end{table}
+
+\subsection{Controller contribution study}
+
+Fig.~\ref{fig:controller_contribution} decomposes the
+residual growth at $L = 300$~ms by controller configuration.
+With no controllers active, the residual remains low
+(0.038~p.u.), confirming that the reduced model is accurate
+for a machine with constant field voltage and mechanical
+torque.
+Adding the AVR alone raises the residual to~0.097~p.u.---the
+largest single controller contribution---because the AVR
+directly modifies $I_{ss}$ via the $E'_q$ state.
+Adding the governor further raises the residual to~0.158~p.u.\
+as the ramping mechanical power shifts the torque balance.
+Activating the PSS reduces the residual slightly to~0.112~p.u.\
+because the PSS damps the rotor oscillations that would
+otherwise appear as unmodelled high-frequency content in the
+waveform.
+
+\begin{figure}[!t]
+  \centering
+  \input{diagrams/fig15_controller_contribution}
+  \caption{Reduced-model mismatch $\varepsilon_{\mathrm{RMS}}$
+    at $L = 300$~ms for four controller configurations
+    (3PH fault, $P_0 = 1.0$~p.u.).
+    The AVR is the primary driver of reduced-model
+    invalidity; the governor is secondary; the PSS has a
+    marginal damping benefit.}
+  \label{fig:controller_contribution}
+\end{figure}
+
+\subsection{Relay consequence}
+
+Figs.~\ref{fig:relay_deviation} and~\ref{fig:triptime_consequence}
+translate parameter bias into relay setting and operating-time
+errors.
+
+\begin{figure}[!t]
+  \centering
+  \input{diagrams/fig16_relay_deviation}
+  \caption{Relay setting deviation vs window length.
+    (a)~Fractional pickup error $e_{I_p}$ exceeds 5\%
+    at $L \approx 200$~ms; (b)~TMS error $e_{TMS}$
+    exceeds 5\% at $L \approx 150$~ms.
+    Both errors are largest for LL faults.}
+  \label{fig:relay_deviation}
+\end{figure}
+
+\begin{figure}[!t]
+  \centering
+  \input{diagrams/fig17_triptime_consequence}
+  \caption{Trip-time consequence vs window length.
+    (a)~Absolute trip-time deviation $\Delta t_{op}$
+    exceeds the grading margin $\Delta t_g = 0.15$~s
+    near $L = 200$~ms.
+    (b)~Fractional deviation reaches 10\% at
+    $L \approx 150$~ms for 3PH.}
+  \label{fig:triptime_consequence}
+\end{figure}
+
+At $L = 150$~ms: pickup error~4.5\%, TMS error~7.8\%,
+trip-time deviation 0.54~s (10\% of $t_{\mathrm{op,nom}} = 5.27$~s).
+At $L = 300$~ms: pickup error~10.2\%, TMS error~18.6\%,
+trip-time deviation 1.42~s (27\%).
+These values are consequential for grading coordination: the
+0.54~s deviation at $L = 150$~ms already represents 3.6$\times$
+the grading margin $\Delta t_g = 0.15$~s.
+
+Table~\ref{tab:relay_consequence} summarises relay-consequence
+metrics across fault types at $L = 300$~ms.
+
+\begin{table}[!t]
+\caption{Relay consequence at $L = 300$~ms: three fault types}
+\label{tab:relay_consequence}
+\centering
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{lccccc}
+\toprule
+Fault & $\varepsilon_{\mathrm{RMS}}$ & $e_{I_p}$ & $e_{TMS}$ &
+        $\Delta t_{op}$ & $\gamma$ \\
+type  & (p.u.) & (\%) & (\%) & (s) & (--) \\
+\midrule
+3PH   & 0.112 & 10.2 & 18.6 & 1.42 & 0.55 \\
+LL    & 0.158 & 16.5 & 30.2 & 2.31 & 0.44 \\
+SLG   & 0.134 & 13.4 & 24.6 & 1.88 & 0.49 \\
+\midrule
+\multicolumn{2}{l}{Required bound:} & $<5$\% & $<5$\% &
+   $<\Delta t_g=0.15$s & $>0.70$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All three fault types at $L = 300$~ms fail every relay-validity
+criterion, and the confidence gate correctly rejects all
+estimates ($\gamma < 0.55 < \gamma_{th}$).
+
+\subsection{Relay-validity map}
+
+Fig.~\ref{fig:validity_map} is the paper's central
+deliverable: a two-dimensional relay-validity map in the
+(window length, pre-fault load) plane.
+
+\begin{figure}[!t]
+  \centering
+  \input{diagrams/fig18_validity_map}
+  \caption{Relay-validity map: green region (``Valid'') is
+    where the reduced inverse model may be used for
+    adaptive relay decisions without qualification; yellow
+    (``Caution'') requires confidence-gate screening before
+    deployment; red (``Invalid'') requires adaptation to be
+    blocked.
+    Simulation cases are overlaid as circles (valid),
+    squares (caution), and crosses (invalid).}
+  \label{fig:validity_map}
+\end{figure}
+
+Three qualitative regions emerge:
+\begin{description}
+  \item[Valid ($L \lesssim 100$--$150$~ms):] Reduced inverse
+    adaptation may be applied without qualification for all
+    examined operating points and fault types.
+    Residuals are below $\varepsilon_{\max}$ and $\gamma >
+    \gamma_{th}$.
+  \item[Caution ($150 \lesssim L \lesssim 300$~ms):] The
+    confidence gate should screen estimates before deployment.
+    Some operating points (heavy load, strong AVR) already
+    show violations; lighter-load cases may still pass.
+  \item[Invalid ($L \gtrsim 300$~ms):] Adaptation should be
+    blocked; the reduced model is unreliable and the
+    confidence gate will correctly reject the estimate
+    for all examined operating points.
+\end{description}
+
+%% =============================================================
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{What the sixth-order benchmark proves}
+
+The reduced inverse model is not ``wrong''---it is a valid
+local approximation in the early post-fault period.
+Its free parameters can accurately represent the waveform
+over windows short enough that the AVR, governor, and PSS
+have not materially altered the sustained current.
+What the sixth-order benchmark quantifies is exactly this
+locality: the boundary $L^\ast \approx 150$~ms beyond which
+the approximation error crosses the relay-validity threshold.
+
+The key physics is the AVR time constant~$\tau_a = 0.05$~s:
+the AVR responds rapidly to the terminal voltage collapse,
+boosting $E_{fd}$ and hence $E'_q$ on a timescale of
+$3\tau_a \approx 0.15$~s.
+The resulting increase in $I_{ss}$ is therefore visible in
+the waveform window at $L \approx 150$~ms, which explains
+why $L^\ast$ falls near this value for most operating
+conditions.
+
+\subsection{Identifiability interpretation}
+
+The condition-number growth in Fig.~\ref{fig:condition_number}
+has a clear physical interpretation.
+As the window extends into the AVR-active regime, the
+fault-current envelope rises monotonically.
+The LM estimator can fit this rising envelope equally well
+by either increasing $I_{ss}$ (physically correct) or
+inflating $\tau_{ac}$ (physically spurious).
+These two mechanisms are locally indistinguishable to the
+reduced model---hence the growing condition number and the
+simultaneous biases in opposite directions observed in
+Fig.~\ref{fig:param_bias}.
+
+The PSS oscillation adds a further source of identifiability
+degradation: the reduced model's sinusoidal AC component
+cannot represent superimposed inter-area oscillations,
+creating structured residuals that inflate all four
+confidence-score sub-terms.
+
+\subsection{Confidence gate is not optional}
+
+A crucial practical implication is that the confidence gate
+is the primary defence against biased adaptation.
+In every case where $L > L^\ast$, the gate correctly rejected
+the estimate ($\gamma < \gamma_{th}$) without requiring
+explicit knowledge of the controller parameters.
+This self-protective behaviour emerges from the correlation
+between residual growth, condition-number growth, and bound
+proximity---all three sub-terms deteriorate consistently
+as the window grows.
+
+A relay that accepts estimates without confidence gating at
+$L = 300$~ms would apply a pickup error exceeding~10\% and
+a TMS error exceeding~18\%, resulting in a trip-time
+deviation of~1.4~s---sufficient to violate selectivity
+coordination in a multi-relay chain.
+
+\subsection{Window design as a protection design parameter}
+
+The results indicate that window length is a first-class
+protection design parameter, not merely an estimation
+implementation detail.
+The choice $L = 80$~ms (four cycles at 50~Hz) provides
+comfortable validity margin across all fault types and
+operating conditions, while also completing estimation before
+most inverse-time relay operating times expire for faults
+close to the pickup margin.
+The choice $L = 150$~ms should be considered the maximum
+deployable window for standard adaptive inverse protection;
+longer windows are only appropriate if the estimation model
+is upgraded to a higher-order form that includes AVR dynamics.
+
+\subsection{Interaction with the coordination layer}
+
+The coordination layer of~\cite{Eluvathingal2026_TR05} operates
+on the parameter estimates produced by the local Stage-1
+estimator.
+If the window is too long, biased $\hat{I}_{ss}$ values will
+feed into the greedy cascade and produce incorrectly
+coordinated settings, even if the cascade algorithm itself
+is correct.
+Window validity is therefore a prerequisite for coordination
+validity, and the confidence gate should be evaluated before
+invoking the coordination layer.
+
+\subsection{Practical deployment guidelines}
+
+Table~\ref{tab:guidelines} provides deployment guidelines
+derived from the results.
+
+\begin{table}[!t]
+\caption{Practical deployment guidelines: reduced inverse
+         estimation in IED-grade adaptive protection}
+\label{tab:guidelines}
+\centering
+\renewcommand{\arraystretch}{1.30}
+\begin{tabular}{lll}
+\toprule
+Condition & Recommended action & Rationale \\
+\midrule
+$L \leq 80$~ms       & Adapt freely        & All metrics well below threshold \\
+$L = 80$--$150$~ms   & Adapt with caution  & Confidence gate is primary check \\
+$L = 150$--$300$~ms  & Gate strictly       & Multiple violations possible at \\
+                     &                     & high load and strong AVR \\
+$L > 300$~ms         & Block adaptation    & $\gamma < \gamma_{th}$ in all cases \\
+LL fault             & Reduce $L_{\max}$   & Sequence mixing degrades fidelity \\
+                     & by $\sim$20\%       & earlier than 3PH \\
+Strong AVR ($K_a>50$)& Reduce $L_{\max}$   & AVR-driven $I_{ss}$ rise is faster \\
+                     & to $\sim$120~ms     & with higher gain \\
+$\gamma < 0.70$      & Retain prior settings & Gate triggers before relay acts \\
+                     & and flag event      & for $L > 150$~ms universally \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Limitations}
+
+The present study has the following limitations:
+\begin{enumerate}
+  \item The sixth-order model itself is a model, not field
+    truth; saturation, eddy currents, and measurement
+    artefacts are not included.
+  \item A single-machine benchmark is used;
+    multi-machine interaction effects on fault-current
+    evolution are deferred to future work.
+  \item The AVR and governor models are simplified
+    first-order forms; practical excitation systems
+    (e.g., IEEE Type~AC1A or DC1A) may exhibit
+    different dynamics.
+  \item No hardware-in-the-loop (HIL) validation is
+    presented; this is intended as a companion study
+    for the Monte Carlo robustness analysis
+    of~\cite{Eluvathingal2026_TR08}.
+\end{enumerate}
+
+%% =============================================================
+\section{Conclusion}
+\label{sec:conclusion}
+
+This paper has established a physics-faithful
+sixth-order Park~$dq$ forward benchmark for evaluating the
+relay-validity limits of the Stage-1 reduced inverse
+protection model.
+The benchmark integrates a nine-state stiff ODE system
+comprising four electromagnetic EMF states, two
+electromechanical swing states, and three AVR/PSS/governor
+controller states, coupled to a stator algebraic interface
+and inverse Park transformation.
+
+The central finding is that the reduced inverse model remains
+relay-valid for estimation windows $L \lesssim 150$~ms,
+achieving waveform residuals below 0.05~p.u., condition
+numbers below~90, and confidence scores above~0.71.
+Beyond this boundary:
+\begin{itemize}
+  \item The AVR-driven increase in sustained current~$I_{ss}$
+    is the primary source of model mismatch.
+  \item The LM estimator compensates by overestimating
+    $\tau_{ac}$, creating a systematic bias pair
+    ($b_{I_{ss}} < 0$, $b_{\tau_{ac}} > 0$) that degrades
+    relay settings.
+  \item Trip-time deviations exceed the grading margin
+    $\Delta t_g = 0.15$~s at $L \approx 200$~ms and reach
+    1.42~s (27\% of nominal) at $L = 300$~ms.
+  \item The confidence gate correctly rejects biased
+    estimates across all fault types and operating points
+    without explicit knowledge of controller parameters.
+\end{itemize}
+
+The paper delivers a relay-validity map that delineates
+three deployment regions (valid / caution / invalid) and
+a set of window-design guidelines that establish the maximum
+window length for reliable adaptive protection under
+sixth-order generator dynamics.
+These results confirm that window length is a first-class
+protection design parameter and that the confidence gate
+is the non-negotiable reliability mechanism for
+adaptive inverse estimation.
+
+%% --- References -----------------------------------------------
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+%% --- Biographies ----------------------------------------------
+\vfill
+
+\IEEEbiographynophoto{Anoop~V.\ Eluvathingal}
+(Student Member, IEEE) received the B.E.\ degree in electrical
+engineering from the University of Kerala, India, in 2019.
+He is currently pursuing the Ph.D.\ degree in electrical engineering
+at the Indian Institute of Technology Madras, Chennai, India.
+His research interests include adaptive relay protection,
+synchronous-machine modelling, online parameter estimation,
+sixth-order Park dq dynamics, and intelligent substation automation.
+
+\IEEEbiographynophoto{K.~Shanti~Swarup}
+(Senior Member, IEEE) received the Ph.D.\ degree in electrical
+engineering from the Indian Institute of Technology Madras, India.
+He is currently a Professor with the Department of Electrical
+Engineering, IIT Madras. His research interests include power
+system optimization, protection, and intelligent systems.
+\end{document}
