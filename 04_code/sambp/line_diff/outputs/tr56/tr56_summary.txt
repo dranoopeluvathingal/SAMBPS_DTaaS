@@ -1,0 +1,19 @@
+========================================================================
+TR-56: DFIG + ANDES-validated 87L — Batch Summary
+Cases: 6  |  Failed: 0  |  Correct decisions: 6/6
+========================================================================
+Case                           Scen    Rf   Expected  Trip?   OK   t_trip   I_diff   I_sub
+------------------------------------------------------------------------
+tr56_ext_R001                external  0.01    no_trip  False    ✓    --         --      -- 
+tr56_ext_R010                external  0.10    no_trip  False    ✓    --         --      -- 
+tr56_ext_R050                external  0.50    no_trip  False    ✓    --         --      -- 
+tr56_int_R001                internal  0.01       trip   True    ✓    950ms   18.723   0.735
+tr56_int_R010                internal  0.10       trip   True    ✓    950ms   16.211   0.511
+tr56_int_R050                internal  0.50       trip   True    ✓    950ms   14.868   0.395
+========================================================================
+External (security) : 3/3 no-trip
+Internal (dependability): 3/3 tripped
+DFIG I_sub range  : 0.395 – 0.735 pu
+DFIG tau_ac range : 0.0050 – 0.5000 s
+Crowbar t_cb range: 1030.0 – 1123.1 ms after fault
+========================================================================
