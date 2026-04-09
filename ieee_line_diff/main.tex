@@ -298,10 +298,21 @@ Voltage-based (used) & $v_S,\,v_R$        & 0.001\,pu & 0.08\,pu & 0 \\
 \end{tabular}
 \end{table}
 
-The voltage-based method (Table~\ref{tab:corrections}, bottom row) is used
-in all subsequent sections because it requires no pre-fault window, making it
-applicable at fault inception and during dynamic conditions such as busbar
-transfers.
+\begin{figure}[!t]
+  \centering
+  \input{figures/fig_residual}
+  \caption{Charging residual floor ($\sigma_{\rm res}$, orange) and
+           detection threshold ($I_{\rm thr}$, blue) for each correction
+           method.  The voltage-based method achieves the same 0.001\,pu
+           residual as the pre-fault blind method while requiring zero
+           pre-fault window, enabling $I_{\rm thr} = 0.08\,\pu$.}
+  \label{fig:residual}
+\end{figure}
+
+The voltage-based method (Table~\ref{tab:corrections}, Fig.~\ref{fig:residual})
+is used in all subsequent sections because it requires no pre-fault window,
+making it applicable at fault inception and during dynamic conditions such as
+busbar transfers.
 
 \subsection{Baseline 87L Performance}
 \label{sec:baseline}
@@ -499,8 +510,29 @@ The 87LN0 zero-sequence element (Section~\ref{sec:seqelems}) and
 IBR-specific sensitivity settings are activated only when
 $H_{\rm ratio} > 0.10$, preventing spurious operation on SG-only networks
 where residual zero-sequence from CT saturation could trigger a false trip.
+Figure~\ref{fig:confidence} quantifies this effect: without the pre-filter,
+a no-fault measurement with $I_{h3} = 0.005\,\pu$ collapses confidence from
+$c = 1.00$ to $c = 0.41$ --- below $\gamma_{\min}$, causing the relay to
+lock out even on valid fault trips.
 The pre-filter restores $c \geq 0.99$ across all tested harmonic levels
-($I_{h3} = 0$--$0.10\,\pu$) while leaving fault detection unaffected.
+($I_{h3} = 0$--$0.10\,\pu$) while leaving fault detection unaffected:
+the fundamental--harmonic orthogonality property ensures the fault phasor
+is fully captured in the fundamental coefficient regardless of harmonic
+amplitude~\cite{SAMBP_TR21}.
+
+\begin{figure}[!t]
+  \centering
+  \input{figures/fig_confidence}
+  \caption{Relay confidence score $c$ vs.\ 3rd harmonic injection $I_{h3}$.
+           Without the pre-filter (red crosses), the healthy-line confidence
+           collapses to $c = 0.37$ at $I_{h3} \geq 0.005\,\pu$, blocking
+           the $\gamma$-gate (orange dotted line at $\gamma_{\min} = 0.80$).
+           With the pre-filter (blue circles), $c \geq 0.99$ at all injection
+           levels.  The internal-fault fixed-DFT curve (orange dashed) degrades
+           to $c = 0.55$ at $I_{h3} = 0.10\,\pu$; the pre-filter restores it
+           to $c = 1.00$ (not shown separately).}
+  \label{fig:confidence}
+\end{figure}
 
 \subsection{Negative-Sequence Differential Elements (87LN and 87LN0)}
 \label{sec:seqelems}
@@ -648,6 +680,28 @@ $I_{\rm ext,max} = 7\,\pu$, the maximum CT mismatch step is:
 a 4\% margin.  The formal proof is given in the Appendix.
 Monte Carlo Group~C (5\,000 external fault trials) confirms a minimum
 TDCS security margin of 15.5\% across all randomised CT error values.
+
+Figure~\ref{fig:tdcs} shows $\Delta_{\rm rms}$ vs.\ $\kibr$ for internal
+3PH faults (Study A, blue) and vs.\ $I_{\rm ext}$ for external faults
+(Study C, red dashed).  The two curves are separated by a decade on the
+log-scale x-axis; the detection threshold (0.020\,pu) lies comfortably
+between the worst-case external fault point (0.023\,pu at $I_{\rm ext}=7\,\pu$)
+and the minimum internal fault response (0.047\,pu at $\kibr=0.07\,\pu$),
+confirming a $2\times$ operating margin for the internal case and a
+demonstrated 4\% security margin at the external boundary.
+
+\begin{figure}[!t]
+  \centering
+  \input{figures/fig_tdcs}
+  \caption{TDCS-87L operating characteristic.  Blue circles: $\Delta_{\rm rms}$
+           for internal 3PH IBR faults (Study~A) vs.\ $\kibr$.
+           Red squares: $\Delta_{\rm rms}$ for external faults (Study~C) vs.\
+           through-current $I_{\rm ext}$.
+           The detection threshold $\Delta_{\rm thr}=0.020\,\pu$ (dotted orange)
+           separates the two curves with a $2\times$ operating margin at
+           $\kibr=0.07\,\pu$ and a 4\% security margin at $I_{\rm ext}=7\,\pu$.}
+  \label{fig:tdcs}
+\end{figure}
 
 %% =============================================================
 \section{Performance Evaluation}
