@@ -1,0 +1,111 @@
+\relax 
+\citation{Anderson1999,Blackburn2006}
+\citation{IEEE1110_2002,Kundur1994}
+\citation{Urdaneta1988,Novosel1994}
+\citation{Eluvathingal2025_TR01}
+\citation{Eluvathingal2025_TR01}
+\@writefile{toc}{\contentsline {section}{\numberline {I}Introduction}{1}{}\protected@file@percent }
+\newlabel{sec:intro}{{I}{1}{}{}{}}
+\citation{IEC60255-151_2009}
+\citation{Eluvathingal2025_TR01}
+\citation{Eluvathingal2025_TR01}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Multi-generator busbar protection system. Generators $G_1$, $G_2$ feed a common bus through step-up transformers and per-generator relays $R_1$, $R_2$. Bus relay $R_B$ protects the outgoing feeder. The supervisory coordinator receives locally estimated parameters~$\hat  {\bm  {\theta }}_k^{(1)}$ and returns coordinated settings $\{I_{p,k}^c,\,TMS_k^c\}$.}}{2}{}\protected@file@percent }
+\newlabel{fig:system}{{1}{2}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {II}Multi-Generator Protection Problem Formulation}{2}{}\protected@file@percent }
+\newlabel{sec:problem}{{II}{2}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-A}}System topology}{2}{}\protected@file@percent }
+\newlabel{eq:fault_model}{{1}{2}{}{}{}}
+\newlabel{eq:bus_sum}{{2}{2}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-B}}Relay operating time}{2}{}\protected@file@percent }
+\newlabel{eq:vi_char}{{3}{2}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-C}}Coordination requirements}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {II-C}0a}C1: Pickup selectivity}{2}{}\protected@file@percent }
+\newlabel{eq:selectivity}{{4}{2}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {II-C}0b}C2: Time-grading}{2}{}\protected@file@percent }
+\newlabel{eq:grading}{{5}{2}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-D}}Violation scenario with local adaptation}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {III}Local Inverse-Estimation Adaptive Relay Layer}{2}{}\protected@file@percent }
+\newlabel{sec:local}{{III}{2}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Two-pass Levenberg--Marquardt estimator}{2}{}\protected@file@percent }
+\newlabel{eq:lm_obj}{{7}{2}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Confidence gate}{2}{}\protected@file@percent }
+\newlabel{eq:confidence}{{8}{2}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}Local adaptive mapping}{3}{}\protected@file@percent }
+\newlabel{eq:ip_map}{{9}{3}{}{}{}}
+\newlabel{eq:tms_map}{{10}{3}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Coordination Constraints}{3}{}\protected@file@percent }
+\newlabel{sec:constraints}{{IV}{3}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Relay ordering}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Parameter definitions}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Constraint evaluation}{3}{}\protected@file@percent }
+\newlabel{eq:sel_slack}{{11}{3}{}{}{}}
+\newlabel{eq:grad_slack}{{12}{3}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-D}}Selectivity violation in the study system}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {V}Coordination Enforcement Algorithm}{3}{}\protected@file@percent }
+\newlabel{sec:algorithm}{{V}{3}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Protection settings in three states: study system, $N=2$ generators, bus fault (3PH)}}{3}{}\protected@file@percent }
+\newlabel{tab:states}{{I}{3}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Coordination enforcement flowchart. After local estimation and confidence gating, the supervisor checks selectivity and grading constraints and applies greedy cascade and TMS corrections as needed before deploying coordinated settings.}}{3}{}\protected@file@percent }
+\newlabel{fig:flowchart}{{2}{3}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Greedy cascade for pickup selectivity}{3}{}\protected@file@percent }
+\newlabel{eq:greedy}{{13}{3}{}{}{}}
+\citation{Eluvathingal2025_TR01}
+\newlabel{prop:convergence}{{1}{4}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}Closed-form TMS grading correction}{4}{}\protected@file@percent }
+\newlabel{eq:tms_correction}{{14}{4}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}Computational complexity and latency}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {VI}Study System and Simulation Programme}{4}{}\protected@file@percent }
+\newlabel{sec:system}{{VI}{4}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-A}}Network data}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-B}}Protection relay data}{4}{}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Supervisory coordination enforcement}}{4}{}\protected@file@percent }
+\newlabel{alg:coord}{{1}{4}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-C}}Study matrix}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-D}}Simulation platform}{4}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Study matrix: eight simulation cases}}{5}{}\protected@file@percent }
+\newlabel{tab:study_matrix}{{II}{5}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Pickup currents in three protection states (Case~1: 3PH bus fault, both generators online). The dashed orange line marks the minimum compliant value for generator relays: $I_{p,B}^c + \Delta I_m = 1.035$~p.u. Violation markers (!) indicate selectivity failures in the pre-coordination state.}}{5}{}\protected@file@percent }
+\newlabel{fig:pickup_bars}{{3}{5}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {VII}Numerical Results}{5}{}\protected@file@percent }
+\newlabel{sec:results}{{VII}{5}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-A}}Pickup settings comparison}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-B}}Operating times and grading margins}{5}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Relay operating times at $I_{f,\min } = 1.30$~p.u.\ (Case~1). The dashed orange line shows the minimum grading requirement: $t_{op,B}^c + \Delta t_g = 2.57$~s. The double-headed arrow indicates the grading margin achieved by the coordinated generator relay~$R_1$.}}{5}{}\protected@file@percent }
+\newlabel{fig:triptime_bars}{{4}{5}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-C}}Margin summary}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-D}}Full study matrix performance}{5}{}\protected@file@percent }
+\citation{Urdaneta1988}
+\citation{IEC61850_2013}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Selectivity margin (left) and time-grading margin (right) for both generator relays in three protection states. Dashed orange lines indicate required minima ($\Delta I_m = 0.20$~p.u.\ and $\Delta t_g = 0.15$~s). The post-coordination state meets both constraints for all relays.}}{6}{}\protected@file@percent }
+\newlabel{fig:margins}{{5}{6}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Coordination outcomes: all eight study cases}}{6}{}\protected@file@percent }
+\newlabel{tab:results}{{III}{6}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {VIII}Discussion}{6}{}\protected@file@percent }
+\newlabel{sec:discussion}{{VIII}{6}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-A}}Why local adaptation is insufficient}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-B}}Greedy cascade vs.\ optimal formulation}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-C}}Communication and synchronisation requirements}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-D}}Interaction with differential protection}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-E}}Limitations}{6}{}\protected@file@percent }
+\citation{Eluvathingal2026_TR03}
+\citation{Eluvathingal2026_TR08}
+\bibstyle{IEEEtran}
+\bibdata{references}
+\bibcite{Anderson1999}{1}
+\bibcite{Blackburn2006}{2}
+\bibcite{IEEE1110_2002}{3}
+\bibcite{Kundur1994}{4}
+\bibcite{Urdaneta1988}{5}
+\bibcite{Novosel1994}{6}
+\bibcite{Eluvathingal2025_TR01}{7}
+\bibcite{IEC60255-151_2009}{8}
+\bibcite{IEC61850_2013}{9}
+\bibcite{Eluvathingal2026_TR03}{10}
+\bibcite{Eluvathingal2026_TR08}{11}
+\@writefile{toc}{\contentsline {section}{\numberline {IX}Conclusion}{7}{}\protected@file@percent }
+\newlabel{sec:conclusion}{{IX}{7}{}{}{}}
+\@writefile{toc}{\contentsline {section}{References}{7}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{Biographies}{7}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{Anoop~V.\ Eluvathingal}{7}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{K.~Shanti~Swarup}{7}{}\protected@file@percent }
+\gdef \@abspage@last{7}

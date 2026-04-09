@@ -79,8 +79,7 @@
         of India, under the Prime Minister's Research Fellowship (PMRF).}%
 \thanks{The authors are with the Department of Electrical Engineering,
         Indian Institute of Technology Madras, Chennai~600\,036, India
-        (e-mail: \texttt{ee20d401@smail.iitm.ac.in}).}%
-\thanks{Digital Object Identifier: 10.1109/TPWRD.2026.XXXXXXX}}
+        (e-mail: ee21d017@smail.iitm.ac.in; swarup@ee.iitm.ac.in).}}
 
 % =============================================================================
 \begin{document}
@@ -115,8 +114,9 @@ throughout the HIF window.
 Simulation results over $\Rf = 20$--$500\,\Omega$ on a 10~MVA
 synchronous-generator feeder demonstrate that: two regimes are correctly
 identified with analytical boundary agreement; adaptive TMS reduces clearance
-time by \textbf{21--53\%} in the inverse-time window; missed-trip boundaries
-are unchanged; confidence acceptance exceeds \textbf{93\%}; and no security
+time by \textbf{17--23\%} in the inverse-time window; missed-trip boundaries
+are unchanged; confidence acceptance exceeds \textbf{89\%} (3PH) and
+\textbf{100\%} (SLG); and no security
 degradation (false trips) is observed across 144 simulation cases.
 \end{abstract}
 
@@ -882,20 +882,20 @@ adaptive TMS.  In the instantaneous regime ($\Rf < 46\,\Omega$), both curves
 coincide at $t_{\mathrm{op}} < 0.02\sss$.  The adaptive benefit emerges
 abruptly at $\Rf = 46\,\Omega$ and grows monotonically toward the no-trip
 boundary.  Headline results: at $\Rf = 72\,\Omega$ (mid-HIF),
-$t_{\mathrm{fixed}} = \mathbf{5.22\sss}$ and
-$t_{\mathrm{adapt}} = \mathbf{2.48\sss}$ ($\Delta t = \mathbf{53\%}$);
-at $\Rf = 90\,\Omega$ (deep HIF), $\Delta t = \mathbf{51\%}$.
+$t_{\mathrm{fixed}} = \mathbf{5.55\sss}$ and
+$t_{\mathrm{adapt}} = \mathbf{4.40\sss}$ ($\Delta t = \mathbf{21\%}$);
+at $\Rf = 90\,\Omega$ (deep HIF), $\Delta t = \mathbf{23\%}$.
 
 \begin{figure}[!t]
 \centering
-\input{figures/fig_triptime_placeholder}
+\input{figures/fig_triptime}
 \caption{Operate time vs.\ $\Rf$ for fixed (solid blue) and adaptive
   (dashed red) TMS under 3PH faults.  In the instantaneous regime both
   curves overlap at $t < 0.02\sss$.  In the HIF window (orange band) the
-  adaptive law achieves [XX--XX]\% clearance time reduction.  The no-trip
+  adaptive law achieves 17--23\% clearance time reduction.  The no-trip
   boundary at $\Rf = 98\,\Omega$ is marked.
-  Markers at $\Rf = 72\,\Omega$ show simulation values: $t_{\mathrm{fixed}}=5.22\sss$,
-  $t_{\mathrm{adapt}}=2.48\sss$ ($\Delta t=53\%$).}
+  Markers at $\Rf = 72\,\Omega$ show simulation values: $t_{\mathrm{fixed}}=5.55\sss$,
+  $t_{\mathrm{adapt}}=4.40\sss$ ($\Delta t=21\%$).}
 \label{fig:triptime}
 \end{figure}
 
@@ -926,8 +926,8 @@ consistent with $T_{d0}' = 0.80\sss$, confirming the analytical model.
 
 Fig.~\ref{fig:confidence} plots $\gamma$ versus $\Rf$ for all 3PH cases.
 For $\Rf \leq 90\,\Omega$ (inverse-time operative region),
-$\gamma > 0.89$ in \textbf{17} of \textbf{54} operative cases
-(\textbf{31\%} strong-acceptance rate).  Rejected cases cluster at
+$\gamma \geq 0.80$ in \textbf{32} of \textbf{36} operative cases
+(\textbf{89\%} acceptance rate).  Rejected cases cluster at
 $90\degree$ inception with 0.8\,pu loading, where the DC offset magnitude
 is small.  For $\Rf > 98\,\Omega$ (no-trip zone), $\gamma$ correctly drops
 below $\gammin = 0.80$, blocking spurious TMS adaptation when the relay
@@ -935,13 +935,12 @@ is near the non-operative boundary.
 
 \begin{figure}[!t]
 \centering
-\input{figures/fig_confidence_placeholder}
+\input{figures/fig_confidence}
 \caption{Composite confidence score $\gamma$ vs.\ $\Rf$.  Both 3PH (solid)
   and SLG (dashed) curves remain above $\gammin = 0.80$ throughout the HIF
   window.  For $\Rf > 98\,\Omega$, $\gamma$ falls below threshold, correctly
-  blocking adaptation.  Acceptance rates within the HIF window: 3PH~=~\textbf{93\%},
-  SLG~=~\textbf{100\%}.
-}
+  blocking adaptation.  Acceptance rates within the HIF window: 3PH~=~\textbf{89\%},
+  SLG~=~\textbf{100\%}.}
 \label{fig:confidence}
 \end{figure}
 
@@ -955,16 +954,15 @@ summary.  Key observations:
   \item Missed trips confined to $\Rf \geq 98\,\Omega$ (3PH) and
         $\Rf \geq 40\,\Omega$ (SLG) --- consistent with analytical no-trip
         boundaries.
-  \item Adaptive acceptance: $\geq \textbf{93\%}$ in the operative HIF window.
+  \item Adaptive acceptance: $\geq \textbf{89\%}$ (3PH) and $\textbf{100\%}$ (SLG) in the operative HIF window.
   \item Trip-time reduction: 0\% in the instantaneous regime (as expected);
-        \textbf{21--53\%} in the HIF window.
+        \textbf{17--23\%} in the HIF window.
 \end{itemize}
 
 \begin{table*}[!t]
 \centering
 \caption{Protection Performance Summary: Fixed vs.\ Adaptive TMS
-         (Representative Cases; \textbf{Placeholders in bold brackets
-         to be replaced with simulation data})}
+         (Representative Cases; inception $\phi_a = 0\degree$, loading $= 0.8$\,pu)}
 \label{tab:perf_summary}
 \begin{tabular}{@{}cccccccccccc@{}}
 \toprule
@@ -975,26 +973,28 @@ Case & Fault & $\Rf$(\si{\ohm}) & $\Iss$(\pu) &
   $t_{\mathrm{adapt}}$(\si{\second}) &
   $\Delta t$(\%) \\
 \midrule
-1  & 3PH & 10  & 0.498 & 0.97 & 0.12 & 0.099 & 2.94 & Inst.     & 0.020         & 0.020         & 0   \\
-2  & 3PH & 20  & 0.490 & 0.96 & 0.12 & 0.095 & 2.29 & Inst.     & 0.020         & 0.020         & 0   \\
-3  & 3PH & 40  & 0.474 & 0.93 & 0.12 & 0.092 & 1.86 & Inst.     & 0.020         & 0.020         & 0   \\
-4  & 3PH & 46  & 0.468 & 0.92 & 0.08 & 0.061 & 1.77 & Boundary  & 0.020         & 0.019         & 5   \\
-5  & 3PH & 60  & 0.454 & 0.89 & 0.08 & 0.059 & 1.50 & Inv-time  & 3.24  & 1.59  & 51 \\
-6  & 3PH & 72  & 0.441 & 0.86 & 0.08 & 0.057 & 1.31 & Inv-time  & 5.22  & 2.48  & 53 \\
-7  & 3PH & 80  & 0.432 & 0.85 & 0.08 & 0.056 & 1.22 & Inv-time  & 7.34  & 3.44  & 53 \\
-8  & 3PH & 90  & 0.420 & 0.82 & 0.08 & 0.054 & 1.10 & Inv-time  & 14.85 & 7.29  & 51 \\
-9  & 3PH & 98  & 0.411 & 0.81 & 0.08 & 0.053 & 1.01 & Margin    & 162.0 & 71.6  & 56 \\
-10 & 3PH & 120 & 0.392 & ---  & ---  & ---   & 0.87 & No-trip   & ---           & ---           & ---          \\
-11 & SLG & 20  & 0.490 & 0.96 & 0.12 & 0.095 & 1.38 & Inv-time  & 4.26  & 3.38  & 21 \\
-12 & SLG & 30  & 0.481 & 0.94 & 0.08 & 0.062 & 1.08 & Inv-time  & 20.25 & 10.46 & 48 \\
-13 & SLG & 40  & 0.474 & ---  & ---  & ---   & 0.87 & No-trip   & ---           & ---           & ---          \\
+1  & 3PH & 10  & 0.512 & 1.00 & 0.12 & 0.100 & 2.79 & Inst.     & 0.020         & 0.020         & 0   \\
+2  & 3PH & 20  & 0.511 & 1.00 & 0.12 & 0.099 & 2.51 & Inst.     & 0.020         & 0.020         & 0   \\
+3  & 3PH & 40  & 0.506 & 0.99 & 0.12 & 0.098 & 2.09 & Inst.     & 0.020         & 0.020         & 0   \\
+4  & 3PH & 46  & 0.503 & 0.98 & 0.12 & 0.097 & 1.77 & Inv-time  & 2.111         & 1.717         & 19  \\
+5  & 3PH & 60  & 0.497 & 0.97 & 0.12 & 0.096 & 1.48 & Inv-time  & 3.367 & 2.701 & 20 \\
+6  & 3PH & 72  & 0.489 & 0.95 & 0.12 & 0.095 & 1.29 & Inv-time  & 5.554 & 4.396 & 21 \\
+7  & 3PH & 80  & 0.484 & 0.94 & 0.12 & 0.094 & 1.19 & Inv-time  & 8.637 & 6.768 & 22 \\
+8  & 3PH & 90  & 0.477 & 0.93 & 0.12 & 0.093 & 1.08 & Inv-time  & 21.003 & 16.232 & 23 \\
+9  & 3PH & 98  & 0.472 & 0.92 & 0.12 & 0.092 & 1.00 & Margin    & $>$100 & $>$100 & --- \\
+10 & 3PH & 120 & 0.462 & ---  & ---  & ---   & 0.84 & No-trip   & ---           & ---           & ---          \\
+11 & SLG & 10  & 0.512 & 1.00 & 0.12 & 0.100 & 1.67 & Inv-time  & 2.412 & 2.000 & 17 \\
+12 & SLG & 20  & 0.511 & 1.00 & 0.12 & 0.099 & 1.50 & Inv-time  & 3.220 & 2.661 & 17 \\
+13 & SLG & 30  & 0.506 & 0.99 & 0.12 & 0.098 & 1.32 & Inv-time  & 5.100 & 4.193 & 18 \\
+14 & SLG & 40  & 0.502 & ---  & ---  & ---   & 0.87 & No-trip   & ---           & ---           & ---          \\
 \midrule
 \multicolumn{12}{@{}l@{}}{\footnotesize
   Inst.~= instantaneous element operates ($t < 0.02\sss$).
   No-trip = $M < 1.0$.  $\tauac = 0.83 \pm 0.05\sss$ (all cases).
   False-trip count: 0.
-  Acceptance $\gamma \geq 0.80$ in HIF window: \textbf{93\%} (3PH), \textbf{100\%} (SLG).
-  Case~9 ($M\approx 1.01$) is at the analytical no-trip boundary; operate times $>$60~s.}
+  Acceptance $\gamma \geq 0.80$ in HIF window: \textbf{89\%} (3PH), \textbf{100\%} (SLG).
+  Case~9 ($M\approx 1.00$) is at the analytical no-trip boundary; operate times $>$100~s.
+  All values from \texttt{hif\_sim.py} (inception $0\degree$, loading $0.8$\,pu).}
 \end{tabular}
 \end{table*}
 
@@ -1004,21 +1004,21 @@ Case & Fault & $\Rf$(\si{\ohm}) & $\Iss$(\pu) &
 Fig.~\ref{fig:trajectory} shows the relay trajectory for
 $\Rf = 72\,\Omega$ (3PH, $\phi_a = 0\degree$).
 The estimated $M(t)$ stabilises within three cycles; the gate accepts the
-estimate at $t \approx 0.18\sss$; the adaptive TMS steps from 0.12 to 0.057;
-and the relay trips at $t_{\mathrm{adapt}} = \mathbf{2.48\sss}$ vs.\
-$t_{\mathrm{fixed}} = 5.22\sss$ for the fixed-TMS case.
+estimate at $t \approx 0.18\sss$; the adaptive TMS steps from 0.12 to 0.095
+(ratio~$= 0.792$);
+and the relay trips at $t_{\mathrm{adapt}} = \mathbf{4.40\sss}$ vs.\
+$t_{\mathrm{fixed}} = 5.55\sss$ for the fixed-TMS case ($\Delta t = 21\%$).
 
 \begin{figure}[!t]
 \centering
-\input{figures/fig_trajectory_placeholder}
+\input{figures/fig_trajectory}
 \caption{Relay trajectory ($\Rf = 72\,\Omega$, 3PH, $\phi_a=0\degree$).
   Traces are normalised: $M(t) = I_{\mathrm{rms}}/I_p$ (solid blue),
   $\gamma(t)$ (dashed green), and $\tms(t)/\tms_0$ (solid orange).
-  Gate accepts at $t = 0.18\sss$, triggering the TMS step.
-  Adaptive trip at $t_{\mathrm{adapt}} = \mathbf{2.48\sss}$; fixed-TMS
-  reference trip at $t_{\mathrm{fixed}} = 5.22\sss$.
-  Simulation values for $\Rf=72\,\Omega$: $\tms$ steps from 0.12 to 0.057;
-  adaptive trip at $t=2.48\sss$ vs.\ fixed-TMS reference at $t=5.22\sss$.}
+  Gate accepts at $t = 0.18\sss$, triggering the TMS step from 0.12 to 0.095
+  ($TMS/TMS_0 = 0.792$).
+  Adaptive trip at $t_{\mathrm{adapt}} = \mathbf{4.40\sss}$; fixed-TMS
+  reference trip at $t_{\mathrm{fixed}} = 5.55\sss$ ($\Delta t = 21\%$).}
 \label{fig:trajectory}
 \end{figure}
 

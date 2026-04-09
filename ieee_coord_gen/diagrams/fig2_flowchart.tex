@@ -1,0 +1,90 @@
+% ============================================================
+%  Figure 2 — Coordination enforcement flowchart
+%  Local inverse estimation → adaptive settings →
+%  selectivity check → greedy cascade →
+%  grading check → TMS correction → deploy
+% ============================================================
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  proc/.style ={draw, thick, fill=blue!8, rounded corners=2pt,
+                minimum width=3.6cm, minimum height=0.55cm, align=center},
+  dec/.style  ={draw, thick, fill=orange!12, diamond, aspect=3.0,
+                minimum width=3.6cm, align=center},
+  term/.style ={draw, thick, fill=green!12, rounded corners=4pt,
+                minimum width=3.6cm, minimum height=0.55cm, align=center},
+  warn/.style ={draw, thick, fill=red!10, rounded corners=2pt,
+                minimum width=2.6cm, minimum height=0.55cm, align=center},
+  arr/.style  ={->, thick},
+  >=Latex,
+  node distance=0.50cm
+]
+
+%% ---- Start -------------------------------------------------------
+\node[term]  (start)  {Fault detected; post-fault window $[t_0,\,t_c]$};
+
+%% ---- Per-generator estimation -----------------------------------
+\node[proc, below=of start]  (local)
+     {Local inverse estimation per generator:\\
+      $\hat{\bm\theta}_k^{(1)} \leftarrow \textsc{TwoPassLM}(i_k)$,\;
+      $k = 1,\dots,N,\,B$};
+
+%% ---- Confidence gate per relay ----------------------------------
+\node[dec,  below=of local]  (confgate)
+     {All $\gamma_k \geq \gamma_{\min}$?};
+\node[warn, right=1.0 of confgate] (holdk)
+     {Hold prior settings\\for low-$\gamma$ relays};
+\draw[arr] (confgate) -- node[above,font=\tiny]{No} (holdk);
+
+%% ---- Local mapping ----------------------------------------------
+\node[proc, below=0.6 of confgate]  (localmap)
+     {Local adaptive mapping (per relay):\\
+      $I_{p,k}^{loc} = K_{Ip}\hat I_{ss,k}^{(1)} + I_{p,\min}$,\quad
+      $TMS_k^{loc} = K_{TMS}\hat\tau_{ac,k}^{(1)}$};
+
+%% ---- Build ordered list ----------------------------------------
+\node[proc, below=of localmap]  (order)
+     {Build ordered relay list $\{R_k\}_{k=1}^{N+1}$\\
+      (upstream $\to$ downstream, $R_{N+1} = R_B$)};
+
+%% ---- Selectivity check -----------------------------------------
+\node[dec,  below=of order]  (selcheck)
+     {Selectivity violated?\\
+      $\exists\,k:\;I_{p,k}^{loc} < I_{p,k+1}^{loc} + \Delta I_m$};
+
+%% ---- Greedy cascade --------------------------------------------
+\node[proc, right=1.0 of selcheck] (greedy)
+     {Greedy cascade (upstream pass):\\
+      $I_{p,k} \leftarrow \min\!\bigl(I_{p,k+1}+\Delta I_m,\,I_{p,\max}\bigr)$};
+\draw[arr] (selcheck) -- node[above,font=\tiny]{Yes} (greedy);
+\draw[arr] (greedy.north) |- (selcheck.north east)
+      node[near start, above, font=\tiny]{Repeat};
+
+%% ---- Grading check ---------------------------------------------
+\node[dec,  below=0.6 of selcheck]  (gradcheck)
+     {Grading violated at $I_{f,\min}$?\\
+      $\exists\,k:\;t_{op,k} \leq t_{op,k+1} + \Delta t_g$};
+
+%% ---- TMS correction --------------------------------------------
+\node[proc, right=1.0 of gradcheck] (tmscorr)
+     {Minimal TMS correction (downstream relay):\\
+      $TMS_{k+1}^{new} = TMS_{k+1}\cdot
+       \tfrac{t_{op,k} - \Delta t_g}{t_{op,k+1}}$};
+\draw[arr] (gradcheck) -- node[above,font=\tiny]{Yes} (tmscorr);
+\draw[arr] (tmscorr.north) |- (gradcheck.north east)
+      node[near start, above, font=\tiny]{Repeat};
+
+%% ---- Deploy -----------------------------------------------------
+\node[term, below=0.6 of gradcheck] (deploy)
+     {Deploy coordinated settings:
+      $\{I_{p,k}^c,\,TMS_k^c\}_{k=1}^{N+1}$};
+
+%% ---- Main flow arrows -------------------------------------------
+\draw[arr] (start)     -- (local);
+\draw[arr] (local)     -- (confgate);
+\draw[arr] (confgate)  -- node[left,font=\tiny]{Yes} (localmap);
+\draw[arr] (localmap)  -- (order);
+\draw[arr] (order)     -- (selcheck);
+\draw[arr] (selcheck)  -- node[left,font=\tiny]{No} (gradcheck);
+\draw[arr] (gradcheck) -- node[left,font=\tiny]{No} (deploy);
+
+\end{tikzpicture}
