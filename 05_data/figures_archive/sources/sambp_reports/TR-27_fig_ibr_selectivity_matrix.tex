@@ -1,0 +1,87 @@
+% fig_ibr_selectivity_matrix.tex
+% TR-27: Full 21-scenario selectivity matrix
+%
+% Part A (rows 1-10): SG-dominated scenarios from TR-05 full network simulator
+%   All 5 relays shown (OC, 87B_A, 87L, 87B_B, 87T)
+%   Results: 10/10 selective (same as TR-05)
+%
+% Part B (rows 11-21): IBR parametric analytic scenarios
+%   Combined 87L element shown as 4 sub-elements: 87L, 87LN, 87LN0, TDCS
+%   Results: 11/11 selective
+%
+% Cell colours:
+%   green!30  = correct trip (T)
+%   gray!15   = correct restrain (.)
+%   red!30    = spurious trip (X)  [none expected]
+%   orange!40 = missed trip (M)    [none expected]
+%   white     = not applicable to this relay/scenario
+
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+
+% ---- Colour macros ----
+\newcommand{\CT}{\cellcolor{green!30}T}    % correct trip
+\newcommand{\CR}{\cellcolor{gray!12}$\cdot$}   % correct restrain
+\newcommand{\NA}{\cellcolor{white!0}--}    % not applicable
+
+\begin{tabular}{@{}lC{1.1cm}C{1.1cm}C{1.1cm}C{1.1cm}C{1.1cm}C{1.2cm}@{}}
+\toprule
+\textbf{Scenario}
+  & \textbf{OC}
+  & \textbf{87B\_A}
+  & \textbf{87L}
+  & \textbf{87B\_B}
+  & \textbf{87T}
+  & \textbf{Verdict} \\
+\midrule
+\multicolumn{7}{@{}l}{\textit{Part A — SG-dominated network (full simulator), 10 scenarios}} \\[2pt]
+bus\_A / 3ph            & \CT & \CT & \CR & \CR & \CR & \cellcolor{green!20}OK \\
+bus\_A / ag             & \CT & \CT & \CR & \CR & \CR & \cellcolor{green!20}OK \\
+line\_mid / 3ph         & \CT & \CR & \CT & \CR & \CR & \cellcolor{green!20}OK \\
+line\_mid / ag          & \CT & \CR & \CT & \CR & \CR & \cellcolor{green!20}OK \\
+bus\_B / 3ph            & \CT & \CR & \CR & \CT & \CR & \cellcolor{green!20}OK \\
+bus\_B / ag             & \CT & \CR & \CR & \CT & \CR & \cellcolor{green!20}OK \\
+transformer\_hv / 3ph   & \CT & \CR & \CR & \CR & \CT & \cellcolor{green!20}OK \\
+transformer\_hv / ag    & \CT & \CR & \CR & \CR & \CT & \cellcolor{green!20}OK \\
+bus\_C\_load / 3ph      & \CT & \CR & \CR & \CR & \CR & \cellcolor{green!20}OK \\
+bus\_C\_load / ag       & \CT & \CR & \CR & \CR & \CR & \cellcolor{green!20}OK \\[4pt]
+\multicolumn{7}{@{}l}{\textit{Part B — IBR combined chain (analytic model), 11 scenarios}} \\
+\bottomrule
+\end{tabular}
+
+\vspace{4pt}
+
+% Part B table: 4-element breakdown
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lC{1.2cm}C{1.2cm}C{1.2cm}C{1.2cm}C{1.2cm}C{1.2cm}@{}}
+\toprule
+\textbf{IBR scenario}
+  & \textbf{87L}
+  & \textbf{87LN}
+  & \textbf{87LN0}
+  & \textbf{TDCS}
+  & \textbf{Any}
+  & \textbf{Verdict} \\
+\midrule
+IBR 3PH $k=0.08$ (TDCS)               & \CR & \CR & \CR & \CT & \CT & \cellcolor{green!20}OK \\
+IBR 3PH $k=0.15$ (87L+TDCS)           & \CT & \CR & \CR & \CT & \CT & \cellcolor{green!20}OK \\
+IBR 3PH $f=48.5$\,Hz (TDCS)           & \CR & \CR & \CR & \CT & \CT & \cellcolor{green!20}OK \\
+IBR 3PH $I_{h3}=0.08$ (TDCS)          & \CR & \CR & \CR & \CT & \CT & \cellcolor{green!20}OK \\
+IBR 3PH $k=0.06$ hi-base (TDCS)       & \CR & \CR & \CR & \CT & \CT & \cellcolor{green!20}OK \\
+IBR SLG solid-earth (87LN0+TDCS)      & \CR & \CR & \CT & \CT & \CT & \cellcolor{green!20}OK \\
+IBR SLG R-earth (87LN0+TDCS)          & \CR & \CR & \CT & \CT & \CT & \cellcolor{green!20}OK \\
+IBR SLG unearthed (TDCS)              & \CR & \CR & \CR & \CT & \CT & \cellcolor{green!20}OK \\
+IBR SLG worst unearthed (TDCS)        & \CR & \CR & \CR & \CT & \CT & \cellcolor{green!20}OK \\
+IBR ext Bus\_B through (secure)        & \CR & \CR & \CR & \CR & \CR & \cellcolor{green!20}OK \\
+IBR ext worst CT 0.4\%@7\,pu (secure) & \CR & \CR & \CR & \CR & \CR & \cellcolor{green!20}OK \\
+\bottomrule
+\end{tabular}
+
+\vspace{3pt}
+{\scriptsize T = correct trip\ \ $\cdot$ = correct restrain\ \ -- = not applicable to this relay}
+
+\endgroup

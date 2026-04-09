@@ -1,0 +1,112 @@
+%% glossary.tex  ─ Abbreviations and Glossary Entries
+%%
+%% Usage: \newacronym{label}{short}{long}
+%%        \newglossaryentry{label}{name={...},description={...}}
+
+%% ── Abbreviations ────────────────────────────────────────────
+\newacronym{IBR}  {IBR}  {Inverter-Based Resource}
+\newacronym{GFL}  {GFL}  {Grid-Following Inverter}
+\newacronym{GFM}  {GFM}  {Grid-Forming Inverter}
+\newacronym{DER}  {DER}  {Distributed Energy Resource}
+\newacronym{DG}   {DG}   {Distributed Generator}
+\newacronym{SG}   {SG}   {Synchronous Generator}
+\newacronym{PCC}  {PCC}  {Point of Common Coupling}
+\newacronym{POI}  {POI}  {Point of Interconnection}
+\newacronym{PLL}  {PLL}  {Phase-Locked Loop}
+\newacronym{VSM}  {VSM}  {Virtual Synchronous Machine}
+\newacronym{VSG}  {VSG}  {Virtual Synchronous Generator}
+
+%% Protection elements
+\newacronym{ANSI} {ANSI} {American National Standards Institute}
+\newacronym{IEC}  {IEC}  {International Electrotechnical Commission}
+\newacronym{OC}   {OC}   {Overcurrent}
+\newacronym{ITOC} {ITOC} {Inverse-Time Overcurrent}
+\newacronym{DOC}  {DOC}  {Directional Overcurrent}
+\newacronym{87L}  {87L}  {Line Current Differential}
+\newacronym{87T}  {87T}  {Transformer Differential}
+\newacronym{87B}  {87B}  {Bus Differential}
+\newacronym{21}   {21}   {Distance Relay}
+\newacronym{67}   {67}   {Directional Overcurrent Relay}
+\newacronym{81}   {81}   {Frequency Relay}
+\newacronym{25}   {25}   {Synchronism-Check Relay}
+\newacronym{TDCS} {TDCS} {Transient Differential Current Signature}
+\newacronym{POTT} {POTT} {Permissive Overreaching Transfer Trip}
+\newacronym{PUTT} {PUTT} {Permissive Underreaching Transfer Trip}
+\newacronym{DTT}  {DTT}  {Direct Transfer Trip}
+\newacronym{TMS}  {TMS}  {Time-Multiplier Setting}
+\newacronym{CTI}  {CTI}  {Coordination Time Interval}
+\newacronym{CT}   {CT}   {Current Transformer}
+\newacronym{VT}   {VT}   {Voltage Transformer}
+\newacronym{IED}  {IED}  {Intelligent Electronic Device}
+\newacronym{PMU}  {PMU}  {Phasor Measurement Unit}
+\newacronym{ROCOF}{ROCOF}{Rate-of-Change-of-Frequency}
+
+%% Communication / cybersecurity
+\newacronym{GOOSE}{GOOSE}{Generic Object-Oriented Substation Event}
+\newacronym{MMS}  {MMS}  {Manufacturing Message Specification}
+\newacronym{HMAC} {HMAC} {Hash-based Message Authentication Code}
+\newacronym{DoS}  {DoS}  {Denial-of-Service}
+
+%% Machine learning / signal processing
+\newacronym{PINN} {PINN} {Physics-Informed Neural Network}
+\newacronym{EKF}  {EKF}  {Extended Kalman Filter}
+\newacronym{SGD}  {SGD}  {Stochastic Gradient Descent}
+\newacronym{CUSUM}{CUSUM}{Cumulative Sum Control Chart}
+\newacronym{DT}   {DT}   {Digital Twin}
+\newacronym{ML}   {ML}   {Machine Learning}
+\newacronym{SVM}  {SVM}  {Support Vector Machine}
+\newacronym{ReLU} {ReLU} {Rectified Linear Unit}
+\newacronym{RMSE} {RMSE} {Root Mean Square Error}
+
+%% System / network
+\newacronym{SAMBP}{SAMBP}{Self-Adaptive Multi-Bus Protection}
+\newacronym{WAPC} {WAPC} {Wide-Area Protection Coordinator}
+\newacronym{HIL}  {HIL}  {Hardware-in-the-Loop}
+\newacronym{SIL}  {SIL}  {Software-in-the-Loop}
+\newacronym{RTDS} {RTDS} {Real-Time Digital Simulator}
+\newacronym{SCADA}{SCADA}{Supervisory Control and Data Acquisition}
+\newacronym{EMS}  {EMS}  {Energy Management System}
+\newacronym{HV}   {HV}   {High Voltage}
+\newacronym{MV}   {MV}   {Medium Voltage}
+\newacronym{LV}   {LV}   {Low Voltage}
+\newacronym{pu}   {pu}   {per unit}
+
+%% Notation entries (for printNotation)
+\newnotation{kibr}    {$k_\mathrm{ibr}$}
+  {IBR current ratio, $I_\mathrm{IBR}/I_\mathrm{rated}$}
+\newnotation{Idiff}   {$I_\mathrm{diff}$}
+  {Differential operating current}
+\newnotation{Ibias}   {$I_\mathrm{bias}$}
+  {Bias (restraint) current}
+\newnotation{Iop}     {$I_\mathrm{op}$}
+  {Relay operating (pickup) current}
+\newnotation{km}      {$k_m$}
+  {Adaptive bias slope of 87L characteristic}
+\newnotation{Zline}   {$Z_\mathrm{line}$}
+  {Line positive-sequence impedance}
+\newnotation{Zapp}    {$Z_\mathrm{app}$}
+  {Apparent impedance seen by distance relay}
+\newnotation{alpha}   {$\alpha$}
+  {Per-unit fault location along protected line (0 = local end)}
+\newnotation{TMS}     {$\mathit{TMS}$}
+  {Time-Multiplier Setting for IEC inverse-time overcurrent relay}
+\newnotation{CTI}     {$\mathit{CTI}$}
+  {Coordination Time Interval between primary and backup relay}
+\newnotation{M}       {$M$}
+  {Relay current multiple, $I_\mathrm{fault}/I_\mathrm{pickup}$}
+\newnotation{lambda}  {$\lambda$}
+  {Forgetting factor in online SGD ($0 < \lambda \leq 1$)}
+\newnotation{S}       {$S_k$}
+  {CUSUM score at sample $k$}
+\newnotation{delta}   {$\delta$}
+  {CUSUM reference value (allowable slack)}
+\newnotation{theta}   {$\theta$}
+  {CUSUM alarm threshold}
+\newnotation{P}       {$\mathbf{P}$}
+  {EKF error covariance matrix}
+\newnotation{K}       {$\mathbf{K}$}
+  {EKF Kalman gain matrix}
+\newnotation{Q}       {$\mathbf{Q}$}
+  {EKF process noise covariance}
+\newnotation{R}       {$\mathbf{R}$}
+  {EKF measurement noise covariance}

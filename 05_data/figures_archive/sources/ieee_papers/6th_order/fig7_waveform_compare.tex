@@ -1,0 +1,94 @@
+% ============================================================
+%  Figure 7 — Waveform comparison: 6th-order truth vs reduced
+%  Top: short window 80 ms; Bottom: long window 500 ms
+%  i_a^{6th}(t) = [I_ss(t)+(I_sub-I_ss)*exp(-t/τ_ac)]*sin(ωt+φ) + DC
+%  i_a^{red}(t) = same but I_ss = const = 1.35
+%  I_ss(t) = 1.35*(1+0.15*(1-exp(-t/0.5)))
+% ============================================================
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=1 by 2, vertical sep=1.2cm},
+  width=\columnwidth, height=4.5cm,
+  xlabel={Time (s)},
+  ymajorgrids=true, grid style={gray!20},
+  label style={font=\small},
+  tick label style={font=\scriptsize},
+  clip=true
+]
+
+%% ---- Top: short window 80 ms --------------------------------
+\nextgroupplot[
+  title={\textbf{(a)} Short window $L = 80\,\text{ms}$},
+  title style={font=\small},
+  domain=0:0.08, samples=300,
+  ymin=-4.5, ymax=4.5,
+  ylabel={$i_a$ (p.u.)},
+  xticklabel style={font=\scriptsize},
+  legend style={at={(0.99,0.99)}, anchor=north east,
+                font=\tiny, fill=white, draw=black!30,
+                legend columns=1}
+]
+% 6th-order truth (I_ss varies with AVR)
+\addplot[blue, thick, solid] {
+  (1.35*(1+0.15*(1-exp(-x/0.5))) + (3.20-1.35)*exp(-x/0.83))
+  * sin(deg(314.16*x) - 30)
+  + 3.20*sin(30*pi/180)*exp(-x/0.07)
+};
+
+% Reduced model (constant I_ss=1.35)
+\addplot[red, dashed, thick] {
+  (1.35 + 1.85*exp(-x/0.83)) * sin(deg(314.16*x) - 30)
+  + 1.60*0.5*exp(-x/0.07)
+};
+
+% Residual x10
+\addplot[gray!60, dotted] {
+  10 * (1.35*0.15*(1-exp(-x/0.5)))
+  * sin(deg(314.16*x) - 30)
+};
+
+\legend{6th-order truth, Reduced model fit, Residual $\times 10$};
+
+%% ---- Bottom: long window 500 ms ----------------------------
+\nextgroupplot[
+  title={\textbf{(b)} Long window $L = 500\,\text{ms}$},
+  title style={font=\small},
+  domain=0:0.50, samples=600,
+  ymin=-3.0, ymax=3.5,
+  ylabel={$i_a$ (p.u.)},
+  xticklabel style={font=\scriptsize},
+  legend style={at={(0.99,0.99)}, anchor=north east,
+                font=\tiny, fill=white, draw=black!30},
+  clip=false
+]
+% 6th-order truth
+\addplot[blue, thick, solid] {
+  (1.35*(1+0.15*(1-exp(-x/0.5))) + 1.85*exp(-x/0.83))
+  * sin(deg(314.16*x) - 30)
+  + 1.60*0.5*exp(-x/0.07)
+};
+
+% Reduced model (biased fit at 500ms: I_ss=1.285, τ_ac=1.14)
+\addplot[red, dashed, thick] {
+  (1.285 + 1.85*exp(-x/1.14)) * sin(deg(314.16*x) - 30)
+  + 1.60*0.5*exp(-x/0.07)
+};
+
+% Residual x5
+\addplot[gray!60, dotted] {
+  5 * ((1.35*(1+0.15*(1-exp(-x/0.5))) + 1.85*exp(-x/0.83))
+  * sin(deg(314.16*x) - 30)
+  - (1.285 + 1.85*exp(-x/1.14)) * sin(deg(314.16*x) - 30))
+};
+
+% Divergence region shading
+\addplot[fill=red!8, draw=none, opacity=0.6]
+  coordinates {(0.15,-2.8)(0.50,-2.8)(0.50,3.3)(0.15,3.3)} \closedcycle;
+
+\node[font=\tiny, red!70!black, align=center]
+     at (axis cs:0.35, 3.1) {divergence\\region};
+
+\legend{6th-order truth, Reduced model fit, Residual $\times 5$};
+
+\end{groupplot}
+\end{tikzpicture}

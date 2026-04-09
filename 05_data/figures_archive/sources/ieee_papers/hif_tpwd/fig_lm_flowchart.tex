@@ -1,0 +1,102 @@
+% fig_lm_flowchart.tex
+% Two-pass Levenberg-Marquardt estimation algorithm flowchart
+% Uses tikz_master_styles: logic_start, logic_process, logic_decision, logic_io
+\begin{tikzpicture}[node distance=0.55cm and 1.6cm]
+
+  % ---- PASS 1 nodes ----
+  \node[logic_start] (start) {Fault detected\\$t > t_{\mathrm{det}}$};
+
+  \node[logic_process, below=of start,text width=3.2cm]
+    (init1) {Initialise $\bm{\theta}^{(0)}$:\\
+             $[\hat{t}_0^{(0)},\hat{I}_{sub}^{(0)},\hat{\phi}_a^{(0)},\hat{\tau}_{dc}^{(0)}]$};
+
+  \node[logic_process, below=of init1, text width=3.2cm]
+    (jac1) {Compute $\mathbf{J}^{(k)} = \partial\mathbf{f}/\partial\bm{\theta}$\\\small (analytical, eq.~\eqref{eq:jacobian})};
+
+  \node[logic_process, below=of jac1, text width=3.2cm]
+    (lm1) {LM update:\\ $\bm{\theta}^{(k+1)} = \bm{\theta}^{(k)}$\\ $+\,(\mathbf{J}^T\mathbf{J}+\mu\mathbf{I})^{-1}\mathbf{J}^T\mathbf{r}$};
+
+  \node[logic_decision, below=of lm1, aspect=1.6, text width=2.5cm]
+    (conv1) {$\|\bm{\theta}^{(k+1)}-\bm{\theta}^{(k)}\|$\\ $< \epsilon_1$?};
+
+  \node[logic_io, below=of conv1, text width=3.0cm]
+    (out1) {Pass-1 output: $\hat{t}_0$, $\hat{I}_{sub}$,\\$\hat{\phi}_a$, $\hat{\tau}_{dc}$};
+
+  % Pass-1 header
+  \node[font=\scriptsize\bfseries,fill=blue!12,draw=blue!30,
+        rounded corners=2pt,inner sep=3pt,
+        above=0.08cm of init1,xshift=0cm]
+    (ph1) {\textbf{Pass 1} — Full window: $t \in [t_0,\, t_0+W_1]$};
+
+  % ---- PASS 2 nodes ----
+  \node[logic_process, below=of out1, text width=3.2cm]
+    (tailwin) {Select tail window:\\$t \in [t_0 + 3\hat{\tau}_{dc},\, t_0+W_2]$};
+
+  \node[logic_process, below=of tailwin, text width=3.2cm]
+    (init2) {Initialise $\bm{\theta}^{(0)}$:\\
+             $[\hat{I}_{ss}^{(0)},\hat{\tau}_{ac}^{(0)}]$,\\
+             $\hat{t}_0,\hat{I}_{sub},\hat{\phi}_a,\hat{\tau}_{dc}$ fixed};
+
+  \node[logic_process, below=of init2, text width=3.2cm]
+    (jac2) {Compute $\mathbf{J}^{(k)}_{\mathrm{tail}}$\\\small (cols $I_{ss},\tau_{ac}$ only)};
+
+  \node[logic_process, below=of jac2, text width=3.2cm]
+    (lm2) {LM update (free vars):\\ $[\hat{I}_{ss},\hat{\tau}_{ac}]$};
+
+  \node[logic_decision, below=of lm2, aspect=1.6, text width=2.5cm]
+    (conv2) {Converged?\\ $\|\Delta\bm{\theta}\| < \epsilon_2$?};
+
+  \node[logic_io, below=of conv2, text width=3.2cm]
+    (out2) {Pass-2 output: $\hat{I}_{ss}$, $\hat{\tau}_{ac}$};
+
+  % Pass-2 header
+  \node[font=\scriptsize\bfseries,fill=orange!12,draw=orange!30,
+        rounded corners=2pt,inner sep=3pt,
+        above=0.08cm of tailwin]
+    (ph2) {\textbf{Pass 2} — Tail window (DC-free): identifies $I_{ss}$, $\tau_{ac}$};
+
+  % ---- Confidence gate ----
+  \node[logic_process, below=of out2, text width=3.2cm]
+    (gamma) {Compute $\gamma = w_1\gamma_\kappa + w_2\gamma_\varepsilon + w_3\gamma_n$};
+
+  \node[logic_decision, below=of gamma, aspect=1.6, text width=2.5cm]
+    (accept) {$\gamma \geq \gamma_{\min}$\\$= 0.80$?};
+
+  \node[logic_process, below left=0.6cm and 0.5cm of accept,
+        text width=2.4cm, fill=green!8]
+    (update) {Accept:\\Update $TMS^*$\\via eq.~\eqref{eq:tms_ext}};
+
+  \node[logic_process, below right=0.6cm and 0.5cm of accept,
+        text width=2.2cm, fill=red!8]
+    (reject) {Reject:\\Retain\\current $TMS$};
+
+  \node[logic_start, below=1.6cm of accept]
+    (done) {Output $TMS^*$};
+
+  % ---- Arrows ----
+  \draw[logic_arrow] (start)   -- (init1);
+  \draw[logic_arrow] (init1)   -- (jac1);
+  \draw[logic_arrow] (jac1)    -- (lm1);
+  \draw[logic_arrow] (lm1)     -- (conv1);
+  \draw[logic_arrow] (conv1)   -- node[right,font=\tiny]{Yes} (out1);
+  % Not converged loop
+  \draw[logic_arrow] (conv1.east) -- ++(1.2,0)
+        node[above,font=\tiny]{No} |-  (jac1.east);
+
+  \draw[logic_arrow] (out1)    -- (tailwin);
+  \draw[logic_arrow] (tailwin) -- (init2);
+  \draw[logic_arrow] (init2)   -- (jac2);
+  \draw[logic_arrow] (jac2)    -- (lm2);
+  \draw[logic_arrow] (lm2)     -- (conv2);
+  \draw[logic_arrow] (conv2)   -- node[right,font=\tiny]{Yes} (out2);
+  \draw[logic_arrow] (conv2.east) -- ++(1.2,0)
+        node[above,font=\tiny]{No} |- (jac2.east);
+
+  \draw[logic_arrow] (out2)    -- (gamma);
+  \draw[logic_arrow] (gamma)   -- (accept);
+  \draw[logic_arrow] (accept.south west) -- node[left,font=\tiny]{Yes} (update.north);
+  \draw[logic_arrow] (accept.south east) -- node[right,font=\tiny]{No}  (reject.north);
+  \draw[logic_arrow] (update.south) -- ++(0,-0.3) -| (done.west);
+  \draw[logic_arrow] (reject.south) -- ++(0,-0.3) -| (done.east);
+
+\end{tikzpicture}

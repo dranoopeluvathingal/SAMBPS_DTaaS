@@ -1,4 +1,56 @@
+# ============================================================
+#  PHD_THESIS .gitignore
+# ============================================================
+
+# LaTeX build artefacts
+**/*.aux
+**/*.log
+**/*.out
+**/*.toc
+**/*.blg
+**/*.bbl
+**/*.nav
+**/*.snm
+**/*.nlo
+**/*.ist
+**/*.acn
+**/*.glo
+**/*.lof
+**/*.lot
+**/*.fls
+**/*.fdb_latexmk
+texput.log
+
+# Build directories
+01_thesis/build/
+03_technical_reports/**/build/
+
+# Python
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/.ipynb_checkpoints/
+
+# Virtual environments
 phd_env/
-dr_e_venv/
-__pycache__/
-.cache/
+venv/
+.venv/
+**/phd_env/
+**/venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/settings.json
+**/*.swp
+
+# Quarto
+_site/
+.quarto/
+
+# Large binaries (commit selectively)
+**/*.pkl
+**/*.xlsx
+**/*.zip

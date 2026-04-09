@@ -1,0 +1,273 @@
+%% ch13_conclusions.tex
+%% Chapter 13: Conclusions and Future Work
+%% Thesis: Self-Adaptive Model-Based Protection for Future Power Systems
+%% ============================================================
+\chapter{Conclusions and Future Work}
+\label{ch:conclusions}
+
+\section{Summary of Contributions}
+\label{sec:ch13_summary}
+
+This thesis has developed, analysed, and validated the \textbf{Self-Adaptive
+Model-Based Protection (SAMBP)} framework---a hierarchical, physics-aware
+architecture for protection of future power systems dominated by
+Inverter-Based Resources (IBRs). The framework treats adaptive protection
+as an \emph{inverse estimation problem}: each protection element maintains
+an explicit physical model of its protected device and continuously
+identifies the current model parameters from real-time measurements.
+Adaptation decisions are gated by a four-component confidence score and
+bounded by a provably safe update law.
+
+The thesis delivers 25 original contributions across three tiers, of
+which 17 are fully validated with numerical results ([P]) and 8 represent
+complete theoretical frameworks with placeholder results pending the
+18--24 month experimental execution phase ([F]).
+
+\subsection{Tier 1: Local Relay Physics}
+
+\paragraph{Chapter~\ref{ch:line_diff} --- Line Differential Protection (C1--C5).}
+Five adaptive 87L elements provide complementary coverage across all
+fault types. The physics-constrained adaptive threshold $k_m^*(\kibr)$
+(C1) achieves TPR = 1.000 across $\kibr \in [0.03, 0.85]$~pu. The
+87LN negative-sequence element (C3) proves that IBR negative-sequence
+suppression \emph{improves} 87LN sensitivity ($\rho_2 = 2$, independent
+of $\kibr$). The 87LN0 zero-sequence element (C5) provides the only
+viable SLG protection on pure-IBR feeders with no SG grounding.
+
+\paragraph{Chapter~\ref{ch:generator_oc} --- Generator Overcurrent (C6--C10).}
+The SAMBP-SyncOC framework introduces the first inverse-estimation-based
+adaptive OC protection for synchronous generators. The two-pass LM
+estimator (C6) achieves $R^2 > 0.999$ with Jacobian condition number
+$\kappa_n(J) < 20$ across three-phase, line-to-line, and SLG faults.
+The confidence-gated bounded update law (C7, C8) reduces spurious pickups
+by $\approx 60\%$ with no security degradation. Extensions to HIF
+detection, sequence estimation, multi-generator buses, Park $dq$ truth
+model validation, and DFIG Type-3 wind generators (C9, C10) are
+theoretically complete and pending experimental execution.
+
+\paragraph{Chapter~\ref{ch:transformer_diff} --- Transformer Differential (C11--C12).}
+The 87T-SPRT scheme replaces the ad-hoc second harmonic blocking criterion
+with a Wald SPRT on the harmonic ratio trajectory, providing explicit
+false-trip and miss-rate guarantees ($\alpha = \beta = 0.001$). The
+IBR-adaptive bias slope $k_T^*(\kibr)$ closes the second failure mode
+(false restrain during IBR-fed internal fault). Both contributions are
+theoretically complete, with expected decision time $\approx 50$~ms
+comparable to classical blocking delay. Experimental validation is pending.
+
+\paragraph{Chapter~\ref{ch:distance} --- Distance Protection (C13--C14).}
+The quadrilateral 21 characteristic with IBR reactive-shift correction (C13)
+achieves $P_\mathrm{detect} = 99.3\%$, $P_\mathrm{secure} = 99.97\%$.
+The Monte Carlo reliability framework (C14) provides the first probabilistic
+reliability quantification for IBR distance protection.
+
+\paragraph{Chapter~\ref{ch:microgrid} --- Microgrid Protection (C15--C17).}
+The GFL/GFM dual-mode characterisation (C15) quantifies the 4--8$\times$
+fault current reduction at grid-to-island transition. The ROCOF islanding
+detection (C16) achieves $< 1\%$ NDZ and 114~ms isolation time compliant
+with IEEE~1547-2018. The adaptive OC setting-group (C17) switches within
+5~ms of GOOSE receipt.
+
+\subsection{Tier 2: Digital Monitoring and Learning}
+
+\paragraph{Chapter~\ref{ch:digital_twin} --- Digital Twin (C18--C19).}
+The non-blocking DT architecture (C18) guarantees that EKF updates never
+delay primary trip decisions through the shadow register pattern. The
+EKF joint estimation (C19) achieves RMSE $\leq 0.024$~pu for $\kibr$,
+$\leq 0.5\%$ for $\Zline$, and $\leq 1.1\%$ for fault location, all
+bounded by the analytically derived Cramr-Rao Lower Bound.
+
+\paragraph{Chapter~\ref{ch:ml} --- Physics-Informed ML (C20--C21).}
+The PINN classifier (C20) achieves 96.1\% five-class accuracy with zero
+physics-constraint violations, by embedding three KVL/KCL constraints
+in the loss function. CUSUM-SGD online learning (C21) adapts to fleet
+composition drift within 21 detection samples with $< 2$~pp catastrophic
+forgetting.
+
+\subsection{Tier 3: Centralised Coordination and Security}
+
+\paragraph{Chapter~\ref{ch:centralised} --- WAPC (C22--C24).}
+Wide-area PMU fault localisation (C22) achieves 94.5\% correct-line
+identification at $\sigma_V = 0.01$~pu. The CTI-graded settings engine
+(C23) produces 100\% CTI-compliant settings in $< 3$~s. The closed-loop
+CUSUM$\to$settings$\to$GOOSE protocol (C24) completes the full adaptive
+cycle in $\approx 31$~minutes with 8 of 9 steps automated.
+
+\paragraph{Chapter~\ref{ch:cybersecurity} --- Cybersecurity (C17, C25).}
+HMAC-SHA256 (C17) reduces GOOSE attack risk by 54.9\% at 0.72~ms overhead.
+The adversarial PINN robustness framework (C25) is theoretically established
+and pending experimental validation.
+
+\section{Mapping to Research Objectives}
+\label{sec:ch13_objectives}
+
+\begin{table}[htbp]
+\caption{Research objectives and their fulfilment status}
+\label{tab:ch13_objectives}
+\small
+\begin{tabularx}{\textwidth}{@{}lp{2cm}p{4cm}p{3cm}l@{}}
+\toprule
+Obj. & Chapter & Contribution & Key metric & Status \\
+\midrule
+O1 & \ref{ch:line_diff} & C1--C5: Adaptive 87L
+  & TPR = 1.000, all $\kibr$ & [P] \\
+O2 & \ref{ch:generator_oc} & C6--C8: SAMBP-SyncOC
+  & $R^2 > 0.999$; $-60\%$ pickups & [P], C9-C10 [F] \\
+O3 & \ref{ch:transformer_diff} & C11--C12: 87T-SPRT
+  & $\alpha = \beta = 0.001$; 50~ms & [F] \\
+O4 & \ref{ch:distance} & C13--C14: Quadrilateral 21
+  & $P_d = 99.3\%$, $P_s = 99.97\%$ & [P] \\
+O5 & \ref{ch:microgrid} & C15--C17: Microgrid
+  & 114~ms, NDZ $< 1\%$ & [P] \\
+O6 & \ref{ch:digital_twin} & C18--C19: EKF DT
+  & RMSE $\leq 0.024$~pu & [P] \\
+O7 & \ref{ch:ml} & C20--C21: PINN + CUSUM
+  & 96.1\%; $< 2$~pp forgetting & [P] \\
+O8 & \ref{ch:centralised},\ref{ch:cybersecurity} & C22--C25: WAPC + security
+  & 94.5\%; 54.9\% risk reduction & [P], C25 [F] \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Limitations}
+\label{sec:ch13_limitations}
+
+\begin{enumerate}
+\item \textbf{Validated [P] scope:} All [P] contributions are validated
+      by EMT simulation and software-in-the-loop. Physical hardware-in-the-loop
+      on commercial IEDs (SEL-411L) is pending.
+
+\item \textbf{Synthetic training data:} PINN training and EKF validation
+      data are synthetic. Real field fault recordings from live IBR
+      substations are needed for independent validation (Gap G7).
+
+\item \textbf{Single-substation WAPC:} The WAPC architecture is designed
+      for up to 34 buses within one substation. Multi-substation
+      coordination requires a hierarchical extension (Gap G4).
+
+\item \textbf{GFM model horizon:} GFM inverters are modelled as VSMs
+      valid for $t \leq 150$~ms. AVR dynamics beyond this horizon are
+      not captured (Gap G6).
+
+\item \textbf{Pending [F] contributions:} Eight contributions
+      (C9, C10, C11, C12, C25 and coordinated attack analysis) are
+      theoretically complete but require experimental execution. The
+      simulation scripts exist and the theoretical frameworks are validated
+      against Milestone-1 results.
+\end{enumerate}
+
+\section{Future Work and Research Roadmap}
+\label{sec:ch13_future}
+
+\subsection{Phase 1 (0--6 months): Complete Existing Scripts}
+
+\paragraph{F1.1 --- Execute SAMBP-SyncOC Milestones 2--5.}
+Run \texttt{run\_milestone2.py}, \texttt{run\_multi\_gen.py}, and
+\texttt{run\_park\_dq\_validation.py} (all existing, structurally validated).
+Fill in the 12 result placeholders in Section~\ref{sec:ch5_extensions}
+and publish Contribution C9 as a journal paper.
+
+\textbf{Target:} $R^2 > 0.999$ for HIF at $R_F \leq 100\,\Omega$;
+multi-generator CTI compliance $> 95\%$;
+Park $dq$ truth model agreement $< 5\%$ RMS at $t \leq 250$~ms.
+
+\paragraph{F1.2 --- Execute 87T-SPRT Simulation.}
+Implement the transformer energisation and turn-to-turn fault simulator.
+Fit $(\mu_0, \sigma_0, \mu_1, \sigma_1)$ from simulation data.
+Execute 400-scenario study plan of Section~\ref{sec:ch6_validation}.
+Publish Contributions C11 and C12.
+
+\textbf{Target:} False trip rate $\leq 0.1\%$ on inrush;
+miss rate $\leq 0.1\%$ on internal fault;
+$> 30\%$ improvement over classical 2nd harmonic blocking at $\kibr < 0.15$.
+
+\subsection{Phase 2 (6--12 months): Extend to DFIG and Adversarial PINN}
+
+\paragraph{F2.1 --- DFIG Type-3 Adaptive OC (Contribution C9d).}
+Implement the piecewise-ODE DFIG crowbar model.
+Apply two-phase LM estimator across 30 crowbar activation scenarios.
+Validate $R^2 > 0.99$ and $\Delta t_{cb} < 2$~ms.
+
+\paragraph{F2.2 --- Adversarial PINN Robustness (Contribution C25).}
+Implement FGSM/PGD attack generators.
+Validate $> 80\%$ adversarial accuracy at $\varepsilon = 0.05$~pu.
+Prove or disprove the physics-constraint robustness hypothesis
+(Eq.~\eqref{eq:ch12_margin_bound}).
+
+\subsection{Phase 3 (12--18 months): GFM Extended Dynamics and HIL}
+
+\paragraph{F3.1 --- GEAC Stability Boundary (Gap G6).}
+Extend the GFM VSM model to include AVR dynamics beyond $t = 150$~ms.
+Determine the Grid-Edge Adaptive Characteristic (GEAC) stability
+boundary as a function of $(M, D, L_v)$ and $\kibr$.
+
+\paragraph{F3.2 --- Hardware-in-the-Loop Validation (Gap G1).}
+Commission HIL test cell with SEL-411L relay and RTDS real-time simulator.
+Execute 100-scenario regression suite against physical relay firmware.
+
+\subsection{Phase 4 (18--24 months): Multi-Substation and Field Data}
+
+\paragraph{F4.1 --- Multi-Substation WAPC Scaling (Gap G4).}
+Extend the WAPC to a hierarchical architecture: local substation
+coordinators reporting to a regional coordinator.
+Solve the consensus problem under 10--50~ms propagation delay.
+
+\paragraph{F4.2 --- Field Data Validation (Gap G7).}
+Collaborate with a DSO operating an IBR-dominated network to collect
+and label real fault recordings. Validate PINN classifier and EKF
+on real-world data. Quantify the synthetic-to-real domain gap.
+
+\subsection{Summary Roadmap}
+
+\begin{table}[htbp]
+\caption{18--24 month research roadmap}
+\label{tab:ch13_roadmap}
+\small
+\begin{tabularx}{\textwidth}{@{}lp{3cm}lXl@{}}
+\toprule
+Phase & Task & Timeline & Target metric & Contribs. \\
+\midrule
+1.1 & SyncOC Milestones 2--5 & 0--3 mo & $R^2>0.999$, CTI $>95\%$ & C9, C10 \\
+1.2 & 87T-SPRT simulation & 3--6 mo & FTR $<0.1\%$, MR $<0.1\%$ & C11, C12 \\
+2.1 & DFIG Type-3 OC & 6--9 mo & $R^2>0.99$, $|\Delta t_{cb}|<2$~ms & C9d \\
+2.2 & Adversarial PINN & 9--12 mo & $>80\%$ adv.\ acc.\ & C25 \\
+3.1 & GEAC stability & 12--15 mo & Stability boundary mapped & G6 \\
+3.2 & HIL validation & 15--18 mo & 95/100 scenarios pass & G1 \\
+4.1 & Multi-substation WAPC & 18--21 mo & Consensus $<100$~ms & G4 \\
+4.2 & Field data validation & 21--24 mo & PINN accuracy $>90\%$ real & G7 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Concluding Remarks}
+\label{sec:ch13_concluding}
+
+The displacement of synchronous machines by IBRs is irreversible and
+accelerating. The protection crisis it creates is not a temporary
+transition problem but a permanent structural feature of all future
+high-IBR power systems. Legacy relay algorithms, designed for passive,
+high-current, physics-determined fault current sources, fail systematically
+when the fault current is controlled, software-limited, and compositionally
+variable.
+
+The SAMBP framework proposed in this thesis addresses this crisis from
+first principles: by treating adaptive protection as an inverse estimation
+problem, it provides a unified mathematical structure applicable to every
+protection element---line differential, generator overcurrent, transformer
+differential, distance, and islanding---and to every source type.
+The framework is the first to integrate model identification, real-time
+state estimation, and centralised coordination into a closed-loop self-adaptive
+system with provable safety guarantees.
+
+The 17 validated contributions establish that the framework works: relay
+algorithms adapting in real-time to measured IBR fleet composition achieve
+full detection coverage across the operating envelope, with quantified
+reliability and security bounds. The 8 pending contributions extend the
+framework to the broader technology space---DFIG wind generators,
+transformer protection, adversarial cyberattacks---that defines the full
+scope of future power system protection needs.
+
+The remaining open gaps (multi-substation scaling, HIL firmware validation,
+and real field fault data) define a clear post-doctoral research agenda.
+This thesis has equipped that agenda with the foundational methodology,
+validated algorithms, documented performance bounds, and existing simulation
+scripts needed to make rapid progress on the 18--24 month timeline.

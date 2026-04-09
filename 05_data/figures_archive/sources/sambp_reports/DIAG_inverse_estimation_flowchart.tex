@@ -1,0 +1,122 @@
+% =============================================================================
+% SAMBP: Inverse Estimation Process Flowchart
+% File: inverse_estimation_flowchart.tex
+% Description: Detailed flowchart of the inverse estimation algorithm
+% =============================================================================
+
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usetikzlibrary{shapes,shapes.geometric,arrows,arrows.meta,calc,positioning,fit,decorations.pathmorphing}
+
+% Include TikZ styles
+\input{../tikz_master_styles.tex}
+
+\begin{document}
+
+\begin{tikzpicture}[
+    node distance=1.5cm,
+    font=\small,
+    >=latex,
+]
+
+% Define colors
+\definecolor{startEnd}{RGB}{76, 175, 80}
+\definecolor{process}{RGB}{33, 150, 243}
+\definecolor{decision}{RGB}{255, 193, 7}
+\definecolor{data}{RGB}{155, 89, 182}
+
+% Styles
+\tikzset{
+    start/.style = {rectangle, rounded corners, minimum width=2.5cm, minimum height=0.6cm, 
+                    text centered, draw=black, thick, fill=startEnd!30},
+    stop/.style = {rectangle, rounded corners, minimum width=2.5cm, minimum height=0.6cm,
+                   text centered, draw=black, thick, fill=startEnd!60},
+    process_box/.style = {rectangle, minimum width=3cm, minimum height=0.8cm,
+                          text centered, text width=2.8cm, draw=black, thick, fill=process!20},
+    decision_box/.style = {diamond, aspect=2, minimum width=2.5cm, minimum height=1cm,
+                           text centered, text width=2cm, draw=black, thick, fill=decision!20},
+    data_box/.style = {trapezium, trapezium left angle=70, trapezium right angle=110,
+                       minimum width=2.5cm, minimum height=0.8cm, text centered, 
+                       text width=2.3cm, draw=black, thick, fill=data!20},
+    arrow/.style = {thick, -{Stealth[length=2.5mm, width=2mm]}},
+    label/.style = {font=\scriptsize, fill=white, inner sep=2pt}
+}
+
+% Nodes
+\node[start] (start) at (0,0) {Start: Receive $i_{diff}(k)$};
+
+\node[data_box] (data_input) at (0,-1.5) {Initialize buffer\\$\{i_{diff}(1), \ldots, i_{diff}(N)\}$};
+
+\node[process_box] (init_params) at (0,-3) {Initialize parameters $\boldsymbol{\theta}_0$\\from signal characteristics};
+
+\node[process_box] (compute_jacobian) at (0,-4.5) {Compute Jacobian\\$\mathbf{J}(\boldsymbol{\theta}_n)$};
+
+\node[process_box] (compute_residual) at (0,-6) {Compute residual\\$\mathbf{r}_n = \mathbf{i} - f(\boldsymbol{\theta}_n)$};
+
+\node[process_box] (compute_sse) at (0,-7.5) {Compute SSE\\$E_n = \frac{1}{2}\mathbf{r}_n^T\mathbf{r}_n$};
+
+\node[decision_box] (check_convergence) at (0,-9.2) {$E_n < $\\$E_{tol}$?};
+
+\node[process_box] (solve_lm) at (3.5,-9.2) {Solve LM system:\\$(\mathbf{J}^T\mathbf{J} + \lambda\mathbf{I})\Delta\boldsymbol{\theta} = \mathbf{J}^T\mathbf{r}$};
+
+\node[process_box] (update_params) at (3.5,-10.7) {Update\\$\boldsymbol{\theta}_{n+1} = \boldsymbol{\theta}_n + \Delta\boldsymbol{\theta}$};
+
+\node[process_box] (update_lambda) at (3.5,-12.2) {Adapt $\lambda$:\\decrease if $E$ reduced, else increase};
+
+\node[process_box] (compute_kappa) at (0,-11) {Compute condition number\\$\kappa_n = \sigma_{max}/\sigma_{min}$};
+
+\node[decision_box] (check_kappa) at (0,-12.5) {$\kappa_n <$\\$\kappa_{th}$?};
+
+\node[process_box] (confidence_high) at (-3.5,-12.5) {Set confidence flag\\HIGH};
+
+\node[process_box] (confidence_low) at (3.5,-14) {Set confidence flag\\LOW};
+
+\node[process_box] (extract_cov) at (0,-13.8) {Extract covariance matrix\\$\mathbf{P} = (\mathbf{J}^T\mathbf{J} + \lambda\mathbf{I})^{-1}$};
+
+\node[data_box] (output) at (0,-15.3) {Output: $\hat{\boldsymbol{\theta}}$, confidence,\\residual variance};
+
+\node[stop] (finish) at (0,-16.8) {End: Output to filter};
+
+% Arrows - Main flow
+\draw[arrow] (start) -- (data_input);
+\draw[arrow] (data_input) -- (init_params);
+\draw[arrow] (init_params) -- (compute_jacobian);
+\draw[arrow] (compute_jacobian) -- (compute_residual);
+\draw[arrow] (compute_residual) -- (compute_sse);
+\draw[arrow] (compute_sse) -- (check_convergence);
+
+% Yes from convergence - go to kappa check
+\draw[arrow] (check_convergence.north) -- ++(0,0.8) -- ++(-3.5,0) -- (check_kappa.north) 
+    node[label, anchor=south] {YES};
+
+% No from convergence - go to solve LM
+\draw[arrow] (check_convergence.east) -- (solve_lm.west)
+    node[label, anchor=south] {NO};
+
+\draw[arrow] (solve_lm) -- (update_params);
+\draw[arrow] (update_params) -- (update_lambda);
+\draw[arrow] (update_lambda) -- ++(0,-0.7) -- ++(-3.5,0) -- (compute_jacobian.east)
+    node[label, pos=0.7, anchor=west] {iterate};
+
+% Kappa check
+\draw[arrow] (check_kappa.west) -- (confidence_high.east)
+    node[label, anchor=south] {YES};
+
+\draw[arrow] (check_kappa.east) -- (confidence_low.west)
+    node[label, anchor=south] {NO};
+
+% Converge to output
+\draw[arrow] (confidence_high) -- ++(0,-0.5) -- ++(3.5,0) -- (extract_cov.west);
+\draw[arrow] (confidence_low) -- (extract_cov.east);
+\draw[arrow] (extract_cov) -- (output);
+\draw[arrow] (output) -- (finish);
+
+% Annotations
+\node[label, anchor=west] at (3.5,-0.5) {\textbf{Levenberg-Marquardt Two-Pass Strategy}};
+\node[label, anchor=west] at (3.5,-11.5) {\textit{Pass 1: Convergence ($\lambda$ large)}};
+\node[label, anchor=west] at (3.5,-13.5) {\textit{Pass 2: Refinement ($\lambda$ small)}};
+
+\end{tikzpicture}
+
+\end{document}

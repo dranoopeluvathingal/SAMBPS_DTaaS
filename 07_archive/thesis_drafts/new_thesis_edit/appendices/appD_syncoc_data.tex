@@ -1,0 +1,98 @@
+%% appD_syncoc_data.tex
+%% Appendix D: SAMBP-SyncOC Numerical Data and Simulation Scripts
+%% ============================================================
+\chapter{SAMBP-SyncOC Numerical Dataset and Scripts}
+\label{app:syncoc}
+
+\section{System Parameters}
+\label{app:syncoc_params}
+
+The study system of Chapter~\ref{ch:generator_oc} uses the parameters
+in Table~\ref{tab:app_syncoc_params}. The full parameter file is
+\texttt{sambp/sambp\_sync\_oc/report/params.py}.
+
+\begin{table}[htbp]
+\caption{SAMBP-SyncOC complete simulation parameter set}
+\label{tab:app_syncoc_params}
+\small
+\begin{tabularx}{\textwidth}{@{}lllll@{}}
+\toprule
+Group & Symbol & Value & Unit & Notes \\
+\midrule
+\multicolumn{5}{l}{\textit{Synchronous Generator}} \\
+& $X_d$ & 1.80 & pu & Standard large unit \\
+& $X_d'$ & 0.30 & pu & \\
+& $X_d''$ & 0.20 & pu & \\
+& $T_d'$ & 0.800 & s & \\
+& $T_d''$ & 0.030 & s & \\
+& $R_a$ & 0.010 & pu & \\
+& $H$ & 5.0 & s & Inertia constant \\
+\midrule
+\multicolumn{5}{l}{\textit{Network}} \\
+& $R_{th}$ & 0.010 & pu & \\
+& $X_{th}$ & 0.150 & pu & \\
+& $R_\ell$ & 0.020 & pu & \\
+& $X_\ell$ & 0.080 & pu & \\
+\midrule
+\multicolumn{5}{l}{\textit{Simulation}} \\
+& $f_s$ & 10{,}000 & Hz & Sampling rate \\
+& $T_\mathrm{sim}$ & 2.0 & s & Duration \\
+& $t_0$ & 0.10 & s & Fault inception \\
+& $t_c$ & 0.35 & s & Fault clearance \\
+\midrule
+\multicolumn{5}{l}{\textit{LM Algorithm}} \\
+& $\mu_0$ & $10^{-3}$ & -- & Initial damping \\
+& $\mu_\mathrm{max}$ & $10^{6}$ & -- & Maximum damping \\
+& $N_\mathrm{iter}$ & 500 & -- & Max iterations \\
+& $\varepsilon_r$ & $10^{-8}$ & pu & Residual tolerance \\
+\midrule
+\multicolumn{5}{l}{\textit{Confidence Score}} \\
+& $w_1, w_2, w_3, w_4$ & 0.35, 0.30, 0.20, 0.15 & -- & Component weights \\
+& $\alpha_R$ & 100 & -- & $\gamma_R$ sharpness \\
+& $\alpha_J$ & 0.1 & -- & $\gamma_J$ scaling \\
+& $\gamma_\mathrm{th}$ & 0.70 & -- & Adaptation gate \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Simulation Script Inventory}
+\label{app:syncoc_scripts}
+
+The following scripts in \texttt{sambp/sambp\_sync\_oc/} implement
+the SAMBP-SyncOC framework:
+
+\begin{table}[htbp]
+\caption{SAMBP-SyncOC script inventory}
+\label{tab:app_syncoc_scripts}
+\small
+\begin{tabularx}{\textwidth}{@{}p{5cm}Xl@{}}
+\toprule
+Script & Function & Status \\
+\midrule
+\texttt{report/run\_milestone1.py} & Single-generator LM estimation & Complete [P] \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Milestone-1 Raw Results}
+\label{app:syncoc_raw}
+
+The raw estimation results for Milestone 1 (three fault cases) are
+archived in \texttt{sambp/sambp\_sync\_oc/report/outputs/}:
+
+\begin{table}[htbp]
+\caption{Raw LM estimation results: Case A (3P), B (LL), C (SLG)}
+\label{tab:app_syncoc_raw}
+\small
+\begin{tabularx}{\textwidth}{@{}lXXXXXXX@{}}
+\toprule
+Case & $\hat{t}_0$ [s] & $\hat{I}_{ss}$ [pu] & $\hat{I}_{sub}$ [pu] &
+  $\hat{\tau}_{ac}$ [s] & $\hat{\tau}_{dc}$ [s] & $\hat{\phi}_a$ [rad] & $R^2$ \\
+\midrule
+A & 0.1001 & 0.341 & 3.872 & 0.0298 & 0.0931 & $-$0.312 & 0.9997 \\
+B & 0.0999 & 0.295 & 2.941 & 0.0301 & 0.0944 & $-$0.418 & 0.9995 \\
+C & 0.1003 & 0.182 & 2.104 & 0.0312 & 0.0967 & $+$0.521 & 0.9993 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+

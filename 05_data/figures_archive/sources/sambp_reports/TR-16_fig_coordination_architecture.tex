@@ -1,0 +1,66 @@
+% fig_coordination_architecture.tex
+% Block diagram: 87B/87L hybrid coordination architecture (TR-16)
+% Shows: Bus section (87B) + Line section (87L) feeding a coordination logic block
+\begin{tikzpicture}[
+  blk/.style={draw, fill=blue!8, rounded corners=3pt,
+              minimum width=64pt, minimum height=26pt,
+              font=\scriptsize, align=center},
+  zblk/.style={draw, fill=orange!8, rounded corners=3pt,
+               minimum width=52pt, minimum height=22pt,
+               font=\scriptsize, align=center},
+  cblk/.style={draw, fill=green!8, rounded corners=3pt,
+               minimum width=64pt, minimum height=26pt,
+               font=\scriptsize\bfseries, align=center},
+  sig/.style={font=\scriptsize},
+  arr/.style={-latex, thick},
+  darr/.style={-latex, thick, dashed, gray!60},
+  lab/.style={font=\scriptsize\itshape},
+  zone/.style={draw=gray!50, fill=gray!5, rounded corners=4pt,
+               inner sep=6pt, dashed},
+]
+
+% ---- Bus zone (top path) ---------------------------------------------------
+\node[sig] (iBUS) at (0, 2.2) {$i_{1}(t),\ldots,i_{N}(t)$};
+\node[blk] (B87) at (3.4, 2.2) {87B Bus\\Differential\\(TR-14 CSV)};
+\draw[arr] (iBUS.east) -- (B87.west);
+\node[zblk] (bDec) at (6.8, 2.2) {BB1 / BB2\\BC / no\_trip};
+\draw[arr] (B87.east) -- (bDec.west);
+
+% ---- Line zone (bottom path) -----------------------------------------------
+\node[sig] (iLINE) at (0, 0.0) {$i_{\rm diff,line}(t)$};
+\node[blk] (L87) at (3.4, 0.0) {87L Line\\Differential\\(TR-15 Mode~1)};
+\draw[arr] (iLINE.east) -- (L87.west);
+\node[zblk] (lDec) at (6.8, 0.0) {trip / no\_trip\\$\hat{I}_{\rm fund},\,f_{\rm int}$};
+\draw[arr] (L87.east) -- (lDec.west);
+
+% ---- Coordination logic ----------------------------------------------------
+\node[cblk] (coord) at (10.4, 1.1) {Coordination\\Logic\\(non-conflicting)};
+\draw[arr] (bDec.east) -| (coord.north);
+\draw[arr] (lDec.east) -| (coord.south);
+
+% ---- Output ----------------------------------------------------------------
+\node[sig] (out) at (13.3, 1.1) {Trip signal};
+\draw[arr] (coord.east) -- (out.west);
+
+% ---- Physics annotations ---------------------------------------------------
+\node[draw, fill=red!5, rounded corners=2pt, font=\scriptsize, align=center,
+      anchor=north]
+  (busphy) at (3.4, 1.35)
+  {Bus fault $\Rightarrow$\\$i_{\rm diff,line}=0$};
+\draw[darr] (busphy.north) -- (B87.south);
+
+\node[draw, fill=blue!5, rounded corners=2pt, font=\scriptsize, align=center,
+      anchor=south]
+  (linephy) at (3.4, -1.3)
+  {Line fault $\Rightarrow$\\bus CTs cancel};
+\draw[darr] (linephy.south) -- (L87.north);
+
+% ---- Zone boundary boxes ---------------------------------------------------
+\begin{scope}[on background layer]
+\node[zone, fit=(iBUS)(B87)(bDec), label={[font=\tiny,gray]above:Bus Protection Zone}]
+  {};
+\node[zone, fit=(iLINE)(L87)(lDec), label={[font=\tiny,gray]below:Line Protection Zone}]
+  {};
+\end{scope}
+
+\end{tikzpicture}

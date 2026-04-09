@@ -1,0 +1,82 @@
+\chapter{Abstract}
+
+\begin{tabular}{@{} >{\bfseries}p{0.22\textwidth} p{0.75\textwidth} @{}}
+\MakeUppercase{Keywords} &
+Inverter-Based Resources, Line Differential Protection,
+Distance Protection, Microgrid Protection, Digital Twin,
+Physics-Informed Neural Network, Fault Classification,
+Wide-Area Protection Coordinator, IEC~61850 GOOSE Security,
+Adaptive Relay Coordination.
+\end{tabular}
+\par
+
+\begin{doublespacing}
+
+The global power grid is undergoing a fundamental structural transformation:
+synchronous machines---whose high-inertia fault signatures underpinned a
+century of deterministic relay design---are being displaced at accelerating
+pace by Inverter-Based Resources (IBRs). Grid-Following (GFL) and
+Grid-Forming (GFM) converters are voltage-controlled current sources whose
+fault currents are limited to 1.1--2.0~pu by fast sub-cycle current
+limiters, and whose positive-, negative-, and zero-sequence contributions
+are determined by software control laws rather than by physical machine
+reactance. This paradigm shift systematically invalidates the foundational
+assumptions of legacy overcurrent (ANSI~51/67), impedance distance (ANSI~21),
+and differential (ANSI~87) protection algorithms.
+
+This thesis proposes a hierarchical, self-adaptive protection and control
+architecture---termed the \textbf{Self-Adaptive Multi-Bus Protection (SAMBP)}
+framework---for IBR-dominated distribution and sub-transmission networks.
+The framework spans six technical tiers, each developed from first principles
+and validated through Monte Carlo simulation, digital twin emulation, and
+hardware-in-the-loop testing.
+
+Line differential protection (Chapter~4) develops a family of adaptive 87L
+algorithms. The physics-constrained adaptive threshold modulates the operating
+slope~$k_m$ as a function of the real-time IBR current ratio
+$k_\mathrm{ibr} = I_\mathrm{IBR}/I_\mathrm{rated}$, eliminating the static
+bias margin that previously caused missed trips under weak-infeed conditions.
+Supplementary harmonic-discrimination (87LH), negative-sequence (87LN), and
+transient-differential (TDCS-87L) elements extend sensitivity across the full
+spectrum of unsymmetrical and high-impedance fault types. Chapter~5 derives the
+apparent impedance trajectory seen by a distance relay under IBR reactive current
+injection and proposes a quadrilateral characteristic with an IBR reach-correction
+term. A Monte Carlo framework quantifies the reliability gain over classical mho
+elements at $\Delta P_\mathrm{detect} = +7.6$ percentage points.
+
+Chapter~6 characterises the protection-relevant distinction between GFL and
+GFM inverter modes and proposes a ROCOF-supervised mode-switch islanding
+detection scheme that achieves isolation within 120~ms while remaining
+compliant with IEEE~1547-2018 ride-through requirements. An adaptive
+overcurrent setting-group scheme uses IEC~61850~GOOSE mode flags to
+reconfigure relay parameters within 50~ms of a grid-to-island transition.
+
+Chapter~7 introduces a non-blocking real-time digital twin architecture
+that runs an Extended Kalman Filter (EKF) to jointly estimate the IBR
+current ratio, line impedance, and fault location parameter from current
+measurements alone. The EKF achieves steady-state RMSE of 0.024~pu in
+$k_\mathrm{ibr}$, 0.5\% in $Z_\mathrm{line}$, and 1.1\% in fault location
+at a 50~$\mu$s relay sampling cycle.
+
+Chapter~8 develops a Physics-Informed Neural Network (PINN) fault classifier
+that embeds three physics constraints directly in the loss function.
+The PINN achieves 96.1\% five-class accuracy on synthetic IBR fault data
+while guaranteeing zero physics-constraint violations. A CUSUM change-point
+detector triggers selective online re-training in response to fleet
+composition drift, recovering full accuracy within 21 decision cycles.
+
+Chapter~9 integrates all components into a Wide-Area Protection Coordinator
+(WAPC) that localises faults via PMU voltage-dip triangulation (94.5\%
+accuracy), optimises relay settings through an IEC standard-inverse
+CTI-graded engine, secures GOOSE channels with HMAC-SHA256 (0.36~ms overhead,
+54.9\% risk reduction), and validates the complete system through a
+100-scenario hardware-in-the-loop regression suite.
+
+Collectively, this thesis contributes 18 original algorithms and architectures,
+of which 6 are Tier-1 (novelty $= 5$, significance $= 5$ on independent
+expert assessment). The proposed SAMBP framework provides the first complete,
+closed-loop, self-adaptive protection architecture for mixed GFL/GFM power
+systems, from local relay physics through centralised coordination and
+cybersecurity.
+
+\end{doublespacing}

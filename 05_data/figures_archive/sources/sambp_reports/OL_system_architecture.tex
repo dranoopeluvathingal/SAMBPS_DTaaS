@@ -1,0 +1,94 @@
+\documentclass{standalone}
+\usepackage{tikz}
+\usepackage{tikzscale}
+\usetikzlibrary{shapes,arrows,positioning,calc,decorations.pathreplacing}
+\input{../tikz_master_styles}
+
+\begin{document}
+%----------------------------------------------------------------------
+% System Architecture Diagram for SAMBP Framework
+%----------------------------------------------------------------------
+
+\begin{tikzpicture}[scale=1.2, every node/.style={font=\small}]
+
+% Define block styles using master styles
+\tikzstyle{blockblue}=[rectangle, draw=sambp_blue, fill=sambp_blue!10, thick, 
+                       minimum width=2.5cm, minimum height=0.8cm, text centered, 
+                       font=\small\bfseries]
+\tikzstyle{blockgreen}=[rectangle, draw=sambp_green, fill=sambp_green!10, thick, 
+                        minimum width=2.5cm, minimum height=0.8cm, text centered, 
+                        font=\small\bfseries]
+\tikzstyle{blockred}=[rectangle, draw=sambp_red, fill=sambp_red!10, thick, 
+                      minimum width=2.5cm, minimum height=0.8cm, text centered, 
+                      font=\small\bfseries]
+\tikzstyle{blockyellow}=[rectangle, draw=sambp_orange, fill=sambp_orange!10, thick, 
+                         minimum width=2.5cm, minimum height=0.8cm, text centered, 
+                         font=\small\bfseries]
+\tikzstyle{arrow}=[->, thick, sambp_black]
+\tikzstyle{arrowthick}=[->, line width=2pt, sambp_dark_gray]
+
+% Physical Plant Layer
+\node[blockblue] (gen) at (0, 0) {Synchronous\\Generator};
+\node[blockblue] (net) at (3, 0) {Network\\(Thévenin)};
+\node[blockblue] (fault) at (6, 0) {Fault\\Location};
+
+\draw[arrow] (gen) -- (net) node[midway, above] {$i_a, i_b, i_c$};
+\draw[arrow] (net) -- (fault) node[midway, above] {$V_{term}$};
+
+% Measurement & Signal Processing
+\node[blockgreen] (meas) at (3, -2) {Current\\Measurement};
+\node[blockgreen] (smooth) at (3, -3.5) {Signal\\Processing\\(Savitzky-Golay)};
+\node[blockgreen] (rms) at (3, -5) {RMS\\Computation};
+
+\draw[arrow] (fault) -- (meas);
+\draw[arrow] (meas) -- (smooth);
+\draw[arrow] (smooth) -- (rms);
+
+% Event Detection
+\node[blockyellow] (detect) at (6, -3.5) {Event\\Detection\\($\hat{t}_0$)};
+\node[blockyellow] (window) at (6, -5) {Window\\Extraction};
+
+\draw[arrow] (rms) -- (detect);
+\draw[arrow] (detect) -- (window);
+
+% Two-Pass Estimator
+\node[blockred] (pass1) at (0, -3.5) {Pass 1: Full\\Window (6 params)};
+\node[blockred] (pass2) at (0, -5) {Pass 2: Tail\\Window (2 params)};
+\node[blockyellow] (merge) at (3, -6.5) {Merge\\$\hat{\boldsymbol{\theta}}$};
+
+\draw[arrow] (window) -- (pass1);
+\draw[arrow] (pass1) -- (pass2);
+\draw[arrow] (pass2) -- (merge);
+
+% Confidence Scoring
+\node[blockgreen] (conf) at (6, -6.5) {Confidence\\Gate\\$\gamma \geq \gamma_{th}$};
+
+\draw[arrow] (merge) -- (conf);
+
+% Adaptation
+\node[blockblue] (adapt) at (3, -8) {Adaptive\\Mapping\\$(I_p^*, \text{TMS}^*)$};
+\node[blockblue] (bound) at (3, -9.5) {Bounded\\Update\\Law};
+\node[blockblue] (relay) at (3, -11) {Adaptive\\OC Relay};
+
+\draw[arrow] (conf) -- (adapt);
+\draw[arrow] (adapt) -- (bound);
+\draw[arrow] (bound) -- (relay);
+
+% Output
+\node[blockgreen] (trip) at (3, -12.5) {Protection\\Decision\\(Trip/Block)};
+
+\draw[arrow] (relay) -- (trip);
+
+% Title and Region Labels
+\draw[dashed, sambp_dark_gray, line width=1pt] (-1, 0.8) rectangle (7, -1.5)
+    node[above right, font=\normalsize\bfseries] {\textcolor{sambp_dark_gray}{Physical Plant}};
+
+\draw[dashed, sambp_dark_gray, line width=1pt] (-1, -1.8) rectangle (7, -5.5)
+    node[above right, font=\normalsize\bfseries] {\textcolor{sambp_dark_gray}{Signal Processing \& Estimation}};
+
+\draw[dashed, sambp_dark_gray, line width=1pt] (-1, -6.2) rectangle (7, -12.8)
+    node[above right, font=\normalsize\bfseries] {\textcolor{sambp_dark_gray}{Adaptation \& Decision}};
+
+\end{tikzpicture}
+
+\end{document}

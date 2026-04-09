@@ -1,0 +1,111 @@
+% ============================================================
+%  Figure 5 — Selectivity margin and grading margin:
+%  before and after coordination for both generator relays
+%  Left: selectivity margin I_p,k - I_p,B vs required Delta_Im
+%  Right: time-grading margin t_op,k - t_op,B vs required Delta_tg
+% ============================================================
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=2 by 1, horizontal sep=1.0cm},
+  width=0.50\columnwidth, height=6.2cm,
+  ymajorgrids=true, grid style={gray!20},
+  label style={font=\small},
+  tick label style={font=\scriptsize},
+  clip=false
+]
+
+%% ---- Left: Selectivity margin -----------------------------------
+\nextgroupplot[
+  title={\textbf{(a)} Pickup selectivity margin},
+  title style={font=\small},
+  ybar=4pt, bar width=9pt,
+  symbolic x coords={$R_1$, $R_2$},
+  xtick=data,
+  xlabel={Generator relay},
+  ylabel={$I_{p,k} - I_{p,B}$ (p.u.)},
+  ymin=-0.10, ymax=0.50,
+  ytick={-0.10,-0.05,0,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45},
+  legend style={at={(0.50,1.02)}, anchor=south, font=\tiny,
+                fill=white, legend columns=2},
+  nodes near coords, nodes near coords align={vertical},
+  every node near coord/.style={font=\tiny}]
+
+% Fixed margin = 1.20 - 0.80 = 0.40 (both)
+\addplot[fill=gray!55, draw=gray!70, bar shift=-6pt] coordinates {
+  ($R_1$, 0.40)
+  ($R_2$, 0.40)
+};
+
+% Pre-coord: R1: 0.992-0.835=0.157; R2: 0.980-0.835=0.145
+\addplot[fill=red!35, draw=red!55, bar shift=0pt] coordinates {
+  ($R_1$, 0.157)
+  ($R_2$, 0.145)
+};
+
+% Post-coord: 1.035-0.835=0.200 (both)
+\addplot[fill=blue!30, draw=blue!50, bar shift=6pt] coordinates {
+  ($R_1$, 0.200)
+  ($R_2$, 0.200)
+};
+
+% Required margin line
+\draw[thick, orange!80!black, dashed]
+      ({axis cs:$R_1$,0.20}|-{axis cs:$R_1$,0.20}) --
+      ({axis cs:$R_2$,0.20}|-{axis cs:$R_2$,0.20});
+\node[above right, font=\tiny, orange!80!black]
+      at (axis cs:$R_2$,0.20) {$\Delta I_m$};
+
+% Violation shading
+\addplot[fill=red!10, draw=none] coordinates {($R_1$,-0.10)} \closedcycle;
+
+% Zero line
+\draw[black!40] ({axis cs:$R_1$,0}|-{axis cs:$R_1$,0}) --
+                ({axis cs:$R_2$,0}|-{axis cs:$R_2$,0});
+
+\legend{Fixed, Pre-coord, Post-coord};
+
+%% ---- Right: Grading margin at I_f,min = 1.30 pu ----------------
+\nextgroupplot[
+  title={\textbf{(b)} Time-grading margin at $I_{f,\min}$},
+  title style={font=\small},
+  ybar=4pt, bar width=9pt,
+  symbolic x coords={$R_1$, $R_2$},
+  xtick=data,
+  xlabel={Generator relay},
+  ylabel={$t_{op,k} - t_{op,B}$ (\si{\second})},
+  ymin=0, ymax=32,
+  ytick={0,5,10,15,20,25,30},
+  legend style={at={(0.50,1.02)}, anchor=south, font=\tiny,
+                fill=white, legend columns=2},
+  nodes near coords, nodes near coords align={vertical},
+  every node near coord/.style={font=\tiny}]
+
+% Fixed: 32.5-4.32 = 28.18 s (both)
+\addplot[fill=gray!55, draw=gray!70, bar shift=-6pt] coordinates {
+  ($R_1$, 28.18)
+  ($R_2$, 28.18)
+};
+
+% Pre-coord: t1-tB = 4.27-2.42=1.85; t2-tB = 4.37-2.42=1.95
+\addplot[fill=red!35, draw=red!55, bar shift=0pt] coordinates {
+  ($R_1$, 1.85)
+  ($R_2$, 1.95)
+};
+
+% Post-coord: 5.16-2.42=2.74; 5.59-2.42=3.17
+\addplot[fill=blue!30, draw=blue!50, bar shift=6pt] coordinates {
+  ($R_1$, 2.74)
+  ($R_2$, 3.17)
+};
+
+% Required grading margin
+\draw[thick, orange!80!black, dashed]
+      ({axis cs:$R_1$,0.15}|-{axis cs:$R_1$,0.15}) --
+      ({axis cs:$R_2$,0.15}|-{axis cs:$R_2$,0.15});
+\node[above right, font=\tiny, orange!80!black]
+      at (axis cs:$R_2$,0.20) {$\Delta t_g$};
+
+\legend{Fixed, Pre-coord, Post-coord};
+
+\end{groupplot}
+\end{tikzpicture}

@@ -1,0 +1,167 @@
+%% ============================================================
+%% THESIS MAIN FILE
+%% Title:  Advanced Protection for Distributed Power Systems
+%%         and Microgrids
+%% Author: Anoop V Eluvathingal
+%% Inst.:  IIT Madras, Dept. Electrical Engineering
+%% Degree: Doctor of Philosophy
+%% Year:   2026
+%%
+%% Build:  pdflatex thesis_main
+%%         bibtex   thesis_main
+%%         pdflatex thesis_main
+%%         pdflatex thesis_main
+%% ============================================================
+
+\documentclass[phd, zdraft]{iitmdissertation}
+
+%% ── Additional packages ──────────────────────────────────────
+\usepackage{multirow}
+\usepackage{amsmath,amssymb,bm,mathtools}
+\usepackage{graphicx}
+\usepackage{standalone}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{pgfplotstable}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{diagbox}
+\usepackage{siunitx}
+\usepackage{physics}
+\usepackage{xcolor}
+\usepackage[framemethod=tikz]{mdframed}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+\usepackage{circuitikz}
+\usepackage{enumitem}
+\usepackage{amsthm}
+
+%% ── TikZ libraries ───────────────────────────────────────────
+\input{thesis_tikz_styles.tex}
+
+%% ── Fix KOMA-Script 3.41 + microtype \MakeUppercase incompatibility ──────
+%% LaTeX 2023 \MakeUppercase internally uses an optional-argument LaTeX3
+%% implementation. When KOMA-Script writes this to the .toc as
+%% \MakeUppercase []{text}, a microtype/LaTeX3-key interaction on the
+%% second pass empties all TOC entries.
+%% Fix: redefine \MakeUppercase as a plain 1-arg command via LaTeX3
+%% \text_uppercase:n, so the .toc receives \MakeUppercase{text} (no []).
+\microtypesetup{activate=false}
+\ExplSyntaxOn
+\DeclareRobustCommand \MakeUppercase [1] { \text_uppercase:n {#1} }
+\ExplSyntaxOff
+
+%% ── Dissertation metadata ────────────────────────────────────
+\dissertationDepartment      {Department of Electrical Engineering}
+\dissertationAuthorName      {Anoop V Eluvathingal}
+\dissertationDateOfBirth     {22 October 1988}
+\dissertationDegree          {Doctor of Philosophy}
+\dissertationTitle           {Advanced Protection for Distributed Power Systems and Microgrids}
+\dissertationMonth           {June}
+\dissertationYear            {2026}
+\dissertationCertificateDate {June 2026}
+\dissertationType            {Thesis}
+\dissertationGuides          {Dr.\ K. Shanti Swarup}
+\dissertationCommitteeName   {Doctoral Committee}
+
+%% ── Convenience macros ───────────────────────────────────────
+\newcommand{\Idiff}{I_\mathrm{diff}}
+\newcommand{\Ibias}{I_\mathrm{bias}}
+\newcommand{\Iop}{I_\mathrm{op}}
+\newcommand{\kibr}{k_\mathrm{ibr}}
+\newcommand{\kmargin}{k_\mathrm{m}}
+\newcommand{\Zline}{Z_\mathrm{line}}
+\newcommand{\Zapp}{Z_\mathrm{app}}
+\newcommand{\PINN}{\textsc{pinn}}
+\newcommand{\WAPC}{\textsc{wapc}}
+\newcommand{\TMS}{\mathit{TMS}}
+\newcommand{\CTI}{\mathit{CTI}}
+\newcommand{\eg}{e.g.,\ }
+\newcommand{\ie}{i.e.,\ }
+\newcommand{\etal}{et al.}
+\newcommand{\highlight}[1]{\colorbox{yellow!30}{#1}}
+
+%% ── Result placeholder box ───────────────────────────────────
+\newcommand{\resultbox}[2][Result Placeholder]{%
+  \begin{tcolorbox}[
+    colback=orange!5,
+    colframe=orange!60!black,
+    fonttitle=\bfseries\small,
+    title={#1 \textnormal{(pending future work)}},
+    breakable,
+    before upper={\small},
+  ]
+  #2
+  \end{tcolorbox}
+}
+
+%% ── Algorithm style ──────────────────────────────────────────
+\algrenewcommand\algorithmicrequire{\textbf{Input:}}
+\algrenewcommand\algorithmicensure{\textbf{Output:}}
+
+%% ── Listing style ────────────────────────────────────────────
+\lstset{
+  basicstyle    = \ttfamily\scriptsize,
+  keywordstyle  = \bfseries\color{blue!70!black},
+  commentstyle  = \itshape\color{gray},
+  numberstyle   = \tiny\color{gray},
+  breaklines    = true,
+  frame         = single,
+  numbers       = left,
+  xleftmargin   = 1.5em,
+}
+
+%% ── Theorem environments ─────────────────────────────────────
+
+%% ── siunitx setup ────────────────────────────────────────────
+\sisetup{
+  per-mode     = symbol,
+  range-phrase = --,
+}
+
+%% ─────────────────────────────────────────────────────────────
+\begin{document}
+
+%% ── Pre-matter ───────────────────────────────────────────────
+\prematter
+  \input{frontmatter/pre-quote.tex}
+  \input{frontmatter/pre-dedication.tex}
+  \printCertificate
+
+%% ── Front matter ─────────────────────────────────────────────
+\begin{FrontMatter}
+  \printGlossaryAndAbbreviations
+  \input{frontmatter/notation.tex}
+\end{FrontMatter}
+
+%% ── Main matter ──────────────────────────────────────────────
+\begin{MainMatter}
+  \input{chapters/ch01_introduction.tex}
+  \input{chapters/ch02_ibr_foundations.tex}
+  \input{chapters/ch03_differential_protection.tex}
+  \input{chapters/ch04_oc_distance.tex}
+  \input{chapters/ch05_microgrid_protection.tex}
+  \input{chapters/ch06_monitoring_ml.tex}
+  \input{chapters/ch07_coordination_security.tex}
+  \input{chapters/ch08_conclusions.tex}
+  %% ── Appendices ──
+  \appendix
+  \input{appendices/appA_proofs.tex}
+  \input{appendices/appB_system_data.tex}
+  \input{appendices/appC_algorithms.tex}
+  \input{appendices/appD_syncoc_data.tex}
+\end{MainMatter}
+
+%% ── Back matter ──────────────────────────────────────────────
+\begin{BackMatter}
+  \printBibliographyReferences{thesis.bib}
+\end{BackMatter}
+
+\end{document}

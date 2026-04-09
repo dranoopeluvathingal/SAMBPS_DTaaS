@@ -1,0 +1,44 @@
+% ============================================================
+%  Figure 4 — Signal chain: 9 ODE states → relay abc currents
+% ============================================================
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  blk/.style={draw, thick, rounded corners=2pt,
+              minimum width=2.2cm, minimum height=1.0cm,
+              align=center},
+  arr/.style={->, thick, >=Latex},
+  node distance=0.55cm
+]
+
+\node[blk, fill=yellow!15] (ode)
+     {9-state ODE\\[1pt]
+      $[E'_q, E'_d,$\\$E''_q, E''_d,$\\$\delta,\omega,$\\$E_{fd},V_{pss},T_m]$};
+
+\node[blk, fill=blue!10, right=of ode] (stator)
+     {Stator\\algebraic\\$\mathbf{v}_{dq} = R_s\mathbf{i}_{dq}$\\$+ \mathbf{e}_{dq}$};
+
+\node[blk, fill=blue!10, right=of stator] (solve)
+     {Solve $i_d, i_q$\\from network\\constraint\\$R_f, Z_{th}$};
+
+\node[blk, fill=green!12, right=of solve] (park)
+     {Inv. Park\\$\mathbf{i}_{abc}$\\$= T^{-1}(\delta)$\\$\mathbf{i}_{dq0}$};
+
+\node[blk, fill=orange!12, right=of park] (relay)
+     {Relay input\\$i_a(t),i_b(t),$\\$i_c(t)$\\@ 10\,kHz};
+
+\draw[arr] (ode)    -- node[above,font=\tiny]{states $\mathbf{x}(t)$} (stator);
+\draw[arr] (stator) -- node[above,font=\tiny]{$\mathbf{e}_{dq}$}      (solve);
+\draw[arr] (solve)  -- node[above,font=\tiny]{$i_d,i_q$}              (park);
+\draw[arr] (park)   -- node[above,font=\tiny]{sampled}                (relay);
+
+%% Feedback: δ from ODE to Park
+\draw[arr, yellow!50!black, bend right=30]
+  (ode.south) to node[below, font=\tiny, yellow!50!black]{$\delta(t)$} (park.south);
+
+%% Downstream arrow to estimator
+\draw[arr, dashed, gray!60]
+  (relay.east) -- ++(0.8, 0)
+  node[right, font=\tiny, gray!60, align=left]
+  {to Stage-1\\estimator};
+
+\end{tikzpicture}

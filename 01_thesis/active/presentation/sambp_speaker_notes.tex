@@ -1,0 +1,558 @@
+%% ============================================================
+%% SAMBP TSA Meeting — Speaker Notes (Standalone Document)
+%% Author  : Anoop V Eluvathingal, IIT Madras
+%% Compile : pdflatex sambp_speaker_notes.tex
+%% ============================================================
+\documentclass[12pt, a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{mathptmx}
+\usepackage[a4paper, top=20mm, bottom=20mm, left=22mm, right=22mm]{geometry}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\usepackage{amsmath}
+\usepackage{fontawesome5}
+\usepackage[colorlinks=true, linkcolor=iitmMaroon, urlcolor=iitmMaroon]{hyperref}
+
+\definecolor{iitmMaroon}{RGB}{128,0,0}
+\definecolor{iitmGold}  {RGB}{179,145,25}
+\definecolor{noteBg}    {RGB}{252,250,245}
+\definecolor{slideNum}  {RGB}{0,60,130}
+
+\setstretch{1.3}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+
+%% Section formatting — slide title bar
+\newcommand{\secbox}[1]{%
+  \colorbox{iitmMaroon}{\parbox{\dimexpr\textwidth-2\fboxsep\relax}{%
+    \strut\quad\color{white}\large\bfseries\thesection\enspace|\enspace #1\strut}}}
+\titleformat{\section}[block]{\normalfont}{}{0pt}{\secbox}[\vspace{2pt}]
+
+\titlespacing{\section}{0pt}{14pt}{6pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small\color{iitmMaroon}\textit{SAMBP TSA Meeting --- Speaker Notes}}
+\fancyhead[R]{\small\color{iitmMaroon}\textit{Anoop V Eluvathingal, IIT Madras}}
+\fancyfoot[C]{\small\thepage}
+
+%% Slide note box
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
+\newenvironment{notebox}{%
+  \begin{tcolorbox}[
+    colback=noteBg,
+    colframe=iitmMaroon!40,
+    boxrule=0.6pt,
+    arc=3pt,
+    left=8pt, right=8pt, top=6pt, bottom=6pt
+  ]
+  \setstretch{1.4}\small
+}{%
+  \end{tcolorbox}
+}
+
+\newcommand{\slidetag}[2]{%
+  \noindent
+  \textcolor{slideNum}{\footnotesize\bfseries Slide #1} \hfill
+  \textcolor{iitmGold!80!black}{\footnotesize\itshape Approx.\ #2}\\[2pt]
+}
+
+\begin{document}
+
+%% ── Title page ──────────────────────────────────────────────
+\begin{center}
+  {\color{iitmMaroon}\rule{\linewidth}{2pt}}\\[0.5cm]
+  {\LARGE\bfseries\color{iitmMaroon}
+    Advanced Protection for Distributed\\[0.2cm]
+    Power Systems and Microgrids}\\[0.4cm]
+  {\large Thesis Submission Approval (TSA) Meeting}\\[0.3cm]
+  {\large\bfseries Speaker Notes}\\[0.5cm]
+  {\normalsize Anoop V.\ Eluvathingal \quad|\quad
+               Supervisor: Prof.\ K.\ Shanti Swarup}\\[0.1cm]
+  {\normalsize Dept.\ of Electrical Engineering, IIT Madras \quad|\quad June 2026}\\[0.5cm]
+  {\color{iitmMaroon}\rule{\linewidth}{2pt}}
+\end{center}
+
+\vspace{0.3cm}
+\begin{tcolorbox}[colback=iitmMaroon!8, colframe=iitmMaroon, arc=3pt,
+                  boxrule=0.8pt, left=8pt, right=8pt, top=6pt, bottom=6pt]
+  \small
+  \textbf{How to use these notes:}
+  \begin{itemize}[leftmargin=1.5em, itemsep=2pt, topsep=3pt]
+    \item Each section corresponds to one slide. Total: 12 numbered + title + thank-you.
+    \item Estimated timing is shown in the top-right of each slide section.
+    \item Key phrases to emphasise are shown in \textbf{bold}.
+    \item Appendix slides (A--I) are backup --- use only during Q\&A.
+    \item Total target delivery time: \textbf{18--22 minutes} for the 12 content slides.
+  \end{itemize}
+\end{tcolorbox}
+
+\newpage
+\tableofcontents
+\newpage
+
+%% ============================================================
+\section{Title Slide}
+
+\slidetag{---}{1 min}
+\begin{notebox}
+Good morning / good afternoon, respected committee members.
+I am \textbf{Anoop V.\ Eluvathingal}, a PhD candidate in the Department of Electrical
+Engineering at IIT Madras, working under the supervision of
+\textbf{Prof.\ K.\ Shanti Swarup}.
+
+Today I present my thesis titled \textbf{``Advanced Protection for Distributed Power
+Systems and Microgrids''} for the Thesis Submission Approval.
+
+My work addresses a fundamental challenge in modern power grids: how do we protect
+networks that are increasingly dominated by \textbf{inverter-based resources} (IBRs),
+which behave fundamentally differently from the synchronous generators our relay
+algorithms were designed for?
+
+Over the next 20 minutes I will walk you through the research background, the six key
+contributions, and our validated results. Backup slides covering each thesis chapter
+in detail are available after the last numbered slide for the Q\&A.
+\end{notebox}
+
+%% ============================================================
+\section{Outline}
+
+\slidetag{1 of 12}{0.5 min}
+\begin{notebox}
+I have organised this presentation into \textbf{12 sections}.
+
+We begin with the background and motivation, then critically examine what the state of
+the art can and cannot do. The core of the talk covers six key contributions spread
+across three slides --- one per two contributions --- followed by the thesis organisation,
+publications, and a closing summary with recommended next steps.
+
+Please hold questions until the end; I am happy to go to any backup chapter slide
+during discussion.
+\end{notebox}
+
+%% ============================================================
+\section{Background and Context}
+
+\slidetag{2 of 12}{1.5 min}
+\begin{notebox}
+The left chart tells the story of the generation mix transformation.
+By 2030, IBRs are projected to supply \textbf{72\% of generation} while synchronous
+machines drop to 28\%. This is already happening in India's renewable-rich states.
+
+The right chart shows the \textbf{critical technical consequence}.
+A synchronous generator produces 8--10 per-unit fault current.
+An inverter-based resource is \textbf{software-limited to 1.1--2.0 pu}.
+
+The red dotted line is a typical overcurrent relay pickup set for synchronous machines.
+When an IBR feeds a fault, the current simply does not reach the pickup threshold ---
+the relay does not see a fault at all.
+
+This is the physical root of every failure mode I will show next.
+\textbf{IEEE C37.300-2024}, the new CPC systems standard, explicitly mandates an
+adaptive supervisory layer for exactly this reason.
+\end{notebox}
+
+%% ============================================================
+\section{Research Motivation}
+
+\slidetag{3 of 12}{2 min}
+\begin{notebox}
+The 12 failure modes on the right are not theoretical --- they are \textbf{systematically
+documented from grid incident reports and protection literature}.
+
+The diagram on the left illustrates the most insidious mode: \textbf{sympathetic tripping}.
+A fault on Feeder 1 causes the IBR on Feeder 2 to push current into the fault through
+the common bus. R2 on the \emph{healthy} feeder sees this elevated current and trips
+unnecessarily, disconnecting healthy load.
+
+The table spans all major protection elements: overcurrent 51, distance 21, directional
+67, line differential 87L, islanding, pilot schemes, and CUSUM-based monitoring.
+
+\textbf{All 12 modes trace to one root cause}: relay parameters are static while IBR
+behaviour is dynamic. The conclusion is clear --- we need an adaptive supervisory layer
+that continuously refreshes relay settings from real-time estimates.
+\end{notebox}
+
+%% ============================================================
+\section{State-of-the-Art \& Limitations}
+
+\slidetag{4 of 12}{2 min}
+\begin{notebox}
+The sequence network diagram reveals a critical gap in the literature.
+In the positive-sequence network, IBR current is limited to $k_\text{ibr}$.
+But in the \textbf{negative-sequence network}, the IBR presents zero impedance ---
+it does not limit negative-sequence current in the same way.
+
+This leads to \textbf{Proposition 4.2} of the thesis:
+\emph{when IBR suppresses $I_2$, the 87LN operate ratio $\rho_2 = 2$ always,
+regardless of $k_\text{ibr}$}. IBR suppression is therefore a \textbf{protection asset}
+for negative-sequence elements --- an insight not previously reported.
+
+The gap table summarises seven protection areas. Each row represents a specific chapter
+of this thesis. The final row highlights the absence of any closed-loop, multi-tier
+coordination framework --- which is exactly what SAMBP provides.
+\end{notebox}
+
+%% ============================================================
+\section{Research Objectives}
+
+\slidetag{5 of 12}{1.5 min}
+\begin{notebox}
+The six objectives map \textbf{directly to the six contributions}.
+O1--O3 address local relay adaptation: line differential, distance, and microgrid
+islanding. O4 and O5 address the monitoring layer: real-time parameter estimation and
+physics-informed machine learning. O6 closes the loop at the coordination layer.
+
+The study network on the right is the common testbed for all six contributions: 10 buses,
+7 IBR units, and 3 PMUs, configured to represent a realistic distribution-level active
+network. All Monte Carlo campaigns were run on this network.
+
+The $k_\text{ibr}$ parameter --- defined as the IBR current limit normalised by rated
+current --- ranges from 0.03 to 0.85 pu across the study scenarios, covering everything
+from near-zero to near-rated IBR output.
+\end{notebox}
+
+%% ============================================================
+\section{Key Contributions (1 of 3)}
+
+\slidetag{6 of 12}{2 min}
+\begin{notebox}
+\textbf{C1 --- Adaptive 87L:}
+The core result is the adaptive slope law $k_m^*(k_\text{ibr})$.
+A fixed slope fails at both extremes of $k_\text{ibr}$: too sensitive at high
+$k_\text{ibr}$ causing false trips; too insensitive at low $k_\text{ibr}$ causing missed
+trips. Our law tracks the through-fault operate ratio in real time.
+We also introduce \textbf{87LN} for zero-sequence sensitivity in pure-IBR networks,
+and \textbf{TDCS} --- Transient Differential Catch Scheme --- as a backstop for the
+sub-threshold blind spot.
+
+The bar chart confirms \textbf{100\% detection for any GFL/GFM mix}. The 67Q element
+activates only above 50\% GFM fraction when negative-sequence directional discrimination
+becomes meaningful.
+
+\textbf{C2 --- Adaptive distance:}
+IBR phase-angle injection shifts the apparent impedance outside the relay mho circle.
+The adaptive quadrilateral reach corrects for this with a \textbf{$+7.6$ percentage-point
+detection gain} validated over 10{,}000 Monte Carlo trials.
+\end{notebox}
+
+%% ============================================================
+\section{Key Contributions (2 of 3)}
+
+\slidetag{7 of 12}{2 min}
+\begin{notebox}
+This diagram is the \textbf{architectural summary} of the entire thesis. It is important
+to read this correctly.
+
+\textbf{Tier 1} (blue, left) is the local relay layer --- adaptive 87L, sequence
+elements, and IBR modelling. Chapters 2--4.
+
+\textbf{Tier 2} (lighter blue) extends to distance and microgrid protection.
+Chapters 5--6.
+
+\textbf{Tiers 3 and 4} (green) form the monitoring layer --- EKF digital twin and PINN
+classifier. Chapters 7--8.
+
+\textbf{Tier 5} (maroon) is the Wide-Area Protection Coordinator which sends updated
+settings back to the relays. Chapter 9.
+
+\textbf{Tier 6} (gold) is the Digital Twin validation and audit framework spanning
+Chapters 7--9.
+
+The arrows between tiers show the upward information flow. This is a
+\textbf{closed feedback loop}, not a hierarchical command system. The relay can always
+act on its own physics; the upper tiers only refine it.
+\end{notebox}
+
+%% ============================================================
+\section{Key Contributions (3 of 3)}
+
+\slidetag{8 of 12}{2 min}
+\begin{notebox}
+\textbf{C3 --- Islanding detection:}
+The combined ROCOF plus $V_2/V_1$ criterion closes the non-detection zone to below
+\textbf{1\% of the load range}, while maintaining IEEE 1547-2018 ride-through
+compliance. Setting-group switching via GOOSE completes in 50 ms.
+
+\textbf{C4 --- EKF digital twin:}
+The dual-core shadow-register design ensures the TRIP core always uses the most recent
+committed estimate. The EKF estimation cycle of 20 ms is completely decoupled from the
+relay's 50 $\mu$s trip decision.
+
+\textbf{C5 --- PINN:}
+Physics constraints (KVL, $I_1 = I_2^*$ symmetry, and current limiting) are embedded
+directly in the loss function. At \textbf{96.1\% 5-class accuracy} with zero physics
+violations and 3.7 $\mu$s inference, this is directly deployable in real relay firmware.
+
+\textbf{C6 --- WAPC:}
+The closed-loop protocol runs CUSUM monitoring, parameter computation, digital twin
+validation, MMS upload, and relay activation in a total of \textbf{31 minutes}.
+HMAC-SHA256 authentication reduces GOOSE message spoofing risk by \textbf{54.9\%}.
+
+\textit{Draw attention to the validation metrics table on the right --- these numbers
+are the key takeaways.}
+\end{notebox}
+
+%% ============================================================
+\section{Thesis Organization}
+
+\slidetag{9 of 12}{1.5 min}
+\begin{notebox}
+The thesis follows a deliberate progression.
+\textbf{Chapters 1--3} establish the foundation: the SAMBP architecture, the physics
+of IBR fault currents, and a systematic characterisation of the 12 protection failure
+modes.
+
+\textbf{Chapters 4--6} deliver the three local relay contributions --- one chapter per
+contribution, each with a full derivation, algorithm, and Monte Carlo validation campaign.
+
+\textbf{Chapters 7--9} address the monitoring and coordination layers. Chapter 9 is the
+integrating chapter that ties all contributions together through the Wide-Area Protection
+Coordinator and the 31-minute closed-loop protocol.
+
+The 55 SAMBP technical reports are referenced throughout the thesis as the primary
+numerical evidence base. They are available for inspection and form a \textbf{complete
+audit trail} from algorithm to validated result.
+\end{notebox}
+
+%% ============================================================
+\section{List of Publications (1 of 2)}
+
+\slidetag{10 of 12}{1.5 min}
+\begin{notebox}
+The thesis is anchored by a published journal paper in \textit{IEEE Access} (2024).
+This paper introduces the concept of adaptive relay logic for resolving the conflict
+between line protection and LVRT requirements in medium-voltage solar PV
+interconnections --- directly motivating Contribution C1.
+
+The Springer book chapter from 2020 established early foundational concepts in
+protection for inverter-interfaced networks.
+
+On the pipeline side, the \textbf{adaptive 87L paper (P1) is currently under review at
+\textit{IEEE Transactions on Power Delivery}}. The EKF digital twin paper (P2) is in
+preparation for \textit{IEEE Transactions on Power Electronics}. The PINN paper (P3)
+targets \textit{IEEE Transactions on Smart Grid}.
+\end{notebox}
+
+%% ============================================================
+\section{List of Publications (2 of 2)}
+
+\slidetag{11 of 12}{1 min}
+\begin{notebox}
+Papers P4 and P5 are planned. P4 on the Wide-Area Protection Coordinator targets
+\textit{IEEE Transactions on Power Systems}. P5 on the HIL validation is planned for
+the IEEE PES General Meeting.
+
+The four conference papers from 2017--2018 represent the investigative phase of the
+research that identified the key protection gaps this thesis resolves. They also
+demonstrate the evolution from symmetrical-component islanding relays to the full
+SAMBP framework.
+
+In total: \textbf{1 published journal paper}, 1 book chapter, 4 conference papers, and
+\textbf{5 journal papers in the submission pipeline}. The 55 SAMBP technical reports
+provide the full derivation and simulation evidence base for all claims.
+\end{notebox}
+
+%% ============================================================
+\section{Summary \& Next Steps}
+
+\slidetag{12 of 12}{2 min}
+\begin{notebox}
+To summarise: this thesis delivers a \textbf{complete six-tier self-adaptive protection
+framework} for IBR-dominated power networks.
+
+The six contributions collectively \textbf{eliminate all 12 failure modes} identified in
+the motivation. The validation is rigorous: 5{,}000 Monte Carlo trials per group, 100
+hardware-in-loop scenarios, and physics consistency verified for every PINN output.
+
+Three open research gaps define the future roadmap. The most technically critical is
+\textbf{Gap G4} --- GFM virtual-inertia transient modelling beyond 150 ms, which limits
+the applicability of the Stage-1 Park model.
+
+My most immediate practical recommendation: \textbf{begin deploying adaptive 87L
+protection before IBR penetration in any feeder zone exceeds 40\%}.
+
+I believe SAMBP provides the \textbf{first complete, closed-loop, self-adaptive
+protection architecture} for the next generation of power networks. I am grateful for
+the guidance of Prof.\ K.\ Shanti Swarup and the committee throughout this journey.
+
+\textit{Pause here for 2--3 seconds. Then: ``Thank you.''}
+\end{notebox}
+
+%% ============================================================
+\section*{Thank You / Q\&A}
+\addcontentsline{toc}{section}{Thank You / Q\&A}
+
+\slidetag{---}{open}
+\begin{notebox}
+I am happy to address any questions.
+
+Backup slides are available for each chapter (\textbf{Appendix A through I}) covering:
+SAMBP architecture, IBR modelling, protection failure modes, adaptive 87L detail,
+distance relay, microgrid islanding, digital twin, PINN classifier, and WAPC.
+
+I can also navigate directly to any of the 55 SAMBP technical reports if the committee
+wishes to examine specific derivations or simulation data.
+
+\textit{Common questions and suggested responses:}
+\begin{itemize}[leftmargin=1.5em, itemsep=4pt]
+  \item \textbf{``How does TDCS avoid false alarms during energisation?''}\\
+        The TDCS threshold $\Delta_{thr} = 0.04$ pu is set 15.5\% above the 95th
+        percentile CT mismatch envelope. During energisation, current is unidirectional
+        so $\Delta I_{rms}$ stays below threshold.
+
+  \item \textbf{``Is the EKF stable under IBR inverter saturation?''}\\
+        The EKF uses a linearised model valid for $k_{ibr} \in [0.03, 0.85]$. Beyond
+        0.85 pu, the inverse estimator flags low confidence and the gate withholds
+        adaptation. The relay then falls back to nominal settings.
+
+  \item \textbf{``What is the computational cost of the PINN on relay hardware?''}\\
+        At 3.7 $\mu$s inference time on a standard laptop CPU, the PINN is well within
+        the budget for modern numerical relays with DSP co-processors. The model has
+        3 hidden layers of 64 neurons --- a small network by current standards.
+
+  \item \textbf{``Why 31 minutes for the WAPC closed loop? Is that acceptable?''}\\
+        The 31-minute cycle is for \textbf{setting update}, not for fault protection.
+        The relay continues to protect during the update cycle using the last committed
+        settings. The 25-minute MMS phase includes a mandatory human operator approval
+        step per IEC 61850-90-1. In fully automated deployments this could be reduced
+        to under 5 minutes.
+
+  \item \textbf{``How does the system handle simultaneous faults?''}\\
+        Each relay acts independently in real time. The WAPC handles coordination
+        sequentially after the first fault is cleared, which is the standard assumption
+        for CTI-based coordination.
+\end{itemize}
+\end{notebox}
+
+%% ============================================================
+\section*{Appendix Notes (Backup Slides A--I)}
+\addcontentsline{toc}{section}{Appendix Notes (Backup Slides A--I)}
+
+\subsection*{Appendix A --- SAMBP Architecture (Ch.\ 1)}
+\begin{notebox}
+This figure shows the full three-tier SAMBP architecture. The local relay tier handles
+all protection actions within 50 $\mu$s. The monitoring tier runs the EKF digital twin
+on a 20 ms cycle. The coordination tier runs the CUSUM-to-GOOSE closed loop on a
+minute-scale cycle.
+
+Key design principle: \textbf{physics-first, non-blocking}. The relay never waits for
+AI or optimisation output to make a trip decision. Upper tiers only improve settings
+\emph{between} fault events.
+\end{notebox}
+
+\subsection*{Appendix B --- IBR Modelling (Ch.\ 2)}
+\begin{notebox}
+The GFL inverter control structure shows the current control loop that enforces the
+$k_\text{ibr}$ limit. The dq-axis current references are clipped at $k_\text{ibr}$ times
+rated current.
+
+The 10-bus study network: IBRs at buses 2--5 (radial feeder) and buses 7--9 (lateral).
+Three PMUs at buses 4 and 7 provide wide-area observability for the WAPC.
+
+$k_\text{ibr}$ sweeps from 0.03 to 0.85 pu in all study campaigns,
+covering worst-case low-inertia to near-rated injection scenarios.
+\end{notebox}
+
+\subsection*{Appendix C --- Protection Challenges (Ch.\ 3)}
+\begin{notebox}
+The left figure: the 87L failure plane in $I_\text{diff}$--$I_\text{bias}$ space with
+fixed slope. Red crosses = missed trips (IBR below slope); orange squares = false trip
+risk (IBR drives $I_\text{diff}$ above slope during through-fault conditions).
+
+Core finding --- the operate ratio formula:
+$\rho = 2(1-k_\text{ibr}) / (1+k_\text{ibr})$.
+When $k_\text{ibr} \to 1$: $\rho \to 0$ (false trip risk).
+When $k_\text{ibr} \to 0$: $\rho \to 2$ (missed trip if slope $> 2$).
+A fixed slope cannot satisfy both simultaneously.
+\end{notebox}
+
+\subsection*{Appendix D --- Adaptive 87L Detail (Ch.\ 4)}
+\begin{notebox}
+The adaptive slope curve is derived by solving $\rho(k_\text{ibr}) = k_m^*(k_\text{ibr})$
+with appropriate security margins.
+
+The formula has three components: a main quadratic term tracking the through-fault
+$\rho$, a small linear correction for the high-$k_\text{ibr}$ region, and a 0.05 security
+floor.
+
+Bar chart: TDCS catches bins below $k_\text{ibr} = 0.12$ where 87L is too insensitive
+even with adaptive slope. Together they achieve TPR = 1.000 across all bins
+($N = 5000$ MC trials, TR-26).
+\end{notebox}
+
+\subsection*{Appendix E --- Distance Protection (Ch.\ 5)}
+\begin{notebox}
+R--X locus: IBR angle injection causes the apparent impedance to shift outside the
+zone-1 mho circle (overreach) or deep inside (underreach, weak-infeed).
+
+Correction term: $\Delta X = Z_F k_\text{ibr} (I_r/I_A) \sin\beta$ derived analytically
+from the sequence network. The adaptive quadrilateral applies
+$Z_1^\text{adapt} = Z_1(1 + k_r \hat{k}_\text{ibr})$ using the EKF estimate.
+
+$+7.6$ pp detection gain at $k_\text{ibr} = 0.5$ is representative of typical operating
+points.
+\end{notebox}
+
+\subsection*{Appendix F --- Microgrid \& Islanding (Ch.\ 6)}
+\begin{notebox}
+Mode transition FSM: grid-connected GFL mode $\to$ islanded GFM mode, triggered by the
+combined detection criterion.
+
+Three-condition logic: ROCOF captures fast frequency excursions; phase angle deviation
+catches slower drift events; $V_2/V_1$ detects unbalanced islanding invisible to ROCOF
+alone.
+
+End-to-end: 60 ms detection + 4 ms GOOSE + 50 ms relay = \textbf{114 ms total}.
+Meets IEEE 1547-2018 ride-through requirements with NDZ below 1\% of load range.
+\end{notebox}
+
+\subsection*{Appendix G --- Digital Twin (Ch.\ 7)}
+\begin{notebox}
+Non-blocking architecture: TRIP core ($\leq 50\,\mu$s) and EKF core (20 ms cycle) run
+in parallel, sharing state only via atomic shadow register write.
+
+Three parameters estimated simultaneously:
+$\hat{k}_\text{ibr}$ (RMSE 0.024 pu), $\hat{Z}_\text{line}$ (0.5\%), and
+$\hat{\alpha}$ (1.1\%).
+
+TDCS margin: 15.5\% safety margin over the 95th percentile CT mismatch envelope.
+This sets the TDCS threshold in the 87L implementation.
+\end{notebox}
+
+\subsection*{Appendix H --- PINN Classifier (Ch.\ 8)}
+\begin{notebox}
+Feature importance chart (TR-47): top 3 features are $\alpha$ (fault angle),
+$k_\text{ibr}$ (IBR limit), and $R_\text{arc}$ (arc resistance) --- all align with
+physics, validating that the PINN has learned physically meaningful representations.
+
+Physics constraint weights: KVL (10) $>$ symmetry $I_1 = I_2^*$ (5) $>$ current
+limiting (2). Hierarchy determined through ablation studies.
+
+3.7 $\mu$s inference fits relay firmware budget. Online re-training via CUSUM-SGD
+($\leq 21$ cycles) adapts to fleet-level IBR parameter drift automatically.
+\end{notebox}
+
+\subsection*{Appendix I --- Wide-Area Protection Coordinator (Ch.\ 9)}
+\begin{notebox}
+Four WAPC subsystems: fault localisation via PMU $\Delta V$ triangulation (94.5\%),
+CTI engine for IEC standard-inverse coordination
+($\Delta_\text{CTI} \geq 0.2$ s), GOOSE security via HMAC-SHA256, and HIL validation.
+
+Closed-loop protocol: 0.5 min CUSUM alarm $\to$ 2 min compute $\to$ 1 min DT
+validation $\to$ 25 min MMS upload (includes operator approval per IEC 61850-90-1)
+$\to$ 2.5 min activate.
+
+54.9\% GOOSE risk reduction from eliminating unauthenticated messages.
+HMAC-SHA256 adds only 0.36 ms overhead --- well within the 4 ms GOOSE budget.
+\end{notebox}
+
+\end{document}

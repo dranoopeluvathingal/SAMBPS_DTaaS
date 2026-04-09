@@ -1,0 +1,400 @@
+%% slide14_study_note.tex
+%% Detailed Study Note — Slide 14: Ch 10 Physics-Informed Fault Classifier (PINN)
+%% TSA Meeting Preparation | Anoop V Eluvathingal | IIT Madras | 2026
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,tabularx,array,longtable}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{parskip}
+\newcommand{\kibr}{k_\mathrm{ibr}}
+
+\definecolor{iitmnavy}{RGB}{15,40,80}
+\definecolor{iitmgold}{RGB}{180,140,0}
+\definecolor{lightblue}{RGB}{220,235,250}
+\definecolor{lightyellow}{RGB}{255,252,220}
+\definecolor{lightred}{RGB}{255,235,235}
+\definecolor{lightgreen}{RGB}{230,255,230}
+\definecolor{lightpurple}{RGB}{240,230,255}
+
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{keybox}[1]{colback=lightblue,colframe=iitmnavy,
+  fonttitle=\bfseries\color{white},title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{formulabox}[1]{colback=lightyellow,colframe=iitmgold,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{resultbox}[1]{colback=lightgreen,colframe=green!50!black,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{warnbox}[1]{colback=lightred,colframe=red!60!black,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{archbox}[1]{colback=lightpurple,colframe=iitmnavy!60,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{speakbox}{colback=orange!8,colframe=orange!70!black,
+  fonttitle=\bfseries,title={What to Say at the TSA Meeting},arc=3pt,
+  boxrule=1pt,breakable}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{iitmnavy}\small\textbf{TSA Meeting Study Note}}
+\fancyhead[R]{\color{iitmnavy}\small Slide 14 — Physics-Informed Fault Classifier (PINN)}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\small\color{gray}Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ 2026}
+\renewcommand{\headrulewidth}{1.5pt}
+\renewcommand{\headrule}{\color{iitmnavy}\hrule width\headwidth height\headrulewidth}
+
+\titleformat{\section}{\large\bfseries\color{iitmnavy}}{}{0em}{}[\color{iitmnavy}\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{iitmnavy!80}}{}{0em}{}
+
+\hypersetup{colorlinks=true,linkcolor=iitmnavy,urlcolor=iitmnavy}
+
+\begin{document}
+
+%% ── Title Block ──────────────────────────────────────────────────────────────
+\begin{tcolorbox}[colback=iitmnavy,coltext=white,arc=4pt,boxrule=0pt]
+\begin{center}
+  {\Large\bfseries TSA Meeting — Slide 14 Study Note}\\[4pt]
+  {\large Ch~10: Physics-Informed Fault Classifier (PINN)}\\[6pt]
+  {\normalsize Contribution C3 $\cdot$ Chapter 6 $\cdot$ SAMBP Framework}\\[2pt]
+  {\small Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ PhD Thesis 2026}
+\end{center}
+\end{tcolorbox}
+
+\vspace{6pt}
+
+%% ── 1. Slide Overview ────────────────────────────────────────────────────────
+\section{Slide Overview and Narrative}
+
+\begin{keybox}{What This Slide Shows}
+Slide~14 presents the \textbf{Physics-Informed Neural Network (PINN)} fault classifier, the second component of Contribution~C3. The narrative is structured as a two-act argument:
+
+\textbf{Act 1 — The problem with pure ML:} A standard deep neural network trained on synchronous-machine fault data misclassifies 31\% of IBR-modified fault signatures. High-IBR conditions ($\kibr > 0.6$) reduce baseline accuracy to 64.2\%, because the network has no physical constraint to anchor it when the operating point moves outside its training distribution.
+
+\textbf{Act 2 — The physics fix:} Embedding KCL as a penalty residual in the training loss forces the classifier to remain physically consistent. The physics weight $\lambda_\mathrm{phys} = 0.3$ balances empirical data fit against physical law. The result: overall accuracy rises from 81.4\% to 96.1\%, and high-IBR accuracy jumps from 64.2\% to 93.8\% — a 46\% relative gain precisely where pure ML was most unreliable.
+\end{keybox}
+
+\subsection{Slide Key Data Points}
+
+\begin{center}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Metric} & \textbf{Baseline (pure ML)} & \textbf{PINN} \\
+\midrule
+Overall accuracy         & 81.4\%  & 96.1\%  \\
+High-$\kibr$ ($>0.6$)   & 64.2\%  & 93.8\%  \\
+AG fault recall          & 77.3\%  & 97.4\%  \\
+3$\phi$ fault recall     & 89.1\%  & 98.2\%  \\
+Physics consistency      & 51.2\%  & 99.7\%  \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%% ── 2. Engineering Challenge ─────────────────────────────────────────────────
+\section{Engineering Challenge: Why Pure ML Fails for IBR Faults}
+
+\begin{warnbox}{The Core Problem}
+Legacy fault classification treats the problem as purely statistical: feed in measured current features, output a class label. This works when training and test distributions match. But IBRs fundamentally change the fault physics:
+
+\begin{itemize}[nosep]
+  \item Fault current magnitude is capped at 1.1--2.0~pu by fast current limiters
+  \item Sequence component ratios are determined by firmware, not physical reactance
+  \item The same fault type produces dramatically different current signatures at $\kibr = 0.1$ vs $\kibr = 0.7$
+\end{itemize}
+
+A network trained on synchronous-machine data encounters IBR-modified signatures as \textit{distribution shift} — it has never learned that $\kibr$ changes the fundamental physics of the measurement. Without a physics anchor, the network extrapolates in the wrong direction. At $\kibr > 0.6$, baseline accuracy collapses to 64.2\%.
+\end{warnbox}
+
+The three classification errors the baseline commits most often:
+\begin{enumerate}[nosep]
+  \item \textbf{Structural MISS} ($\kibr < 0.06$): Low-IBR networks still have synchronous machines; the network sees reduced fault current and misclassifies a real fault as no-fault.
+  \item \textbf{Z1 confusion} ($0.10 \leq \kibr \leq 0.80$): Distance-relay reach is IBR-dependent; the network predicts 87L trips when Z1 is correct.
+  \item \textbf{EXT false alarm} ($\alpha > 1.0$): Large normalised fault location values trigger erroneous EXTERNAL classifications.
+\end{enumerate}
+
+%% ── 3. PINN Architecture ─────────────────────────────────────────────────────
+\section{PINN Architecture}
+
+\begin{archbox}{Network Specification (TR-46)}
+\begin{tabular}{@{}ll@{}}
+\textbf{Input dimension}  & 4 features: $\kibr$, $\alpha$ (norm.\ fault location), $R_\mathrm{arc}$, fault type \\
+\textbf{Hidden layers}    & 3 layers $\times$ 64 neurons, ReLU activation \\
+\textbf{Output layer}     & Softmax over 4 classes: MISS, 87L-only, Z1+87L, EXT \\
+\textbf{Parameters}       & 12\,676 trainable parameters \\
+\textbf{Training set}     & $N = 2000$ synthetic MC samples (TR-37 engine) \\
+\textbf{Measurement noise} & $\sigma_k = 0.005$~pu, $\sigma_\alpha = 0.02$ \\
+\end{tabular}
+\end{archbox}
+
+\subsection{The Three Physics Constraints}
+
+The PINN embeds three hard physics rules derived directly from the SAMBP protection model thresholds (TR-35):
+
+\begin{center}
+\begin{tabular}{@{}clll@{}}
+\toprule
+\textbf{ID} & \textbf{Condition} & \textbf{Required output} & \textbf{Physics source} \\
+\midrule
+C1 & $\kibr < 0.06$                            & $P(\text{MISS}) \geq 0.95$ & TR-37 MISS threshold \\
+C2 & $\kibr \geq 0.10$ and $\alpha \leq 0.80$ & $P(\text{Z1})+P(\text{87L}) \geq 0.95$ & Z1 quad reach \\
+C3 & $\alpha > 1.0$                            & $P(\text{EXT}) \geq 0.95$ & Relay directional \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+These constraints directly encode the relay trip/no-trip logic — the network cannot predict Z1 for a structurally impossible IBR level, or predict 87L for a fault that relay geometry places outside reach.
+
+%% ── 4. Loss Function ─────────────────────────────────────────────────────────
+\section{The Physics-Informed Loss Function}
+
+\begin{formulabox}{PINN Loss: Two-Term Composite}
+\[
+  \mathcal{L} \;=\; \underbrace{\mathcal{L}_\mathrm{data}}_{\text{cross-entropy}}
+  \;+\; \lambda_\mathrm{phys}\,
+  \underbrace{\bigl\|\mathbf{K}\hat{\mathbf{V}} - \hat{\mathbf{I}}\bigr\|^2}_{\text{KCL residual}}
+\]
+
+\medskip
+\begin{tabular}{@{}ll@{}}
+$\mathcal{L}_\mathrm{data}$         & Standard cross-entropy classification loss \\
+$\mathbf{K}$                        & Network admittance matrix (from EKF digital twin state, TR-43) \\
+$\hat{\mathbf{V}}, \hat{\mathbf{I}}$ & Estimated nodal voltages and currents from IED measurements \\
+$\lambda_\mathrm{phys} = 0.3$       & Physics weighting hyperparameter (tuned by validation) \\
+\end{tabular}
+
+\medskip
+\textbf{Interpretation:} At each training step, the residual $\|\mathbf{K}\hat{\mathbf{V}} - \hat{\mathbf{I}}\|^2$ measures how much the predicted fault signature violates Kirchhoff's Current Law given the current network topology estimate. Penalising this residual forces the classifier to prefer hypotheses that are physically realisable — even for operating points it has never seen during training.
+\end{formulabox}
+
+\subsection{Why $\lambda_\mathrm{phys} = 0.3$?}
+
+The value was chosen by sweep over $\{0.05, 0.10, 0.20, 0.30, 0.50, 1.00\}$ on a held-out validation set:
+\begin{itemize}[nosep]
+  \item Too small ($< 0.10$): physics constraint too weak; boundary violations persist.
+  \item $\lambda = 0.30$: optimal trade-off — 99.7\% physics consistency, 96.1\% classification accuracy.
+  \item Too large ($> 0.50$): physics dominates data loss; model underfits, accuracy degrades.
+\end{itemize}
+
+\subsection{Physics Constraint Violations: Baseline vs PINN}
+
+\begin{center}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Model} & \textbf{Violations} & \textbf{Rate} & \textbf{Root cause} \\
+\midrule
+Data-driven baseline & 55 & 11.0\% & No physics enforcement \\
+PINN                 &  5 &  1.0\% & Noise pushes marginal $k$ across boundary \\
+\midrule
+\textbf{Reduction}   &    & \textbf{90.9\%} & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The 5 residual violations in the PINN all occur at $\kibr \approx 0.032$ (measurement noise crosses the $k < 0.06$ threshold of constraint C1). This is a measurement limitation, not a modelling failure.
+
+%% ── 5. Feature Engineering ───────────────────────────────────────────────────
+\section{Feature Engineering and Importance (TR-47)}
+
+\begin{keybox}{The 8-Feature Input Space (Slide) vs 4-Feature Core (TR-46)}
+The slide shows 8 input features: $|I_a|, |I_b|, |I_c|, \angle I_a, I_\mathrm{zero}, I_\mathrm{neg}, \hat{\kibr}, \phi_\mathrm{ctrl}$.
+
+The TR-46 PINN uses a 4-feature reduced set: $\kibr$, $\alpha$, $R_\mathrm{arc}$, fault type. This is the \textit{physics-derived} representation where the raw current measurements have already been processed through the EKF digital twin to extract the physically meaningful quantities.
+\end{keybox}
+
+\subsection{Permutation Feature Importance (TR-47)}
+
+\begin{center}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+\textbf{Feature} & \textbf{Importance} & \textbf{Physical meaning} \\
+\midrule
+$\alpha$ (norm.\ fault location)  & 37.0~pp & Determines relay reach classification \\
+$\kibr$ (IBR ratio)               & 27.1~pp & Controls current magnitude regime \\
+$R_\mathrm{arc}$ (arc resistance) & 21.3~pp & Causes Z1 underreach / miss errors \\
+$I_1/I_2$ ratio                   & $\approx 0$~pp & Physics-derived, zero incremental importance \\
+$Z_m$, $Z_\mathrm{ratio}$         & $\approx 0$~pp & Redundant given $\alpha$ and $\kibr$ \\
+$k_\mathrm{margin}$, $\alpha_m$   & $\approx 0$~pp & Deterministic functions of top-3 features \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Key insight:} Physics-derived features carry \textit{zero incremental importance} because they are deterministic functions of the three raw features ($k$, $\alpha$, $R_\mathrm{arc}$). The PINN does not need them explicitly — the physics constraint in the loss function provides the same regularisation benefit without adding input dimensionality.
+
+\textbf{Minimum effective feature set:} Studies~B and~D in TR-47 show that raw features only ($k + \alpha$, 2 features) achieve 85.5\% accuracy — confirming the physics constraint, not the feature set, is the primary driver of PINN performance.
+
+%% ── 6. Results Explanation ───────────────────────────────────────────────────
+\section{How to Read the Results Table}
+
+\begin{resultbox}{Per-Class Accuracy Comparison (TR-46 Figure 2)}
+\begin{tabular}{@{}lrrl@{}}
+\toprule
+\textbf{Class} & \textbf{Baseline} & \textbf{PINN} & \textbf{Gain driver} \\
+\midrule
+MISS ($\kibr < 0.06$)            & 85.2\% & 92.4\% & C1 constraint penalises non-MISS predictions \\
+87L ($0.06 \leq k < 0.10$)      & 81.5\% & 87.9\% & C2 boundary enforced from below \\
+Z1 ($0.10 \leq k \leq 0.80$)    & 64.2\% & 90.7\% & Largest gain — C2 eliminates Z1/87L confusion \\
+EXT ($\alpha > 1.0$)             & 93.0\% & 96.1\% & C3 reinforces already-good baseline \\
+\bottomrule
+\end{tabular}
+
+\medskip
+The Z1 class shows the largest improvement ($+26.5$~pp) because it sits in the most crowded region of feature space — bounded by the 87L threshold below and the EXT threshold above. The physics constraint C2 acts as a discriminant surface that data alone cannot reliably learn.
+\end{resultbox}
+
+\subsection{Boundary Region Extrapolation (TR-46 Figure 3 — Best Figure)}
+
+The most striking result is in the \textit{boundary region} $k \in [0.045, 0.075]$, where both constraints C1 and C2 are active simultaneously:
+
+\begin{itemize}[nosep]
+  \item \textbf{Baseline accuracy}: 75\% (one-quarter of samples misclassified)
+  \item \textbf{PINN accuracy}: 99\% (+24~pp)
+\end{itemize}
+
+This is the critical operating regime for protection: the network must correctly distinguish a structural MISS ($\kibr < 0.06$) from a valid 87L trip ($\kibr \geq 0.10$) when the IBR measurement is noisy. The physics constraint removes the ambiguity that data alone cannot resolve.
+
+%% ── 7. Best Recommended Figure ───────────────────────────────────────────────
+\section{Best Supporting Figure for This Slide}
+
+\begin{resultbox}{RECOMMENDED: TR-46/2026 Figure 3 -- Protection Decision Space Plot}
+
+\textbf{What it shows:} A 2D scatter plot with $\kibr$ on the x-axis and $\alpha$ (normalised fault location) on the y-axis. Four coloured regions show the protection outcome zones: MISS (red), 87L-only (blue), Z1+87L (orange), EXT (grey). Overlaid scatter points show PINN predictions (open circles) vs baseline predictions (filled circles). The boundary region $k \in [0.045, 0.075]$ is highlighted. A key annotation reads ``PINN: 99\% / Base: 75\%'' in the boundary zone.
+
+\textbf{Why it is the best figure:} The decision space visualisation is the single most powerful communication tool for this slide because:
+\begin{enumerate}[nosep]
+  \item It shows \textit{where} the physics constraints live (the coloured zone boundaries)
+  \item It shows \textit{why} the PINN wins (points cluster correctly within zones)
+  \item It shows \textit{when} pure ML fails (baseline scatter leaks across zone boundaries)
+  \item A committee member can read the 24~pp gain directly from the figure without additional explanation
+\end{enumerate}
+
+\textbf{Source:} TR-46/2026, page 3, Figure 3. In \texttt{PDF\_COLLECTION/01\_SAMBP\_Reports/TR-46\_sambp\_report.pdf}.
+\end{resultbox}
+
+\textbf{Secondary figures (use if time permits):}
+\begin{itemize}[nosep]
+  \item \textbf{TR-47 Figure 1} (feature importance bar chart): Use to answer ``which features matter most?''
+  \item \textbf{TR-49 Figure 1} (ML integration pipeline): Use to answer ``how does the PINN plug into the relay?''
+  \item \textbf{TR-46 Figure 2} (per-class accuracy bar chart): Use to answer ``which fault type gains most?''
+\end{itemize}
+
+%% ── 8. Cross-Thesis Connections ──────────────────────────────────────────────
+\section{Cross-Thesis Connections}
+
+\begin{center}
+\begin{tabular}{@{}p{4cm}p{10.5cm}@{}}
+\toprule
+\textbf{Connection} & \textbf{Explanation} \\
+\midrule
+\textbf{EKF Digital Twin} \newline (Slide 13, C3) &
+The PINN receives $\hat{\kibr}$ from the EKF as an input feature. The EKF's RMSE $\leq 0.024$~pu on $\kibr$ directly bounds the worst-case PINN input error; PINN was trained with $\sigma_k = 0.005$~pu noise accordingly. \\
+\addlinespace
+\textbf{Adaptive 87L} \newline (Slide 9, C1) &
+PINN output class C2 (``Z1+87L'') triggers the adaptive 87L relay. The PINN's 97.4\% AG recall feeds into the 87L TPR = 1.000 result — misclassification would reduce 87L sensitivity. \\
+\addlinespace
+\textbf{SAMBP-SyncOC} \newline (Slide 10, C2) &
+The PINN fault type classification (AG/BG/3$\phi$/etc.) informs the SyncOC adaptive setting selection. Wrong fault type $\Rightarrow$ wrong inverse-time curve $\Rightarrow$ mis-coordination. \\
+\addlinespace
+\textbf{CUSUM Online Learning} \newline (Chapter 6, C3) &
+CUSUM detects fleet composition drift ($\Delta \kibr > 0.05$) and triggers PINN retraining. The PINN's 99.7\% physics consistency acts as a sanity check: retraining that degrades consistency below 95\% is rejected. \\
+\addlinespace
+\textbf{Physics Veto} \newline (TR-49, C4) &
+The PINN output passes through a 3-constraint hard veto before publishing the GOOSE advisory. Any prediction violating C1--C3 is overridden by the relay-physics deterministic rule. This eliminates all residual violations in the integration pipeline. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%% ── 9. Equations to Know ─────────────────────────────────────────────────────
+\section{Equations to Know for the TSA Meeting}
+
+\begin{formulabox}{PINN Loss Function}
+\[
+  \mathcal{L} = -\sum_{i}\sum_{c} y_{ic}\log \hat{p}_{ic}
+  \;+\; \lambda_\mathrm{phys}\sum_{j} \bigl\|\mathbf{K}_j\hat{\mathbf{V}}_j - \hat{\mathbf{I}}_j\bigr\|^2
+\]
+Say: ``The first term is ordinary cross-entropy; the second term penalises any prediction that requires a current distribution Kirchhoff's laws say is impossible.''
+\end{formulabox}
+
+\begin{formulabox}{Physics Constraint C2 (Z1 / 87L Boundary)}
+\[
+  \kibr \geq 0.10 \;\text{ and }\; \alpha \leq 0.80
+  \;\Longrightarrow\;
+  P(\text{Z1}) + P(\text{87L}) \geq 0.95
+\]
+Say: ``When the IBR penetration is high enough and the fault is inside relay reach, the network is forced to predict a trip. This is not an ad-hoc rule — it encodes the same threshold the SAMBP relay uses for adaptive trip decisions.''
+\end{formulabox}
+
+\begin{formulabox}{KCL Admittance Residual}
+\[
+  \varepsilon_\mathrm{KCL} = \|\mathbf{K}\hat{\mathbf{V}} - \hat{\mathbf{I}}\|
+\]
+Say: ``This is just Kirchhoff's Current Law in matrix form. If the network predicts a fault classification that implies a current vector $\hat{\mathbf{I}}$ inconsistent with the measured voltages and the network admittance matrix, the loss goes up. The PINN learns to avoid physically impossible predictions.''
+\end{formulabox}
+
+\begin{formulabox}{Boundary Region Accuracy Gain}
+\[
+  \Delta \text{Acc}_\text{boundary} = 99\% - 75\% = +24~\text{pp}
+  \quad (k \in [0.045,\; 0.075])
+\]
+Say: ``The 24~pp gain is largest exactly where protection is most critical — the threshold between a structural miss and a valid relay trip.''
+\end{formulabox}
+
+%% ── 10. Speaker Script ───────────────────────────────────────────────────────
+\section{Speaker Script}
+
+\begin{speakbox}
+\textbf{Opening (15 seconds):}
+``Chapter~10 asks: can a neural network classify IBR fault types reliably — even when the operating point is far outside its training distribution? The short answer is no, not without physics. The baseline deep network misclassifies 31\% of IBR-modified signatures because it has no knowledge of what is physically possible.''
+
+\medskip
+\textbf{The fix (20 seconds):}
+``We embed Kirchhoff's Current Law directly into the training loss as a KCL residual penalty, weighted at $\lambda = 0.3$. The network is penalised every time it predicts a fault class that would require a physically impossible current distribution. Three hard constraints encode the relay threshold logic from the SAMBP protection model.''
+
+\medskip
+\textbf{Results (25 seconds):}
+``Overall accuracy rises from 81.4 to 96.1\%. But the headline result is the high-IBR accuracy: from 64.2 to 93.8\% — a 46\% relative gain. And in the critical boundary region where the MISS/trip decision is hardest, accuracy goes from 75 to 99\%. Physics constraint violations drop from 11\% to 1\% — the residual 1\% is measurement noise crossing the threshold, not a model error.''
+
+\medskip
+\textbf{Integration note (15 seconds):}
+``The PINN does not operate standalone. Its output passes through a hard physics veto before any GOOSE advisory is published. And the inputs include the IBR penetration ratio estimated by the EKF digital twin from the previous slide — the two components of C3 are directly coupled.''
+
+\medskip
+\textbf{Closing link (10 seconds):}
+``This completes Contribution~C3: a non-blocking digital twin that tracks network state, feeding into a physics-informed classifier that makes reliable fault decisions even as the fleet composition drifts — without ever delaying a primary relay trip.''
+\end{speakbox}
+
+%% ── 11. Anticipated Q\&A ─────────────────────────────────────────────────────
+\section{Anticipated Committee Questions and Answers}
+
+\begin{keybox}{Q1: Why not just retrain the pure ML model on IBR-modified data?}
+\textbf{Answer:} Retraining addresses today's fleet composition, but the IBR ratio $\kibr$ is continuously changing as new converters are commissioned. A retrained network degrades as soon as the operating point shifts. The PINN's physics constraint is \textit{topology-invariant} — KCL holds regardless of $\kibr$. The CUSUM-triggered online learning (Chapter~6) handles slow drift; the physics constraint handles instantaneous generalisation.
+\end{keybox}
+
+\begin{keybox}{Q2: The KCL residual uses $\mathbf{K}$ — the network admittance matrix. How do you get $\mathbf{K}$ in real time?}
+\textbf{Answer:} The EKF digital twin (TR-43/44) continuously estimates $Z_\mathrm{line}$ and $Y_\mathrm{shunt}$ from IED phasor measurements. These estimates are written to the DT library look-up table that the PINN accesses at inference time (TR-49 Figure~1, latency: $0.107$~ms). The EKF's RMSE $\leq 0.024$~pu on impedance bounds the worst-case $\mathbf{K}$ perturbation; this sensitivity has been tested (TR-49 Study~B).
+\end{keybox}
+
+\begin{keybox}{Q3: How does 96.1\% compare to state-of-the-art ML fault classifiers?}
+\textbf{Answer:} Comparable pure-ML classifiers report 95--98\% on synchronous-machine test sets, but degrade to 60--70\% on IBR-dominated test sets (as our baseline confirms). Our 93.8\% at $\kibr > 0.6$ is, to our knowledge, the first published result for that operating regime. The comparison is not purely about accuracy — the 99.7\% physics consistency guarantee is the novel contribution, not the headline number alone.
+\end{keybox}
+
+\begin{keybox}{Q4: Why use a PINN when the physics constraints C1--C3 could just be a hard post-processing veto?}
+\textbf{Answer:} The hard veto (TR-49) is also implemented as a safety layer. But the veto and the PINN serve different roles. The veto \textit{catches} violations after inference; the PINN \textit{prevents} them by learning to avoid physically impossible predictions in the interior of the decision space. In the boundary region ($k \in [0.045, 0.075]$), the veto cannot help because the prediction is technically inside the allowable zone — only the physics-informed loss provides the discriminant surface.
+\end{keybox}
+
+\begin{keybox}{Q5: The training set is only 2000 samples. Is that enough?}
+\textbf{Answer:} Yes, because the PINN's physics constraint acts as a strong regulariser that reduces effective model complexity. Study~D (TR-47) shows the minimum effective feature set is 2 features ($k + \alpha$, 85.5\%), confirming the classification surface is low-dimensional. The physics constraint provides the equivalent of approximately 2 hidden layers of regularisation, so 2000 samples is adequate for a 12,676-parameter network — the Cramér--Rao argument for the EKF (TR-43) applies analogously here.
+\end{keybox}
+
+\vfill
+\begin{tcolorbox}[colback=iitmnavy!8,colframe=iitmnavy,arc=3pt,boxrule=0.8pt]
+\small
+\textbf{Source documents:} TR-46/2026 (PINN architecture and physics constraints), TR-47/2026 (feature engineering and importance), TR-49/2026 (ML integration pipeline and physics veto). \\
+\textbf{Thesis location:} Chapter~6, Contribution~C3, Section on Physics-Informed Fault Classification. \\
+\textbf{Best figure:} TR-46/2026, Figure~3 (decision space in $(k_\mathrm{ibr}, \alpha)$ plane, boundary region highlighted).
+\end{tcolorbox}
+
+\end{document}

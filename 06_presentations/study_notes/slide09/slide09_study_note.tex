@@ -1,0 +1,427 @@
+%% slide09_study_note.tex
+%% Detailed Study Note --- Slide 9: Ch 5 SAMBP-SyncOC Generator Over-Current Protection
+%% TSA Meeting Preparation | Anoop V Eluvathingal | IIT Madras | 2026
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{booktabs,tabularx,array,longtable}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\algrenewcommand\algorithmicrequire{\textbf{Input:}}
+\algrenewcommand\algorithmicensure{\textbf{Output:}}
+\newcommand{\kibr}{k_\mathrm{ibr}}
+\newcommand{\TMS}{\mathrm{TMS}}
+\newcommand{\Iset}{I_\mathrm{set}}
+\newcommand{\Ip}{I_p}
+\newcommand{\tops}{t_\mathrm{op}}
+\newcommand{\tpri}{t_\mathrm{primary}}
+\newcommand{\tbak}{t_\mathrm{backup}}
+\newcommand{\CTI}{\mathrm{CTI}}
+
+\definecolor{iitmnavy}{RGB}{15,40,80}
+\definecolor{iitmgold}{RGB}{180,140,0}
+\definecolor{lightblue}{RGB}{220,235,250}
+\definecolor{lightyellow}{RGB}{255,252,220}
+\definecolor{lightred}{RGB}{255,235,235}
+\definecolor{lightgreen}{RGB}{230,255,230}
+\definecolor{lightpurple}{RGB}{240,230,255}
+\definecolor{lightorange}{RGB}{255,243,225}
+
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{keybox}[1]{colback=lightblue,colframe=iitmnavy,
+  fonttitle=\bfseries\color{white},title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{formulabox}[1]{colback=lightyellow,colframe=iitmgold,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{resultbox}[1]{colback=lightgreen,colframe=green!50!black,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{warnbox}[1]{colback=lightred,colframe=red!60!black,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{archbox}[1]{colback=lightpurple,colframe=iitmnavy!60,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{speakbox}{colback=orange!8,colframe=orange!70!black,
+  fonttitle=\bfseries,title={What to Say at the TSA Meeting},arc=3pt,
+  boxrule=1pt,breakable}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{iitmnavy}\small\textbf{TSA Meeting Study Note}}
+\fancyhead[R]{\color{iitmnavy}\small Slide 9 --- Ch~4 SAMBP-SyncOC Generator OC Protection}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\small\color{gray}Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ 2026}
+\renewcommand{\headrulewidth}{1.5pt}
+\renewcommand{\headrule}{\color{iitmnavy}\hrule width\headwidth height\headrulewidth}
+
+\titleformat{\section}{\large\bfseries\color{iitmnavy}}{}{0em}{}[\color{iitmnavy}\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{iitmnavy!80}}{}{0em}{}
+
+\hypersetup{colorlinks=true,linkcolor=iitmnavy,urlcolor=iitmnavy}
+
+\begin{document}
+
+%% ── Title Block ──────────────────────────────────────────────────────────────
+\begin{tcolorbox}[colback=iitmnavy,coltext=white,arc=4pt,boxrule=0pt]
+\begin{center}
+  {\Large\bfseries TSA Meeting --- Slide 9 Study Note}\\[4pt]
+  {\large Ch~4: SAMBP-SyncOC --- Adaptive Generator Over-Current Protection}\\[6pt]
+  {\normalsize Contributions C2 $\cdot$ Chapter 4 $\cdot$ SAMBP Framework}\\[2pt]
+  {\small Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ PhD Thesis 2026}
+\end{center}
+\end{tcolorbox}
+
+\vspace{6pt}
+
+%% ── 1. Slide Overview ────────────────────────────────────────────────────────
+\section{Slide Overview and Narrative}
+
+\begin{keybox}{What This Slide Shows}
+Slide~9 presents \textbf{Ch~4: SAMBP-SyncOC}, the adaptive generator overcurrent protection framework. The slide's narrative has three parts:
+
+\textbf{The problem:} Synchronous generators (SGs) operating near IBR buses experience \emph{depressed fault current}. When IBRs current-limit during a fault, they reduce the total short-circuit contribution, compressing the fault current seen by the generator's OC relay. Settings calibrated for an all-SG network (where fault current is high) become either too sensitive (causing spurious pickups on load transients) or too slow (failing to trip high-impedance faults). Additionally, IBR reactive injection alters the time-overcurrent coordination between primary and backup relays.
+
+\textbf{The solution:} SAMBP-SyncOC replaces the fixed pickup $I_p$ and time-multiplier $\TMS$ with an \textbf{online adaptive setting} derived from the LM inverse estimator. The pickup $\Iset(\kibr)$ is updated every fault cycle using the estimated steady-state fault current $\hat{I}_{ss}$, which already accounts for the actual IBR penetration at the time of the fault. The coordination constraint $\tpri + \CTI \leq \tbak$ is maintained for all $\kibr$ via a bounded projected-gradient update --- i.e., every setting change is simultaneously tested against the CTI constraint and clipped if it would violate coordination.
+
+\textbf{The result:} The LM model fits the measured fault current waveform with $R^2 = 0.999+$ (versus 0.941 for the fixed offline curve). Spurious pickups fall from 38 to 16 ($-58\%$). Coordination margin improves from 0.82 to 0.94. Maloperation under IBR penetration drops from 12.3\% to 1.1\%.
+\end{keybox}
+
+\subsection{Slide Key Results}
+
+\begin{center}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Metric} & \textbf{Fixed Settings} & \textbf{SAMBP-SyncOC} & \textbf{Change} \\
+\midrule
+$R^2$ (OC curve fit)    & 0.941 & $>$0.999 & $+6.2$\% relative \\
+Spurious pickups        & 38    & 16       & $-58\%$ \\
+Coordination margin     & 0.82  & 0.94     & $+0.12$ \\
+Maloperation under IBR  & 12.3\%& 1.1\%   & $-91\%$ relative \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Key observation from slide:} Online $\Iset(\kibr)$ adaptation cuts spurious pickups by 58\% while maintaining IEC~60255-151 coordination. The $R^2$ jump from 0.941 to 0.999 means the model is now characterising the actual fault waveform --- not a generic worst-case approximation.
+
+%% ── 2. Engineering Challenge ─────────────────────────────────────────────────
+\section{Engineering Challenge: Why Fixed OC Settings Fail Near IBR Buses}
+
+\begin{warnbox}{Four Failure Modes of Offline-Set OC Relays in IBR Networks}
+Classical OC protection sets $I_p$ and $\TMS$ at commissioning using worst-case fault current calculations. This approach fails in four scenarios that routinely arise in modern Active Distribution Networks (ADNs):
+
+\begin{enumerate}[nosep]
+  \item \textbf{Reconfigurable networks:} Post-fault topology changes alter the Thevenin impedance seen by the generator, shifting fault current by 20--80\%. A commissioning-time setting is immediately wrong after any switching event.
+  \item \textbf{Variable loading:} A pickup calibrated for peak load ($I_\mathrm{load}^\mathrm{max}$) is far above off-peak load. During off-peak, a high-impedance fault produces only slightly more current than load --- the relay cannot distinguish them.
+  \item \textbf{IBR fault current suppression:} IBRs current-limit to $1.0$--$1.2$~pu of rated during fault ride-through. In an IBR-dominated network, the total fault current may be only $1.5$--$2.0$~pu, well below the OC pickup set for an all-SG system ($2.5$--$5$~pu). The relay does not pick up, and the fault persists.
+  \item \textbf{Generator aging:} Machine parameters ($X_d''$, $T_d''$, $R_a$) drift over service life. Settings based on nameplate values become stale within 3--5 years, yet recalibration requires an outage.
+\end{enumerate}
+
+The most immediately damaging in an IBR-heavy network is item~3: the combined fault current is so depressed that the fixed pickup threshold is never reached for high-impedance faults, causing \textbf{maloperation rate 12.3\%} with fixed settings.
+\end{warnbox}
+
+\subsection{What ``Depressed Fault Current'' Means Quantitatively}
+
+For a three-phase fault at the generator bus in a mixed SG-IBR network:
+\[
+  I_\mathrm{fault,total} = \underbrace{\frac{E_q''}{X_d'' + X_{th}}}_{\text{SG contribution}} + \underbrace{\kibr \cdot I_\mathrm{rated}}_{\text{IBR (limited)}}
+\]
+For $X_d'' = 0.20$~pu, $X_{th} = 0.15$~pu, $E_q'' \approx 1.0$~pu: SG contribution $= 1.0/0.35 = 2.86$~pu. IBR contributes $\kibr \times 1.2$~pu (limited to 120\% rated). Total: $2.86 + 0.5 \times 1.2 = 3.46$~pu at $\kibr = 0.5$. Compare with all-SG equivalent: $5.0$~pu. The fault current is \textbf{reduced by 31\%} --- and this is for a bolted three-phase fault. For a single-line-to-ground (SLG) fault at $R_F = 10\,\Omega$, the reduction is 55--65\%.
+
+%% ── 3. Fault Current Model ───────────────────────────────────────────────────
+\section{Reduced-Order Fault Current Model (C6)}
+
+\begin{formulabox}{Six-Parameter SG Fault Current Model}
+The phase-A fault current is modelled as the superposition of three components:
+\begin{equation}
+  \hat{i}_a(t;\,\bm{\theta}) = \underbrace{I_{ss}}_{\text{steady-state}}
+    + \underbrace{I_{sub}\,e^{-(t-t_0)/\tau_{ac}}\cos(\omega_0 t + \phi_a)}_{\text{subtransient AC}}
+    + \underbrace{I_{DC}(t_0)\,e^{-(t-t_0)/\tau_{dc}}}_{\text{DC offset}}
+  \label{eq:fault_model}
+\end{equation}
+with parameter vector $\bm{\theta} = \{t_0,\, I_{ss},\, I_{sub},\, \tau_{ac},\, \tau_{dc},\, \phi_a\}$.
+
+The DC amplitude is \emph{not} a free parameter; it is fixed by the continuity condition at $t = t_0$:
+\begin{equation}
+  I_{DC}(t_0) = -I_{sub}\cos\phi_a - I_{ss}
+  \label{eq:dc_continuity}
+\end{equation}
+This constraint reduces the formulation from seven to six free parameters, which is the key numerical contribution of C6. The Jacobian condition number drops from $\kappa_n \approx 2100$--$5800$ (seven parameters) to $\kappa_n = 8.3$--$18.4$ (six parameters) --- a \textbf{250--315$\times$ reduction}. This makes the LM optimisation converge reliably without ill-conditioning.
+\end{formulabox}
+
+\subsection{Two-Pass LM Estimation Strategy}
+
+The time-scale separation $\tau_{ac} \approx T_d'' = 30$~ms $\ll \tau_{dc} \approx T_a = 100$~ms $\ll T_d' = 800$~ms enables a two-pass decomposition:
+
+\begin{center}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+\textbf{Pass} & \textbf{Window} & \textbf{Free parameters} & \textbf{Fixed} & \textbf{Purpose} \\
+\midrule
+Pass 1 & $[t_0,\; t_0+60\,\mathrm{ms}]$ & $t_0, I_{sub}, \tau_{ac}, \phi_a, \tau_{dc}$ & $I_{ss} = I_\mathrm{load}$ & Subtransient fit \\
+Pass 2 & $[t_0,\; t_0+250\,\mathrm{ms}]$ & $I_{ss}$ & Pass-1 values & Steady-state tail \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Pass~1 captures the fast subtransient ($\tau_{ac} \approx 30$~ms). Pass~2 uses the long tail to separate the steady-state $I_{ss}$ from the decaying subtransient. Stopping criterion: $\|\mathbf{r}\|_2^2/K < 10^{-6}$~pu$^2$.
+
+\textbf{From the paper figure (fig\_key\_results):} The waveform fit panel shows the measured phase-A fault current (blue), the six-parameter model (red, R$^2$=0.999), the envelope (orange dotted), and the DC offset (green dashed) with identified parameters $\hat{I}_{sub} = 2.838$~pu, $\hat{\tau}_{dc} = 55.9$~ms, $\hat{\phi}_a = \pi/2$~rad.
+
+%% ── 4. Confidence Score and Adaptation Gate ──────────────────────────────────
+\section{Four-Component Confidence Score and Adaptation Gate (C7)}
+
+\begin{archbox}{Why a Confidence Gate is Essential}
+The LM estimator will always produce a result --- even for a noisy measurement or a CT saturation event where the fault current waveform does not match the six-parameter model. Without a quality gate, SAMBP-SyncOC would blindly update relay settings based on a poor-quality estimate. Contribution C7 introduces a \textbf{composite confidence score} $\gamma \in [0, 1]$ that gates the adaptation decision:
+\[
+  \gamma = w_1 \gamma_R + w_2 \gamma_J + w_3 \gamma_\Delta + w_4 \gamma_P
+\]
+with weights $w_1 = 0.35$, $w_2 = 0.30$, $w_3 = 0.20$, $w_4 = 0.15$ (sum = 1.0).
+
+\medskip
+\begin{tabular}{@{}clll@{}}
+\toprule
+\textbf{Component} & \textbf{Symbol} & \textbf{Measures} & \textbf{Good value} \\
+\midrule
+Residual fit & $\gamma_R$ & $R^2$ of waveform fit; sharpness 100 & $\gamma_R \to 1$ if $R^2 \to 1$ \\
+Jacobian condition & $\gamma_J$ & $\exp(-\alpha_J \kappa_n)$ & $\gamma_J \to 1$ if $\kappa_n$ low \\
+Parameter stability & $\gamma_\Delta$ & Change in $\bm{\theta}$ from last estimate & $\gamma_\Delta \to 1$ if stable \\
+Physical plausibility & $\gamma_P$ & $\bm{\theta} \in \Theta$ (parameter bounds) & 1 if all in bounds, 0 otherwise \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\textbf{Gate:} If $\gamma \geq \gamma_\mathrm{th} = 0.70$ $\Rightarrow$ adaptation authorised; else relay holds previous settings. Validated: $\gamma \in [0.89, 0.93]$ for all three fault cases --- comfortably above gate.
+\end{archbox}
+
+%% ── 5. Adaptive Relay Setting and Coordination Constraint ────────────────────
+\section{Adaptive Setting Update Law and Coordination Constraint (C8)}
+
+\begin{formulabox}{IEC 60255-151 Very-Inverse Relay with Adaptive Pickup}
+The slide's inverse-time equation in standard IEC form is:
+\begin{equation}
+  \tops = \frac{\TMS \cdot A}{\left(I/\Iset(\kibr)\right)^B - 1}
+  \label{eq:toc}
+\end{equation}
+For the IEC Very-Inverse curve: $A = 13.5$, $B = 2$. For Standard Inverse: $A = 0.14$, $B = 0.02$. For Extremely Inverse: $A = 80$, $B = 2$. The thesis uses Very-Inverse throughout.
+
+The adaptive pickup is derived from the LM-estimated steady-state fault current:
+\begin{equation}
+  \Ip^\mathrm{adapt} = k_s \cdot I_{ss}^\mathrm{load} \cdot (1 + \delta_p)
+  \label{eq:ip_adapt}
+\end{equation}
+where $k_s = 1.25$ (sensitivity factor ensuring trip for all fault levels above load) and $\delta_p = 0.10$ (10\% security margin).
+
+The adaptive TMS is solved directly from the coordination constraint:
+\begin{equation}
+  \TMS^\mathrm{adapt} = \frac{t_\mathrm{CTI} \cdot [(I_\mathrm{fault}^\mathrm{max}/\Ip)^2 - 1]}{k_\mathrm{VI}}
+  \label{eq:tms_adapt}
+\end{equation}
+\end{formulabox}
+
+\subsection{Coordination Constraint: t-primary + CTI less than t-backup}
+
+The coordination time interval (CTI) constraint requires that the primary relay trips before the backup relay by a margin $\CTI \geq 0.3$~s (IEC~60255-151 minimum):
+\[
+  \tpri(\Ip, \TMS) + \CTI \leq \tbak(\Ip^\mathrm{backup}, \TMS^\mathrm{backup})
+\]
+When $\Ip$ is updated, $\TMS$ must be simultaneously adjusted to maintain this inequality for \emph{all} values of $\kibr \in [0, \kibr^\mathrm{max}]$.
+
+\subsection{Projected-Gradient Update Mechanism}
+
+The ``projected-gradient optimisation'' mentioned on the slide is the bounded update law:
+
+\begin{enumerate}[nosep]
+  \item \textbf{Gradient step:} Compute the unconstrained optimal $\Ip$ from the LM estimate.
+  \item \textbf{Project onto feasible set:} Clip to the safety bounds:
+    \begin{align}
+      \Ip &\leftarrow \mathrm{clip}\!\left(\Ip,\; I_{p,\mathrm{min}},\; I_{p,\mathrm{max}}\right) \\
+      I_{p,\mathrm{min}} &= 1.05 \cdot I_\mathrm{load}^\mathrm{max} \quad \text{(never trips on pure load)} \\
+      I_{p,\mathrm{max}} &= 0.80 \cdot I_\mathrm{fault,3P}^\mathrm{min} \quad \text{(always trips bolted fault)} \\
+      |\Delta \Ip| &\leq \delta_\mathrm{max} = 0.10 \cdot I_{p,0} \quad \text{(max 10\% per cycle)}
+    \end{align}
+  \item \textbf{Check coordination:} Verify $\tpri^\mathrm{new} + \CTI \leq \tbak$ for the worst-case $\kibr$.
+        If violated, scale back $\Ip$ toward $I_{p,0}$ until constraint is satisfied (secondary projection).
+  \item \textbf{Authorise:} Only execute if $\gamma \geq \gamma_\mathrm{th} = 0.70$ (C7 gate).
+\end{enumerate}
+
+The security property guaranteed by this law (Proposition from Ch~2): if $I_{p,0}$ trips all bolted faults, then any adapted $\Ip \leq I_{p,\mathrm{max}}$ also trips all bolted faults --- \textbf{trip security is preserved under bounded adaptation}.
+
+%% ── 6. Results Explanation ───────────────────────────────────────────────────
+\section{Results: What the Numbers Mean}
+
+\begin{resultbox}{Interpreting the Four Metrics}
+\textbf{R$^2 = 0.941$ (fixed) vs 0.999 (adaptive):}
+The fixed relay's OC curve was calibrated with worst-case fault current magnitudes from a system study, not a fitted waveform model. $R^2 = 0.941$ means the standard IEC characteristic describes only 94.1\% of the variance in actual fault current behaviour --- the remaining 5.9\% includes IBR-induced distortions (harmonic injection, reactive current transients). SAMBP-SyncOC fits the actual measured waveform, achieving $R^2 = 0.999+$.
+
+\textbf{Spurious pickups: 38 $\to$ 16 ($-58\%$):}
+A ``spurious pickup'' is when the relay picks up (current exceeds $I_p$) during a load transient, motor start, or IBR reactive injection event --- not a genuine fault. With fixed $I_p = 1.20$~pu set for an all-SG network, even moderate off-peak load transients cross the threshold. With $\Ip^\mathrm{adapt} = 1.49$~pu (adapted to the actual IBR-depressed fault current and load level), the threshold is higher relative to load transients, reducing false pickups by 58\%.
+
+\textbf{Coordination margin: 0.82 $\to$ 0.94:}
+Coordination margin $= t_\mathrm{backup}/t_\mathrm{primary}$ at the maximum fault current. A margin of 0.82 means that at maximum fault current, the primary relay operates at 82\% of the backup relay time --- only an 18\% margin. If the primary relay is slightly slow due to CT burden, this margin could be violated. SAMBP-SyncOC actively adjusts $\TMS$ to maintain a 0.94 ratio across all $\kibr$ values.
+
+\textbf{Maloperation under IBR: 12.3\% $\to$ 1.1\%:}
+A ``maloperation'' is either a missed trip (fault not detected) or a spurious trip (non-fault condition). With fixed settings, 12.3\% of IBR-modified fault events result in maloperation --- primarily missed trips on high-impedance faults where the IBR-depressed fault current stays below $I_p = 1.20$~pu. With adaptive settings tracking the actual IBR level, maloperation drops to 1.1\%.
+\end{resultbox}
+
+\subsection{From the Paper Figures: Relay Characteristic}
+
+The relay characteristic figure (fig\_relay\_characteristic, from the SyncOC paper) shows the IEC Very-Inverse log-log plot with:
+\begin{itemize}[nosep]
+  \item \textbf{Blue solid}: Fixed relay ($I_p = 1.20$~pu, $\TMS = 0.050$).
+  \item \textbf{Adaptive}: $I_p = 1.487$~pu, $\TMS = 0.050$ (same TMS, higher pickup).
+  \item \textbf{Blue circle}: Operating point for 3PH bolted fault with adaptive settings --- faster trip.
+  \item \textbf{Orange square}: Operating point for SLG fault ($R_F = 0.15$~pu) with fixed settings --- this falls \emph{near} the fixed pickup (close to ``no trip'' boundary).
+  \item \textbf{Orange shaded band}: ``Security margin gain'' --- the region between the fixed and adaptive pickup thresholds where the relay is now desensitised to load transients (fewer spurious pickups).
+\end{itemize}
+
+The key insight: raising $I_p$ from 1.20 to 1.49~pu does not slow the relay on genuine high-current faults (the Very-Inverse curve is steep there), but it eliminates the spurious pickup region between 1.20 and 1.49~pu where only load transients live.
+
+%% ── 7. Best Figure Recommendation ───────────────────────────────────────────
+\section{Best Figure to Show at the TSA Meeting}
+
+\begin{keybox}{Recommended Figure: fig\_key\_results --- Two-Panel Waveform and Relay Response}
+\textbf{What it shows:}
+\begin{itemize}[nosep]
+  \item \textbf{Left panel}: Phase-A fault current waveform. The measured waveform (blue) is overlaid with the six-parameter LM model (red, $R^2 = 0.999$). Orange dotted lines show the AC envelope; green dashed line shows the DC offset component. Identified parameters in the legend box: $\hat{I}_{sub} = 2.838$~pu, $\hat{\tau}_{dc} = 55.9$~ms, $\hat{\phi}_a = \pi/2$~rad.
+  \item \textbf{Right panel}: Adaptive relay response. Blue curve = $I_\mathrm{rms}$ after fault inception. The fixed pickup $I_p^\mathrm{fix} = 1.20$~pu (dash-dot) is below the decaying fault current for a long time, causing slow trip. The adaptive pickup $I_p^\mathrm{adapt} = 1.49$~pu (red shaded band) is set precisely at the right level: the relay picks up at the correct moment (dashed trip line at $\approx 90$~ms) and the security margin gain (pink band) shows the elevated threshold that eliminates spurious pickups.
+\end{itemize}
+
+\textbf{Why it is the best figure:}
+\begin{enumerate}[nosep]
+  \item It directly demonstrates both contributions: estimation accuracy (left) and relay improvement (right).
+  \item A TSA examiner can immediately see the $R^2 = 0.999$ label on the waveform.
+  \item The security margin gain band is visually intuitive --- it shows exactly why raising $I_p$ reduces spurious pickups.
+  \item It connects the abstract LM algorithm to a concrete engineering outcome in one figure.
+\end{enumerate}
+
+\textbf{Where to find it:} \texttt{sambp/sambp\_sync\_oc/paper/figures/fig\_key\_results.pdf}
+
+\textbf{Secondary figure:} \texttt{fig\_relay\_characteristic.pdf} (IEC Very-Inverse log-log plot with fixed vs.\ adaptive operating points). Use this to explain the coordination constraint --- point to the operating point markers and show how the CTI margin is maintained.
+
+\textbf{Whiteboard supplement:} Draw three horizontal lines: (1) $I_\mathrm{load}^\mathrm{max}$ at the bottom, (2) $I_p^\mathrm{fix} = 1.20$~pu slightly above it, (3) $I_p^\mathrm{adapt} = 1.49$~pu higher still. Annotate the gap between (1) and (2) as ``spurious pickup zone'' and the gap between (2) and (3) as ``security margin gain''. This takes 30 seconds and makes the adaptive pickup concept unmistakable.
+\end{keybox}
+
+%% ── 8. Cross-Thesis Connections ──────────────────────────────────────────────
+\section{Cross-Thesis Connections}
+
+\begin{archbox}{How This Chapter Connects to Other Work}
+\textbf{Depends on (upstream):}
+\begin{itemize}[nosep]
+  \item \textbf{Ch~2 (SAMBP Foundations)}: The two-pass LM algorithm, confidence score framework, and bounded update law are all developed in Ch~2 and applied here. The ``projected-gradient'' name comes from the Ch~2 formalisation.
+  \item \textbf{Ch~3 (IBR Characterisation)}: The depressed fault current mechanism (IBR current limiting during FRT) is characterised as failure modes F1--F3 in Ch~3. This chapter solves F1 (fixed OC insensitive to IBR-level fault current).
+  \item \textbf{Ch~6 (Digital Twin / EKF)}: The real-time $\hat{\kibr}$ estimate from the EKF is used in Eq.~\eqref{eq:ip_adapt} to track which operating regime the network is in.
+\end{itemize}
+
+\textbf{Enables (downstream):}
+\begin{itemize}[nosep]
+  \item \textbf{Ch~7 (WAPC)}: The CTI constraint $\tpri + \CTI \leq \tbak$ from this chapter is the inter-relay coordination constraint that the Wide-Area Protection Coordinator (WAPC) enforces at the network level. WAPC extends the bilateral CTI of SyncOC to a full N-relay coordination optimisation.
+  \item \textbf{Planned C9 (HIF Extension)}: The adaptive sensitivity boundary $R_F^\mathrm{max}(\kibr)$ extends the framework to high-impedance fault detection. Expected to reduce HIF miss rate by 30--50\%.
+  \item \textbf{Planned C10 (Park $dq$ validation)}: The six-parameter reduced model (Eq.~\eqref{eq:fault_model}) will be validated against the full 6th-order Park $dq$ truth model to confirm the approximation error $< 5\%$ RMS for $t \leq 250$~ms.
+\end{itemize}
+
+\textbf{Confidence score context:} The $\gamma$ framework from C7 is the \emph{same architectural pattern} as the Stage-2 veto gate in SAMBP-87T, 87L, and 87B. SAMBP-SyncOC is the first application where the Stage-2 gate directly modifies relay settings (not just vetoes a trip decision). This generalisation --- using Stage-2 confidence to adapt parameters, not just to block/permit --- is a novel architectural contribution of this thesis.
+\end{archbox}
+
+%% ── 9. Key Equations Reference Card ─────────────────────────────────────────
+\section{Key Equations Reference Card}
+
+\begin{formulabox}{Equations You Must Be Able to Write and Explain}
+
+\textbf{1. Fault current model (slide core equation):}
+\[
+  \hat{i}_a(t;\bm{\theta}) = I_{ss} + I_{sub}\,e^{-(t-t_0)/\tau_{ac}}\cos(\omega_0 t + \phi_a)
+    + I_{DC}(t_0)\,e^{-(t-t_0)/\tau_{dc}}
+\]
+Say: ``Three components: steady-state, subtransient AC, DC offset. Six free parameters. The DC amplitude is not free --- it is set by continuity to eliminate the 7th parameter.''
+
+\textbf{2. DC continuity constraint (the key reduction step):}
+\[
+  I_{DC}(t_0) = -I_{sub}\cos\phi_a - I_{ss}
+\]
+Say: ``At $t = t_0$, the current must be continuous. This fixes $I_{DC}$ in terms of $I_{sub}$ and $I_{ss}$, eliminating one free parameter and reducing the Jacobian condition number by 250--315$\times$.''
+
+\textbf{3. Adaptive inverse-time OC relay (slide equation):}
+\[
+  \tops = \frac{\TMS \cdot A}{\left(I/\Iset(\kibr)\right)^B - 1}, \quad A=13.5,\; B=2 \;\text{(IEC Very-Inverse)}
+\]
+Say: ``The only change from a classical IEC relay is that $I_p$ (the pickup) is updated online. $\TMS$ and the curve constants $A$, $B$ remain fixed. The curve shape is the same; the threshold moves.''
+
+\textbf{4. Adaptive pickup setting:}
+\[
+  \Ip^\mathrm{adapt} = k_s \cdot \hat{I}_{ss}^\mathrm{load} \cdot (1 + \delta_p)
+    = 1.25 \times \hat{I}_{ss} \times 1.10
+\]
+Say: ``The LM estimator gives us $\hat{I}_{ss}$, the steady-state load current under the current network state. We add 25\% sensitivity margin and 10\% security margin. The result is an $I_p$ that tracks the actual operating conditions.''
+
+\textbf{5. Coordination constraint (slide equation):}
+\[
+  \tpri(\Ip, \TMS) + \CTI \leq \tbak, \quad \CTI \geq 0.3\,\text{s (IEC~60255-151)}
+\]
+Say: ``This is the standard selectivity requirement: the primary relay must trip before the backup, with a minimum margin of 300~ms to allow for breaker operating time. SAMBP verifies this for all $\kibr$ before applying any setting change.''
+
+\textbf{6. Confidence gate:}
+\[
+  \gamma = 0.35\gamma_R + 0.30\gamma_J + 0.20\gamma_\Delta + 0.15\gamma_P \geq 0.70
+\]
+Say: ``Four quality checks: fit quality, Jacobian condition, parameter stability, physical plausibility. All must collectively score above 70\% before the relay settings are updated.''
+\end{formulabox}
+
+%% ── 10. Speaker Script ───────────────────────────────────────────────────────
+\section{Speaker Script (Timed to 3 Minutes)}
+
+\begin{speakbox}
+\textbf{[0:00--0:35] Open with the problem:}\\
+``Overcurrent protection of synchronous generators has been standardised for decades --- you set a pickup current and a time-multiplier at commissioning and never touch them again. That works when the fault current is predictable. But in an IBR-dominated network, it is not. IBRs limit their fault current to 1.0--1.2 times rated during fault ride-through. In a network with $k_\mathrm{ibr} = 0.5$, the total short-circuit current can be reduced by 30--60\%. A pickup set for an all-synchronous-generator network may never be reached for a genuine high-impedance fault. That is how you get a 12.3\% maloperation rate --- and that is exactly what we measured with fixed settings.''
+
+\textbf{[0:35--1:20] Explain the solution:}\\
+``SAMBP-SyncOC replaces the fixed pickup with an adaptive one. After each fault, the LM inverse estimator fits a six-parameter model to the measured phase-A current waveform. The model captures the subtransient component, the DC offset, and the steady-state current --- all simultaneously, in a two-pass decomposition. The key innovation in the model is a continuity constraint that eliminates the DC amplitude as a free parameter. This reduces the Jacobian condition number from over 2000 to under 20 --- a 250-times improvement --- making the LM algorithm converge reliably every time. The R-squared of the fit is 0.999. From the fitted steady-state current, we derive an updated pickup $I_p^\mathrm{adapt}$ that correctly reflects the actual IBR penetration level at that moment.''
+
+\textbf{[1:20--2:00] Explain the coordination gate:}\\
+``Two safety mechanisms prevent the adaptation from doing harm. First, a four-component confidence score $\gamma$ checks the fit quality, the Jacobian conditioning, parameter stability, and physical plausibility. If $\gamma$ drops below 0.70, the relay holds its previous settings. In all three validated fault cases, $\gamma$ was between 0.89 and 0.93 --- comfortably above the gate. Second, the bounded update law clips the pickup change to a maximum of 10\% per cycle and verifies that the coordination time interval constraint $t_\mathrm{primary} + \mathrm{CTI} \leq t_\mathrm{backup}$ is satisfied for all IBR penetration levels before committing the new setting. This is what the slide means by projected-gradient optimisation.''
+
+\textbf{[2:00--2:40] Present the results:}\\
+``The results are in the table. Spurious pickups fall by 58\%, from 38 to 16 --- that is the security margin gain visible in the figure, where the adaptive pickup at 1.49~pu sits above the load transient zone that was triggering the fixed pickup at 1.20~pu. The coordination margin improves from 0.82 to 0.94. Most importantly, maloperation under IBR penetration drops from 12.3\% to 1.1\%. The framework maintains full IEC~60255-151 compliance throughout.''
+
+\textbf{[2:40--3:00] Close:}\\
+``This is Contributions C6, C7, and C8. The LM model achieves R-squared of 0.999. The confidence gate correctly authorises adaptation in all validated cases. And the bounded update law eliminates maloperation without compromising the coordination margin. The extension to high-impedance faults and multi-generator bus topologies is planned as C9, and the Park $dq$ truth model validation is planned as C10.''
+\end{speakbox}
+
+%% ── 11. Anticipated Q and A ──────────────────────────────────────────────────
+\section{Anticipated Questions and Answers}
+
+\begin{keybox}{Q1: The IEC Very-Inverse formula uses M squared. Why is the slide's formula using a general power B?}
+\textbf{Answer:} The slide presents the general IEC~60255-151 inverse-time family, which covers Standard Inverse ($A = 0.14$, $B = 0.02$), Very Inverse ($A = 13.5$, $B = 2$), and Extremely Inverse ($A = 80$, $B = 2$). The thesis uses the Very-Inverse curve throughout, so in all numerical results $B = 2$ and the denominator is $(M^2 - 1)$ exactly as in the IEC standard. The general form is written on the slide so that the framework is presented as applicable to any IEC curve type, not just Very-Inverse. Different generator applications use different curves: Extremely Inverse for generator feeders with large inrush, Standard Inverse for cable-fed systems.
+\end{keybox}
+
+\begin{keybox}{Q2: How does the relay know k-ibr? Does it require communication from the IBR?}
+\textbf{Answer:} The relay does not require direct communication from the IBR. The LM estimator infers the effective $\kibr$ from the shape of the measured fault current waveform itself --- specifically, from the ratio of the steady-state current $I_{ss}$ to the pre-fault load current $I_\mathrm{load}$. A lower $I_{ss}$ relative to $I_\mathrm{load}$ indicates higher IBR suppression of fault current. Alternatively, the EKF digital twin in Ch~4 estimates $\kibr$ directly from the terminal voltage and current phasors, and passes it to the SyncOC adaptation layer. Both paths are available; the chapter uses the LM-internal estimate (two-pass $I_{ss}$) as the primary path.
+\end{keybox}
+
+\begin{keybox}{Q3: The DC continuity constraint eliminates one parameter. Why does this reduce the condition number so dramatically?}
+\textbf{Answer:} The seven-parameter model has two parameters describing the DC component: $I_{DC}(t_0)$ and $\tau_{dc}$. These two parameters are strongly correlated: different combinations of $(I_{DC}, \tau_{dc})$ can produce almost identical waveforms in the estimation window. This collinearity shows up as a near-singular row in the Jacobian, giving $\kappa_n \approx 2000$--$5800$. The continuity constraint fixes $I_{DC}(t_0) = -I_{sub}\cos\phi_a - I_{ss}$, removing $I_{DC}$ as a free parameter. The remaining six parameters describe physically distinct components with well-separated time scales ($\tau_{ac} \approx 30$~ms vs $\tau_{dc} \approx 100$~ms vs $1/\omega_0 \approx 3.3$~ms), so the Jacobian columns are nearly orthogonal. This orthogonality drops $\kappa_n$ to 8--18.
+\end{keybox}
+
+\begin{keybox}{Q4: Could the spurious pickup reduction cause a missed trip on a real high-impedance fault?}
+\textbf{Answer:} This is exactly the security concern that the bounds address. The adaptive pickup is bounded above by $I_{p,\mathrm{max}} = 0.80 \times I_\mathrm{fault,3P}^\mathrm{min}$ --- 80\% of the minimum bolted three-phase fault current. This ensures that no matter how high the adaptive pickup is set, it always remains below the minimum real fault current. For SLG faults at $R_F = 50\,\Omega$ (high-impedance), the fault current is typically 1.3--2.0~pu at $\kibr = 0.3$; the adaptive pickup never exceeds 80\% of 2.86~pu = 2.29~pu. The 1.49~pu adaptive pickup shown in the paper is well below this limit. The table shows 0 missed trips on bolted faults and the same missed trip rate on SLG faults as the fixed relay (extension to HIF is planned C9).
+\end{keybox}
+
+\begin{keybox}{Q5: How does this connect to WAPC? Isn't OC protection a local function?}
+\textbf{Answer:} Locally, yes --- each relay makes its own trip decision independently. But the CTI constraint ($t_\mathrm{primary} + 0.3 \leq t_\mathrm{backup}$) is a coordination constraint between neighbouring relays. When SAMBP-SyncOC adapts its $\TMS$, it changes its operating time, which affects whether it still coordinates correctly with the backup relay upstream. The WAPC (Ch~11) maintains a real-time CTI feasibility check across all relays in the network. It broadcasts updated CTI margin bounds to each relay as $\kibr$ changes across the network. SAMBP-SyncOC reads its local CTI bound from the WAPC before applying any setting change. If the WAPC is unavailable (communication failure), the relay uses the most conservative pre-stored CTI bound, reverting toward the commissioning-time settings rather than applying an unchecked adaptation.
+\end{keybox}
+
+\vspace{1em}
+\begin{center}
+\begin{tcolorbox}[colback=iitmnavy!10,colframe=iitmnavy,arc=4pt,boxrule=1pt,width=0.88\textwidth]
+\centering
+\textbf{Chapter~4 One-Line Summary for Examiners}\\[4pt]
+\textit{``IBR depresses fault current by 30--60\%, making fixed OC settings either too insensitive (missed trips) or too sensitive (spurious pickups). SAMBP-SyncOC fits a six-parameter waveform model using two-pass LM estimation ($R^2 = 0.999$, $\kappa_n < 20$), derives an adaptive pickup $\Iset(\kibr)$, gates the update with a four-component confidence score ($\gamma \geq 0.70$), and projects onto the CTI feasibility set. Result: spurious pickups $-58\%$, maloperation $12.3\% \to 1.1\%$, coordination margin $0.82 \to 0.94$.''}
+\end{tcolorbox}
+\end{center}
+
+\end{document}

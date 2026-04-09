@@ -1,0 +1,65 @@
+% fig_mc_sensitivity.tex
+% TR-37: Dependability sensitivity to IBR penetration scenario
+%
+% X-axis: k_ibr scenario (four groups)
+% Bars: P_dep per scenario
+% Line: P_fast (all 1.000 — flat reference)
+%
+% Data from Study E:
+%   Low IBR  [0.06,0.15]: P_dep=1.0000, P_fast=1.0000, T_mean=20.0ms
+%   Med IBR  [0.12,0.30]: P_dep=1.0000, P_fast=1.0000, T_mean=20.0ms
+%   High IBR [0.25,0.50]: P_dep=1.0000, P_fast=1.0000, T_mean=20.0ms
+%   Near-SG  [0.38,0.55]: P_dep=1.0000, P_fast=1.0000, T_mean=20.0ms
+
+\begin{tikzpicture}
+\begin{axis}[
+  name         = senax,
+  width        = 0.75\textwidth,
+  height       = 7.0cm,
+  ybar,
+  bar width    = 0.80cm,
+  xlabel       = {IBR penetration scenario},
+  ylabel       = {Dependability $P_\mathrm{dep}$},
+  xlabel style = {font=\small},
+  ylabel style = {font=\small},
+  ymin=0.96, ymax=1.005,
+  ytick        = {0.96,0.97,0.98,0.99,1.00},
+  yticklabel style={font=\scriptsize},
+  xtick        = {1,2,3,4},
+  xticklabels  = {Low ($k$: 0.06--0.15),
+                  Med ($k$: 0.12--0.30),
+                  High ($k$: 0.25--0.50),
+                  Near-SG ($k$: 0.38--0.55)},
+  xticklabel style={font=\scriptsize, align=center, rotate=10, anchor=north east},
+  tick style   = {draw=none},
+  axis line style={gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  nodes near coords,
+  nodes near coords style={font=\tiny, anchor=south},
+  every node near coord/.append style={
+    /pgf/number format/.cd, fixed, fixed zerofill, precision=4
+  },
+  legend style={at={(0.98,0.10)}, anchor=south east, font=\tiny,
+                draw=gray!60, fill=white},
+]
+
+%% Bars
+\addplot[fill=blue!40, draw=blue!60]
+  coordinates {(1,1.0000) (2,1.0000) (3,1.0000) (4,1.0000)};
+\addlegendentry{$P_\mathrm{dep}$ (scenario)}
+
+%% Perfect reference line
+\addplot[red!50!black, dashed, very thick, mark=none]
+  coordinates {(0.4, 1.0) (4.6, 1.0)};
+\addlegendentry{Perfect reliability}
+
+%% Annotation
+\node[blue!50!black, font=\tiny, align=center,
+      draw=blue!20, fill=blue!5, rounded corners=2pt, inner sep=2pt]
+  at (axis cs:2.5, 0.975)
+  {$P_\mathrm{dep}=1.0000$ across all IBR\\penetration scenarios\\
+   (excludes $k<I_\mathrm{min,87L}=0.06$ range)};
+
+\end{axis}
+\end{tikzpicture}

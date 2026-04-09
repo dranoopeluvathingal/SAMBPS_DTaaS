@@ -1,0 +1,902 @@
+% =============================================================================
+%  reorganisation_plan.tex
+%  Detailed File/Folder Reorganisation Plan for /root/phd_thesis
+%  Anoop V. Eluvathingal | IIT Madras | April 2026
+% =============================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{booktabs,array,longtable,tabularx}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{mdframed}
+\usepackage{tikz}
+\usetikzlibrary{trees,shapes,arrows.meta,positioning,calc}
+
+% ---- Colours ----------------------------------------------------------------
+\definecolor{sambpblue}{RGB}{0,76,153}
+\definecolor{phasegreen}{RGB}{0,120,60}
+\definecolor{alertred}{RGB}{180,0,0}
+\definecolor{warnorange}{RGB}{200,100,0}
+\definecolor{lightblue}{RGB}{230,240,255}
+\definecolor{lightgreen}{RGB}{230,255,235}
+\definecolor{lightyellow}{RGB}{255,252,220}
+\definecolor{lightred}{RGB}{255,235,235}
+\definecolor{rulegray}{RGB}{100,100,100}
+\definecolor{darkgray}{RGB}{60,60,60}
+
+% ---- Titlesec ---------------------------------------------------------------
+\titleformat{\section}{\large\bfseries\color{sambpblue}}{\thesection.}{0.6em}{}
+  [\vspace{-4pt}\rule{\linewidth}{0.8pt}]
+\titleformat{\subsection}{\normalsize\bfseries\color{phasegreen}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{darkgray}}{\thesubsubsection}{0.5em}{}
+
+% ---- Header/footer ----------------------------------------------------------
+\pagestyle{fancy}\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small\textcolor{rulegray}{PHD\_THESIS Reorganisation Plan}}
+\fancyhead[R]{\small\textcolor{rulegray}{Anoop V. Eluvathingal | April 2026}}
+\fancyfoot[C]{\small\thepage}
+
+% ---- Box environments -------------------------------------------------------
+\newmdenv[backgroundcolor=lightblue,linecolor=sambpblue,linewidth=1pt,
+  innerleftmargin=8pt,innerrightmargin=8pt,innertopmargin=5pt,innerbottommargin=5pt,
+  skipabove=5pt,skipbelow=4pt]{bluebox}
+\newmdenv[backgroundcolor=lightgreen,linecolor=phasegreen,linewidth=1pt,
+  innerleftmargin=8pt,innerrightmargin=8pt,innertopmargin=5pt,innerbottommargin=5pt,
+  skipabove=5pt,skipbelow=4pt]{greenbox}
+\newmdenv[backgroundcolor=lightyellow,linecolor=warnorange,linewidth=1pt,
+  innerleftmargin=8pt,innerrightmargin=8pt,innertopmargin=5pt,innerbottommargin=5pt,
+  skipabove=5pt,skipbelow=4pt]{yellowbox}
+\newmdenv[backgroundcolor=lightred,linecolor=alertred,linewidth=1pt,
+  innerleftmargin=8pt,innerrightmargin=8pt,innertopmargin=5pt,innerbottommargin=5pt,
+  skipabove=5pt,skipbelow=4pt]{redbox}
+
+% ---- Misc -------------------------------------------------------------------
+\setlength{\parindent}{0pt}
+\hypersetup{colorlinks=true,linkcolor=sambpblue,urlcolor=sambpblue}
+\newcommand{\cmd}[1]{\texttt{\small #1}}
+\newcommand{\dir}[1]{\texttt{\textbf{#1}}}
+\newcommand{\OLD}{\textcolor{alertred}{\textbf{[OLD]}}\xspace}
+\newcommand{\NEW}{\textcolor{phasegreen}{\textbf{[NEW]}}\xspace}
+
+% =============================================================================
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{sambpblue}
+    PHD\_THESIS — Systematic Reorganisation Plan}\\[10pt]
+  {\large Detailed folder structure, migration map, and execution steps}\\[8pt]
+  {\normalsize Anoop V.\ Eluvathingal \quad|\quad IIT Madras \quad|\quad April 2026}
+\end{center}
+
+\vspace{4pt}\rule{\linewidth}{1.2pt}\vspace{6pt}
+
+\begin{abstract}
+\noindent
+The current \texttt{/root/phd\_thesis} root contains \textbf{179 items}
+(121 files + 58 directories) at the top level, including 56 stray LaTeX
+auxiliary files (\texttt{.aux/.log/.out/.toc}), 14 slide study-note files
+scattered across 14 directories, and 20+ directories with overlapping or
+ambiguous purposes.
+This plan defines a clean 7-folder top-level taxonomy, specifies exactly where
+every existing item moves, and gives the exact shell commands to execute the
+migration safely — including git operations to track the 29 currently untracked
+technical reports.
+\end{abstract}
+
+\tableofcontents
+
+% =============================================================================
+\newpage
+\section{Diagnosis: What Is Wrong Now}
+
+\subsection{Root-Level Clutter}
+\begin{redbox}
+\textbf{121 files} live at root — including 56 LaTeX build artefacts
+(\texttt{.aux}, \texttt{.log}, \texttt{.out}, \texttt{.toc}),
+14 slide study-note PDFs/TEX/AUX sets, and 5 presentation PDFs that
+belong in subdirectories.
+\end{redbox}
+
+\begin{table}[h!]
+\centering
+\caption{Root-level clutter count}
+\begin{tabular}{lrl}
+\toprule
+\textbf{Type} & \textbf{Count} & \textbf{Problem} \\
+\midrule
+LaTeX build artefacts (.aux/.log/.out/.toc/.nlo/.snm/.nav) & 56 & Should go in build/ \\
+slide\textit{NN}\_study\_note.* (tex+pdf+aux+log+out) & 70 & Should live in presentations/ \\
+slide\textit{NN}\_figures/ directories & 10 & Should live in presentations/ \\
+thesis.tex / synopsis.tex (orphan drafts) & 2 & Move to thesis\_drafts/ \\
+\texttt{*.mplstyle} files & 2 & Move to scripts/styles/ \\
+\texttt{tikz\_master\_styles.tex} & 1 & Move to shared/styles/ \\
+\texttt{reference.bib} (global orphan) & 1 & Move to shared/ \\
+\texttt{lock\_pdf.py} & 1 & Move to scripts/utilities/ \\
+\texttt{*.qmd} / \texttt{\_quarto.yml} / \texttt{\_site/} & 6 & Archive or docs/ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Duplicate / Overlapping Directories}
+
+\begin{table}[h!]
+\centering
+\caption{Directories with overlapping purpose}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Directories} & \textbf{Overlap} \\
+\midrule
+\dir{new\_thesis/} vs \dir{new\_thesis\_edit/} & Two identical 13-chapter drafts; differ only by minor edits \\
+\dir{thesis\_submission/} vs \dir{new\_thesis/} vs \dir{2-mainmatter/} & Three independent thesis draft trees \\
+\dir{Z\_Final\_Thesis\_data/} vs \dir{data/} vs \dir{simulations/} & Simulation data spread across three locations \\
+\dir{Z\_Synthetic\_Family\_Library/} vs \dir{Z\_Synthetic\_Family\_Library\_v2/} & Two versions, should be \dir{data/synthetic\_library/v1} and \dir{v2} \\
+\dir{models/} vs \dir{core\_engines/} & Both contain ML \texttt{.pkl} model files \\
+\dir{ch4/} vs \dir{ch6/} vs \dir{Z\_Final\_Thesis\_scripts/} & Chapter scripts in three places \\
+\dir{analytics\_validation/} vs \dir{data/validation/} & Validation results duplicated \\
+\dir{sambp\_overleaf/} vs \dir{sambp/sambp\_diagrams/} & TikZ diagrams in two places \\
+\dir{docs/} vs \dir{reports/} vs \dir{PDF\_COLLECTION/} & Reference PDFs in three locations \\
+\dir{presentation\_delivery/} (empty) vs \dir{presentations/} & One is empty \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Git Tracking Gaps}
+
+\begin{yellowbox}
+\textbf{29 technical reports are untracked} (TR-16 to TR-37, TR-46 to TR-55).
+These 29 directories exist on disk with compiled PDFs but have never been
+committed to git. If the disk is lost or reset, all this work is gone.
+\end{yellowbox}
+
+\subsection{SAMBP Report Naming}
+
+The \dir{sambp/} directory has 59 report folders named
+\texttt{report3}, \texttt{report4}\ldots \texttt{report62} with gaps
+at 59--61 and 63--65. There is no quick way to know which report covers
+which topic without opening each file. Folder names should encode the topic.
+
+% =============================================================================
+\newpage
+\section{Proposed Top-Level Structure}
+
+The new structure uses \textbf{7 top-level folders} plus 3 root-level files.
+Every item currently in the root has exactly one destination.
+
+\begin{bluebox}
+\begin{verbatim}
+phd_thesis/
+|-- 01_thesis/           ← All thesis draft LaTeX (submission-ready)
+|-- 02_papers/           ← All IEEE journal papers (6 papers)
+|-- 03_technical_reports/← All 59 SAMBP TRs, grouped by phase
+|-- 04_code/             ← All Python modules and scripts
+|-- 05_data/             ← All simulation data, CSV, synthetic library
+|-- 06_presentations/    ← Slides, TSA meeting, study notes
+|-- 07_archive/          ← Superseded drafts, old Overleaf versions
+|-- CLAUDE.md            ← Project instructions (keep at root)
+|-- README.md            ← Top-level overview (keep at root)
+`-- THESIS_CHAPTER_MAP.tex ← Master TR→chapter map (keep at root)
+\end{verbatim}
+\end{bluebox}
+
+% =============================================================================
+\section{Detailed Target Structure — Folder by Folder}
+
+\subsection{01\_thesis/}
+
+\begin{greenbox}
+\textbf{Purpose:} The single source of truth for the thesis LaTeX.
+One active draft; older versions go to \dir{07\_archive/}.
+\end{greenbox}
+
+\begin{verbatim}
+01_thesis/
+|-- active/                    ← Current IIT Madras submission draft
+|   |-- thesis_main.tex        ← Master file (from thesis_submission/)
+|   |-- iitmdissertation.cls
+|   |-- iitmdissertation.sty
+|   |-- iitm.bst
+|   |-- chapters/              ← ch01_introduction.tex … ch13_conclusions.tex
+|   |-- frontmatter/           ← abstract, acknowledgements, glossary
+|   |-- appendices/
+|   |-- figures/               ← All thesis figures
+|   |-- images/                ← iitm-logo.png etc.
+|   |-- references/
+|   |   `-- thesis.bib
+|   `-- styles/
+|       |-- tikz_master_styles.tex
+|       |-- thesis.mplstyle
+|       `-- thesis_v2.mplstyle
+|-- synopsis/
+|   `-- synopsis.tex
+|-- chapter_map/
+|   `-- THESIS_CHAPTER_MAP.tex
+`-- build/                     ← LaTeX build artefacts (gitignored)
+    `-- .gitkeep
+\end{verbatim}
+
+\textbf{Sources:}
+\begin{itemize}[noitemsep]
+  \item \cmd{thesis\_submission/} $\to$ \cmd{01\_thesis/active/}
+  \item \cmd{synopsis.tex} $\to$ \cmd{01\_thesis/synopsis/}
+  \item \cmd{THESIS\_CHAPTER\_MAP.tex} $\to$ \cmd{01\_thesis/chapter\_map/}
+  \item \cmd{tikz\_master\_styles.tex}, \cmd{*.mplstyle} $\to$ \cmd{01\_thesis/active/styles/}
+  \item Root \cmd{thesis.tex}, \cmd{thesis*.log} $\to$ \cmd{07\_archive/root\_orphans/}
+\end{itemize}
+
+% ---------------------------------------------------------------------------
+\subsection{02\_papers/}
+
+\begin{greenbox}
+\textbf{Purpose:} All IEEE-format journal papers, one subfolder per paper.
+Each subfolder is self-contained (tex + bib + figures + Makefile).
+\end{greenbox}
+
+\begin{verbatim}
+02_papers/
+|-- paper_a_syncoc_oc/         ← Paper A: Adaptive OC (IEEE TPWRD)
+|   |-- main_paper.tex
+|   |-- references.bib
+|   |-- figures/
+|   `-- Makefile
+|-- paper_b_cascade_oc/        ← Paper B: Hilbert-Fortescue Cascade (IEEE TIE)
+|   |-- main_paper_b.tex
+|   |-- references.bib
+|   |-- figures/
+|   `-- Makefile
+|-- paper_c_unified_sambp/     ← Paper C: Unified SAMBP (IEEE TPWRS)
+|   |-- main_paper_c.tex
+|   |-- references_c.bib
+|   |-- figures/
+|   `-- Makefile
+|-- paper_d_6th_order/         ← 6th-order Park dq validation (IEEE)
+|   ← from ieee_6th_order/
+|-- paper_e_hif_tpwrd/         ← HIF Impedance-Aware OC (IEEE TPWRD)
+|   ← from ieee_hif_tpwd/  +  sambp/hif_paper/
+|-- paper_f_seq_estim/         ← Sequence Component Estimation (IEEE)
+|   ← from ieee_seq_estim/
+|-- paper_g_coord_gen/         ← Coordinated Adaptive OC (IEEE)
+|   ← from ieee_coord_gen/
+`-- paper_h_line_diff/         ← IBR-Adaptive 87L Line Diff (IEEE TIE)
+    ← from ieee_line_diff/
+\end{verbatim}
+
+\textbf{Naming convention:} \texttt{paper\_\{letter\}\_\{short\_topic\}/}
+Letters A--C are the main journal sequence; D--H are supporting papers.
+
+% ---------------------------------------------------------------------------
+\subsection{03\_technical\_reports/}
+
+\begin{greenbox}
+\textbf{Purpose:} All 59 SAMBP Technical Reports, grouped into 7 phase
+subfolders. Each TR folder is renamed to encode the topic.
+\end{greenbox}
+
+\begin{verbatim}
+03_technical_reports/
+|-- phase_1_sg_framework/          ← TR-03 to TR-11 (SG core + MC)
+|   |-- TR03_87T_87L_foundation/
+|   |-- TR04_87B_bus_differential/
+|   |-- TR05_system_integration_v1/
+|   |-- TR06_iec61850_goose/
+|   |-- TR07_double_busbar/
+|   |-- TR08_monte_carlo_4k/
+|   |-- TR09_stage2_recalibration/
+|   |-- TR10_ct_saturation/
+|   `-- TR11_hif_sensitivity/
+|-- phase_2_87L_deep/              ← TR-12 to TR-27
+|   |-- TR12_87L_magnitude_override/
+|   |-- TR13_87L_pi_section/
+|   |-- TR14_busbar_transfer_goose/
+|   |-- TR15_87L_voltage_pi_section/
+|   |-- TR16_87B_87L_coordination/
+|   |-- TR17_87L_adaptive_threshold/
+|   |-- TR18_mho_distance_21/
+|   |-- TR19_simultaneous_transfer/
+|   |-- TR20_frequency_adaptive_87L/
+|   |-- TR21_harmonic_discrimination/
+|   |-- TR22_87LN_negative_sequence/
+|   |-- TR23_TDCS_87L/
+|   |-- TR24_adaptive_TDCS/
+|   |-- TR25_87LN0_zero_sequence/
+|   |-- TR26_IBR_monte_carlo_15k/
+|   `-- TR27_IBR_87L_integration/
+|-- phase_3_distance/              ← TR-28 to TR-37
+|   |-- TR28_synthesis_TR03_TR27/
+|   |-- TR29_IBR_impedance_trajectory/
+|   |-- TR30_cross_polarised_mho/
+|   |-- TR31_zero_seq_compensation/
+|   |-- TR32_directional_elements_67/
+|   |-- TR33_POTT_IBR_lines/
+|   |-- TR34_quadrilateral_distance/
+|   |-- TR35_IBR_distance_coordination/
+|   |-- TR36_auto_reclose_IBR/
+|   `-- TR37_distance_MC_reliability/
+|-- phase_4_microgrid/             ← TR-38 to TR-42
+|   |-- TR38_GFL_GFM_characterisation/
+|   |-- TR39_islanding_detection/
+|   |-- TR40_adaptive_OC_microgrid/
+|   |-- TR41_87B_microgrid/
+|   `-- TR42_microgrid_integration/
+|-- phase_5_digital_twin/          ← TR-43 to TR-45
+|   |-- TR43_DT_architecture/
+|   |-- TR44_EKF_estimation/
+|   `-- TR45_DT_validation/
+|-- phase_6_ML_advanced/           ← TR-46 to TR-55
+|   |-- TR46_PINN_fault_classification/
+|   |-- TR47_feature_engineering/
+|   |-- TR48_online_learning/
+|   |-- TR49_ML_integration/
+|   |-- TR50_WAPC/
+|   |-- TR51_settings_optimisation/
+|   |-- TR52_cybersecurity_GOOSE/
+|   |-- TR53_HIL_protocol/
+|   |-- TR54_deployment_commissioning/
+|   `-- TR55_thesis_synthesis/
+`-- phase_7_IBR_extension/         ← TR-56, 57, 58, 62 (+ future 59-65)
+    |-- TR56_DFIG_piecewise_ODE/
+    |-- TR57_SPRT_87T_IBR/
+    |-- TR58_EAC_CUEP_relay78/
+    |-- TR62_PV_2param_87L/
+    |-- TR59_DFIG_virtual_87G/      ← placeholder (planned)
+    |-- TR60_relay40_LOE_GFM/       ← placeholder
+    |-- TR61_64G_stator_earth/      ← placeholder
+    |-- TR63_relay81_IFDI/          ← placeholder
+    |-- TR64_87T_IBR_fullMC/        ← placeholder
+    `-- TR65_generator_suite/       ← placeholder
+\end{verbatim}
+
+\textbf{Internal structure of each TR folder} (unchanged):
+\begin{verbatim}
+TR56_DFIG_piecewise_ODE/
+|-- main_report56.tex
+|-- references56.bib
+|-- Makefile
+|-- figures/
+`-- main_report56.pdf
+\end{verbatim}
+
+% ---------------------------------------------------------------------------
+\subsection{04\_code/}
+
+\begin{greenbox}
+\textbf{Purpose:} All Python source code, organised by protection function
+then by layer (models, estimation, detection, evaluation, adaptation).
+No ML \texttt{.pkl} model files here — those go to \dir{05\_data/models/}.
+\end{greenbox}
+
+\begin{verbatim}
+04_code/
+|-- sambp/                         ← Core SAMBP protection modules
+|   |-- sync_oc/                   ← from sambp/sambp_sync_oc/
+|   |   |-- models/
+|   |   |-- inverse_estimation/
+|   |   |-- evaluation/
+|   |   |-- adaptation/
+|   |   `-- signal_processing/
+|   |-- line_diff/                 ← from sambp/sambp_line_diff/
+|   |-- transformer_diff/          ← from sambp/sambp_transformer_diff/
+|   |-- bus_diff/                  ← from sambp/sambp_bus_diff/
+|   |-- generator/                 ← from sambp/sambp_generator/
+|   |-- distance/                  ← from sambp/sambp_distance/
+|   |-- coordination/              ← from sambp/sambp_coordination/
+|   |-- double_bus/                ← from sambp/sambp_double_bus/
+|   `-- system/                    ← from sambp/sambp_system/
+|-- chapter_scripts/               ← Chapter-specific simulation scripts
+|   |-- ch4_IPR/                   ← from ch4/ + Z_Final_Thesis_scripts/ch4_IPR/
+|   |-- ch5_microgrid/             ← from Z_Final_Thesis_scripts/ch5_Microgrid/
+|   `-- ch6_AI_ML/                 ← from ch6/ + Z_Final_Thesis_scripts/ch6_AI_ML/
+|-- data_processing/               ← from data_processing/ (generators, CSV tools)
+|-- analytics/                     ← from analytics_validation/ (audit, validation)
+|-- utilities/                     ← from utilities/ + scripts/
+|   |-- preview_tikz.py
+|   |-- organize_thesis.sh
+|   |-- sync_thesis.sh
+|   |-- lock_pdf.py
+|   |-- generate_synopsis.py
+|   `-- ...
+|-- notebooks/                     ← from notebooks/
+|   |-- C6_Validation_Sandbox.ipynb
+|   `-- Inverse_Source_modelling.ipynb
+`-- styles/
+    |-- thesis.mplstyle
+    `-- thesis_v2.mplstyle
+\end{verbatim}
+
+% ---------------------------------------------------------------------------
+\subsection{05\_data/}
+
+\begin{greenbox}
+\textbf{Purpose:} All data artefacts — simulation outputs, CSV files,
+trained ML models, synthetic waveform libraries.
+Nothing here is source code.
+\end{greenbox}
+
+\begin{verbatim}
+05_data/
+|-- simulation_results/            ← from data/simulations/ + Z_Final_Thesis_data/
+|   |-- ch4_IPR/
+|   |-- ch5_microgrid/
+|   `-- ch6_AI_ML/
+|-- fault_waveforms/               ← from data/chapter_4/ + data/processing/
+|   |-- pscad_fault_data.csv
+|   |-- hif_fault_data.csv
+|   |-- sg_fault_data.csv
+|   `-- fault_data.csv
+|-- synthetic_library/             ← from Z_Synthetic_Family_Library*
+|   |-- v1/
+|   |   |-- waveforms/
+|   |   |-- metadata/
+|   |   `-- benchmark_results/
+|   `-- v2/
+|       |-- waveforms/
+|       |-- metadata/
+|       `-- benchmark_results/
+|-- validation_results/            ← from data/validation/ + analytics_validation/
+|   |-- Master_100_Sim_Results.csv
+|   |-- batch_validation_results.csv
+|   `-- ici_audit_results.csv
+|-- trained_models/                ← from models/ + core_engines/ (*.pkl files)
+|   |-- ibr_fault_classifier.pkl
+|   |-- feature_scaler.pkl
+|   |-- model_a_magnitude.pkl
+|   |-- model_b_entropy.pkl
+|   |-- scaler_a.pkl
+|   `-- scaler_b.pkl
+`-- figures_archive/               ← from FIGURE_ARCHIVE/ + Z_Final_Thesis_figures/
+    |-- rendered/                  ← PNG/PDF rendered outputs
+    `-- sources/                   ← TikZ .tex figure sources
+\end{verbatim}
+
+% ---------------------------------------------------------------------------
+\subsection{06\_presentations/}
+
+\begin{greenbox}
+\textbf{Purpose:} All slides, study notes, and TSA meeting materials.
+\end{greenbox}
+
+\begin{verbatim}
+06_presentations/
+|-- tsa_meeting/                   ← from root TSA_meeting_*.tex/pdf
+|   |-- TSA_meeting_Eluvathingal.tex
+|   |-- TSA_meeting_Eluvathingal.pdf
+|   |-- TSA_notes_Eluvathingal.tex
+|   `-- TSA_notes_Eluvathingal.pdf
+|-- synopsis_slides/               ← from presentations/*.pptx
+|   |-- Anoop_PhD_Synopsis.pptx
+|   `-- Anoop_Detailed_PhD_Synopsis.pptx
+|-- sambp_overview/
+|   |-- sambp_presentation_notes.pdf
+|   `-- sambp_speaker_notes.pdf
+`-- study_notes/                   ← from root slide03_* … slide16_*
+    |-- slide03/
+    |   |-- slide03_study_note.tex
+    |   |-- slide03_study_note.pdf
+    |   `-- figures/
+    |-- slide04/ … slide16/        ← same pattern for 04–16
+    `-- figures/                   ← from slide07_figures … slide16_figures
+\end{verbatim}
+
+% ---------------------------------------------------------------------------
+\subsection{07\_archive/}
+
+\begin{yellowbox}
+\textbf{Purpose:} Superseded drafts and experimental work that is NOT deleted
+but is NOT part of the active pipeline. Read-only; nothing here is compiled or
+run as part of the thesis workflow.
+\end{yellowbox}
+
+\begin{verbatim}
+07_archive/
+|-- thesis_drafts/
+|   |-- new_thesis/                ← 13-chapter extended draft
+|   |-- new_thesis_edit/           ← edited version of above
+|   |-- 2-mainmatter/              ← earliest chapter-by-chapter draft
+|   |-- thesis.tex                 ← orphan root draft
+|   `-- sambp_overleaf/            ← Overleaf full-report draft
+|-- reports_old/
+|   |-- sambp_overleaf/sambp_full_report/  ← older compiled SAMBP report
+|   `-- reports/ (syncoc_deviation, research_gap)
+|-- quarto_site/                   ← from _site/, audit.qmd, *.qmd, _quarto.yml
+|-- old_pdfs/
+|   |-- SAMBP_Research_Gap_Plan.pdf
+|   |-- SAMBP_SyncOC_Deviation_Analysis.pdf
+|   `-- PDF_COLLECTION/
+|-- scratch/
+|   |-- figures_orphan/            ← visualization/, images/, figures_thesis/
+|   |-- build_artefacts/           ← build/
+|   `-- simulations_old/           ← simulations/plots/
+`-- root_orphans/                  ← stray tex/log at root that match nothing
+    |-- texput.log
+    `-- reference.bib
+\end{verbatim}
+
+% =============================================================================
+\newpage
+\section{File-by-File Migration Map}
+
+\begin{longtable}{p{5.2cm}p{6.8cm}l}
+\toprule
+\textbf{Current Location} & \textbf{New Location} & \textbf{Action} \\
+\midrule
+\endhead
+\multicolumn{3}{l}{\textit{--- Root-level files ---}} \\
+\cmd{thesis\_submission/} & \cmd{01\_thesis/active/} & Move \\
+\cmd{THESIS\_CHAPTER\_MAP.tex} & \cmd{01\_thesis/chapter\_map/} & Move \\
+\cmd{synopsis.tex} & \cmd{01\_thesis/synopsis/} & Move \\
+\cmd{tikz\_master\_styles.tex} & \cmd{01\_thesis/active/styles/} & Move \\
+\cmd{thesis.mplstyle}, \cmd{thesis\_v2.mplstyle} & \cmd{01\_thesis/active/styles/} & Move \\
+\cmd{thesis.tex} & \cmd{07\_archive/thesis\_drafts/} & Move \\
+\cmd{reference.bib} & \cmd{07\_archive/root\_orphans/} & Move \\
+\cmd{lock\_pdf.py} & \cmd{04\_code/utilities/} & Move \\
+\cmd{README.md} & (keep at root) & Stay \\
+\cmd{RESEARCH\_GAP\_PLAN.md} & (keep at root) & Stay \\
+\cmd{texput.log}, \cmd{thesis*.log} & Delete & Delete \\
+\cmd{THESIS\_CHAPTER\_MAP.aux/.log/.out/.toc} & Delete & Delete \\[4pt]
+
+\multicolumn{3}{l}{\textit{--- Slide study notes (03–16) ---}} \\
+\cmd{slide03\_study\_note.*} & \cmd{06\_presentations/study\_notes/slide03/} & Move \\
+\cmd{slide04} \ldots \cmd{slide16} & \cmd{06\_presentations/study\_notes/slide\textit{NN}/} & Move \\
+\cmd{slide07\_figures/} \ldots \cmd{slide16\_figures/} & \cmd{06\_presentations/study\_notes/slide\textit{NN}/figures/} & Move \\[4pt]
+
+\multicolumn{3}{l}{\textit{--- TSA materials ---}} \\
+\cmd{TSA\_meeting\_Eluvathingal.*} & \cmd{06\_presentations/tsa\_meeting/} & Move \\
+\cmd{TSA\_notes\_Eluvathingal.*} & \cmd{06\_presentations/tsa\_meeting/} & Move \\
+\cmd{presentations/*.pptx} & \cmd{06\_presentations/synopsis\_slides/} & Move \\
+\cmd{sambp\_presentation\_notes.pdf} & \cmd{06\_presentations/sambp\_overview/} & Move \\
+\cmd{sambp\_speaker\_notes.pdf} & \cmd{06\_presentations/sambp\_overview/} & Move \\[4pt]
+
+\multicolumn{3}{l}{\textit{--- IEEE papers ---}} \\
+\cmd{sambp/sambp\_sync\_oc/paper/} & \cmd{02\_papers/paper\_a\_syncoc\_oc/} & Move \\
+\cmd{sambp/sambp\_sync\_oc/paper\_b/} & \cmd{02\_papers/paper\_b\_cascade\_oc/} & Move \\
+\cmd{sambp/sambp\_sync\_oc/paper\_c/} & \cmd{02\_papers/paper\_c\_unified\_sambp/} & Move \\
+\cmd{ieee\_6th\_order/} & \cmd{02\_papers/paper\_d\_6th\_order/} & Move \\
+\cmd{ieee\_hif\_tpwd/} & \cmd{02\_papers/paper\_e\_hif\_tpwrd/} & Move \\
+\cmd{sambp/hif\_paper/} & \cmd{02\_papers/paper\_e\_hif\_tpwrd/older\_draft/} & Merge \\
+\cmd{ieee\_seq\_estim/} & \cmd{02\_papers/paper\_f\_seq\_estim/} & Move \\
+\cmd{ieee\_coord\_gen/} & \cmd{02\_papers/paper\_g\_coord\_gen/} & Move \\
+\cmd{ieee\_line\_diff/} & \cmd{02\_papers/paper\_h\_line\_diff/} & Move \\[4pt]
+
+\multicolumn{3}{l}{\textit{--- Technical reports ---}} \\
+\cmd{sambp/report3/} & \cmd{03\_technical\_reports/phase\_1\_sg\_framework/TR03\_87T\_87L\_foundation/} & Move+Rename \\
+\cmd{sambp/report4/} & \cmd{.../TR04\_87B\_bus\_differential/} & Move+Rename \\
+\cmd{sambp/report5/} & \cmd{.../TR05\_system\_integration\_v1/} & Move+Rename \\
+\cmd{sambp/report6/} & \cmd{.../TR06\_iec61850\_goose/} & Move+Rename \\
+\cmd{sambp/report7/} & \cmd{.../TR07\_double\_busbar/} & Move+Rename \\
+\cmd{sambp/report8/} & \cmd{.../TR08\_monte\_carlo\_4k/} & Move+Rename \\
+\cmd{sambp/report9/} & \cmd{.../TR09\_stage2\_recalibration/} & Move+Rename \\
+\cmd{sambp/report10/} & \cmd{.../TR10\_ct\_saturation/} & Move+Rename \\
+\cmd{sambp/report11/} & \cmd{.../TR11\_hif\_sensitivity/} & Move+Rename \\
+\cmd{sambp/report12--15/} & \cmd{.../phase\_2\_87L\_deep/TR12--15.../} & Move+Rename \\
+\cmd{sambp/report16--27/} & \cmd{.../phase\_2\_87L\_deep/TR16--27.../} & Move+Rename \\
+\cmd{sambp/report28--37/} & \cmd{.../phase\_3\_distance/TR28--37.../} & Move+Rename \\
+\cmd{sambp/report38--42/} & \cmd{.../phase\_4\_microgrid/TR38--42.../} & Move+Rename \\
+\cmd{sambp/report43--45/} & \cmd{.../phase\_5\_digital\_twin/TR43--45.../} & Move+Rename \\
+\cmd{sambp/report46--55/} & \cmd{.../phase\_6\_ML\_advanced/TR46--55.../} & Move+Rename \\
+\cmd{sambp/report56,57,58,62/} & \cmd{.../phase\_7\_IBR\_extension/TR56.../} & Move+Rename \\[4pt]
+
+\multicolumn{3}{l}{\textit{--- Code modules ---}} \\
+\cmd{sambp/sambp\_sync\_oc/} & \cmd{04\_code/sambp/sync\_oc/} & Move \\
+\cmd{sambp/sambp\_line\_diff/} & \cmd{04\_code/sambp/line\_diff/} & Move \\
+\cmd{sambp/sambp\_transformer\_diff/} & \cmd{04\_code/sambp/transformer\_diff/} & Move \\
+\cmd{sambp/sambp\_bus\_diff/} & \cmd{04\_code/sambp/bus\_diff/} & Move \\
+\cmd{sambp/sambp\_generator/} & \cmd{04\_code/sambp/generator/} & Move \\
+\cmd{sambp/sambp\_distance/} & \cmd{04\_code/sambp/distance/} & Move \\
+\cmd{sambp/sambp\_coordination/} & \cmd{04\_code/sambp/coordination/} & Move \\
+\cmd{sambp/sambp\_double\_bus/} & \cmd{04\_code/sambp/double\_bus/} & Move \\
+\cmd{sambp/sambp\_system/} & \cmd{04\_code/sambp/system/} & Move \\
+\cmd{ch4/}, \cmd{ch6/} & \cmd{04\_code/chapter\_scripts/} & Merge \\
+\cmd{Z\_Final\_Thesis\_scripts/} & \cmd{04\_code/chapter\_scripts/} & Merge \\
+\cmd{analytics\_validation/} & \cmd{04\_code/analytics/} & Move \\
+\cmd{data\_processing/} & \cmd{04\_code/data\_processing/} & Move \\
+\cmd{utilities/} & \cmd{04\_code/utilities/} & Merge \\
+\cmd{scripts/} & \cmd{04\_code/utilities/} & Merge \\
+\cmd{notebooks/} & \cmd{04\_code/notebooks/} & Move \\
+\cmd{core\_engines/} & Split: .pkl $\to$ 05\_data/; .py $\to$ 04\_code/ & Split \\
+\cmd{models/} & \cmd{05\_data/trained\_models/} & Move \\[4pt]
+
+\multicolumn{3}{l}{\textit{--- Data ---}} \\
+\cmd{data/simulations/} & \cmd{05\_data/simulation\_results/} & Move \\
+\cmd{data/chapter\_4/} & \cmd{05\_data/fault\_waveforms/} & Move \\
+\cmd{data/processing/} & \cmd{05\_data/fault\_waveforms/} & Merge \\
+\cmd{data/validation/} & \cmd{05\_data/validation\_results/} & Move \\
+\cmd{Z\_Final\_Thesis\_data/} & \cmd{05\_data/simulation\_results/} & Merge \\
+\cmd{Z\_Synthetic\_Family\_Library/} & \cmd{05\_data/synthetic\_library/v1/} & Move \\
+\cmd{Z\_Synthetic\_Family\_Library\_v2/} & \cmd{05\_data/synthetic\_library/v2/} & Move \\
+\cmd{FIGURE\_ARCHIVE/} & \cmd{05\_data/figures\_archive/} & Move \\
+\cmd{Z\_Final\_Thesis\_figures/} & \cmd{05\_data/figures\_archive/chapter\_sources/} & Merge \\[4pt]
+
+\multicolumn{3}{l}{\textit{--- Archive ---}} \\
+\cmd{new\_thesis/} & \cmd{07\_archive/thesis\_drafts/new\_thesis/} & Move \\
+\cmd{new\_thesis\_edit/} & \cmd{07\_archive/thesis\_drafts/new\_thesis\_edit/} & Move \\
+\cmd{2-mainmatter/} & \cmd{07\_archive/thesis\_drafts/2-mainmatter/} & Move \\
+\cmd{sambp\_overleaf/} & \cmd{07\_archive/thesis\_drafts/sambp\_overleaf/} & Move \\
+\cmd{docs/} & \cmd{07\_archive/reference\_pdfs/} & Move \\
+\cmd{reports/} & \cmd{07\_archive/reports\_old/} & Move \\
+\cmd{PDF\_COLLECTION/} & \cmd{07\_archive/old\_pdfs/} & Move \\
+\cmd{\_site/}, \cmd{*.qmd}, \cmd{\_quarto.yml} & \cmd{07\_archive/quarto\_site/} & Move \\
+\cmd{backups/} & \cmd{07\_archive/backups/} & Move \\
+\cmd{build/} & \cmd{07\_archive/build\_artefacts/} & Move \\
+\cmd{simulations/} & \cmd{07\_archive/scratch/} & Move \\
+\cmd{visualization/} & \cmd{07\_archive/scratch/} & Move \\
+\cmd{presentation\_delivery/} (empty) & Delete & Delete \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\newpage
+\section{Git Strategy}
+
+\subsection{Problem: 29 Untracked Reports Must Be Committed First}
+
+\begin{redbox}
+\textbf{CRITICAL:} Git must be updated BEFORE any files are moved.
+If you move files and then commit, git sees ``deleted old + added new'' and
+loses history. The correct sequence is:\\[4pt]
+\textbf{Step 1:} Commit the 29 untracked reports.\\
+\textbf{Step 2:} Use \cmd{git mv} to move everything (history preserved).\\
+\textbf{Step 3:} Commit the reorganisation.
+\end{redbox}
+
+\subsection{Step 1 — Commit Untracked Reports}
+
+Run once to stage all 29 untracked TR folders:
+\begin{verbatim}
+cd /root/phd_thesis
+
+# Add all untracked reports (TR-16 to TR-37, TR-46 to TR-55)
+for n in 16 17 18 19 20 21 22 23 24 25 26 27 \
+         28 29 30 31 32 33 34 35 36 37 \
+         46 47 48 49 50 51 52 53 54 55; do
+  git add sambp/report${n}/
+done
+
+git commit -m "Add untracked TR-16 to TR-55 (29 reports, 87L/distance/microgrid/DT/ML phases)"
+\end{verbatim}
+
+\subsection{Step 2 — Create New Directory Structure}
+
+\begin{verbatim}
+mkdir -p 01_thesis/{active/{chapters,frontmatter,appendices,figures,images,
+         references,styles},synopsis,chapter_map,build}
+mkdir -p 02_papers/paper_{a_syncoc_oc,b_cascade_oc,c_unified_sambp,
+         d_6th_order,e_hif_tpwrd,f_seq_estim,g_coord_gen,h_line_diff}
+mkdir -p 03_technical_reports/{phase_1_sg_framework,phase_2_87L_deep,
+         phase_3_distance,phase_4_microgrid,phase_5_digital_twin,
+         phase_6_ML_advanced,phase_7_IBR_extension}
+mkdir -p 04_code/{sambp/{sync_oc,line_diff,transformer_diff,bus_diff,
+         generator,distance,coordination,double_bus,system},
+         chapter_scripts/{ch4_IPR,ch5_microgrid,ch6_AI_ML},
+         data_processing,analytics,utilities,notebooks,styles}
+mkdir -p 05_data/{simulation_results/{ch4_IPR,ch5_microgrid,ch6_AI_ML},
+         fault_waveforms,synthetic_library/{v1,v2},
+         validation_results,trained_models,figures_archive/{rendered,sources}}
+mkdir -p 06_presentations/{tsa_meeting,synopsis_slides,sambp_overview,
+         study_notes}
+mkdir -p 07_archive/{thesis_drafts,reports_old,quarto_site,
+         old_pdfs,scratch,backups,build_artefacts,root_orphans}
+\end{verbatim}
+
+\subsection{Step 3 — Move Technical Reports (with rename)}
+
+\begin{verbatim}
+BASE=03_technical_reports
+
+# Phase 1 — SG Framework
+declare -A TR_NAMES=(
+  [3]="TR03_87T_87L_foundation"       [4]="TR04_87B_bus_differential"
+  [5]="TR05_system_integration_v1"    [6]="TR06_iec61850_goose"
+  [7]="TR07_double_busbar"            [8]="TR08_monte_carlo_4k"
+  [9]="TR09_stage2_recalibration"     [10]="TR10_ct_saturation"
+  [11]="TR11_hif_sensitivity"
+)
+PHASE=phase_1_sg_framework
+for n in 3 4 5 6 7 8 9 10 11; do
+  git mv sambp/report${n} ${BASE}/${PHASE}/${TR_NAMES[$n]}
+done
+
+# Phase 2 — 87L Deep
+declare -A TR_NAMES2=(
+  [12]="TR12_87L_magnitude_override"  [13]="TR13_87L_pi_section"
+  [14]="TR14_busbar_transfer_goose"   [15]="TR15_87L_voltage_pi_section"
+  [16]="TR16_87B_87L_coordination"    [17]="TR17_87L_adaptive_threshold"
+  [18]="TR18_mho_distance_21"         [19]="TR19_simultaneous_transfer"
+  [20]="TR20_frequency_adaptive_87L"  [21]="TR21_harmonic_discrimination"
+  [22]="TR22_87LN_negative_sequence"  [23]="TR23_TDCS_87L"
+  [24]="TR24_adaptive_TDCS"           [25]="TR25_87LN0_zero_sequence"
+  [26]="TR26_IBR_monte_carlo_15k"     [27]="TR27_IBR_87L_integration"
+)
+PHASE=phase_2_87L_deep
+for n in 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27; do
+  git mv sambp/report${n} ${BASE}/${PHASE}/${TR_NAMES2[$n]}
+done
+
+# (same pattern for phases 3-7 — see full script in 04_code/utilities/)
+\end{verbatim}
+
+\subsection{Step 4 — Move Code Modules}
+
+\begin{verbatim}
+# SAMBP Python modules
+git mv sambp/sambp_sync_oc          04_code/sambp/sync_oc
+git mv sambp/sambp_line_diff        04_code/sambp/line_diff
+git mv sambp/sambp_transformer_diff 04_code/sambp/transformer_diff
+git mv sambp/sambp_bus_diff         04_code/sambp/bus_diff
+git mv sambp/sambp_generator        04_code/sambp/generator
+git mv sambp/sambp_distance         04_code/sambp/distance
+git mv sambp/sambp_coordination     04_code/sambp/coordination
+git mv sambp/sambp_double_bus       04_code/sambp/double_bus
+git mv sambp/sambp_system           04_code/sambp/system
+\end{verbatim}
+
+\subsection{Step 5 — Move Papers}
+
+\begin{verbatim}
+git mv ieee_6th_order        02_papers/paper_d_6th_order
+git mv ieee_hif_tpwd         02_papers/paper_e_hif_tpwrd
+git mv ieee_seq_estim        02_papers/paper_f_seq_estim
+git mv ieee_coord_gen        02_papers/paper_g_coord_gen
+git mv ieee_line_diff        02_papers/paper_h_line_diff
+git mv sambp/hif_paper       02_papers/paper_e_hif_tpwrd/older_draft
+\end{verbatim}
+
+\subsection{Step 6 — Move Thesis and Presentations}
+
+\begin{verbatim}
+git mv thesis_submission               01_thesis/active
+git mv THESIS_CHAPTER_MAP.tex          01_thesis/chapter_map/
+git mv synopsis.tex                    01_thesis/synopsis/
+git mv tikz_master_styles.tex          01_thesis/active/styles/
+
+# Slide study notes (03-16)
+for n in $(seq -w 3 16); do
+  mkdir -p 06_presentations/study_notes/slide${n}
+  git mv slide${n}_study_note.tex  06_presentations/study_notes/slide${n}/
+  git mv slide${n}_study_note.pdf  06_presentations/study_notes/slide${n}/ 2>/dev/null
+  for ext in aux log out toc; do
+    rm -f slide${n}_study_note.${ext}
+  done
+done
+for n in 07 08 10 11 12 13 14 15 16; do
+  git mv slide${n}_figures 06_presentations/study_notes/slide${n}/figures
+done
+
+# TSA materials
+for ext in tex pdf; do
+  git mv TSA_meeting_Eluvathingal.${ext}  06_presentations/tsa_meeting/
+  git mv TSA_notes_Eluvathingal.${ext}    06_presentations/tsa_meeting/
+done
+\end{verbatim}
+
+\subsection{Step 7 — Archive Old Drafts}
+
+\begin{verbatim}
+git mv new_thesis          07_archive/thesis_drafts/
+git mv new_thesis_edit     07_archive/thesis_drafts/
+git mv 2-mainmatter        07_archive/thesis_drafts/
+git mv sambp_overleaf      07_archive/thesis_drafts/
+git mv docs                07_archive/reference_pdfs
+git mv reports             07_archive/reports_old
+git mv PDF_COLLECTION      07_archive/old_pdfs
+git mv backups             07_archive/
+git mv build               07_archive/build_artefacts
+git mv simulations         07_archive/scratch/simulations_old
+git mv visualization       07_archive/scratch/
+\end{verbatim}
+
+\subsection{Step 8 — Delete Clutter}
+
+\begin{verbatim}
+# Delete all LaTeX build artefacts at root
+rm -f THESIS_CHAPTER_MAP.{aux,log,out,toc}
+rm -f TSA_meeting_Eluvathingal.{aux,log,nav,out,snm,toc}
+rm -f TSA_notes_Eluvathingal.{aux,log,out,toc}
+rm -f texput.log thesis.log thesis_main.log thesis.nlo
+rm -f SAMBP_Research_Gap_Plan.pdf SAMBP_SyncOC_Deviation_Analysis.pdf
+
+# Delete empty directory
+rm -rf presentation_delivery
+rm -rf __pycache__ _assets _site .quarto .ipynb_checkpoints
+\end{verbatim}
+
+\subsection{Step 9 — Update .gitignore}
+
+Add to \texttt{.gitignore}:
+\begin{verbatim}
+# LaTeX build artefacts
+**/*.aux
+**/*.log
+**/*.out
+**/*.toc
+**/*.blg
+**/*.bbl
+**/*.nav
+**/*.snm
+**/*.nlo
+**/*.ist
+**/*.acn
+**/*.glo
+**/*.lof
+**/*.lot
+01_thesis/build/
+03_technical_reports/**/figures/*.pdf  # auto-generated figures
+
+# Python
+**/__pycache__/
+**/*.pyc
+**/.ipynb_checkpoints/
+
+# Virtual environments
+phd_env/
+venv/
+.venv/
+\end{verbatim}
+
+\subsection{Step 10 — Final Commit}
+
+\begin{verbatim}
+git add -A
+git commit -m "Reorganise PHD_THESIS into 7-folder taxonomy (01_thesis through 07_archive)"
+\end{verbatim}
+
+% =============================================================================
+\newpage
+\section{Before / After Comparison}
+
+\begin{table}[h!]
+\centering
+\caption{Root-level directory count: before vs.\ after}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Metric} & \textbf{Before} & \textbf{After} \\
+\midrule
+Top-level directories & 58 & \textbf{7} \\
+Top-level files & 121 & \textbf{3} \\
+Total root-level items & 179 & \textbf{10} \\
+Untracked TR folders & 29 & \textbf{0} \\
+Stray .aux/.log files at root & 56 & \textbf{0} \\
+Slide study-note sets at root & 14 & \textbf{0} \\
+Overlapping thesis draft trees & 3 & \textbf{1 active + archive} \\
+TR folders with opaque names & 59 & \textbf{0 (all topic-named)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Rules Going Forward}
+
+\begin{bluebox}
+\begin{enumerate}[leftmargin=1.5cm,label=\textbf{R\arabic*.}]
+  \item \textbf{New TR:} Create in \cmd{03\_technical\_reports/phase\_\{N\}/TR\{XX\}\_\{topic\}/}.
+    Commit immediately after writing.
+  \item \textbf{New code:} Goes in \cmd{04\_code/sambp/\{function\}/}.
+    Never at root.
+  \item \textbf{Build artefacts:} \cmd{.aux/.log/.out/.toc} go into
+    \cmd{01\_thesis/build/} or \cmd{03\_technical\_reports/.../build/} —
+    all gitignored.
+  \item \textbf{New paper:} Create in \cmd{02\_papers/paper\_\{letter\}\_\{topic\}/}.
+  \item \textbf{New data file:} Goes in \cmd{05\_data/} under the appropriate
+    subcategory. Never committed alongside code.
+  \item \textbf{Presentations:} All slides go into \cmd{06\_presentations/}.
+  \item \textbf{Nothing at root} except \cmd{README.md},
+    \cmd{RESEARCH\_GAP\_PLAN.md}, \cmd{.gitignore}, and \cmd{CLAUDE.md}.
+\end{enumerate}
+\end{bluebox}
+
+\vfill
+\begin{center}
+\rule{0.6\linewidth}{0.4pt}\\[4pt]
+{\small Reorganisation Plan $\cdot$ April 2026 $\cdot$
+Based on full filesystem audit: 179 root items $\to$ 10 root items}
+\end{center}
+
+\end{document}

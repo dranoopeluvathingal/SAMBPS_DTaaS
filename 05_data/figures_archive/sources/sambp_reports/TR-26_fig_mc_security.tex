@@ -1,0 +1,74 @@
+% fig_mc_security.tex
+% TR-26: Scatter/line plot — TDCS security margin vs external through-current
+% Group C: 5000 external fault trials
+% Shows: ΔI (CT mismatch step) and Δ_thr (adaptive threshold) across I_ext range
+%
+% Data: worst-case scatter from 5000 trials
+%   ΔI_max  = εCT_max × I_ext / sqrt(2) - μ_pre_min
+%           = 0.005 × I_ext / 1.414 - 0.002
+%   Δ_thr_min = 0.025 + 3×σ_min = 0.025 + 3×0.0003 = 0.0259
+%   Worst case at I_ext=7: ΔI=0.0224, Δ_thr=0.0259, margin=13.5% > 0
+%
+% From MC: worst margin = 15.5% at I_ext=6.95, εCT=0.0050, μ=0.0021 pu
+\begin{tikzpicture}
+\begin{axis}[
+  name         = secax,
+  width        = 0.78\textwidth,
+  height       = 6.0cm,
+  ylabel       = {Apparent TDCS $\Delta I$ / threshold [pu]},
+  ylabel style = {font=\small},
+  xlabel       = {External through-current $I_{\rm ext}$ [pu]},
+  xlabel style = {font=\small},
+  ymin=0, ymax=0.042,
+  ytick        = {0, 0.005, 0.010, 0.015, 0.020, 0.025, 0.030, 0.035, 0.040},
+  yticklabel style={font=\scriptsize},
+  xmin=0, xmax=7.5,
+  xtick        = {1, 2, 3, 4, 5, 6, 7},
+  xticklabel style={font=\scriptsize},
+  legend style={at={(0.05,0.97)}, anchor=north west,
+                font=\scriptsize, draw=gray!60},
+  grid         = major,
+  grid style   = {gray!20, dashed},
+  tick style   = {draw=none},
+  axis line style={gray!60},
+  mark size=1.8pt,
+]
+
+% Upper envelope of ΔI across εCT: ΔI_max = εCT_max×I_ext/sqrt2 - μ_pre_min
+% = 0.005×I_ext/1.414 - 0.002
+\addplot[blue!70!black, thick, mark=square*, mark options={fill=blue!30}]
+  coordinates {
+    (0.5, 0.000)
+    (1.0, 0.001)
+    (1.5, 0.003)
+    (2.0, 0.005)
+    (3.0, 0.008)
+    (4.0, 0.012)
+    (5.0, 0.016)
+    (6.0, 0.019)
+    (7.0, 0.022)
+  };
+\addlegendentry{$\Delta I_{\rm ext}$ worst-case envelope (MC 95-pct)}
+
+% Adaptive threshold lower envelope: Δ_floor + 3×σ_min = 0.025+3×0.0003 = 0.0259
+\addplot[red!60!black, thick, dashed, mark=none, domain=0:7.5, samples=2]
+  ({x}, {0.0259});
+\addlegendentry{$\Delta_{\rm thr,min}$ (95-pct lower, $\sigma=0.0003$\,pu)}
+
+% Adaptive threshold representative: Δ_floor + 3×σ_mean
+\addplot[orange!60!black, thick, dotted, mark=none, domain=0:7.5, samples=2]
+  ({x}, {0.0282});
+\addlegendentry{$\Delta_{\rm thr,mean}$ ($\sigma=0.0011$\,pu mean)}
+
+% Security margin annotation at worst case
+\draw[{latex[length=3pt]}-{latex[length=3pt]}, green!60!black, thick]
+  (axis cs:7.0, 0.022) --
+  node[right, font=\tiny, green!70!black, align=left] {min\\margin\\15.5\%}
+  (axis cs:7.0, 0.0259);
+
+\node[font=\scriptsize, green!60!black, align=center]
+  at (axis cs:3.5, 0.038)
+  {5000/5000 secure (FPR\,=\,0)};
+
+\end{axis}
+\end{tikzpicture}

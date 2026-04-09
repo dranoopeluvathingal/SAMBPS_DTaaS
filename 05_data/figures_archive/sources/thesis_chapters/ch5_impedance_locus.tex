@@ -1,0 +1,50 @@
+% ch5_impedance_locus.tex — Apparent impedance locus on R-X plane
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  width  = 0.68\textwidth,
+  height = 7.0cm,
+  xlabel = {Resistance $R$ ($\Omega$)},
+  ylabel = {Reactance $X$ ($\Omega$)},
+  xmin=-5, xmax=35, ymin=-5, ymax=30,
+  xtick={0,5,10,15,20,25,30},
+  ytick={0,5,10,15,20,25},
+  legend pos=north west,
+  axis equal=false,
+]
+
+%% Zone 1 mho circle (centred at (12,10), radius 13 Ω approx)
+%% Line impedance: Z_L = 10 + j12 Ω, Zone 1 reach = 80%: Z_reach = 8+j9.6
+%% Mho circle: centre = (4, 4.8), radius = 5.04
+\addplot[thick, thesisblue, domain=0:360, samples=72]
+  ({4 + 6.5*cos(x)}, {4.8 + 6.5*sin(x)});
+\node[font=\tiny, thesisblue] at (axis cs:10, 2.5) {Zone~1 mho};
+
+%% True fault locus (no IBR): linear from origin at angle of Z_L
+%% Z_L angle ≈ atan(12/10) = 50 deg
+\addplot[thick, thesisgreen, domain=0:1.0, samples=10]
+  ({x*10 + (1-x)*0}, {x*12 + (1-x)*0});
+\addlegendentry{True fault locus ($\kibr = 0$)};
+
+%% IBR locus: kibr = 0.3, lagging reactive injection (overreach)
+%% Z_app = alpha*ZL + ZF*(1 + kibr*exp(-j90))
+\addplot[thick, thesisred, domain=0:1.0, samples=30]
+  ({x*10 + 10*(1 + 0.3*0)}, {x*12 + 10*(1-0.3*1)}) ;
+\addlegendentry{Apparent impedance ($\kibr = 0.3$, lagging)};
+
+%% IBR locus: kibr = 0.55, more overreach
+\addplot[thick, thesisorange, domain=0:1.0, samples=30]
+  ({x*10 + 10*(1)}, {x*12 + 10*(1-0.55)});
+\addlegendentry{Apparent impedance ($\kibr = 0.55$, lagging)};
+
+%% Zone 1 boundary annotation
+\draw[<-, thin, thesisblue] (axis cs:4,11.3) -- (axis cs:1,13)
+  node[left, font=\tiny]{Zone~1\\ boundary};
+
+%% Overreach annotation
+\draw[<-, thin, thesisorange]
+  (axis cs:16,5) -- (axis cs:20,3)
+  node[right, font=\tiny, thesisorange]{\tiny Overreach:\\enters Zone~1};
+
+\end{axis}
+\end{tikzpicture}

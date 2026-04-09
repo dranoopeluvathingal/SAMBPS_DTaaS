@@ -1,0 +1,56 @@
+\chapter{Abstract}
+
+\begin{tabular}{@{} >{\bfseries}p{0.22\textwidth} p{0.75\textwidth} @{}}
+\MakeUppercase{Keywords} &
+Inverse Estimation, Adaptive Overcurrent Protection, Synchronous Generator,
+Transformer Differential, IBR Line Differential, Levenberg--Marquardt,
+Confidence Scoring, Digital Twin, Physics-Informed Neural Network,
+Wide-Area Protection Coordination, IEC~61850, Adversarial Robustness.
+\end{tabular}
+\par
+
+\begin{doublespacing}
+
+The global power grid is undergoing a fundamental structural transformation:
+synchronous machines---whose high-inertia fault signatures underpinned a century
+of deterministic relay design---are being displaced at accelerating pace by
+Inverter-Based Resources (IBRs). Grid-Following (GFL) and Grid-Forming (GFM)
+converters are software-controlled current sources whose fault currents are
+limited to 1.1--2.0~pu by fast sub-cycle current limiters, and whose sequence
+contributions are determined by firmware rather than physical machine reactance.
+This paradigm shift systematically invalidates the foundational assumptions of
+legacy overcurrent (ANSI~51/67), distance (ANSI~21), and differential (ANSI~87)
+relay algorithms.
+
+This thesis proposes the \textbf{Self-Adaptive Model-Based Protection (SAMBP)}
+architecture for future power systems. The framework treats adaptive protection
+as an \emph{inverse estimation problem}: each protection element maintains an
+explicit physical model of its protected device and identifies model parameters
+from real-time measurements by the Levenberg--Marquardt algorithm. Adaptation
+decisions are gated by a four-component confidence score and bounded by a
+provably safe update law. The framework comprises three tiers and 25 original
+contributions, of which 17 are validated with full numerical results.
+
+Chapter~4 develops five adaptive 87L line differential algorithms achieving
+TPR~= 1.000 across $k_\mathrm{ibr} \in [0.03, 0.85]$~pu.
+Chapter~5 introduces SAMBP-SyncOC: the first inverse-estimation-based adaptive
+overcurrent protection for synchronous generators, achieving $R^2 > 0.999$
+with 60\% reduction in spurious relay pickups.
+Chapter~6 develops the 87T-SPRT transformer differential scheme with Wald
+sequential probability ratio test inrush discrimination ($\alpha = \beta = 0.001$).
+Chapter~7 validates the quadrilateral distance characteristic ($P_\mathrm{detect} = 99.3\%$).
+Chapter~8 validates GFL/GFM mode-switching islanding protection (114~ms, NDZ $< 1\%$).
+Chapter~9 delivers a non-blocking EKF digital twin (RMSE $\leq 0.024$~pu).
+Chapter~10 presents a physics-informed fault classifier (96.1\% accuracy,
+zero physics violations).
+Chapter~11 integrates all components into the WAPC (94.5\% fault localisation,
+100\% CTI compliance, 31-minute closed-loop adaptation).
+Chapter~12 establishes the cybersecurity framework: 54.9\% GOOSE risk reduction
+and the formal adversarial robustness model for CT-injection attacks.
+
+The SAMBP framework is the first published architecture to integrate
+model-based relay adaptation, digital-twin state estimation, physics-informed
+classification, and closed-loop coordination across all protection elements
+with provable safety guarantees.
+
+\end{doublespacing}

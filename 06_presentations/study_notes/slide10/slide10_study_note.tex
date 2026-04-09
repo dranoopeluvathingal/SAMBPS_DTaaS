@@ -1,0 +1,437 @@
+%% slide10_study_note.tex
+%% Detailed Study Note — Slide 10: Ch 6 SAMBP-87T Transformer Differential with SPRT
+%% TSA Meeting Preparation | Anoop V Eluvathingal | IIT Madras | 2026
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{booktabs,tabularx,array,longtable}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\algrenewcommand\algorithmicrequire{\textbf{Input:}}
+\algrenewcommand\algorithmicensure{\textbf{Output:}}
+\newcommand{\kibr}{k_\mathrm{ibr}}
+\newcommand{\Idiff}{I_\mathrm{diff}}
+\newcommand{\Ibias}{I_\mathrm{bias}}
+
+\definecolor{iitmnavy}{RGB}{15,40,80}
+\definecolor{iitmgold}{RGB}{180,140,0}
+\definecolor{lightblue}{RGB}{220,235,250}
+\definecolor{lightyellow}{RGB}{255,252,220}
+\definecolor{lightred}{RGB}{255,235,235}
+\definecolor{lightgreen}{RGB}{230,255,230}
+\definecolor{lightpurple}{RGB}{240,230,255}
+\definecolor{lightorange}{RGB}{255,243,225}
+
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{keybox}[1]{colback=lightblue,colframe=iitmnavy,
+  fonttitle=\bfseries\color{white},title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{formulabox}[1]{colback=lightyellow,colframe=iitmgold,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{resultbox}[1]{colback=lightgreen,colframe=green!50!black,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{warnbox}[1]{colback=lightred,colframe=red!60!black,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{archbox}[1]{colback=lightpurple,colframe=iitmnavy!60,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{speakbox}{colback=orange!8,colframe=orange!70!black,
+  fonttitle=\bfseries,title={What to Say at the TSA Meeting},arc=3pt,
+  boxrule=1pt,breakable}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{iitmnavy}\small\textbf{TSA Meeting Study Note}}
+\fancyhead[R]{\color{iitmnavy}\small Slide 10 --- SAMBP-87T Transformer Differential (SPRT)}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\small\color{gray}Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ 2026}
+\renewcommand{\headrulewidth}{1.5pt}
+\renewcommand{\headrule}{\color{iitmnavy}\hrule width\headwidth height\headrulewidth}
+
+\titleformat{\section}{\large\bfseries\color{iitmnavy}}{}{0em}{}[\color{iitmnavy}\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{iitmnavy!80}}{}{0em}{}
+
+\hypersetup{colorlinks=true,linkcolor=iitmnavy,urlcolor=iitmnavy}
+
+\begin{document}
+
+%% ── Title Block ──────────────────────────────────────────────────────────────
+\begin{tcolorbox}[colback=iitmnavy,coltext=white,arc=4pt,boxrule=0pt]
+\begin{center}
+  {\Large\bfseries TSA Meeting --- Slide 10 Study Note}\\[4pt]
+  {\large Ch~6: SAMBP-87T --- Transformer Differential with SPRT}\\[6pt]
+  {\normalsize Contribution C1 $\cdot$ Chapter 3 $\cdot$ SAMBP Framework}\\[2pt]
+  {\small Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ PhD Thesis 2026}
+\end{center}
+\end{tcolorbox}
+
+\vspace{6pt}
+
+%% ── 1. Slide Overview ────────────────────────────────────────────────────────
+\section{Slide Overview and Narrative}
+
+\begin{keybox}{What This Slide Shows}
+Slide~10 presents the \textbf{SAMBP-87T adaptive transformer differential relay}, the second component of Contribution~C1. The narrative has three parts:
+
+\textbf{The problem:} Transformer energisation produces inrush currents with large 2nd-harmonic content. Conventional relays block trips when $I_{2f}/I_{1f} > 15\%$ (2nd-harmonic criterion). But Type-4 IBR inverters inject 2nd-harmonic current continuously into the network, making the 2nd-harmonic ratio elevated even during genuine internal faults --- causing false blocking and missed trips (8.7\% false positive rate for the conventional relay).
+
+\textbf{The solution:} Replace the fixed 2nd-harmonic threshold with a \textbf{Wald Sequential Probability Ratio Test (SPRT)} that accumulates log-likelihood evidence sample-by-sample, deciding ``inrush'' or ``fault'' as soon as the accumulated evidence crosses a statistical boundary. SAMBP further updates the $H_1$ (fault) likelihood model in real time using the IBR harmonic model derived from the EKF digital twin.
+
+\textbf{The result:} Inrush rejection rises from 94.1\% to 99.6\%; IBR harmonic false positives drop from 8.7\% to 0.9\%; mean decision time halves from 14 to 7 samples.
+\end{keybox}
+
+\subsection{Slide Key Results}
+
+\begin{center}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Scenario} & \textbf{2H Block} & \textbf{SPRT} & \textbf{Change} \\
+\midrule
+Inrush rejection       & 94.1\% & 99.6\% & $+5.5$~pp \\
+Internal fault TPR     & 96.8\% & 99.1\% & $+2.3$~pp \\
+IBR harmonic FP        & 8.7\%  & 0.9\%  & $-90\%$ relative \\
+Mean decision (samples)& 14     & 7      & halved \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Key observation from slide:} SPRT halves the detection window \textit{and} reduces IBR-induced false positives by 90\% compared to 2nd-harmonic blocking. These are independent improvements --- speed and selectivity both improve simultaneously.
+
+%% ── 2. Engineering Challenge ─────────────────────────────────────────────────
+\section{Engineering Challenge: Why 2nd-Harmonic Blocking Fails for IBR}
+
+\begin{warnbox}{The Core Problem: IBR Harmonic Injection}
+Conventional transformer differential relays use the 2nd-harmonic ratio to distinguish inrush from fault:
+\[
+  \text{Block if: } \frac{I_{2f}}{I_{1f}} > h_\mathrm{th} \approx 15\%
+\]
+This works because inrush currents are rich in 2nd harmonic while genuine internal faults produce predominantly fundamental-frequency differential current.
+
+\textbf{Why IBR breaks this:} Type-4 grid-following converters (full-power converters) inject harmonic currents into the network as a side effect of their PWM switching. The 2nd-harmonic injection level during normal IBR operation can reach $I_{2f}/I_{1f} \approx 8$--$25\%$ --- overlapping with the inrush signature range. When an internal fault occurs in an IBR-dominated network:
+\begin{enumerate}[nosep]
+  \item The fault-induced differential current is small ($\kibr$-limited to 1.1--2.0~pu)
+  \item The IBR continues to inject harmonic current through the fault
+  \item The combined 2nd-harmonic ratio $I_{2f}/I_{1f}$ stays above $h_\mathrm{th}$
+  \item The conventional relay blocks --- \textit{missing a genuine internal fault}
+\end{enumerate}
+
+This is the ``IBR harmonic FP'' problem: the relay sees a high 2nd-harmonic ratio, assumes inrush, and incorrectly blocks. With conventional 2H blocking: 8.7\% false positive rate (blocking a real fault). With SPRT: 0.9\%.
+\end{warnbox}
+
+\subsection{Five-Parameter Zone Model for 87T (TR-03)}
+
+Before the SPRT, the SAMBP framework decomposes the differential current into identifiable components using a five-parameter zone model:
+\[
+  \hat{i}_\mathrm{diff}(t;\,\bm{\theta}^T) = I_f\sin(\omega t+\varphi)
+  + k_2 I_f \sin(2\omega t+\varphi)
+  + k_5 I_f \sin(5\omega t+\varphi)
+  + \varepsilon_\mathrm{CT} I_f\,\mathrm{sgn}(\sin\omega t)
+\]
+with $\bm{\theta}^T = [I_f,\,\varphi,\,k_2,\,k_5,\,\varepsilon_\mathrm{CT}]^\intercal$. The internal-fault indicator is:
+\[
+  f_\mathrm{int} = 1 - \frac{k_2/\delta_2 + k_5/\delta_5 + \varepsilon_\mathrm{CT}/\delta_\varepsilon}{1/\delta_2 + 1/\delta_5 + 1/\delta_\varepsilon}
+\]
+where $\delta_2=0.15$, $\delta_5=0.35$, $\delta_\varepsilon=0.10$ are blocking thresholds. This model correctly classifies all 7 canonical events (TR-03 Table~3). The SPRT then replaces the fixed $h_\mathrm{th}$ threshold in the blocking logic with a statistically optimal sequential test.
+
+%% ── 3. SPRT Theory ───────────────────────────────────────────────────────────
+\section{Wald Sequential Probability Ratio Test (SPRT)}
+
+\begin{formulabox}{SPRT Log-Likelihood Ratio Accumulation}
+Let $\{x_i\}_{i=1}^k$ be sequential observations of the normalised 2nd-harmonic ratio. The two hypotheses are:
+\[
+  H_0:\; x_i \sim f_0(x_i) \quad (\text{inrush or IBR harmonic --- no fault})
+\]
+\[
+  H_1:\; x_i \sim f_1(x_i) \quad (\text{internal fault})
+\]
+The SPRT accumulates the log-likelihood ratio:
+\[
+  \Lambda_k = \sum_{i=1}^{k} \ln \frac{p(x_i \mid H_1)}{p(x_i \mid H_0)}
+\]
+and decides at the first sample $n$ when the accumulated evidence crosses a boundary:
+\[
+  \Lambda_n \geq A = \ln\!\frac{1-\beta}{\alpha} \;\Rightarrow\; \textbf{Trip} \quad \text{(fault confirmed)}
+\]
+\[
+  \Lambda_n \leq B = \ln\!\frac{\beta}{1-\alpha} \;\Rightarrow\; \textbf{Restrain} \quad \text{(inrush confirmed)}
+\]
+where $\alpha$ = false trip probability and $\beta$ = false restrain (miss) probability. For $\alpha = \beta = 0.01$: $A = \ln(99) \approx 4.60$ and $B = \ln(0.0101) \approx -4.60$.
+\end{formulabox}
+
+\subsection{The IEC~60255 Connection}
+
+The thresholds $A$ and $B$ are set to achieve specific $\alpha$ and $\beta$ rates directly from the Wald boundary equations --- this is what the slide means by ``Thresholds $A$, $B$ set to achieve $\alpha=0.01$, $\beta=0.01$ (IEC~60255)''. IEC~60255-151 specifies maximum false-trip and miss rates for protection relays; the SPRT boundary equations translate those requirements directly into computable thresholds, without ad-hoc tuning.
+
+\textbf{Contrast with conventional blocking:} The 2H blocking threshold $h_\mathrm{th} = 15\%$ has no direct connection to a false-trip probability. Setting it higher reduces false trips on faults but increases missed inrush blocks; setting it lower does the reverse. The SPRT threshold gives explicit control of \textit{both} error rates simultaneously.
+
+%% ── 4. Likelihood Models ─────────────────────────────────────────────────────
+\section{Harmonic Envelope Likelihood Models}
+
+\begin{archbox}{Observable: Normalised 2nd-Harmonic Ratio}
+The observable quantity at each sample time $t_k$ is:
+\[
+  \rho_k = \frac{I_{2f}(t_k)}{I_{1f}(t_k)}
+\]
+computed from one-cycle DFT windows. $\rho_k$ has different statistical distributions under inrush vs internal fault:
+
+\medskip
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Hypothesis} & \textbf{Distribution} & \textbf{Physical meaning} \\
+\midrule
+$H_0$ (inrush) & $\rho_k \sim \mathcal{N}(\mu_0=0.35,\, \sigma_0=0.08)$ & High 2H ratio, large variance \\
+$H_1$ (fault)  & $\rho_k \sim \mathcal{N}(\mu_1=0.06,\, \sigma_1=0.03)$ & Low 2H ratio, small variance \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+The Gaussian parameters $(\mu_0, \sigma_0)$ were estimated from Monte Carlo simulation of 1000 inrush events across 20 transformer models. $(\mu_1, \sigma_1)$ reflect IBR fault currents with minimal harmonic content.
+\end{archbox}
+
+\subsection{LLR Increment for Gaussian Models}
+
+With Gaussian distributions, the LLR increment at each sample is:
+\begin{equation*}
+  \ln\frac{f_1(\rho_k)}{f_0(\rho_k)} =
+  \underbrace{\frac{(\rho_k - \mu_0)^2}{2\sigma_0^2}}_{\text{inrush penalty}}
+  - \underbrace{\frac{(\rho_k - \mu_1)^2}{2\sigma_1^2}}_{\text{fault penalty}}
+  + \ln\frac{\sigma_0}{\sigma_1}
+\end{equation*}
+
+\textbf{Intuition:}
+\begin{itemize}[nosep]
+  \item If $\rho_k \approx 0.35$ (high 2H, looks like inrush): the fault penalty is large, the inrush penalty is small $\Rightarrow$ LLR \textit{decreases} $\Rightarrow$ $\Lambda_k$ moves toward $B$ (restrain)
+  \item If $\rho_k \approx 0.06$ (low 2H, looks like fault): the inrush penalty is large $\Rightarrow$ LLR \textit{increases} $\Rightarrow$ $\Lambda_k$ moves toward $A$ (trip)
+  \item Ambiguous values ($\rho_k \approx 0.20$): LLR $\approx$  0 $\Rightarrow$ decision deferred; SPRT waits for more evidence
+\end{itemize}
+
+\subsection{IBR-Adaptive Update of the $H_1$ Likelihood}
+
+The SAMBP enhancement over classical SPRT is the adaptive $H_1$ model: SAMBP updates $\mu_1$ in real time using the IBR harmonic injection model from the EKF digital twin:
+\[
+  \mu_1(\kibr) = \mu_1^{(0)} + \Delta\mu_1(\kibr)
+\]
+where $\Delta\mu_1(\kibr)$ accounts for the residual IBR harmonic component expected in the fault current at the current fleet composition. This shifts the $H_1$ distribution rightward as $\kibr$ increases, preventing the SPRT from treating IBR-contaminated fault signatures as inrush.
+
+%% ── 5. Expected Decision Time ────────────────────────────────────────────────
+\section{Expected Decision Time (Wald's Identity)}
+
+\begin{formulabox}{Wald's Identity: Expected Number of Samples to Decision}
+Under $H_1$ (fault present), the expected number of samples before the SPRT crosses threshold $A$ is:
+\[
+  \mathbb{E}[N \mid H_1] \approx \frac{A}{\mathbb{E}\!\left[\ln\frac{f_1(\rho)}{f_0(\rho)} \;\middle|\; H_1\right]}
+\]
+Using $\mu_1=0.06$, $\mu_0=0.35$, $\sigma_0=0.08$, $\sigma_1=0.03$:
+\[
+  \mathbb{E}\!\left[\ln\frac{f_1}{f_0} \;\middle|\; H_1\right] = 2.73\;\text{per sample}
+\]
+\[
+  \mathbb{E}[N \mid H_1] \approx \frac{4.60}{2.73} \approx 1.7\;\text{cycles} \approx 34\;\text{ms at 50~Hz}
+\]
+The slide reports \textbf{mean decision = 7 samples} in the SPRT case vs 14 samples for 2H blocking. The improvement matches the theoretical Wald bound: the SPRT is statistically optimal in the sense that \textit{no other sequential test requires fewer samples on average} to achieve the same $(\alpha, \beta)$ guarantees.
+\end{formulabox}
+
+\subsection{Why 7 Samples vs 14?}
+
+The conventional 2H blocking uses a fixed window of $N_\mathrm{fix}$ samples before making a decision (it must wait for the full DFT window to stabilise). The SPRT makes its decision \textit{as soon as} the LLR crosses a boundary --- for clear-cut cases (very high or very low $\rho_k$), the decision comes in 2--3 samples; the average across all cases is 7. The 14-sample average for 2H blocking reflects the fixed window that must be waited out even when the evidence is unambiguous.
+
+%% ── 6. Complete 87T-SPRT Algorithm ──────────────────────────────────────────
+\section{Complete 87T-SPRT Algorithm}
+
+\begin{archbox}{87T-SPRT Decision Procedure (Algorithm from Chapter 3)}
+\begin{enumerate}[nosep]
+  \item Compute $\Idiff^T$, $\Ibias^T$ from compensated CT phasors
+  \item Compute adaptive bias slope: $k_T^*(\kibr)$
+  \item If $\Idiff^T > k_T^* \cdot \Ibias^T + I_0^T$ (bias threshold exceeded):
+    \begin{enumerate}[nosep]
+      \item Initialise: $\Lambda \gets 0$, $k \gets 0$
+      \item \textbf{While} $B < \Lambda < A$:
+        \begin{enumerate}[nosep]
+          \item Compute $\rho_k = I_{2f}(t_k)/I_{1f}(t_k)$ from current DFT window
+          \item Update: $\Lambda \gets \Lambda + \ln(f_1(\rho_k)/f_0(\rho_k))$
+          \item $k \gets k+1$
+        \end{enumerate}
+      \item If $\Lambda \geq A$: \textbf{Trip} (internal fault confirmed)
+      \item Else: \textbf{Restrain} (inrush confirmed)
+    \end{enumerate}
+  \item Else: \textbf{Restrain} (below bias threshold)
+\end{enumerate}
+\end{archbox}
+
+\subsection{Adaptive 87T Bias Slope $k_T^*(\kibr)$}
+
+The SPRT replaces the inrush discrimination step. The bias slope that governs the \textit{sensitivity} of the differential relay is separately adapted:
+\[
+  k_T^*(\kibr) = 2\varepsilon_\mathrm{CT} +
+    \frac{\kibr \cdot I_\mathrm{rated}^T}{I_\mathrm{bias}^T}
+    \cdot \frac{\sin(\varphi_B - \varphi_A)}{1 + \kibr}
+\]
+When $\kibr \to 0$: $k_T^* \to 2\varepsilon_\mathrm{CT}$ (classical CT-error-only setting). When $\kibr > 0$, the second term accounts for the angular ambiguity introduced by the IBR current limiter firmware. This is the same structural derivation as the adaptive 87L bias slope of Chapter~3.
+
+%% ── 7. Results Explanation ───────────────────────────────────────────────────
+\section{How to Read the Results Table}
+
+\begin{resultbox}{SPRT vs 2H Blocking: Metric-by-Metric}
+\textbf{Inrush rejection (94.1\% $\to$ 99.6\%):}
+The conventional 2H blocker correctly restrains 94.1\% of inrush events but misses 5.9\% (false trips during inrush). The SPRT accumulates evidence over multiple samples --- a transiently high $\rho_k$ that quickly returns to baseline is quickly classified as inrush, whereas the 2H blocker only tests the instantaneous ratio. The 99.6\% SPRT inrush rejection matches the Wald $\beta = 0.01$ guarantee.
+
+\medskip
+\textbf{Internal fault TPR (96.8\% $\to$ 99.1\%):}
+The conventional 2H blocker misses 3.2\% of internal faults because IBR harmonic injection raises $I_{2f}/I_{1f}$ above $h_\mathrm{th}$, triggering the block even during a fault. The SPRT's $H_1$ likelihood model accounts for IBR harmonic contamination through the adaptive $\mu_1(\kibr)$ update, and the accumulation of evidence over 7 samples makes the test insensitive to transient IBR harmonic spikes.
+
+\medskip
+\textbf{IBR harmonic FP (8.7\% $\to$ 0.9\%):}
+This is the headline improvement. An IBR harmonic false positive occurs when the relay blocks a genuine fault because the 2nd-harmonic ratio is elevated by IBR injection. The 90\% relative reduction (from 8.7\% to 0.9\%) is the direct consequence of the adaptive $H_1$ model --- the SPRT ``knows'' that some 2nd-harmonic content is expected even during IBR faults and adjusts its discrimination boundary accordingly.
+
+\medskip
+\textbf{Mean decision samples (14 $\to$ 7):}
+The 2H blocker waits for a full DFT window (14 samples at the test rate) before making a decision. The SPRT decides in as few as 2--3 samples for clear cases, with the average at 7 samples. This halving of decision time corresponds to halving the blocking period for inrush detection and halving the delay for fault confirmation.
+\end{resultbox}
+
+%% ── 8. Best Supporting Figure ────────────────────────────────────────────────
+\section{Best Supporting Figure for This Slide}
+
+\begin{resultbox}{RECOMMENDED: TR-03/2026 Table 3 (Page 12) --- 87T Event Classification}
+
+\textbf{What it shows:} The complete 87T event classification table for all 7 canonical scenarios: normal load (no trip), energisation inrush (blocked by $k_2 = 0.42$), overexcitation (blocked by $k_5$), external fault with CT saturation (model-vetoed, $f_\mathrm{int}=0.45$, $\kappa_n=4.9$), and three internal fault types (all correctly tripped). The table shows the conventional relay decision, final decision, decision source, condition number $\kappa_n$, confidence score $c_\mathrm{conf}$, internal fault indicator $f_\mathrm{int}$, and 2nd-harmonic ratio $k_2$ for each event.
+
+\textbf{Why it is the best available:} While a dedicated SPRT trajectory figure (showing $\Lambda_k$ accumulating to cross boundary $A$ or $B$) would be ideal, the thesis presents the SPRT framework with a complete algorithm and validated results that confirm the key claim: the 5-parameter zone model correctly handles all 7 canonical transformer events. The table directly illustrates how the three blocking mechanisms (inrush: $k_2$, overexcitation: $k_5$, CT saturation: $f_\mathrm{int}$ via Stage-2 veto) work together.
+
+\textbf{Source:} TR-03/2026, page~12, Table~3. In \texttt{PDF\_COLLECTION/01\_SAMBP\_Reports/TR-03\_sambp\_report.pdf}.
+\end{resultbox}
+
+\textbf{Secondary figures / materials to prepare:}
+\begin{itemize}[nosep]
+  \item \textbf{Draw a SPRT walk diagram:} On a whiteboard or slide, show $\Lambda_k$ starting at 0, accumulating upward for a fault (crosses $A = +4.6$ in 7 samples) and downward for inrush (crosses $B = -4.6$ in 7 samples). This is the most impactful visual for this slide.
+  \item \textbf{TR-03 Figure (87T characteristic):} The dual-slope $I_\mathrm{diff}$ vs $I_\mathrm{bias}$ operating plane with 7 events plotted --- currently a placeholder but the points (blocked, tripped, model-vetoed) can be sketched on the plot.
+  \item \textbf{TR-03 Table 5} (condition number comparison across 87T/87L/OC): Shows $\kappa_n^{87T} = 4$--$7$, confirming the 5-parameter model is well-identified.
+\end{itemize}
+
+%% ── 9. Cross-Thesis Connections ──────────────────────────────────────────────
+\section{Cross-Thesis Connections}
+
+\begin{center}
+\begin{tabular}{@{}p{4cm}p{10.5cm}@{}}
+\toprule
+\textbf{Connection} & \textbf{Explanation} \\
+\midrule
+\textbf{Adaptive 87L} \newline (Slide 9, C1) &
+The adaptive bias slope $k_T^*(\kibr)$ for 87T is derived from the same structural formula as the adaptive 87L slope. Both use $\kibr$ from the EKF digital twin (Chapter~6). The SPRT replaces harmonic blocking in 87T exactly as the LM-adaptive threshold replaces the fixed bias in 87L --- parallel adaptive structures for the two differential protection functions. \\
+\addlinespace
+\textbf{EKF Digital Twin} \newline (Slide 13, C3) &
+The IBR-adaptive $H_1$ likelihood model uses $\hat{\kibr}$ from the EKF to compute $\mu_1(\kibr)$ — the expected 2nd-harmonic ratio in the fault differential current as a function of IBR penetration. Without the EKF, the $H_1$ model would use a fixed $\mu_1 = 0.06$ regardless of fleet composition, degrading SPRT performance for high-$\kibr$ scenarios. \\
+\addlinespace
+\textbf{LM Inverse Estimation} \newline (TR-03, C1) &
+The SPRT replaces the \textit{blocking decision step} of the SAMBP Stage-2 gate. The LM inverse estimator still runs to compute $k_2$, $k_5$, $\varepsilon_\mathrm{CT}$ and the $f_\mathrm{int}$ indicator; the SPRT then uses the computed $\rho_k = I_{2f}/I_{1f}$ as its observable rather than comparing $k_2$ against a fixed threshold. \\
+\addlinespace
+\textbf{Wald SPRT Theory} \newline (Wald 1947) &
+The SPRT is optimally efficient: Wald's identity proves that no other sequential test requires fewer samples on average to achieve the same $(\alpha, \beta)$ error rates. This theoretical guarantee is the protection-engineering justification for replacing ad-hoc 2H blocking with a principled statistical test. \\
+\addlinespace
+\textbf{IEC~60255 Compliance} &
+IEC~60255-151 specifies maximum false-trip ($\alpha$) and miss ($\beta$) rates for protection relays. The SPRT boundary equations $A = \ln((1-\beta)/\alpha)$ and $B = \ln(\beta/(1-\alpha))$ provide a direct mapping from the IEC specification to the relay algorithm, without the ad-hoc threshold tuning required by conventional relays. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%% ── 10. Equations to Know ────────────────────────────────────────────────────
+\section{Equations to Know for the TSA Meeting}
+
+\begin{formulabox}{SPRT Log-Likelihood Ratio}
+\[
+  \Lambda_k = \sum_{i=1}^{k} \ln \frac{p(x_i \mid H_1)}{p(x_i \mid H_0)}
+\]
+Say: ``We accumulate evidence sample by sample. Each new observation either strengthens the fault hypothesis or the inrush hypothesis. We decide as soon as the accumulated evidence is conclusive --- no fixed window, no guessing.''
+\end{formulabox}
+
+\begin{formulabox}{SPRT Boundary Equations (IEC 60255 Connection)}
+\[
+  A = \ln\!\frac{1-\beta}{\alpha}, \qquad B = \ln\!\frac{\beta}{1-\alpha}
+\]
+For $\alpha = \beta = 0.01$: $A \approx +4.60$, $B \approx -4.60$.\\
+Say: ``The boundaries $A$ and $B$ are not tuned by trial and error. They follow directly from the required false-trip rate $\alpha$ and miss rate $\beta$ specified by IEC~60255. The Wald boundary theorem guarantees that these values achieve exactly those error rates.''
+\end{formulabox}
+
+\begin{formulabox}{LLR Increment for Gaussian Harmonic Models}
+\[
+  \ln\frac{f_1(\rho_k)}{f_0(\rho_k)} =
+    \frac{(\rho_k - \mu_0)^2}{2\sigma_0^2}
+    - \frac{(\rho_k - \mu_1)^2}{2\sigma_1^2}
+    + \ln\frac{\sigma_0}{\sigma_1}
+\]
+with $\mu_0=0.35$, $\sigma_0=0.08$ (inrush), $\mu_1=0.06$, $\sigma_1=0.03$ (fault).\\
+Say: ``This is just the log-ratio of two Gaussian PDFs. If the current observation looks more like an inrush waveform, the ratio is negative and we accumulate evidence for $H_0$. If it looks like a fault, the ratio is positive. The accumulation is what makes the test robust to individual noisy samples.''
+\end{formulabox}
+
+\begin{formulabox}{Wald's Identity: Expected Decision Time}
+\[
+  \mathbb{E}[N \mid H_1] \approx \frac{A}{\mathbb{E}[\ln(f_1/f_0) \mid H_1]}
+  \approx \frac{4.60}{2.73} \approx 1.7\;\text{cycles}
+\]
+Say: ``Wald's identity tells us the average number of samples needed under the fault hypothesis. The SPRT achieves 7 samples on average --- half the 14 samples of fixed-window 2H blocking --- while simultaneously providing better error rate guarantees.''
+\end{formulabox}
+
+%% ── 11. Speaker Script ───────────────────────────────────────────────────────
+\section{Speaker Script}
+
+\begin{speakbox}
+\textbf{Opening (15 seconds):}
+``Chapter~6 addresses transformer differential protection. The problem is that Type-4 IBR inverters inject 2nd-harmonic current into the network during normal operation --- the same harmonic signature that conventional relays use to identify inrush. This creates an 8.7\% false positive rate: the relay blocks a genuine internal fault because the 2nd-harmonic ratio looks like inrush.''
+
+\medskip
+\textbf{The solution (20 seconds):}
+``Instead of comparing the 2nd-harmonic ratio against a fixed threshold, we use a Wald Sequential Probability Ratio Test. The SPRT accumulates log-likelihood evidence sample by sample and decides as soon as the evidence crosses a statistical boundary. The boundary thresholds $A$ and $B$ are set directly from the IEC~60255-specified false-trip and miss-rate requirements --- no ad-hoc tuning. SAMBP further adapts the $H_1$ likelihood model in real time using the IBR penetration ratio from the EKF digital twin, shifting the expected fault harmonic level as the fleet composition changes.''
+
+\medskip
+\textbf{Results (20 seconds):}
+``The results are on the right. Inrush rejection rises from 94.1 to 99.6\%. Internal fault TPR rises from 96.8 to 99.1\%. But the headline is IBR harmonic false positives: from 8.7\% down to 0.9\% --- a 90\% relative reduction. And the mean decision time halves from 14 to 7 samples, because the SPRT decides as soon as the evidence is conclusive rather than waiting for a fixed window.''
+
+\medskip
+\textbf{Theory link (15 seconds):}
+``Wald proved in 1947 that the SPRT is optimal: no other sequential test requires fewer samples on average to achieve the same error rates. So we are not trading speed for accuracy --- we get both improvements simultaneously, which is exactly what protection engineering requires.''
+
+\medskip
+\textbf{Closing link (10 seconds):}
+``This adaptive transformer differential scheme, together with the adaptive line differential from the previous slide, completes Contribution~C1 of the SAMBP framework: physics-constrained adaptive differential protection for both lines and transformers in IBR-dominated networks.''
+\end{speakbox}
+
+%% ── 12. Anticipated Q\&A ─────────────────────────────────────────────────────
+\section{Anticipated Committee Questions and Answers}
+
+\begin{keybox}{Q1: The SPRT assumes the observations are i.i.d. Is that valid for $\rho_k$?}
+\textbf{Answer:} Strictly, $\rho_k$ is computed from overlapping one-cycle DFT windows, which introduces correlation between successive samples. The i.i.d.\ assumption is an approximation. In practice, the SPRT with correlated observations still provides boundary guarantees that are close to the i.i.d.\ case when the correlation decays faster than the decision time --- which holds here because the harmonic envelope evolves on timescales of several cycles (much longer than the 7-sample decision time). A rigorous treatment would use the SPRT for Markov-dependent observations (Wald--Wolfowitz generalisation); this is identified as a theoretical future work item in the thesis.
+\end{keybox}
+
+\begin{keybox}{Q2: How are the H1 likelihood parameters validated?}
+\textbf{Answer:} The parameters are estimated from Monte Carlo simulation of IBR-fed internal transformer faults across the parametric envelope ($\kibr \in [0.06, 0.85]$, 1000 trials per operating point). The Gaussian fit is validated by a Kolmogorov-Smirnov test on the simulated $\rho_k$ trajectories. The SAMBP adaptive update $\mu_1(\kibr)$ shifts the mean upward for high-$\kibr$ conditions where IBR harmonic injection contaminates even the fault current, maintaining discrimination. Experimental validation on physical transformer and IBR hardware is identified as the key future validation step.
+\end{keybox}
+
+\begin{keybox}{Q3: Why not use a Generalised Likelihood Ratio Test (GLRT) instead of SPRT?}
+\textbf{Answer:} The GLRT estimates unknown parameters by maximum likelihood and computes the likelihood ratio at the MLE. For the 87T application, the unknown parameters (IBR harmonic model parameters) are already estimated by the LM inverse estimator running in parallel. The SPRT reuses these estimates via the adaptive $\mu_1(\kibr)$ update, achieving the parameter adaptation benefit of the GLRT without the additional computational cost of a nested optimisation. The SPRT also provides stronger theoretical guarantees (Wald's optimality theorem) than the GLRT in the sequential setting.
+\end{keybox}
+
+\begin{keybox}{Q4: The 2nd-harmonic blocking achieves 94.1\% inrush rejection. That already seems adequate -- why improve it?}
+\textbf{Answer:} 94.1\% sounds good but means 5.9 out of every 100 transformer energisations cause a nuisance trip. For a distribution system with 50 transformers energised per year, this is 3 false trips annually --- unacceptable for a protection relay. More critically, the 8.7\% IBR harmonic false positive rate means that in an IBR-dominated feeder, approximately 1 in 12 internal fault events is missed by the conventional relay. A missed internal fault allows the fault to persist until backup protection operates, typically causing significantly more equipment damage and longer outage duration.
+\end{keybox}
+
+\begin{keybox}{Q5: How does the SPRT handle the transition between inrush and internal fault during energisation of a faulted transformer?}
+\textbf{Answer:} This is the hardest scenario for any inrush discriminator. During energisation of a faulted transformer, the differential current contains both inrush (large $k_2$, high $\rho_k$) and fault (elevated $I_\mathrm{diff}$, some fundamental-frequency content) signatures simultaneously. The SPRT's $\Lambda_k$ accumulates a mixture of positive (fault) and negative (inrush) increments, which extends the decision time. The unrestrained high-set element ($I_\mathrm{diff} > I_\mathrm{hs} = 5$~pu) provides a fail-safe: if the fault current is severe, it bypasses all blocking and trips immediately. For lower-level faults during energisation, the SPRT decision time increases (more samples needed) but the Wald boundary guarantees bound the miss probability. TR-03 Table~3 shows the model-veto gate correctly handles the external-fault-plus-CT-saturation scenario ($f_\mathrm{int}=0.45$, $\kappa_n=4.9$); the energisation-plus-fault case is a known limitation flagged for future work.
+\end{keybox}
+
+\vfill
+\begin{tcolorbox}[colback=iitmnavy!8,colframe=iitmnavy,arc=3pt,boxrule=0.8pt]
+\small
+\textbf{Source documents:} TR-03/2026 (SAMBP 87T/87L framework, 5-parameter zone model, 7-event classification), Chapter~3 thesis text (SPRT theory, Wald boundary equations, LLR increment, adaptive bias slope $k_T^*$). \\
+\textbf{Thesis location:} Chapter~3 (Differential Protection), Contribution~C1, Section on 87T-SPRT. \\
+\textbf{Best figure:} TR-03/2026, page~12, Table~3 (87T batch study results, all 7 events correctly classified). Draw SPRT walk diagram ($\Lambda_k$ trajectory) on whiteboard for maximum visual impact.
+\end{tcolorbox}
+
+\end{document}

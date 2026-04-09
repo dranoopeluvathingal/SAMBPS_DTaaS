@@ -1,0 +1,63 @@
+% fig_timing_distribution.tex
+% TR-53: SIL latency distributions — distributed vs WAPC paths (Study B)
+
+\begin{tikzpicture}
+\begin{axis}[
+  name         = timax,
+  width        = 0.88\textwidth,
+  height       = 6.5cm,
+  xlabel       = {End-to-end latency [ms]},
+  ylabel       = {Probability density (normalised)},
+  xlabel style = {font=\small},
+  ylabel style = {font=\small},
+  xmin=2.5, xmax=12,
+  ymin=0, ymax=1.05,
+  xtick        = {3,4,5,6,7,8,9,10,11,12},
+  xticklabel style = {font=\scriptsize},
+  ytick        = {0,0.2,0.4,0.6,0.8,1.0},
+  yticklabels  = {0,0.2,0.4,0.6,0.8,1.0},
+  yticklabel style = {font=\scriptsize},
+  tick style   = {draw=none},
+  axis line style = {gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  legend style = {at={(0.98,0.98)}, anchor=north east,
+                  font=\scriptsize, draw=gray!50},
+  legend cell align = left,
+]
+
+%% Distributed path: mean=4.00, sigma≈0.2 (log-normal proxy)
+%% Normalised Gaussian for display
+\addplot[sambpblue, very thick, domain=3.0:5.5, samples=80]
+  {exp(-((x-4.00)^2)/(2*0.23^2))};
+\addlegendentry{Distributed (mean 4.00 ms)}
+
+%% WAPC path: mean=8.92, sigma≈0.45
+\addplot[orange!80!black, very thick, domain=7.0:11.5, samples=80]
+  {exp(-((x-8.92)^2)/(2*0.46^2))};
+\addlegendentry{WAPC (mean 8.92 ms)}
+
+%% P99 markers
+\draw[sambpblue!70, thick, dashed]
+  (axis cs:4.34, 0) -- (axis cs:4.34, 1.0);
+\node[sambpblue, font=\tiny, anchor=south, rotate=90]
+  at (axis cs:4.37, 0.1) {P99 = 4.34 ms};
+
+\draw[orange!70!black, thick, dashed]
+  (axis cs:9.50, 0) -- (axis cs:9.50, 1.0);
+\node[orange!70!black, font=\tiny, anchor=south, rotate=90]
+  at (axis cs:9.53, 0.1) {P99 = 9.50 ms};
+
+%% Trip budget reference
+\draw[red!50, very thick, dashed]
+  (axis cs:11.8, 0) -- (axis cs:11.8, 1.0);
+\node[red!60!black, font=\tiny, rotate=90, anchor=south]
+  at (axis cs:11.83, 0.1) {50 ms budget};
+
+%% 100% within budget annotation
+\node[green!40!black, font=\small\bfseries, align=center]
+  at (axis cs:6.5, 0.85)
+  {Both paths:\\100\% within\\50 ms budget};
+
+\end{axis}
+\end{tikzpicture}

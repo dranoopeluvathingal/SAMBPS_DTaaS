@@ -1,0 +1,81 @@
+% ============================================================
+%  Figure 8 — Internal dq / controller state trajectories
+%  Three subplots: EMFs, E_fd (AVR), T_m and T_e (Gov)
+% ============================================================
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=1 by 3, vertical sep=0.9cm},
+  width=\columnwidth, height=3.5cm,
+  domain=0:0.5, samples=200,
+  ymajorgrids=true, grid style={gray!20},
+  label style={font=\small},
+  tick label style={font=\scriptsize},
+  clip=false
+]
+
+%% ---- Top: EMF states ----------------------------------------
+\nextgroupplot[
+  title={\textbf{(a)} Transient and subtransient EMFs},
+  title style={font=\small},
+  ylabel={EMF (p.u.)},
+  ymin=0.90, ymax=1.40,
+  xticklabels={,,},
+  legend style={at={(0.98,0.98)}, anchor=north east,
+                font=\tiny, fill=white, draw=black!30, legend columns=2},
+  clip=false
+]
+% E'_q: rises due to AVR on ~0.5s time scale
+\addplot[blue, thick] { 1.05 + 0.15*(1-exp(-x/0.5)) };
+% E''_q: rapidly settles to E'_q + small transient
+\addplot[red, dashed] { 1.05 + 0.15*(1-exp(-x/0.5)) + (0.82-1.05)*exp(-x/0.05) };
+
+% Validity boundary
+\draw[thick, gray!50, dashed] (axis cs:0.15, 0.90) -- (axis cs:0.15, 1.40);
+\node[above, font=\tiny, gray!60] at (axis cs:0.15, 1.40) {$L^*$};
+
+\legend{$E'_q$, $E''_q$};
+
+%% ---- Middle: AVR field voltage ------------------------------
+\nextgroupplot[
+  title={\textbf{(b)} AVR field voltage $E_{fd}$},
+  title style={font=\small},
+  ylabel={$E_{fd}$ (p.u.)},
+  ymin=0.90, ymax=2.20,
+  xticklabels={,,},
+  legend style={at={(0.98,0.98)}, anchor=north east,
+                font=\tiny, fill=white, draw=black!30}
+]
+% AVR response with PSS oscillations
+\addplot[purple, thick] {
+  1.05 + 0.85*(1-exp(-x/0.08)) + 0.10*sin(deg(2*pi*5*x))*exp(-x/0.3)
+};
+% Pre-fault flat reference
+\addplot[gray!60, dashed] { 1.05 };
+
+\draw[thick, gray!50, dashed] (axis cs:0.15, 0.90) -- (axis cs:0.15, 2.20);
+
+\legend{Post-fault AVR, Pre-fault ref.};
+
+%% ---- Bottom: Torques ----------------------------------------
+\nextgroupplot[
+  title={\textbf{(c)} Mechanical and electrical torques},
+  title style={font=\small},
+  xlabel={Time (s)},
+  ylabel={Torque (p.u.)},
+  ymin=0.45, ymax=1.10,
+  legend style={at={(0.98,0.98)}, anchor=north east,
+                font=\tiny, fill=white, draw=black!30}
+]
+% T_m: governor ramps up slowly
+\addplot[green!60!black, thick] { 0.80 + 0.05*(1-exp(-x/0.5)) };
+% T_e: drops then recovers with damped oscillation
+\addplot[orange!80!black, dashed] {
+  1.35*(1+0.15*(1-exp(-x/0.5))) - 0.10*exp(-x/0.15)*cos(deg(2*pi*2*x))
+};
+
+\draw[thick, gray!50, dashed] (axis cs:0.15, 0.45) -- (axis cs:0.15, 1.10);
+
+\legend{$T_m$ (governor), $T_e$ (electrical)};
+
+\end{groupplot}
+\end{tikzpicture}

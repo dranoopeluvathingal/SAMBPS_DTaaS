@@ -1,0 +1,401 @@
+%% slide12_study_note.tex
+%% Detailed Study Note — Slide 12: Microgrid Mode-Switching Protection
+%% TSA Meeting Preparation | Anoop V Eluvathingal | IIT Madras | 2026
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,tabularx,array}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{parskip}
+
+\definecolor{iitmnavy}{RGB}{15,40,80}
+\definecolor{iitmgold}{RGB}{180,140,0}
+\definecolor{lightblue}{RGB}{220,235,250}
+\definecolor{lightyellow}{RGB}{255,252,220}
+\definecolor{lightred}{RGB}{255,235,235}
+\definecolor{lightgreen}{RGB}{230,255,230}
+
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{keybox}[1]{
+  colback=lightblue, colframe=iitmnavy, fonttitle=\bfseries\color{white},
+  title=#1, arc=3pt, boxrule=1pt, breakable}
+\newtcolorbox{formulabox}[1]{
+  colback=lightyellow, colframe=iitmgold, fonttitle=\bfseries,
+  title=#1, arc=3pt, boxrule=1pt, breakable}
+\newtcolorbox{resultbox}[1]{
+  colback=lightgreen, colframe=green!50!black, fonttitle=\bfseries,
+  title=#1, arc=3pt, boxrule=1pt, breakable}
+\newtcolorbox{warnbox}[1]{
+  colback=lightred, colframe=red!60!black, fonttitle=\bfseries,
+  title=#1, arc=3pt, boxrule=1pt, breakable}
+\newtcolorbox{speakbox}{
+  colback=orange!8, colframe=orange!70!black, fonttitle=\bfseries,
+  title={What to Say at the TSA Meeting}, arc=3pt, boxrule=1pt, breakable}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{iitmnavy}\small\textbf{TSA Meeting Study Note}}
+\fancyhead[R]{\color{iitmnavy}\small Slide 12 — Microgrid Mode-Switching Protection}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\small\color{gray} Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ 2026}
+\renewcommand{\headrulewidth}{1.5pt}
+\renewcommand{\headrule}{\color{iitmnavy}\hrule width\headwidth height\headrulewidth}
+
+\titleformat{\section}{\large\bfseries\color{iitmnavy}}{}{0em}{}[\color{iitmnavy}\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{iitmnavy!80}}{}{0em}{}
+
+\hypersetup{colorlinks=true, linkcolor=iitmnavy, urlcolor=iitmnavy}
+
+\begin{document}
+
+%% ── Title Block ───────────────────────────────────────────────────────────────
+\begin{tcolorbox}[colback=iitmnavy, coltext=white, arc=4pt, boxrule=0pt]
+\begin{center}
+{\Large\bfseries TSA Meeting Preparation — Detailed Study Note}\\[6pt]
+{\large Slide 12: Ch 8 — Microgrid Mode-Switching Protection}\\[4pt]
+{\normalsize SAMBP Framework $\cdot$ Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ 2026}
+\end{center}
+\end{tcolorbox}
+
+\vspace{0.5em}
+\begin{center}
+\small\textit{Sources: SAMBP TR-38, TR-39, TR-40, TR-41, TR-42 / 2026}
+\end{center}
+
+%% ── 1. Slide Overview ─────────────────────────────────────────────────────────
+\section{1.\; Slide Overview and Purpose}
+
+\begin{keybox}{What This Slide Is About}
+This slide addresses one of the \textbf{most critical reliability gaps} in IBR
+microgrid protection: when a microgrid transitions from \emph{grid-connected} to
+\emph{islanded} mode, the fault current magnitude drops by \textbf{64--72\%} and
+the current direction reference changes. Legacy relays designed for the grid-connected
+state will either \textbf{mal-operate} or \textbf{fail to detect} faults in the
+islanded state.
+
+The slide presents the SAMBP solution: a \textbf{Bayesian mode detector} that
+continuously classifies the operating state, and an \textbf{adaptive directional
+element} that reconfigures itself in real time based on the detected mode.
+\end{keybox}
+
+\noindent\textbf{Position in the thesis:} Chapter 5 (Microgrid Protection), slide 12
+of 22 in the TSA presentation. This is the second of two microgrid slides, following the
+GFL/GFM fault current characterisation (slide 11).
+
+%% ── 2. The Challenge ──────────────────────────────────────────────────────────
+\section{2.\; The Engineering Challenge}
+
+\subsection{Why the mode transition is dangerous}
+
+When the Point-of-Common-Coupling (PCC) breaker opens (intentional or unintentional
+islanding), the following changes occur simultaneously:
+
+\begin{tabular}{@{}lp{5.5cm}p{5.5cm}@{}}
+\toprule
+\textbf{Parameter} & \textbf{Grid-Connected} & \textbf{Islanded}\\
+\midrule
+Fault current source & Upstream grid infeed ($\gg$IBR) & IBR only (limited to 1.1--2.0 pu)\\
+Fault current magnitude & 14--22 pu (bolted) & 4--8 pu (IBR-limited)\\
+Direction reference & Upstream grid voltage & GFM inverter terminal voltage\\
+Frequency regulator & Stiff grid (50 Hz) & GFM virtual inertia ($H_{eq}=0.5$ s)\\
+Distance relay validity & Valid (remote infeed) & \textbf{Invalid} (no remote reference)\\
+87L validity & Valid (comms path open) & \textbf{Invalid} (PCC breaker severs link)\\
+\bottomrule
+\end{tabular}
+
+\vspace{0.5em}
+\begin{warnbox}{The 22\% Mal-Operation Problem}
+In the SAMBP study, without mode-adaptive protection, \textbf{22\%} of fault events
+during the grid-to-island transition window result in relay mal-operation (either
+missed trip or false trip). This is the key ``before'' number that justifies the
+entire microgrid protection chapter.
+\end{warnbox}
+
+%% ── 3. Mode Detector ──────────────────────────────────────────────────────────
+\section{3.\; The Bayesian Mode Detector}
+
+\subsection{Mathematical formulation}
+
+The operating mode is classified at each sample using a Bayesian maximum likelihood
+estimator:
+
+\begin{formulabox}{Mode Detector Formula (slide equation)}
+\begin{equation}
+  \hat{m} = \arg\max_{m \in \{G, I\}} \Pr\!\bigl(z_t \mid \text{mode}=m,\; \hat{k}_\mathrm{ibr}\bigr)
+  \label{eq:bayesian}
+\end{equation}
+where:
+\begin{itemize}[nosep]
+  \item $\hat{m}$ — estimated mode: $G$ = grid-connected, $I$ = islanded
+  \item $z_t$ — measurement vector at time $t$ (frequency deviation, ROCOF,
+        voltage magnitude, reactive-power perturbation response)
+  \item $\hat{k}_\mathrm{ibr}$ — real-time IBR penetration estimate from the EKF
+        digital twin (Chapter 6 / C3)
+  \item $\Pr(\cdot)$ — conditional likelihood, updated at each 50 Hz sample
+\end{itemize}
+\end{formulabox}
+
+\subsection{Why Bayesian, not a simple threshold?}
+
+A fixed ROCOF threshold (IEEE 1547-2018: $\geq 1$ Hz/s) has a Non-Detection Zone
+(NDZ) of $\pm 2\%$ rated power mismatch. The Bayesian estimator fuses four signals:
+
+\begin{enumerate}[nosep]
+  \item \textbf{ROCOF} — primary passive signal, $\geq 1$ Hz/s confirms islanding
+        for $|\Delta P| \geq 0.02$ pu within 100 ms
+  \item \textbf{Voltage/frequency window} — secondary check (V $\notin [0.88,1.10]$
+        pu or $f \notin [49.0,50.5]$ Hz)
+  \item \textbf{Active $\Delta Q$ injection} — 0.05 pu reactive pulse; grid-connected
+        bus shows $\Delta f < 0.01$ Hz; islanded GFM shows $\Delta f = 0.10$ Hz
+  \item \textbf{$\hat{k}_\mathrm{ibr}$ from EKF} — contextual prior (high $k_\mathrm{ibr}$
+        means islanding is more likely given a given ROCOF value)
+\end{enumerate}
+
+The active Q-injection reduces the NDZ area by \textbf{87\%} (from $\pm 2\% \times
+\pm 5\%$ to $\pm 1.2\% \times \pm 1.5\%$ in $\Delta P$--$\Delta Q$ space).
+
+%% ── 4. Adaptive Directional Element ──────────────────────────────────────────
+\section{4.\; Adaptive Directional Element (67)}
+
+The slide lists two operating modes of the directional element:
+
+\subsection{Grid-connected mode (G)}
+
+\begin{itemize}[nosep]
+  \item Polarising quantity: \textbf{pre-fault load flow voltage} from the upstream
+        network — same as a conventional 67 relay
+  \item Forward direction: toward the protected line (away from source)
+  \item Reverse direction: toward the upstream grid
+  \item Active elements: Z1/Z2 distance, 87L, 67Q/67N, Z2/POTT
+  \item Pickup: $I_p = 1.50$ pu (Group 1 OC setting)
+\end{itemize}
+
+\subsection{Islanded mode (I)}
+
+\begin{itemize}[nosep]
+  \item Polarising quantity: \textbf{GFM inverter terminal voltage} (positive-sequence
+        $V_1$ maintained by the GFM virtual impedance $\geq 0.5$ pu for all faults
+        within the 1.1--1.5 pu current limit)
+  \item Why: The upstream grid reference disappears when the PCC breaker opens;
+        the GFM virtual impedance provides a stable local voltage reference
+  \item Active elements: 87B (bus differential, always on), OC Group 2, 67 directional
+  \item Disabled: Z1/Z2 distance, 87L, Z2/POTT (all require remote reference)
+  \item Pickup: $I_p = 0.30$ pu (Group 2, 5$\times$ lower than grid-connected)
+  \item \textbf{Key result:} OC Group 2 is 8$\times$ more sensitive than 87L
+        ($k_\mathrm{ibr,min} = 0.0075$ pu vs 0.06 pu)
+\end{itemize}
+
+\subsection{The 20 ms mode-switch window}
+
+Mode-switching is triggered by an \textbf{IEC 61850 GOOSE} signal from the TR-39
+islanding relay, delivered within 4 ms of the islanding decision. The full sequence:
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Event} & \textbf{Time} & \textbf{Protection state}\\
+\midrule
+PCC breaker opens (islanding) & $t = 0$ ms & Full grid-connected scheme\\
+ROCOF reaches 1 Hz/s & $t = 100$ ms & ROCOF trip issued\\
+GOOSE mode-switch signal & $t = 104$ ms & Within 4 ms of ROCOF trip\\
+Setting group change complete & $t = 120$ ms & Islanded scheme active\\
+\midrule
+\textbf{Transition gap} & \textbf{20 ms} & 87B + 87L + OC-G1 still covering\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textit{Zero protection gap}: during the 20 ms window, 87B (always active) and
+87L (still enabled pre-switch) provide continuous fault coverage.
+
+%% ── 5. Results ────────────────────────────────────────────────────────────────
+\section{5.\; Results — What the Table in the Slide Means}
+
+\begin{resultbox}{Mode-Switch Results Table Explained}
+\begin{tabular}{@{}lp{3.5cm}p{3.5cm}p{4cm}@{}}
+\toprule
+\textbf{Metric} & \textbf{Fixed} & \textbf{SAMBP-MG} & \textbf{Explanation}\\
+\midrule
+Mode detection acc. & --- & \textbf{98.7\%} &
+  Bayesian detector correctly identifies G vs I in 98.7\% of events
+  (across all $\Delta P$, $\Delta Q$ combinations in the study)\\[4pt]
+Transition mal. rate & 22\% & \textbf{1.4\%} &
+  Relay mal-operations (false trip or missed trip) during the
+  grid$\leftrightarrow$island transition; reduced by $15\times$\\[4pt]
+Islanded fault TPR & 71\% & \textbf{97.3\%} &
+  True positive rate for faults occurring in islanded mode;
+  gap closed by OC Group 2 (lower pickup)\\[4pt]
+False islands & 6/100 & \textbf{0/100} &
+  Events where the scheme incorrectly declared islanding during
+  normal operation; eliminated by the multi-signal Bayesian fusion\\
+\bottomrule
+\end{tabular}
+\end{resultbox}
+
+\subsection{The headline observation}
+
+The slide states: \emph{``Mode-adaptive protection eliminates the 22\% mis-operation
+rate seen at grid$\leftrightarrow$island transition boundary.''}
+
+This is the \textbf{single most important result} of this slide. The 22\% figure
+represents a very high risk for conventional relays and is the quantitative
+justification for the entire adaptive microgrid protection framework.
+
+%% ── 6. Supporting Figure ──────────────────────────────────────────────────────
+\section{6.\; Best Supporting Figure — TR-39 Figure 3}
+
+\begin{keybox}{Recommended Figure for the Presentation}
+\textbf{Source:} SAMBP TR-39/2026, Figure 3 (page 3)\\
+\textbf{Title:} Protection mode switching state machine\\[4pt]
+The figure shows a state machine with five states:
+\begin{enumerate}[nosep]
+  \item \textbf{Grid-Connected Mode} — full scheme: Z1/Z2 + 87L + 67Q active, OC at grid level
+  \item \textbf{Islanding Detection} — ROCOF/V/f monitoring active
+  \item \textbf{Islanded Mode} — Z1/Z2 disabled, 87L offline, OC rescaled, GFM: V/f regulation
+  \item \textbf{Resyncing (Relay 25)} — $\Delta V \leq 0.05$, $\Delta f \leq 0.10$ Hz,
+        $\Delta\theta \leq 10^\circ$
+  \item \textbf{Grid-Connected (restored)} or \textbf{Lockout} (resync failed)
+\end{enumerate}
+Timing annotations: detection $t_{det} = 100$ ms, mode switch $t_{sw} = 120$ ms from islanding,
+Relay 25 window $\leq 5$ s.
+
+\textbf{Why it is the best match:} It directly visualises the mode-transition logic
+and timing that underlies every result in the slide table. It is self-contained and
+immediately comprehensible to a TSA committee audience.
+\end{keybox}
+
+\textbf{Secondary figure (TR-40, Figure 3):} The three-state adaptive OC setting
+group state machine (Group 1 GC $\to$ Group 2 Islanded $\to$ Group 3 Resync)
+is an excellent companion to explain the adaptive directional element bullet points.
+
+%% ── 7. Connection to Other Chapters ──────────────────────────────────────────
+\section{7.\; Connections Across the Thesis}
+
+\begin{tabular}{@{}lp{10cm}@{}}
+\toprule
+\textbf{Chapter/Section} & \textbf{Connection to this slide}\\
+\midrule
+Ch 2 (IBR Foundations) & GFL/GFM fault current model justifies the
+  64--72\% reduction figure\\
+Ch 3 (Differential) & 87L is \emph{disabled} in islanded mode (this slide);
+  87B replaces it\\
+Ch 4 (OC/Distance) & Distance relay Z1/Z2 also \emph{disabled} in
+  islanded mode; OC Group 2 takes primary role\\
+Ch 6 (EKF Digital Twin) & $\hat{k}_\mathrm{ibr}$ estimate feeds directly into the
+  Bayesian mode detector (Eq.~\ref{eq:bayesian})\\
+Ch 7 (WAPC) & IEC 61850 GOOSE is the triggering mechanism for the
+  setting group change (4 ms delivery)\\
+\bottomrule
+\end{tabular}
+
+%% ── 8. Equations Quick Reference ─────────────────────────────────────────────
+\section{8.\; Equations Quick Reference}
+
+\begin{formulabox}{Key Equations for This Slide}
+\textbf{ROCOF-based islanding detection (TR-39):}
+\begin{equation}
+  \text{ROCOF} = \frac{|\Delta P| \cdot f_0}{2 H_{eq}} \geq 1 \;\text{Hz/s}
+  \quad \Rightarrow \quad |\Delta P| \geq 0.02 \;\text{pu}
+\end{equation}
+
+\textbf{Active Q-injection frequency response (TR-39):}
+\begin{equation}
+  \Delta f = K_{f,Q} \cdot \Delta Q = 2.0 \times 0.05 = 0.10 \;\text{Hz}
+  \quad (\text{detectable vs. floor } \Delta f_{resol} = 0.01 \;\text{Hz})
+\end{equation}
+
+\textbf{Islanded OC minimum sensitivity (TR-40):}
+\begin{equation}
+  k_{\min,\text{OC}} = \frac{I_{p,2} \times Z_\text{line}}{2}
+  = \frac{0.30 \times 0.050}{2} = 0.0075 \;\text{pu}
+  \quad (\text{8$\times$ more sensitive than 87L})
+\end{equation}
+
+\textbf{Resync transient energy check (TR-39):}
+\begin{equation}
+  \Delta W = \tfrac{1}{2} S_\text{ibr}(1 - \cos\Delta\theta_\text{max})
+  = 0.0076 \;\text{pu$\cdot$s} \ll \Delta W_\text{limit} \approx 0.05 \;\text{pu$\cdot$s}
+\end{equation}
+\end{formulabox}
+
+%% ── 9. What to Say ───────────────────────────────────────────────────────────
+\section{9.\; TSA Meeting Speaker Script}
+
+\begin{speakbox}
+``This slide addresses what I call the \textbf{mode-transition blind spot} —
+the period when the microgrid is switching from grid-connected to islanded operation.
+During this window, legacy relays face a dilemma: they were set for high grid-fed
+fault currents, but now the fault current has dropped by 64 to 72 percent, and the
+directional reference has moved from the upstream grid to the GFM inverter terminal.
+
+In our study, without adaptation, \textbf{22 percent} of events at the transition
+boundary resulted in relay mal-operation. That is an unacceptably high failure rate.
+
+Our solution has two parts. First, a \textbf{Bayesian mode detector} that fuses four
+signals — ROCOF, voltage-frequency window, an active reactive power perturbation,
+and the IBR penetration estimate from the digital twin — to classify the operating
+mode at every sample. Second, an \textbf{adaptive directional element} that
+automatically switches from pre-fault load-flow polarisation to GFM terminal
+voltage polarisation when islanding is confirmed.
+
+The result: the mal-operation rate falls from 22 percent to \textbf{1.4 percent}.
+Islanded fault detection improves from 71 to \textbf{97.3 percent}. And false
+island declarations — which would cause unnecessary outages — drop from 6 to
+\textbf{zero} in a hundred test events.
+
+The switching is triggered by an IEC 61850 GOOSE signal, delivered within
+4 milliseconds of the islanding decision, with a total transition time of 20
+milliseconds. During that window, the bus differential element provides
+uninterrupted protection coverage — so there is \textbf{zero protection gap}.''
+\end{speakbox}
+
+%% ── 10. Anticipated Committee Questions ──────────────────────────────────────
+\section{10.\; Anticipated TSA Committee Questions and Answers}
+
+\begin{enumerate}
+\item \textbf{Q: How is the Bayesian mode detector different from a simple ROCOF
+      relay?}\\
+      A: A simple ROCOF relay has a fixed NDZ of $\pm 2\%$ rated power. Our Bayesian
+      detector fuses ROCOF with active Q-injection and the EKF's $\hat{k}_\mathrm{ibr}$
+      estimate, reducing the NDZ area by 87\% and eliminating all false declarations.
+
+\item \textbf{Q: What happens if the GOOSE signal is delayed or lost?}\\
+      A: The 87B bus differential is always active in both modes and requires no GOOSE
+      signal. It covers busbar faults during the transition. For the 20 ms gap, the
+      pre-switch settings (OC Group 1 + 87L) remain active, providing backup coverage.
+
+\item \textbf{Q: The 1.4\% residual mal-operation rate — what causes it?}\\
+      A: Both residual misses are \emph{structural} — they occur when $k_\mathrm{ibr}
+      < 0.0075$ pu, below the absolute detection floor of the islanded OC element.
+      This corresponds to an inverter operating below 0.75\% of rated current, which
+      is outside the scope of any protection scheme. The grid-code recommendation
+      is $k_\mathrm{ibr} \geq 0.10$ pu per unit.
+
+\item \textbf{Q: Is hardware-in-the-loop validation planned?}\\
+      A: Yes. The identified next step is HIL testing on a commercial IED (SEL-411L)
+      with a real-time PSCAD simulation via the DRTS interface.
+
+\item \textbf{Q: How does this interact with the WAPC in Chapter 7?}\\
+      A: The WAPC receives the islanding status via IEC 61850 MMS and updates the
+      wide-area settings accordingly. The GOOSE mode-switch signal originates at
+      the local islanding relay (TR-39) and is also broadcast to the WAPC for
+      N-1 contingency re-assessment.
+\end{enumerate}
+
+%% ── Footer note ───────────────────────────────────────────────────────────────
+\vspace{2em}
+\begin{center}
+\small\color{gray}
+Study note prepared from SAMBP Technical Reports TR-38 through TR-42 (2026).\\
+Best supporting figure: TR-39/2026, Figure 3 — Protection Mode Switching State Machine.\\
+File: \texttt{slide12\_study\_note.pdf} $\cdot$ Generated \today
+\end{center}
+
+\end{document}

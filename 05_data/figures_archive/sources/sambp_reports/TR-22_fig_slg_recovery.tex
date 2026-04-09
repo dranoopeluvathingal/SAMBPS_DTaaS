@@ -1,0 +1,69 @@
+% fig_slg_recovery.tex
+% Grouped bar chart: SLG detection — I1_diff and I2_diff vs IBR limit
+% Shows 87L threshold (0.12) and 87LN threshold (0.06), both as horizontal lines
+% For each k_ibr: I1 bar (blue) and I2 bar (orange, constant)
+\begin{tikzpicture}
+\begin{axis}[
+  name        = slgax,
+  ybar,
+  bar width   = 9pt,
+  width       = 0.82\textwidth,
+  height      = 6.8cm,
+  ylabel      = {Differential magnitude [pu]},
+  ylabel style= {font=\small},
+  xlabel      = {IBR current limit $k_{\rm ibr}$ [pu]},
+  xlabel style= {font=\small},
+  ymin=0, ymax=0.26,
+  ytick       = {0, 0.06, 0.08, 0.10, 0.12, 0.15, 0.20, 0.25},
+  yticklabels = {0, 0.06, 0.08, 0.10, 0.12, 0.15, 0.20, 0.25},
+  yticklabel style={font=\scriptsize},
+  xtick       = {1,2,3,4,5,6,7},
+  xticklabels = {0.08, 0.09, 0.10, 0.11, 0.12, 0.15, 0.20},
+  xticklabel style={font=\scriptsize},
+  enlarge x limits=0.08,
+  legend style={at={(0.50,0.97)}, anchor=north,
+                font=\scriptsize, draw=gray!60,
+                legend columns=2},
+  grid         = major,
+  grid style   = {gray!20, dashed},
+  tick style   = {draw=none},
+  axis line style={gray!60},
+]
+
+% I1_diff = min(k_ibr, 0.30) — positive-sequence differential
+\addplot[fill=blue!40, draw=blue!70!black]
+  coordinates {(1,0.08) (2,0.09) (3,0.10) (4,0.11) (5,0.12) (6,0.15) (7,0.20)};
+\addlegendentry{$|\Delta I_1|$ (pos-seq, IBR limited)}
+
+% I2_diff = 0.12 pu — constant (SLG fault sequence network)
+\addplot[fill=orange!50, draw=orange!70!black]
+  coordinates {(1,0.12) (2,0.12) (3,0.12) (4,0.12) (5,0.12) (6,0.12) (7,0.12)};
+\addlegendentry{$|\Delta I_2|$ (neg-seq, NOT IBR limited)}
+
+% 87L threshold = 0.12 pu
+\addplot[blue!70!black, thick, dashed, mark=none, domain=0.5:7.5, samples=2]
+  ({x}, {0.12});
+\addlegendentry{87L threshold: 0.12\,pu}
+
+% 87LN threshold = 0.06 pu
+\addplot[orange!70!black, thick, dashed, mark=none, domain=0.5:7.5, samples=2]
+  ({x}, {0.06});
+\addlegendentry{87LN threshold: 0.06\,pu}
+
+% ---- Annotations for IBR-limited region ------------------------------------
+\node[font=\scriptsize, red!70!black, align=center]
+  at (axis cs:2.5, 0.235)
+  {87L misses ($|\Delta I_1| < 0.12$)\\87LN trips ($|\Delta I_2| = 0.12 > 0.06$)};
+\draw[-latex, red!50!black, thin]
+  (axis cs:2.5, 0.215) -- (axis cs:2.5, 0.13);
+
+% ---- "Recovered" annotation -------------------------------------------------
+% foreach replaced with explicit nodes
+  \node[font=\tiny\bfseries, green!60!black] at (axis cs:1, 0.145) {\ding{51}};
+  \node[font=\tiny\bfseries, green!60!black] at (axis cs:2, 0.145) {\ding{51}};
+  \node[font=\tiny\bfseries, green!60!black] at (axis cs:3, 0.145) {\ding{51}};
+  \node[font=\tiny\bfseries, green!60!black] at (axis cs:4, 0.145) {\ding{51}};
+  \node[font=\tiny\bfseries, green!60!black] at (axis cs:5, 0.145) {\ding{51}};
+
+\end{axis}
+\end{tikzpicture}

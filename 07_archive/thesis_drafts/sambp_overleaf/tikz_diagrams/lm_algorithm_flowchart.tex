@@ -1,0 +1,69 @@
+\documentclass{standalone}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{shapes,arrows,positioning}
+\input{../tikz_master_styles}
+
+\begin{document}
+
+%----------------------------------------------------------------------
+% Levenberg-Marquardt Two-Pass Estimation Algorithm Flowchart
+%----------------------------------------------------------------------
+
+\begin{tikzpicture}[scale=1.0, node distance=1.8cm, every node/.style={font=\small}]
+
+\tikzstyle{process}=[rectangle, draw=sambp_blue, fill=sambp_blue!10, thick, 
+                     minimum width=2.6cm, minimum height=0.7cm, text centered]
+\tikzstyle{decision}=[diamond, draw=sambp_red, fill=sambp_red!10, thick, 
+                      minimum width=1.8cm, minimum height=1.2cm, text centered]
+\tikzstyle{data}=[rectangle, draw=sambp_green, fill=sambp_green!10, thick, 
+                  minimum width=2.0cm, minimum height=0.6cm, text centered]
+\tikzstyle{arrow}=[->, thick, sambp_black]
+
+% Start
+\node[data] (start) {Input: $i_a^{meas}$, $\mathbf{\Theta}$};
+
+% Pass 1
+\node[process] (pass1) [below of=start] {Pass 1: Fit\\All 6 Parameters};
+\node[process] (lm1) [below of=pass1] {LM Iteration\\$\mathbf{\theta}^{(k+1)} = \mathcal{P}_\Theta(...)$};
+\node[decision] (conv1) [below of=lm1, node distance=2.2cm] {Converged?};
+
+\draw[arrow] (start) -- (pass1);
+\draw[arrow] (pass1) -- (lm1);
+\draw[arrow] (lm1) -- (conv1);
+\draw[arrow] (conv1.west) -- ++(-1.5,0) node[above] {No} -- (lm1.west);
+
+% Lock parameters
+\node[process] (lock) [below of=conv1, node distance=2.0cm] {Lock:\\$\psi = \{t_0, I_{sub}, \\  \tau_{dc}, \varphi_a\}$};
+\draw[arrow] (conv1) -- (lock) node[right] {Yes};
+
+% Extract tail
+\node[process] (tail) [below of=lock] {Extract Tail Window:\\$N_{tail} = n_{cyc} \times N_s$};
+\draw[arrow] (lock) -- (tail);
+
+% Pass 2
+\node[process] (pass2) [below of=tail] {Pass 2: Fit\\2 Parameters\\$(I_{ss}, \tau_{ac})$};
+\node[process] (lm2) [below of=pass2] {LM Iteration\\(Fixed Parameters)};
+\node[decision] (conv2) [below of=lm2, node distance=2.2cm] {Converged?};
+
+\draw[arrow] (tail) -- (pass2);
+\draw[arrow] (pass2) -- (lm2);
+\draw[arrow] (lm2) -- (conv2);
+\draw[arrow] (conv2.west) -- ++(-1.5,0) node[above] {No} -- (lm2.west);
+
+% Merge
+\node[process] (merge) [below of=conv2, node distance=2.0cm] {Merge:\\$\hat{\boldsymbol{\theta}} = \psi \cup \{I_{ss}, \tau_{ac}\}$};
+\draw[arrow] (conv2) -- (merge) node[right] {Yes};
+
+% Recompute
+\node[process] (recomp) [below of=merge] {Recompute:\\$\mathbf{r}(\hat{\boldsymbol{\theta}})$, $\mathbf{J}$};
+\draw[arrow] (merge) -- (recomp);
+
+% Output
+\node[data] (output) [below of=recomp] {Output: $\hat{\boldsymbol{\theta}}$, $\mathbf{J}$, $\mathbf{r}$};
+\draw[arrow] (recomp) -- (output);
+
+\end{tikzpicture}
+
+\end{document}

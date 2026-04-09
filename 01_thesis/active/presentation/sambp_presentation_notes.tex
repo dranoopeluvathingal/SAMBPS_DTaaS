@@ -1,0 +1,1851 @@
+%% ============================================================
+%% SAMBP PhD Thesis Approval (TSA Meeting) Presentation
+%% Author  : Anoop V Eluvathingal, IIT Madras
+%% Format  : Aligned with TSA_Meeting_Eluvathingal.pptx template
+%%           — maroon header bar + maroon footer bar, clean white bg
+%% Compile : pdflatex sambp_presentation.tex (twice)
+%%
+%% SPEAKER NOTES
+%%   Notes are embedded in every frame using \note{...}.
+%%   To view notes during presentation, uncomment ONE of:
+%%     Option A — notes on a second screen (dual monitor):
+%%       \setbeameroption{show notes on second screen=right}
+%%     Option B — notes-only PDF for printing:
+%%       \setbeameroption{show only notes}
+%%     Option C — notes alongside slides:
+%%       \setbeameroption{show notes}
+%%   Then recompile.  Default (commented out) = slides only.
+%% ============================================================
+\documentclass[aspectratio=169, 10pt]{beamer}
+
+%% ── Speaker notes infrastructure ───────────────────────────
+\usepackage{pgfpages}
+%% Uncomment ONE line below to enable note display:
+%\setbeameroption{show notes on second screen=right}   %% dual monitor
+\setbeameroption{show only notes}                     %% notes PDF
+%\setbeameroption{show notes}                          %% notes + slides
+
+%% ── Packages ────────────────────────────────────────────────
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{colorbrewer}
+\usetikzlibrary{%
+  shapes, shapes.geometric, arrows, arrows.meta,
+  calc, positioning, fit,
+  decorations.pathmorphing, decorations.pathreplacing,
+  decorations.markings, patterns, matrix, shadows,
+  overlay-beamer-styles,
+}
+\usepackage{amsmath, amssymb, bm}
+\usepackage{booktabs}
+\usepackage{array, multirow, tabularx}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{graphicx}
+\usepackage{fontawesome5}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+
+%% ── IIT Madras colours ──────────────────────────────────────
+\definecolor{iitmMaroon}  {RGB}{128,  0,  0}
+\definecolor{iitmGold}    {RGB}{179,145, 25}
+\definecolor{iitmDarkBlue}{RGB}{ 15, 45, 90}
+\definecolor{iitmLightBg} {RGB}{248,244,240}
+\definecolor{thesisblue}  {RGB}{  0, 70,140}
+\definecolor{thesisred}   {RGB}{180, 30, 30}
+\definecolor{thesisgreen} {RGB}{ 20,120, 60}
+\definecolor{thesisorange}{RGB}{200, 90,  0}
+\definecolor{thesisgray}  {RGB}{100,100,110}
+\definecolor{thesisteal}  {RGB}{  0,130,130}
+\definecolor{thesispurple}{RGB}{100,  0,150}
+\definecolor{lightblue}   {RGB}{220,235,255}
+\definecolor{lightgreen}  {RGB}{220,245,225}
+\definecolor{lightorange} {RGB}{255,240,220}
+\definecolor{lightgray}   {RGB}{240,240,242}
+\definecolor{thesisyellow}{RGB}{220,180,  0}
+\colorlet{sambpblue}{thesisblue}
+\colorlet{sambpgreen}{thesisgreen}
+\colorlet{sambpred}{thesisred}
+
+%% ── TSA-style Beamer theme ──────────────────────────────────
+%% Base: default (no sidebars, no navigation)
+\usetheme{default}
+\usecolortheme[named=iitmMaroon]{structure}
+
+%% Palette colours (used by footline)
+\setbeamercolor{palette primary}   {bg=iitmMaroon, fg=white}
+\setbeamercolor{palette secondary} {bg=iitmMaroon, fg=white}
+\setbeamercolor{frametitle}        {bg=iitmMaroon, fg=white}
+\setbeamercolor{title}             {fg=white,      bg=iitmMaroon}
+\setbeamercolor{block title}       {fg=white,      bg=iitmDarkBlue}
+\setbeamercolor{block body}        {bg=iitmLightBg}
+\setbeamercolor{alerted text}      {fg=iitmMaroon}
+\setbeamercolor{background canvas} {bg=white}
+
+\setbeamerfont{frametitle}{size=\large, series=\bfseries}
+\setbeamerfont{title}     {size=\Large, series=\bfseries}
+
+%% No navigation symbols
+\setbeamertemplate{navigation symbols}{}
+
+%% ── TSA frametitle: full-width maroon bar at top ────────────
+\setbeamertemplate{frametitle}{%
+  \nointerlineskip%
+  \begin{beamercolorbox}[wd=\paperwidth,ht=0.95cm,dp=0.15cm,
+                          leftskip=0.55cm,rightskip=0.4cm]{frametitle}%
+    \vbox to 0.95cm{\vfil%
+      \usebeamerfont{frametitle}\usebeamercolor[fg]{frametitle}%
+      \insertframetitle%
+    \vfil}%
+  \end{beamercolorbox}%
+}
+
+%% ── TSA footline: maroon bar — name|meeting|institute  X/N ─
+\setbeamertemplate{footline}{%
+  \leavevmode%
+  \begin{beamercolorbox}[wd=\paperwidth,ht=0.50cm,dp=0.12cm]{palette primary}%
+    \hspace{0.45cm}%
+    {\scriptsize\color{white}%
+      Anoop V Eluvathingal \enspace|\enspace
+      TSA Meeting \enspace|\enspace
+      IIT Madras}%
+    \hfill%
+    {\scriptsize\color{white}%
+      \insertframenumber/\inserttotalframenumber%
+      \hspace{0.45cm}}%
+  \end{beamercolorbox}%
+}
+
+%% ── Graphics path ───────────────────────────────────────────
+\graphicspath{%
+  {../images/}{../images/figures/}{../images/simulations/}%
+  {../images/chapter_1/}{../images/chapter_2/}%
+  {../images/chapter_3/}{../images/chapter_4/}%
+  {../figures/}{../../sambp/}%
+}
+
+%% ── Node styles ─────────────────────────────────────────────
+\tikzset{
+  sblock/.style   = {rectangle, draw=thesisblue, thick, fill=lightblue,
+                     rounded corners=3pt, minimum width=2.2cm,
+                     minimum height=0.70cm, align=center, font=\scriptsize},
+  scompute/.style = {rectangle, draw=thesisgreen, thick, fill=lightgreen,
+                     rounded corners=3pt, minimum width=2.2cm,
+                     minimum height=0.70cm, align=center, font=\scriptsize},
+  salert/.style   = {rectangle, draw=thesisred, thick, fill=red!8,
+                     rounded corners=3pt, minimum width=2.2cm,
+                     minimum height=0.70cm, align=center, font=\scriptsize},
+  ssensor/.style  = {rectangle, draw=thesisorange, thick, fill=lightorange,
+                     rounded corners=3pt, minimum width=1.9cm,
+                     minimum height=0.60cm, align=center, font=\scriptsize},
+  sarr/.style     = {-{Stealth[length=2.5mm]}, thick},
+  sdataarrow/.style = {-{Stealth[length=2mm]}, thesisgray, thin},
+  sibrbox/.style  = {rectangle, draw=thesisgreen, thick, fill=lightgreen!70,
+                     rounded corners=2pt, minimum width=1.3cm,
+                     minimum height=0.50cm, align=center, font=\tiny},
+  sbusnode/.style = {circle, draw=black, thick, fill=gray!15,
+                     minimum size=0.42cm, inner sep=0pt, font=\tiny},
+  spmunode/.style = {circle, draw=thesisorange, thick, fill=lightorange,
+                     minimum size=0.45cm, align=center, font=\tiny},
+  block/.style     = {rectangle, draw=thesisblue, thick, fill=lightblue,
+                      rounded corners=3pt, minimum width=2.8cm,
+                      minimum height=0.85cm, align=center, font=\small},
+  smallblock/.style= {rectangle, draw=thesisblue, thick, fill=lightblue,
+                      rounded corners=2pt, minimum width=2.0cm,
+                      minimum height=0.65cm, align=center, font=\scriptsize},
+  compute/.style   = {rectangle, draw=thesisgreen, thick, fill=lightgreen,
+                      rounded corners=3pt, minimum width=2.8cm,
+                      minimum height=0.85cm, align=center, font=\small},
+  alert/.style     = {rectangle, draw=thesisred, thick, fill=red!6,
+                      rounded corners=3pt, minimum width=2.8cm,
+                      minimum height=0.85cm, align=center, font=\small},
+  sensor/.style    = {rectangle, draw=thesisorange, thick, fill=lightorange,
+                      rounded corners=3pt, minimum width=2.2cm,
+                      minimum height=0.70cm, align=center, font=\scriptsize},
+  decision/.style  = {diamond, draw=thesisblue, thick, fill=lightblue!60,
+                      aspect=1.8, minimum width=3.0cm, minimum height=1.0cm,
+                      align=center, font=\scriptsize},
+  relaybox/.style  = {rectangle, draw=thesisred, thick, fill=red!5,
+                      rounded corners=2pt, minimum width=1.8cm,
+                      minimum height=0.65cm, align=center, font=\scriptsize},
+  pmunode/.style   = {circle, draw=thesisorange, thick, fill=lightorange,
+                      minimum size=0.7cm, align=center, font=\tiny},
+  busnode/.style   = {circle, draw=black, thick, fill=gray!15,
+                      minimum size=0.55cm, inner sep=0pt, font=\scriptsize},
+  ibrbox/.style    = {rectangle, draw=thesisgreen, thick, fill=lightgreen!70,
+                      rounded corners=2pt, minimum width=1.6cm,
+                      minimum height=0.60cm, align=center, font=\scriptsize},
+  annotbox/.style  = {rectangle, draw=thesisgray!70, thin, fill=white,
+                      rounded corners=2pt, align=left, font=\scriptsize,
+                      inner sep=3pt},
+  arr/.style       = {-{Stealth[length=2.5mm,width=1.8mm]}, thick},
+  arrrev/.style    = {{Stealth[length=2.5mm,width=1.8mm]}-, thick},
+  arrdbl/.style    = {{Stealth[length=2.5mm,width=1.8mm]}-{Stealth[length=2.5mm,width=1.8mm]}, thick},
+  arrblue/.style   = {arr, thesisblue},
+  arrdash/.style   = {arr, dashed, thesisgray},
+  datalink/.style  = {-{Stealth[length=2.5mm,width=1.8mm]}, thesisgray!80, dashed, thick},
+  dataarrow/.style = {-{Stealth[length=2mm,width=1.5mm]}, thesisgray, thin},
+  busbar/.style    = {draw=black, very thick, line cap=round},
+  sumjunct/.style  = {circle, draw=black, thick, fill=white,
+                      minimum size=0.55cm, inner sep=0pt, font=\small},
+  bus/.style      = {draw, thick, minimum width=0.3cm, minimum height=1.4cm,
+                     fill=gray!20},
+  src/.style      = {draw, circle, minimum size=0.65cm,
+                     font=\scriptsize, fill=lightblue},
+  ibr/.style      = {draw, diamond, minimum size=0.85cm,
+                     font=\tiny, fill=lightorange, align=center},
+}
+
+%% ── pgfplots global ─────────────────────────────────────────
+\pgfplotsset{
+  thesis style/.style={
+    width=0.82\textwidth, height=6.5cm,
+    grid=both, grid style={gray!15, very thin},
+    tick style={draw=none},
+    axis line style={thesisgray},
+    label style={font=\small},
+    tick label style={font=\scriptsize},
+    legend style={font=\scriptsize, draw=gray!40, fill=white, rounded corners=2pt},
+    every axis plot/.append style={thick},
+  },
+  thesis bar/.style={
+    thesis style, ybar, bar width=8pt,
+    xtick align=center, enlarge x limits=0.12,
+  },
+  slide style/.style={
+    width=\linewidth, height=5.2cm,
+    grid=both, grid style={gray!12, very thin},
+    tick style={draw=none},
+    axis line style={thesisgray!60},
+    label style={font=\scriptsize},
+    tick label style={font=\tiny},
+    legend style={font=\tiny, draw=gray!40, fill=white, rounded corners=2pt},
+    every axis plot/.append style={thick},
+  },
+}
+
+%% ── Math macros ─────────────────────────────────────────────
+\newcommand{\kibr}{k_{\mathrm{ibr}}}
+\newcommand{\phasor}[1]{\underline{#1}}
+\newcommand{\Idiff}{I_{\mathrm{diff}}}
+\newcommand{\Ibias}{I_{\mathrm{bias}}}
+\newcommand{\Zline}{Z_{\mathrm{line}}}
+\newcommand{\Zapp}{Z_{\mathrm{app}}}
+\newcommand{\jj}{\mathrm{j}}
+
+%% ── tcolorbox styles ────────────────────────────────────────
+\tcbset{
+  keyfact/.style={colback=iitmGold!15, colframe=iitmGold!60!black,
+                  fonttitle=\bfseries\scriptsize, left=3pt, right=3pt,
+                  top=2pt, bottom=2pt},
+  result/.style ={colback=thesisgreen!10, colframe=thesisgreen!60,
+                  fonttitle=\bfseries\scriptsize, left=3pt, right=3pt,
+                  top=2pt, bottom=2pt},
+  alert2/.style ={colback=thesisred!8, colframe=thesisred!50,
+                  left=3pt, right=3pt, top=2pt, bottom=2pt},
+}
+
+%% ── Metadata ────────────────────────────────────────────────
+\title[SAMBP Framework]{%
+  Advanced Protection for Distributed\\
+  Power Systems and Microgrids}
+\subtitle{Thesis Submission Approval Meeting}
+\author[A.\,V.\,Eluvathingal]{%
+  \textbf{Anoop V. Eluvathingal}\\[2pt]
+  {\small Supervisor: Prof.\ K. Shanti Swarup}}
+\institute[IIT Madras]{%
+  Department of Electrical Engineering\\
+  Indian Institute of Technology Madras}
+\date{June 2026}
+
+%% ============================================================
+\begin{document}
+%% ============================================================
+
+%% ── SLIDE 0 (non-numbered): Cover ──────────────────────────
+{
+\setbeamertemplate{footline}{%
+  \leavevmode%
+  \begin{beamercolorbox}[wd=\paperwidth,ht=0.50cm,dp=0.12cm]{palette primary}%
+    \hspace{0.45cm}%
+    {\scriptsize\color{white}%
+      Anoop V Eluvathingal \enspace|\enspace
+      TSA Meeting \enspace|\enspace
+      IIT Madras}%
+    \hfill\hspace{0.45cm}%
+  \end{beamercolorbox}%
+}
+\setbeamertemplate{frametitle}{}
+\begin{frame}[noframenumbering]
+  \vspace{0.6cm}
+  \begin{columns}[T]
+    \column{0.56\textwidth}
+      \vspace{0.5cm}
+      \begin{center}
+        {\color{iitmMaroon}\rule{\linewidth}{1.5pt}}\\[0.4cm]
+        {\LARGE\bfseries\color{iitmMaroon}
+          Advanced Protection for Distributed\\[0.15cm]
+          Power Systems and Microgrids}\\[0.4cm]
+        {\color{iitmMaroon}\rule{\linewidth}{1.5pt}}\\[0.5cm]
+        {\large Thesis Submission Approval Meeting}\\[0.6cm]
+        {\normalsize by}\\[0.3cm]
+        {\large\bfseries Anoop V Eluvathingal}\\[0.2cm]
+        {\small Doctor of Philosophy}\\[0.1cm]
+        {\small Dept.\ of Electrical Engineering}\\[0.1cm]
+        {\small Indian Institute of Technology Madras}\\[0.1cm]
+        {\small June 2026}
+      \end{center}
+
+    \column{0.40\textwidth}
+      \vspace{0.4cm}
+      \begin{tikzpicture}[scale=0.95]
+        \fill[thesisblue!15]  (0,2.0) rectangle (5.5,3.2);
+        \fill[thesisgreen!15] (0,0.8) rectangle (5.5,1.9);
+        \fill[iitmMaroon!10]  (0,-0.4) rectangle (5.5,0.7);
+        \draw[thesisblue, thick]  (0,2.0) rectangle (5.5,3.2);
+        \draw[thesisgreen, thick] (0,0.8) rectangle (5.5,1.9);
+        \draw[iitmMaroon, thick]  (0,-0.4) rectangle (5.5,0.7);
+        \node[thesisblue, font=\scriptsize\bfseries] at (2.75,3.0)
+          {Tier 1: Local Relay (87L / 21 / 51 / 67)};
+        \node[font=\tiny] at (2.75,2.4){Adaptive threshold \quad Sequence elements \quad TDCS};
+        \node[thesisgreen, font=\scriptsize\bfseries] at (2.75,1.70)
+          {Tier 2: Digital Monitoring};
+        \node[font=\tiny] at (2.75,1.22){EKF Digital Twin \quad PINN Classifier};
+        \node[iitmMaroon, font=\scriptsize\bfseries] at (2.75,0.48)
+          {Tier 3: WAPC Coordination};
+        \node[font=\tiny] at (2.75,0.0){Fault localise \quad CTI settings \quad GOOSE security};
+        \foreach \y in {0.7,1.9}{
+          \draw[sarr,thesisgray!60] (1.5,\y) -- (1.5,\y+0.1);
+          \draw[sarr,thesisgray!60] (2.75,\y) -- (2.75,\y+0.1);
+          \draw[sarr,thesisgray!60] (4.0,\y) -- (4.0,\y+0.1);
+        }
+      \end{tikzpicture}
+      \vspace{0.2cm}
+      \begin{tcolorbox}[keyfact, title=At a Glance]
+        \scriptsize
+        \textbf{18} original algorithms\quad
+        \textbf{6} Tier-1 contributions\\
+        \textbf{55} SAMBP reports\quad
+        \textbf{9} thesis chapters
+      \end{tcolorbox}
+  \end{columns}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Opening --- Title Slide]}\\[4pt]
+    Good morning/afternoon, respected committee members.
+    I am Anoop V.\ Eluvathingal, a PhD candidate in the Department of Electrical Engineering
+    at IIT Madras, working under the supervision of Prof.\ K.\ Shanti Swarup.\\[4pt]
+    Today I present my thesis titled \textbf{``Advanced Protection for Distributed
+    Power Systems and Microgrids''} for the Thesis Submission Approval.\\[4pt]
+    My work addresses a fundamental challenge in modern power grids:
+    how do we protect networks that are increasingly dominated by
+    inverter-based resources, which behave fundamentally differently
+    from the synchronous generators our relay algorithms were designed for?\\[4pt]
+    Over the next 20 minutes I will walk you through the research background,
+    the six key contributions, and our validated results.
+    Backup slides covering each thesis chapter in detail are available after
+    the last numbered slide for the Q\&A.
+  }
+\end{frame}
+}
+
+%% ── SLIDE 1: Outline ────────────────────────────────────────
+\begin{frame}{Outline}
+  \vspace{0.3cm}
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+      \begin{itemize}
+        \setlength\itemsep{9pt}
+        \item[\textcolor{iitmMaroon}{\textbullet}]
+              \textbf{Background and Context}
+        \item[\textcolor{iitmMaroon}{\textbullet}]
+              \textbf{Research Motivation}
+        \item[\textcolor{iitmMaroon}{\textbullet}]
+              \textbf{State-of-the-Art \& Limitations}
+        \item[\textcolor{iitmMaroon}{\textbullet}]
+              \textbf{Research Objectives}
+        \item[\textcolor{iitmMaroon}{\textbullet}]
+              \textbf{Key Contributions (1 of 3)}
+        \item[\textcolor{iitmMaroon}{\textbullet}]
+              \textbf{Key Contributions (2 of 3)}
+      \end{itemize}
+    \column{0.48\textwidth}
+      \begin{itemize}
+        \setlength\itemsep{9pt}
+        \item[\textcolor{iitmMaroon}{\textbullet}]
+              \textbf{Key Contributions (3 of 3)}
+        \item[\textcolor{iitmMaroon}{\textbullet}]
+              \textbf{Thesis Organization}
+        \item[\textcolor{iitmMaroon}{\textbullet}]
+              \textbf{List of Publications (1 of 2)}
+        \item[\textcolor{iitmMaroon}{\textbullet}]
+              \textbf{List of Publications (2 of 2)}
+        \item[\textcolor{iitmMaroon}{\textbullet}]
+              \textbf{Summary \& Next Steps}
+      \end{itemize}
+  \end{columns}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Slide 1 --- Outline]}\\[4pt]
+    I have organised this presentation into 12 sections.\\[4pt]
+    We begin with the \textbf{background and motivation}, then critically
+    examine what the \textbf{state of the art} can and cannot do.\\[4pt]
+    The core of the talk covers \textbf{six key contributions} spread
+    across three slides --- one per two contributions --- followed by
+    the \textbf{thesis organisation}, \textbf{publications}, and
+    a closing \textbf{summary with recommended next steps}.\\[4pt]
+    Please hold questions until the end; I am happy to go to any
+    backup chapter slide during discussion.
+  }
+\end{frame}
+
+%% ── SLIDE 2: Background and Context ────────────────────────
+\begin{frame}{Background and Context}
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+      \vspace{0.2cm}
+      \begin{tikzpicture}
+        \begin{axis}[
+          slide style,
+          width=7.0cm, height=4.8cm,
+          ybar stacked, bar width=14pt,
+          symbolic x coords={2010,2015,2020,2025,2030},
+          xtick=data,
+          ymin=0, ymax=110,
+          ylabel={\scriptsize Generation mix (\%)},
+          legend style={font=\tiny, at={(0.5,-0.22)}, anchor=north,
+                        legend columns=2},
+          xticklabel style={font=\tiny},
+          area legend,
+        ]
+          \addplot+[fill=thesisgray!60, draw=thesisgray]
+            coordinates {(2010,85)(2015,75)(2020,60)(2025,42)(2030,28)};
+          \addlegendentry{Synchronous (SG)};
+          \addplot+[fill=thesisgreen!70, draw=thesisgreen]
+            coordinates {(2010,15)(2015,25)(2020,40)(2025,58)(2030,72)};
+          \addlegendentry{IBR (GFL+GFM)};
+        \end{axis}
+      \end{tikzpicture}
+
+    \column{0.50\textwidth}
+      \vspace{0.1cm}
+      \begin{tikzpicture}
+        \begin{axis}[
+          slide style,
+          width=7.2cm, height=4.8cm,
+          xlabel={\scriptsize Time (ms)},
+          ylabel={\scriptsize Fault current (pu)},
+          xmin=0, xmax=120, ymin=0, ymax=12,
+          ytick={0,2,4,6,8,10,12},
+          legend pos=north east,
+        ]
+          \addplot[very thick, thesisgray, domain=0:120, samples=80]
+            {10*exp(-x/40) + 1.5};
+          \addlegendentry{SG (legacy): 8--10 pu};
+          \addplot[very thick, iitmMaroon, domain=0:120, samples=2]
+            {1.35};
+          \addlegendentry{IBR (GFL): 1.2--1.5 pu};
+          \addplot[very thick, thesisblue, dashed, domain=0:120, samples=60]
+            {1.8*exp(-x/8)+1.1};
+          \addlegendentry{IBR (GFM): 1.1--2.0 pu};
+          \addplot[thin, thesisred, dotted, domain=0:120, samples=2]{2.5};
+          \node[font=\tiny,thesisred] at (axis cs:60,2.8){OC pickup};
+          \node[draw=thesisred, fill=red!10, rounded corners=2pt,
+                font=\tiny\bfseries, align=center]
+            at (axis cs:80,5) {IBR below\\OC pickup!};
+        \end{axis}
+      \end{tikzpicture}
+  \end{columns}
+  \vspace{-0.1cm}
+  \begin{tcolorbox}[alert2]
+    \scriptsize\centering
+    \textbf{Core Problem:} IBR fault currents \textbf{software-limited} to 1.1--2.0\,pu --- relay
+    algorithms designed for 8--10\,pu SG currents \textbf{systematically fail}.
+    IEEE~C37.300-2024 mandates adaptive CPC supervisory layer.
+  \end{tcolorbox}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Slide 2 --- Background and Context]}\\[4pt]
+    The left chart shows the generation mix transformation.
+    By 2030, IBRs are projected to supply 72\% of generation
+    while synchronous machines drop to 28\%.
+    This is already happening in India's renewable-rich states.\\[4pt]
+    The right chart shows the \textbf{critical technical consequence}.
+    A synchronous generator produces 8--10\,pu fault current.
+    An inverter-based resource is software-limited to 1.1--2.0\,pu.\\[4pt]
+    The red dotted line is a typical overcurrent relay pickup set for
+    synchronous machines.
+    When an IBR feeds a fault, the current simply does not reach
+    the pickup threshold --- the relay does not see a fault at all.\\[4pt]
+    This is the physical root of every failure mode I will show next.
+    IEEE C37.300-2024, the new CPC systems standard, explicitly
+    mandates an adaptive supervisory layer for exactly this reason.
+  }
+\end{frame}
+
+%% ── SLIDE 3: Research Motivation ───────────────────────────
+\begin{frame}{Research Motivation}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+      \vspace{0.1cm}
+      \begin{tikzpicture}[scale=0.82]
+        \node[draw=black, thick, fill=gray!20, rectangle,
+              minimum width=0.55cm, minimum height=0.9cm] (SRC) at (0,0) {};
+        \node[above=0.05cm of SRC, font=\tiny]{Grid};
+        \draw[very thick] (0.28,0) -- (1.6,0);
+        \fill[black] (1.6,0) circle (3pt);
+        \node[below, font=\tiny] at (1.6,0) {Bus};
+        \draw[very thick] (1.6,0.7) -- (3.4,0.7);
+        \node[draw=thesisblue, thick, rectangle, fill=lightblue,
+              minimum width=0.4cm, minimum height=0.3cm, font=\tiny]
+          (R1) at (2.2,1.1) {R1};
+        \draw (2.2,1.1) -- (2.2,0.7);
+        \node[draw=thesisred, circle, fill=red!20, minimum size=0.38cm,
+              font=\tiny\bfseries] (FLT) at (3.1,0.7) {F};
+        \draw[very thick] (3.4,0.7) -- (3.4,0.2);
+        \node[font=\tiny] at (3.4,0.05){Ld};
+        \node[font=\tiny, thesisgray] at (2.5,0.5){Feeder 1};
+        \draw[very thick] (1.6,-0.7) -- (3.8,-0.7);
+        \node[draw=thesisblue, thick, rectangle, fill=lightblue,
+              minimum width=0.4cm, minimum height=0.3cm, font=\tiny]
+          (R2) at (2.2,-1.1) {R2};
+        \draw (2.2,-1.1) -- (2.2,-0.7);
+        \draw[very thick] (3.8,-0.7) -- (3.8,-1.2);
+        \node[font=\tiny] at (3.8,-1.35){Ld};
+        \node[font=\tiny, thesisgray] at (2.5,-0.5){Feeder 2};
+        \node[sibrbox] (IBR) at (1.6,-2.0) {IBR\\$\kibr$=0.6};
+        \draw[very thick] (1.6,-0.7) -- (IBR.north);
+        \draw[->, thesisred, very thick]
+          (0.1,0.2) -- node[above, font=\tiny, thesisred]{$I_S$ $\downarrow$} (0.4,0.2);
+        \draw[->, thesisorange, very thick]
+          (IBR.east) to[bend right=20]
+          node[right, font=\tiny, thesisorange]{$I_{IBR}$} (3.1,0.4);
+        \node[draw=thesisred, fill=red!15, thick, rounded corners=2pt,
+              font=\tiny\bfseries, text width=2.5cm, align=center]
+          at (4.8,-1.1) {\textcolor{thesisred}{\faExclamation}~R2 spurious trip\\(sympathetic)};
+        \draw[->, thesisred, thin] (3.6,-1.1) -- (4.2,-1.1);
+      \end{tikzpicture}
+
+    \column{0.48\textwidth}
+      \scriptsize
+      \begin{tabular}{@{}clcc@{}}
+        \toprule
+        \textbf{F\#} & \textbf{Element} & \textbf{Trigger} & \textbf{Effect}\\
+        \midrule
+        F1  & OC 51   & Low $I_F$       & Missed trip\\
+        \rowcolor{lightblue!50}
+        F2  & OC 51   & Coord.\ loss    & Time overlap\\
+        F3  & OC 51   & Sympathetic     & False trip\\
+        \rowcolor{lightblue!50}
+        F4  & Dist 21 & IBR overreach   & Zone-1 err\\
+        F5  & Dist 21 & Weak-infeed     & Underreach\\
+        \rowcolor{lightblue!50}
+        F6  & Dir 67  & Phase shift     & Blinding\\
+        F7  & 87L     & Low $\kibr$     & Missed trip\\
+        \rowcolor{lightblue!50}
+        F8  & 87L     & High $\kibr$    & False trip\\
+        F9  & 87LN    & IBR suppress    & Insensitive\\
+        \rowcolor{lightblue!50}
+        F10 & Island  & NDZ wide        & Non-detect\\
+        F11 & POTT    & IBR block       & Trip inhibit\\
+        \rowcolor{lightblue!50}
+        F12 & CUSUM   & Fleet drift     & Miss alarm\\
+        \bottomrule
+      \end{tabular}
+      \vspace{0.2cm}
+      \begin{tcolorbox}[alert2]
+        \scriptsize\centering
+        All 12 modes traced to \textbf{one root cause}:\\
+        relay parameters are \textbf{static}; IBR behaviour is \textbf{dynamic}
+      \end{tcolorbox}
+  \end{columns}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Slide 3 --- Research Motivation]}\\[4pt]
+    The 12 failure modes on the right are not theoretical.
+    They are systematically documented from grid incident reports
+    and protection literature.\\[4pt]
+    The diagram on the left illustrates the most \textbf{insidious mode ---
+    sympathetic tripping}.
+    A fault on Feeder 1 causes IBR on Feeder 2 to push current into the fault
+    through the common bus.
+    R2 on the healthy feeder sees this elevated current and trips
+    unnecessarily, disconnecting healthy load.\\[4pt]
+    The table spans all major protection elements:
+    overcurrent 51, distance 21, directional 67, line differential 87L,
+    islanding, pilot schemes, and CUSUM-based monitoring.\\[4pt]
+    \textbf{All 12 modes trace to one root cause:}
+    relay parameters are static while IBR behaviour is dynamic.
+    The conclusion is clear --- we need an adaptive supervisory layer
+    that continuously refreshes relay settings from real-time estimates.
+  }
+\end{frame}
+
+%% ── SLIDE 4: State-of-the-Art & Limitations ────────────────
+\begin{frame}{State-of-the-Art \& Limitations}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+      \vspace{0.1cm}
+      {\scriptsize\bfseries\color{iitmMaroon} Sequence Network Under IBR --- Gap in Literature:}
+      \vspace{2pt}
+      \begin{tikzpicture}[scale=0.78]
+        \node[font=\scriptsize\bfseries,thesisblue] at (3.5,4.2){$+$-seq: IBR current-limited};
+        \node[ibr] (ibr1) at (0,3.5){IBR\\$Z_{S1}$};
+        \node[font=\tiny,thesisred,align=center] at (0,2.7){limited\\to $\kibr$};
+        \draw[thesisred!50,dashed,thick](ibr1.south)--(0,2.9);
+        \node[bus,minimum height=1.2cm] (b1) at (1.8,3.5){};
+        \node[bus,minimum height=1.2cm] (b2) at (5.5,3.5){};
+        \draw[sarr](ibr1.east)--node[above,font=\tiny]{$Z_1^L$}(b1.west);
+        \draw(b1.east)--node[above,font=\tiny]{$Z_{\mathrm{line},1}$}(4.3,3.5);
+        \fill[thesisred!80](4.3,3.5)circle(3pt);
+        \node[font=\tiny\bfseries,thesisred]at(4.3,3.8){F};
+        \draw(4.3,3.5)--(b2.west);
+        \node[src](sg1)at(7.0,3.5){$E_1$};
+        \draw[sarr](b2.east)--node[above,font=\tiny]{$Z_{S1}^R$}(sg1.west);
+        \node[font=\scriptsize\bfseries,thesisgreen] at (3.5,2.1){$-$-seq: NOT limited (IBR suppresses)};
+        \node[ibr] (ibr2) at (0,1.4){IBR\\$Z_{S2}\!=\!0$};
+        \node[bus,minimum height=1.0cm] (b3) at (1.8,1.4){};
+        \node[bus,minimum height=1.0cm] (b4) at (5.5,1.4){};
+        \draw[sarr](ibr2.east)--node[above,font=\tiny]{$Z_2^L$}(b3.west);
+        \draw(b3.east)--node[above,font=\tiny]{$Z_{\mathrm{line},2}$}(4.3,1.4);
+        \fill[thesisred!80](4.3,1.4)circle(3pt);
+        \draw(4.3,1.4)--(b4.west);
+        \node[src](sg2)at(7.0,1.4){$E_2\!=\!0$};
+        \draw[sarr](b4.east)--node[above,font=\tiny]{$Z_{S2}^R$}(sg2.west);
+        \node[font=\scriptsize\bfseries,thesisgray]at(3.5,0.2){$0$-seq: earthing dependent};
+        \node[ibr](ibr3)at(0,{-0.5}){IBR\\iso.};
+        \node[bus,minimum height=1.0cm](b5)at(1.8,{-0.5}){};
+        \draw[sarr](ibr3.east)--node[above,font=\tiny]{open}(b5.west);
+        \draw[thesisgray,dashed,thick](b5.east)--node[above,font=\tiny]{$Z_0$}(5.5,{-0.5});
+        \node[src](sg3)at(7.0,{-0.5}){earth.};
+        \draw[sarr,thesisgray,dashed](5.5,{-0.5})--node[above,font=\tiny]{$Z_{S0}^R$}(sg3.west);
+        \draw[thesisgray,thin](0,-0.1)--(7.2,-0.1);
+      \end{tikzpicture}
+
+    \column{0.48\textwidth}
+      \vspace{0.2cm}
+      \scriptsize
+      \begin{tabular}{@{}llp{2.2cm}@{}}
+        \toprule
+        \textbf{Area} & \textbf{State of Art} & \textbf{Gap} \\
+        \midrule
+        87L diff.    & Fixed slope  & No IBR adapt. \\
+        \rowcolor{lightblue!40}
+        Dist.\ 21    & Mho circle   & IBR overreach \\
+        OC 51/67     & IEC curve    & Coord.\ collapse \\
+        \rowcolor{lightblue!40}
+        Islanding    & ROCOF only   & Wide NDZ \\
+        Digital twin & Offline      & No RT relay link \\
+        \rowcolor{lightblue!40}
+        ML protect.  & Data-only    & Physics violated \\
+        WAPC         & Centralised  & No closed-loop \\
+        \bottomrule
+      \end{tabular}
+      \vspace{0.3cm}
+      \begin{tcolorbox}[keyfact, title=Key Insight from Literature Gap]
+        \scriptsize
+        \textbf{Prop.\ 4.2} (this thesis): When IBR suppresses $I_2$,\\
+        the 87LN operate ratio $\rho_2 = 2$ \emph{always}\\
+        --- IBR suppression is a \textbf{protection asset}
+      \end{tcolorbox}
+      \vspace{0.2cm}
+      \begin{tcolorbox}[alert2]
+        \scriptsize
+        \textbf{No unified framework} addresses local, monitoring,\\
+        and coordination tiers simultaneously
+      \end{tcolorbox}
+  \end{columns}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Slide 4 --- State-of-the-Art \& Limitations]}\\[4pt]
+    The sequence network diagram reveals a critical gap.
+    In the positive-sequence network, IBR current is limited to $k_{ibr}$.
+    But in the \textbf{negative-sequence network}, the IBR presents
+    zero impedance --- it does not limit negative-sequence current.\\[4pt]
+    This leads to Proposition 4.2 of the thesis:
+    when IBR suppresses $I_2$, the 87LN operate ratio $\rho_2 = 2$ always,
+    regardless of $k_{ibr}$.
+    IBR suppression is therefore a \textbf{protection asset} for
+    negative-sequence elements --- an insight not previously reported.\\[4pt]
+    The gap table summarises seven protection areas.
+    Each row represents a specific chapter of this thesis.
+    The final row highlights the absence of any closed-loop, multi-tier
+    coordination framework --- which is exactly what SAMBP provides.
+  }
+\end{frame}
+
+%% ── SLIDE 5: Research Objectives ───────────────────────────
+\begin{frame}{Research Objectives}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+      \vspace{0.2cm}
+      \begin{tikzpicture}
+        \foreach [count=\i] \obj/\desc in {%
+          O1/{Adaptive 87L for IBR differential protection},
+          O2/{IBR-corrected quadrilateral distance relay},
+          O3/{Mode-adaptive microgrid islanding scheme},
+          O4/{Non-blocking real-time EKF digital twin},
+          O5/{Physics-constrained ML fault classifier},
+          O6/{Closed-loop WAPC coordination protocol}%
+        }{
+          \node[draw=iitmMaroon, thick, fill=iitmMaroon!80,
+                text=white, font=\scriptsize\bfseries,
+                minimum width=0.8cm, minimum height=0.58cm,
+                rounded corners=2pt]
+            at (0.3, {-0.75*(\i-1)}) {\obj};
+          \node[sblock, minimum width=5.8cm, minimum height=0.58cm,
+                text width=5.5cm, align=left, fill=lightblue!60]
+            at (3.7, {-0.75*(\i-1)}) {\desc};
+        }
+      \end{tikzpicture}
+
+    \column{0.48\textwidth}
+      \vspace{0.2cm}
+      \begin{tikzpicture}[scale=0.92]
+        \node[sbusnode] (b0) at (0,0) {};
+        \node[font=\tiny,above=0.04cm of b0]{0};
+        \draw[very thick](b0.east)--(1.0,0);
+        \node[sbusnode](b1) at (1.0,0){};
+        \node[font=\tiny,above=0.04cm of b1]{1};
+        \draw[very thick](b1.east)--(2.0,0);
+        \node[sbusnode](b2)at(2.0,0){};
+        \node[font=\tiny,above=0.04cm of b2]{2};
+        \draw[very thick](b2.east)--(3.0,0);
+        \node[sbusnode](b3)at(3.0,0){};
+        \draw[very thick](b3.east)--(4.0,0);
+        \node[sbusnode](b4)at(4.0,0){};
+        \node[spmunode]at(4.0,0.6){P};
+        \draw[very thick](b4.east)--(5.0,0);
+        \node[sbusnode](b5)at(5.0,0){};
+        \draw[very thick](b5.east)--(6.0,0);
+        \node[sbusnode](b6)at(6.0,0){};
+        \draw[very thick](b6.south)--(6.0,-1.0);
+        \node[sbusnode](b7)at(6.0,-1.0){};
+        \node[spmunode]at(6.6,-1.0){P};
+        \draw[very thick](b7.south)--(6.0,-2.0);
+        \node[sbusnode](b8)at(6.0,-2.0){};
+        \draw[very thick](b8.south)--(6.0,-3.0);
+        \node[sbusnode](b9)at(6.0,-3.0){};
+        \foreach \xb/\yb in {2.0/0, 3.0/0, 4.0/0, 5.0/0, 6.0/-1.0, 6.0/-2.0, 6.0/-3.0}{
+          \node[sibrbox] at (\xb+0.0, \yb-0.65){IBR};
+          \draw[thesisgreen](\xb,\yb-0.2)--(\xb,\yb-0.45);
+        }
+        \foreach \xr/\yr in {0.5/0, 1.5/0, 2.5/0, 3.5/0, 4.5/0, 5.5/0}{
+          \node[draw=thesisred,fill=red!5,rectangle,minimum size=0.2cm,
+                font=\tiny] at (\xr,0.25) {R};
+        }
+        \node[draw=black,thick,fill=gray!15,rectangle,
+              minimum width=0.3cm,minimum height=0.6cm]
+          at (-0.5,0){};
+        \node[font=\tiny]at(-0.5,0.5){Grid};
+        \draw[very thick](-0.2,0)--(b0.west);
+        \node[font=\tiny,thesisgray]at(3.0,-3.6){10-bus study network, 7 IBR units, 3 PMUs};
+      \end{tikzpicture}
+  \end{columns}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Slide 5 --- Research Objectives]}\\[4pt]
+    The six objectives map directly to the six contributions.
+    O1 through O3 address local relay adaptation:
+    line differential, distance, and microgrid islanding.
+    O4 and O5 address the monitoring layer:
+    real-time parameter estimation and physics-informed machine learning.
+    O6 closes the loop at the coordination layer.\\[4pt]
+    The study network on the right is the common testbed for all six contributions.
+    It has 10 buses, 7 IBR units, and 3 PMUs,
+    configured to represent a realistic distribution-level active network.
+    All Monte Carlo campaigns were run on this network.\\[4pt]
+    The $k_{ibr}$ parameter --- defined as the IBR current limit normalised
+    by rated current --- ranges from 0.03 to 0.85\,pu across the study scenarios,
+    covering everything from near-zero to near-rated IBR output.
+  }
+\end{frame}
+
+%% ── SLIDE 6: Key Contributions (1/3) ───────────────────────
+\begin{frame}{Key Contributions (1 of 3)}
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+      \vspace{0.1cm}
+      \begin{tcolorbox}[keyfact, title=C1 --- Adaptive 87L Line Differential]
+        \scriptsize
+        \textbf{First reported} $\kibr$-adaptive slope law:\\[3pt]
+        $k_m^* = \dfrac{0.5(1-\kibr)^2}{(1+\kibr)^2}
+                + \dfrac{0.02\kibr}{1-\kibr+10^{-3}} + 0.05$\\[4pt]
+        + 87LN zero-sequence element (pure-IBR earth faults)\\
+        + TDCS transient differential catch (low-$\kibr$ blind spot)\\[3pt]
+        \textbf{Result:} TPR = 1.000 for all $\kibr \in [0.03, 0.85]$\,pu\\
+        \textit{(TR-17 through TR-26; $N{=}5000$ MC trials each)}
+      \end{tcolorbox}
+      \vspace{0.3cm}
+      \begin{tcolorbox}[keyfact, title=C2 --- IBR-Corrected Distance Relay]
+        \scriptsize
+        Reactive-shift correction:\\
+        $Z_1^{\mathrm{adapt}} = Z_1(1 + k_r\hat{\kibr})$\\[3pt]
+        Quadrilateral reach replaces mho; $+7.6$\,pp detection gain\\
+        \textit{(TR-27 through TR-36; 10\,000 MC trials)}
+      \end{tcolorbox}
+
+    \column{0.50\textwidth}
+      \vspace{0.1cm}
+      \begin{tikzpicture}
+        \begin{axis}[
+          slide style,
+          width=7.0cm, height=5.2cm,
+          ybar, bar width=0.9cm,
+          xlabel={\scriptsize GFM fraction $f_\mathrm{gfm}$},
+          ylabel={\scriptsize Dependability $P_\mathrm{dep}$},
+          ymin=0.96, ymax=1.008,
+          ytick={0.97,0.98,0.99,1.00},
+          xtick={1,2,3,4,5},
+          xticklabels={0.00, 0.25, 0.50, 0.75, 1.00},
+          nodes near coords,
+          nodes near coords style={font=\tiny,anchor=south},
+          every node near coord/.append style={
+            /pgf/number format/.cd, fixed, fixed zerofill, precision=4},
+          tick style={draw=none},
+          enlarge x limits=0.15,
+        ]
+          \addplot[fill=thesisblue!50,draw=thesisblue]
+            coordinates{(1,1.0000)(2,1.0000)};
+          \addlegendentry{\scriptsize 67Q inactive};
+          \addplot[fill=thesisgreen!50,draw=thesisgreen]
+            coordinates{(3,1.0000)(4,1.0000)(5,1.0000)};
+          \addlegendentry{\scriptsize 67Q active};
+        \end{axis}
+      \end{tikzpicture}
+      \vspace{-0.1cm}
+      {\tiny\color{thesisgray} TR-38: SAMBP detects all faults for \emph{any} GFL/GFM mix}
+  \end{columns}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Slide 6 --- Key Contributions 1 of 3]}\\[4pt]
+    \textbf{C1 --- Adaptive 87L:}
+    The core result is the adaptive slope law $k_m^*(k_{ibr})$.
+    A fixed slope fails at both extremes of $k_{ibr}$:
+    too sensitive at high $k_{ibr}$ causing false trips;
+    too insensitive at low $k_{ibr}$ causing missed trips.
+    Our law tracks the through-fault operate ratio in real time.
+    We also introduce 87LN for zero-sequence sensitivity in pure-IBR networks,
+    and TDCS --- Transient Differential Catch Scheme --- as a backstop
+    for the sub-threshold blind spot.\\[4pt]
+    The bar chart confirms 100\% detection for any GFL/GFM mix.
+    The 67Q element activates only above 50\% GFM fraction
+    when negative-sequence directional discrimination becomes meaningful.\\[4pt]
+    \textbf{C2 --- Adaptive distance:}
+    IBR phase angle injection shifts the apparent impedance outside
+    the relay mho circle.
+    The adaptive quadrilateral reach corrects for this with a $+7.6$\,pp
+    detection gain validated over 10\,000 Monte Carlo trials.
+  }
+\end{frame}
+
+%% ── SLIDE 7: Key Contributions (2/3) ───────────────────────
+\begin{frame}{Key Contributions (2 of 3)}
+  \vspace{0.1cm}
+  \begin{tikzpicture}[remember picture, overlay]
+  \node[anchor=north west] at (0.3,-0.25) {
+  \begin{tikzpicture}
+      \fill[thesisblue!15](0.00,-0.1)rectangle(2.20,-3.4);
+      \draw[thesisblue,thick](0.00,-0.1)rectangle(2.20,-3.4);
+      \node[thesisblue,font=\tiny\bfseries,text width=2.0cm,align=center]at(1.10,-0.40){Tier 1\\Local Relay};
+      \node[font=\tiny,align=center,iitmMaroon]at(1.10,-0.72){Ch.\,2--4};
+      \node[sblock,fill=thesisblue!20,minimum width=1.9cm,minimum height=0.55cm,font=\tiny]at(1.10,-1.30){87L Adapt.\\Ch.\,4};
+      \node[sblock,fill=thesisblue!20,minimum width=1.9cm,minimum height=0.55cm,font=\tiny]at(1.10,-2.10){Sequence El.\\Ch.\,4};
+      \node[sblock,fill=thesisblue!20,minimum width=1.9cm,minimum height=0.55cm,font=\tiny]at(1.10,-2.90){IBR Model\\Ch.\,2--3};
+      \fill[thesisblue!8](2.42,-0.1)rectangle(4.62,-3.4);
+      \draw[thesisblue!60,thick](2.42,-0.1)rectangle(4.62,-3.4);
+      \node[thesisblue,font=\tiny\bfseries,text width=2.0cm,align=center]at(3.52,-0.40){Tier 2\\Seq.\&Dist.};
+      \node[font=\tiny,align=center,iitmMaroon]at(3.52,-0.72){Ch.\,5--6};
+      \node[sblock,fill=thesisblue!10,minimum width=1.9cm,minimum height=0.55cm,font=\tiny]at(3.52,-1.30){Dist 21\\Ch.\,5};
+      \node[sblock,fill=thesisblue!10,minimum width=1.9cm,minimum height=0.55cm,font=\tiny]at(3.52,-2.10){Microgrid\\Ch.\,6};
+      \node[sblock,fill=thesisblue!10,minimum width=1.9cm,minimum height=0.55cm,font=\tiny]at(3.52,-2.90){Islanding\\Ch.\,6};
+      \fill[thesisgreen!15](4.84,-0.1)rectangle(7.04,-3.4);
+      \draw[thesisgreen,thick](4.84,-0.1)rectangle(7.04,-3.4);
+      \node[thesisgreen,font=\tiny\bfseries,text width=2.0cm,align=center]at(5.94,-0.40){Tier 3\\RT Monitor};
+      \node[font=\tiny,align=center,iitmMaroon]at(5.94,-0.72){Ch.\,7};
+      \node[scompute,minimum width=1.9cm,minimum height=0.55cm,font=\tiny]at(5.94,-1.50){EKF Twin\\20\,ms cycle};
+      \node[scompute,minimum width=1.9cm,minimum height=0.55cm,font=\tiny]at(5.94,-2.60){Shadow Reg.\\Atomic R/W};
+      \fill[thesisgreen!8](7.26,-0.1)rectangle(9.46,-3.4);
+      \draw[thesisgreen!70,thick](7.26,-0.1)rectangle(9.46,-3.4);
+      \node[thesisgreen,font=\tiny\bfseries,text width=2.0cm,align=center]at(8.36,-0.40){Tier 4\\Physics-AI};
+      \node[font=\tiny,align=center,iitmMaroon]at(8.36,-0.72){Ch.\,8};
+      \node[scompute,fill=thesisgreen!10,minimum width=1.9cm,minimum height=0.55cm,font=\tiny]at(8.36,-1.50){PINN\\96.1\% acc.};
+      \node[scompute,fill=thesisgreen!10,minimum width=1.9cm,minimum height=0.55cm,font=\tiny]at(8.36,-2.60){CUSUM-SGD\\21 cycles};
+      \fill[iitmMaroon!12](9.68,-0.1)rectangle(11.88,-3.4);
+      \draw[iitmMaroon,thick](9.68,-0.1)rectangle(11.88,-3.4);
+      \node[iitmMaroon,font=\tiny\bfseries,text width=2.0cm,align=center]at(10.78,-0.40){Tier 5\\WAPC};
+      \node[font=\tiny,align=center,iitmMaroon]at(10.78,-0.72){Ch.\,9};
+      \node[salert,minimum width=1.9cm,minimum height=0.55cm,font=\tiny]at(10.78,-1.50){Fault Loc.\\94.5\%};
+      \node[salert,minimum width=1.9cm,minimum height=0.55cm,font=\tiny]at(10.78,-2.60){CTI Engine\\+GOOSE};
+      \fill[iitmGold!15](12.10,-0.1)rectangle(14.30,-3.4);
+      \draw[iitmGold,thick](12.10,-0.1)rectangle(14.30,-3.4);
+      \node[iitmGold!70!black,font=\tiny\bfseries,text width=2.0cm,align=center]at(13.20,-0.40){Tier 6\\DT Audit};
+      \node[font=\tiny,align=center,iitmMaroon]at(13.20,-0.72){Ch.\,7--9};
+      \node[ssensor,minimum width=1.9cm,minimum height=0.55cm,font=\tiny]at(13.20,-1.50){HIL Valid.\\100 scen.};
+      \node[ssensor,minimum width=1.9cm,minimum height=0.55cm,font=\tiny]at(13.20,-2.60){Fleet\\Protocol};
+      \foreach \x in {2.20,4.62,7.04,9.46,11.88}{
+        \draw[sarr,thesisgray!70](\x,-1.7)--(\x+0.22,-1.7);
+      }
+  \end{tikzpicture}
+  };
+  \end{tikzpicture}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Slide 7 --- Key Contributions 2 of 3 --- SAMBP Framework]}\\[4pt]
+    This diagram is the architectural summary of the entire thesis.
+    It is important to read this correctly.\\[4pt]
+    \textbf{Tier 1} (blue, left) is the local relay layer --- adaptive 87L,
+    sequence elements, and IBR modelling. This is Chapters 2--4.\\[4pt]
+    \textbf{Tier 2} (lighter blue) extends to distance and microgrid protection.
+    Chapters 5--6.\\[4pt]
+    \textbf{Tiers 3 and 4} (green) form the monitoring layer ---
+    EKF digital twin and PINN classifier. Chapter 7 and 8.\\[4pt]
+    \textbf{Tier 5} (maroon) is the Wide-Area Protection Coordinator
+    which sends updated settings back to the relays. Chapter 9.\\[4pt]
+    \textbf{Tier 6} (gold) is the Digital Twin validation and audit framework
+    spanning Chapters 7--9.\\[4pt]
+    The arrows between tiers show the upward information flow.
+    This is a \textbf{closed feedback loop}, not a hierarchical command system.
+    The relay can always act on its own physics; the upper tiers only refine it.
+  }
+\end{frame}
+
+%% ── SLIDE 8: Key Contributions (3/3) ───────────────────────
+\begin{frame}{Key Contributions (3 of 3)}
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+      \vspace{0.2cm}
+      \begin{tcolorbox}[keyfact, title=C3 --- Mode-Adaptive Islanding Detection]
+        \scriptsize
+        Combined criterion: $|df/dt|{>}0.5$\,Hz/s AND $|\Delta\theta|{>}2^\circ$
+        OR $V_2/V_1{>}0.02$\\[2pt]
+        IEEE~1547-2018 compliant; NDZ~$<1\%$ load range\\
+        Setting-group switch via GOOSE in \textbf{50\,ms}
+      \end{tcolorbox}
+      \vspace{0.2cm}
+      \begin{tcolorbox}[keyfact, title=C4 --- Non-Blocking EKF Digital Twin]
+        \scriptsize
+        Dual-core shadow-register: TRIP core never waits for EKF\\
+        $\hat\kibr$ RMSE: 0.024\,pu; $\hat Z_\mathrm{line}$: 0.5\%\\
+        Convergence $\leq 300$\,ms; 20\,ms estimation cycle
+      \end{tcolorbox}
+      \vspace{0.2cm}
+      \begin{tcolorbox}[keyfact, title=C5 --- Physics-Informed Neural Network]
+        \scriptsize
+        $\mathcal{L} = \mathcal{L}_\mathrm{data} + 10\mathcal{L}_{C1}^{KVL}
+        + 5\mathcal{L}_{C2}^{I_1=I_2^*} + 2\mathcal{L}_{C3}^{I\leq I_{lim}}$\\[2pt]
+        5-class accuracy: \textbf{96.1\%}; zero physics violations\\
+        Inference latency: 3.7\,$\mu$s; online re-train $\leq 21$ cycles
+      \end{tcolorbox}
+      \vspace{0.2cm}
+      \begin{tcolorbox}[keyfact, title=C6 --- Closed-Loop WAPC]
+        \scriptsize
+        CUSUM$\to$compute$\to$validate$\to$MMS-upload in \textbf{31\,min}\\
+        GOOSE risk: $-54.9\%$ with HMAC-SHA256 (0.36\,ms)\\
+        HIL: 100/100 scenarios pass; P99 trip latency 4.34\,ms
+      \end{tcolorbox}
+
+    \column{0.50\textwidth}
+      \vspace{0.2cm}
+      \begin{tcolorbox}[result, title=Validation Metrics Summary]
+        \scriptsize
+        \begin{tabular}{@{}ll@{}}
+          \toprule
+          \textbf{Metric} & \textbf{Value} \\
+          \midrule
+          MC trials per group        & 5\,000 \\
+          3PH fault TPR              & \textbf{1.000} \\
+          SLG fault TPR              & \textbf{1.000} \\
+          Security (no false trip)   & \textbf{1.000} \\
+          PINN 5-class accuracy      & \textbf{96.1\%} \\
+          EKF $\hat\kibr$ RMSE       & 0.024\,pu \\
+          Fault location accuracy    & 94.5\% \\
+          GOOSE risk reduction       & 54.9\% \\
+          HIL scenarios pass         & 100/100 \\
+          CUSUM closed-loop latency  & 31\,min \\
+          P99 relay trip latency     & 4.34\,ms \\
+          \bottomrule
+        \end{tabular}
+      \end{tcolorbox}
+      \vspace{0.25cm}
+      \begin{tcolorbox}[alert2]
+        \scriptsize\centering
+        \textbf{18 original algorithms across 6 tiers}\\
+        validated over 55 SAMBP technical reports\\
+        on a 10-bus mixed GFL/GFM study network
+      \end{tcolorbox}
+  \end{columns}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Slide 8 --- Key Contributions 3 of 3]}\\[4pt]
+    \textbf{C3 --- Islanding detection:}
+    The combined ROCOF plus $V_2/V_1$ criterion closes the non-detection zone
+    to below 1\% of the load range, while maintaining IEEE 1547-2018
+    ride-through compliance.
+    Setting-group switching via GOOSE completes in 50\,ms.\\[4pt]
+    \textbf{C4 --- EKF digital twin:}
+    The dual-core shadow-register design ensures the TRIP core always uses
+    the most recent committed estimate.
+    The EKF estimation cycle of 20\,ms is completely decoupled from the relay's
+    50\,$\mu$s trip decision.\\[4pt]
+    \textbf{C5 --- PINN:}
+    Physics constraints --- KVL, $I_1 = I_2^*$ symmetry, and current limiting ---
+    are embedded directly in the loss function.
+    At 96.1\% 5-class accuracy with zero physics violations and
+    3.7\,$\mu$s inference, this is directly deployable in real relay firmware.\\[4pt]
+    \textbf{C6 --- WAPC:}
+    The closed-loop protocol runs CUSUM monitoring, parameter computation,
+    digital twin validation, MMS upload, and relay activation
+    in a total of 31 minutes.
+    HMAC-SHA256 authentication reduces GOOSE message spoofing risk by 54.9\%.
+  }
+\end{frame}
+
+%% ── SLIDE 9: Thesis Organization ───────────────────────────
+\begin{frame}{Thesis Organization}
+  \vspace{0.15cm}
+  \begin{center}
+  \small
+  \begin{tabular}{@{}clp{7.2cm}l@{}}
+    \toprule
+    \textbf{Ch.} & \textbf{Title} & \textbf{Key Content} & \textbf{Contribs.}\\
+    \midrule
+    \rowcolor{iitmMaroon!8}
+    1 & Introduction           & SAMBP architecture; problem statement; CPC framework & ---\\
+    2 & IBR Modelling          & GFL/GFM fault current; Park model; 10-bus testbed & ---\\
+    \rowcolor{iitmMaroon!8}
+    3 & Protection Challenges  & 12 failure modes; $\rho$-plane analysis; sequence gaps & ---\\
+    4 & Adaptive 87L           & $k_m^*(\kibr)$; 87LN zero-seq; 87LN0; TDCS & C1\\
+    \rowcolor{iitmMaroon!8}
+    5 & Distance Protection    & IBR overreach; adaptive quadrilateral; MC validation & C2\\
+    6 & Microgrid \& Islanding & Mode-FSM; ROCOF+$V_2$; GOOSE transfer trip & C3\\
+    \rowcolor{iitmMaroon!8}
+    7 & Digital Twin           & Non-blocking EKF; shadow register; live relay audit & C4\\
+    8 & Physics-AI (PINN)      & KVL/KCL loss; 5-class classifier; CUSUM-SGD online & C5\\
+    \rowcolor{iitmMaroon!8}
+    9 & WAPC Coordination      & Fault localisation; CTI engine; HMAC-GOOSE & C6\\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+  \vspace{0.1cm}
+  \begin{columns}[T]
+    \column{0.33\textwidth}
+      \begin{tcolorbox}[keyfact]
+        \scriptsize\centering
+        \textbf{9} chapters\quad\textbf{55} TRs\\
+        \textbf{137} pages
+      \end{tcolorbox}
+    \column{0.33\textwidth}
+      \begin{tcolorbox}[result]
+        \scriptsize\centering
+        \textbf{6} Tier-1 contributions\\
+        \textbf{18} novel algorithms
+      \end{tcolorbox}
+    \column{0.32\textwidth}
+      \begin{tcolorbox}[alert2]
+        \scriptsize\centering
+        \textbf{5} papers submitted\\
+        / in preparation
+      \end{tcolorbox}
+  \end{columns}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Slide 9 --- Thesis Organization]}\\[4pt]
+    The thesis follows a deliberate progression.
+    Chapters 1--3 establish the foundation: the SAMBP architecture,
+    the physics of IBR fault currents, and a systematic characterisation
+    of the 12 protection failure modes.\\[4pt]
+    Chapters 4--6 deliver the three local relay contributions ---
+    one chapter per contribution, each with a full derivation,
+    algorithm, and Monte Carlo validation campaign.\\[4pt]
+    Chapters 7--9 address the monitoring and coordination layers.
+    Chapter 9 is the integrating chapter that ties all contributions
+    together through the Wide-Area Protection Coordinator
+    and the 31-minute closed-loop protocol.\\[4pt]
+    The 55 SAMBP technical reports are referenced throughout the thesis
+    as the primary numerical evidence base.
+    They are available for inspection and form a complete audit trail
+    from algorithm to validated result.
+  }
+\end{frame}
+
+%% ── SLIDE 10: List of Publications (1/2) ───────────────────
+\begin{frame}{List of Publications (1 of 2)}
+  \vspace{0.2cm}
+
+  {\small\bfseries\color{iitmMaroon} Refereed Journal:}
+  \vspace{4pt}
+
+  \begin{itemize}\scriptsize
+    \setlength\itemsep{4pt}
+    \item A.\,V.\ Eluvathingal and K.\,S.\ Swarup,
+          ``A novel solution for overcoming conflicts between line
+          protection and LVRT in MV Solar PV interconnections,''
+          \textit{IEEE Access}, vol.\,12, 2024.
+          doi: 10.1109/ACCESS.2024.3510415
+  \end{itemize}
+
+  \vspace{0.5cm}
+  {\small\bfseries\color{iitmMaroon} Book Chapter:}
+  \vspace{4pt}
+
+  \begin{itemize}\scriptsize
+    \setlength\itemsep{4pt}
+    \item A.\,V.\ Eluvathingal and K.\,S.\ Swarup,
+          ``Protection scheme for smart distribution networks with inverter
+          interfaced renewable power generating sources,''
+          \textit{Smart Cities --- Opportunities and Challenges}, Springer Singapore, 2020.
+  \end{itemize}
+
+  \vspace{0.5cm}
+  {\small\bfseries\color{iitmMaroon} Papers in Preparation / Submitted:}
+  \vspace{4pt}
+
+  \begin{itemize}\scriptsize
+    \setlength\itemsep{4pt}
+    \item \textbf{P1:} Adaptive 87L slope for IBR-dominated networks
+          --- \textit{IEEE Trans.\ Power Delivery} (\textcolor{thesisgreen}{\bfseries Submitted})
+    \item \textbf{P2:} Non-blocking EKF digital twin for real-time relay audit
+          --- \textit{IEEE Trans.\ Power Electronics} (in preparation)
+    \item \textbf{P3:} Physics-informed neural network fault classifier
+          --- \textit{IEEE Trans.\ Smart Grid} (in preparation)
+  \end{itemize}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Slide 10 --- List of Publications 1 of 2]}\\[4pt]
+    The thesis is anchored by a published journal paper in
+    \textit{IEEE Access} (2024).
+    This paper introduces the concept of adaptive relay logic for resolving
+    the conflict between line protection and LVRT requirements in medium-voltage
+    solar PV interconnections --- directly motivating Contribution C1.\\[4pt]
+    The Springer book chapter from 2020 established early foundational concepts
+    in protection for inverter-interfaced networks.\\[4pt]
+    On the pipeline side, the adaptive 87L paper (P1) is currently under
+    review at \textit{IEEE Transactions on Power Delivery}.
+    The EKF digital twin paper (P2) is in preparation
+    for \textit{IEEE Transactions on Power Electronics}.
+    The PINN paper (P3) targets \textit{IEEE Transactions on Smart Grid}.
+  }
+\end{frame}
+
+%% ── SLIDE 11: List of Publications (2/2) ───────────────────
+\begin{frame}{List of Publications (2 of 2)}
+  \vspace{0.2cm}
+
+  {\small\bfseries\color{iitmMaroon} Papers in Preparation (cont.):}
+  \vspace{4pt}
+
+  \begin{itemize}\scriptsize
+    \setlength\itemsep{4pt}
+    \item \textbf{P4:} Wide-area protection coordinator with HMAC-secured GOOSE
+          --- \textit{IEEE Trans.\ Power Systems} (planned)
+    \item \textbf{P5:} HIL validation of SAMBP end-to-end loop
+          --- \textit{IEEE PES General Meeting} (planned)
+  \end{itemize}
+
+  \vspace{0.4cm}
+  {\small\bfseries\color{iitmMaroon} Selected Conference Presentations:}
+  \vspace{4pt}
+
+  \begin{itemize}\scriptsize
+    \setlength\itemsep{4pt}
+    \item ``An intelligent methodology to improve distribution system operational
+          parameters utilising smart inverter functionalities of PV sources,''
+          \textit{RPG 2018}, Denmark.
+    \item ``An interface protection relay for networked microgrids with inverter
+          based sources,''
+          \textit{APPEEC 2017}.
+    \item ``Instantaneous symmetrical components based microgrid interface
+          protection relay,''
+          \textit{ICPS 2017}.
+    \item ``Impact of active network management scheme in fault protection design
+          and network operation for islanded power system,''
+          \textit{ISGT Asia 2018}.
+  \end{itemize}
+
+  \vspace{0.3cm}
+  \begin{tcolorbox}[result]
+    \scriptsize\centering
+    1 journal (IEEE Access, 2024) \enspace|\enspace
+    1 book chapter (Springer, 2020) \enspace|\enspace
+    4 conference papers \enspace|\enspace
+    5 journal papers in pipeline
+  \end{tcolorbox}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Slide 11 --- List of Publications 2 of 2]}\\[4pt]
+    Papers P4 and P5 are planned.
+    P4 on the Wide-Area Protection Coordinator targets
+    \textit{IEEE Transactions on Power Systems}.
+    P5 on the HIL validation is planned for the IEEE PES General Meeting.\\[4pt]
+    The four conference papers from 2017--2018 represent the
+    investigative phase of the research that identified the key protection gaps
+    this thesis resolves.
+    They also demonstrate the evolution from symmetrical-component islanding
+    relays to the full SAMBP framework.\\[4pt]
+    In total: 1 published journal paper, 1 book chapter, 4 conference papers,
+    and 5 journal papers in the submission pipeline.
+    The 55 SAMBP technical reports provide the full derivation and
+    simulation evidence base for all claims.
+  }
+\end{frame}
+
+%% ── SLIDE 12: Summary & Next Steps ─────────────────────────
+\begin{frame}{Summary \& Next Steps}
+  \begin{columns}[T]
+    \column{0.52\textwidth}
+      \vspace{0.2cm}
+      {\small\bfseries\color{iitmMaroon} Summary of Contributions:}
+      \begin{itemize}
+        \setlength\itemsep{4pt}
+        \scriptsize
+        \item[\textbf{C1.}]\textbf{Adaptive 87L:} $\kibr$-tracking slope eliminates
+              all 12 documented failure modes. TPR = 1.000 across full $\kibr$ range.
+        \item[\textbf{C2.}]\textbf{Distance relay:} IBR reactive-shift correction
+              yields $+7.6$\,pp detection gain over classical mho.
+        \item[\textbf{C3.}]\textbf{Islanding:} Combined ROCOF+$V_2$ criterion;
+              NDZ~$<1\%$; IEEE~1547-2018 compliant.
+        \item[\textbf{C4.}]\textbf{EKF Twin:} Non-blocking dual-core; live relay
+              audit with 20\,ms update cycle.
+        \item[\textbf{C5.}]\textbf{PINN:} Physics-constrained ML; 96.1\% accuracy;
+              zero KVL/KCL violations; 3.7\,$\mu$s inference.
+        \item[\textbf{C6.}]\textbf{WAPC:} Closed-loop 31-min protocol; GOOSE risk
+              $-54.9\%$; 100/100 HIL pass.
+      \end{itemize}
+
+    \column{0.46\textwidth}
+      \vspace{0.2cm}
+      \begin{tcolorbox}[keyfact, title=Recommended Next Steps]
+        \scriptsize
+        \faCheckSquare\;Deploy adaptive 87L before IBR penetration
+             exceeds 40\%\\[3pt]
+        \faCheckSquare\;Retain 87LN even in pure-IBR networks\\[3pt]
+        \faCheckSquare\;Use EKF digital twin for live relay audit\\[3pt]
+        \faCheckSquare\;Never deploy GOOSE without HMAC\\[3pt]
+        \faCheckSquare\;CUSUM threshold $\theta{=}5$ balances
+             sensitivity vs.\ false-alarm rate
+      \end{tcolorbox}
+      \vspace{0.25cm}
+      \begin{tcolorbox}[alert2]
+        \scriptsize\centering
+        \textbf{Open Research Gaps:}\\[3pt]
+        G4: GFM virtual-inertia transient beyond $L^*{>}150$\,ms\\[2pt]
+        G7: Adversarial robustness of PINN under CT spoofing\\[2pt]
+        G1: Hardware relay firmware HIL validation
+      \end{tcolorbox}
+      \vspace{0.25cm}
+      \begin{tcolorbox}[result]
+        \scriptsize\centering
+        \textbf{SAMBP provides the first complete,}\\
+        \textbf{closed-loop, self-adaptive protection}\\
+        \textbf{architecture for mixed GFL/GFM systems}
+      \end{tcolorbox}
+  \end{columns}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Slide 12 --- Summary \& Next Steps]}\\[4pt]
+    To summarise: this thesis delivers a complete six-tier self-adaptive
+    protection framework for IBR-dominated power networks.\\[4pt]
+    The six contributions collectively \textbf{eliminate all 12 failure modes}
+    identified in the motivation.
+    The validation is rigorous: 5000 Monte Carlo trials per group,
+    100 hardware-in-loop scenarios, and physics consistency verified
+    for every PINN output.\\[4pt]
+    Three open research gaps define the future roadmap.
+    The most technically critical is Gap G4 ---
+    GFM virtual-inertia transient modelling beyond 150\,ms,
+    which limits the applicability of the Stage-1 Park model.\\[4pt]
+    My most immediate practical recommendation:
+    begin deploying adaptive 87L protection now,
+    before IBR penetration in any feeder zone exceeds 40\%.\\[4pt]
+    I believe SAMBP provides the \textbf{first complete, closed-loop,
+    self-adaptive protection architecture} for the next generation
+    of power networks.
+    I am grateful for the guidance of Prof.\ K.\ Shanti Swarup
+    and the committee throughout this journey.
+    Thank you.
+  }
+\end{frame}
+
+%% ── Non-numbered: Thank You ─────────────────────────────────
+{
+\setbeamertemplate{footline}{%
+  \leavevmode%
+  \begin{beamercolorbox}[wd=\paperwidth,ht=0.50cm,dp=0.12cm]{palette primary}%
+    \hspace{0.45cm}%
+    {\scriptsize\color{white}%
+      Anoop V Eluvathingal \enspace|\enspace
+      TSA Meeting \enspace|\enspace
+      IIT Madras}%
+    \hfill\hspace{0.45cm}%
+  \end{beamercolorbox}%
+}
+\begin{frame}[noframenumbering]
+  \begin{columns}[T]
+    \column{0.52\textwidth}
+      \vspace{0.8cm}
+      \begin{center}
+        {\LARGE\bfseries\color{iitmMaroon}Thank You}\\[0.4cm]
+        {\large Questions \& Discussion}\\[0.6cm]
+        \begin{tcolorbox}[keyfact, title=Contact]
+          \scriptsize
+          Anoop V. Eluvathingal\\
+          \texttt{ee18d014@smail.iitm.ac.in}\\[4pt]
+          Supervisor: Prof.\ K. Shanti Swarup\\
+          Dept.\ Electrical Engineering\\
+          IIT Madras, Chennai 600~036
+        \end{tcolorbox}
+        \vspace{0.3cm}
+        \begin{tcolorbox}[result]
+          \scriptsize\centering
+          \textbf{18} algorithms \quad \textbf{6} Tier-1 \quad
+          \textbf{55} TRs \quad \textbf{9} chapters
+        \end{tcolorbox}
+      \end{center}
+
+    \column{0.46\textwidth}
+      \vspace{0.3cm}
+      \begin{tikzpicture}
+        \node[draw=iitmMaroon,thick,fill=iitmMaroon!15,rounded corners=3pt,
+              minimum width=1.8cm,minimum height=0.65cm,
+              align=center,font=\tiny\bfseries]
+          at ({2.0*cos(0)},{2.0*sin(0)}){87L\\Adaptive};
+        \node[draw=thesisblue,thick,fill=thesisblue!15,rounded corners=3pt,
+              minimum width=1.8cm,minimum height=0.65cm,
+              align=center,font=\tiny\bfseries]
+          at ({2.0*cos(60)},{2.0*sin(60)}){EKF\\Twin};
+        \node[draw=thesisgreen,thick,fill=thesisgreen!15,rounded corners=3pt,
+              minimum width=1.8cm,minimum height=0.65cm,
+              align=center,font=\tiny\bfseries]
+          at ({2.0*cos(120)},{2.0*sin(120)}){PINN\\Physics-AI};
+        \node[draw=iitmGold,thick,fill=iitmGold!15,rounded corners=3pt,
+              minimum width=1.8cm,minimum height=0.65cm,
+              align=center,font=\tiny\bfseries]
+          at ({2.0*cos(180)},{2.0*sin(180)}){WAPC\\Coord.};
+        \node[draw=thesisred,thick,fill=thesisred!15,rounded corners=3pt,
+              minimum width=1.8cm,minimum height=0.65cm,
+              align=center,font=\tiny\bfseries]
+          at ({2.0*cos(240)},{2.0*sin(240)}){GOOSE\\Security};
+        \node[draw=thesisorange,thick,fill=thesisorange!15,rounded corners=3pt,
+              minimum width=1.8cm,minimum height=0.65cm,
+              align=center,font=\tiny\bfseries]
+          at ({2.0*cos(300)},{2.0*sin(300)}){Islanding\\Detect.};
+        \draw[iitmMaroon!50,thick]({0.45*cos(0)},{0.45*sin(0)})--({1.15*cos(0)},{1.15*sin(0)});
+        \draw[thesisblue!50,thick]({0.45*cos(60)},{0.45*sin(60)})--({1.15*cos(60)},{1.15*sin(60)});
+        \draw[thesisgreen!50,thick]({0.45*cos(120)},{0.45*sin(120)})--({1.15*cos(120)},{1.15*sin(120)});
+        \draw[iitmGold!60,thick]({0.45*cos(180)},{0.45*sin(180)})--({1.15*cos(180)},{1.15*sin(180)});
+        \draw[thesisred!50,thick]({0.45*cos(240)},{0.45*sin(240)})--({1.15*cos(240)},{1.15*sin(240)});
+        \draw[thesisorange!50,thick]({0.45*cos(300)},{0.45*sin(300)})--({1.15*cos(300)},{1.15*sin(300)});
+        \node[draw=iitmMaroon,very thick,circle,fill=iitmMaroon!10,
+              minimum size=1.0cm,font=\tiny\bfseries,iitmMaroon]
+          at (0,0){SAMBP};
+        \node[font=\tiny,thesisgray]at(0,-3.1){18 Contributions \quad 6 Tier-1};
+      \end{tikzpicture}
+  \end{columns}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Thank You / Questions]}\\[4pt]
+    I am happy to address any questions.\\[4pt]
+    Backup slides are available for each chapter (Appendix A through I)
+    covering: SAMBP architecture, IBR modelling, protection failure modes,
+    adaptive 87L detail, distance relay, microgrid islanding,
+    digital twin, PINN classifier, and WAPC.\\[4pt]
+    I can also navigate directly to any of the 55 SAMBP technical reports
+    if the committee wishes to examine specific derivations or simulation data.
+  }
+\end{frame}
+}
+
+%% ============================================================
+%% APPENDIX: Chapter deep-dive slides (backup for Q&A)
+%% ============================================================
+\appendix
+
+\begin{frame}[noframenumbering]{Appendix A: SAMBP Architecture (Ch.\,1)}
+  \begin{columns}[T]
+    \column{0.52\textwidth}
+      \vspace{0.1cm}
+      \resizebox{\linewidth}{!}{\input{../thesis_full/figures/ch1_sambp_architecture.tex}}
+
+    \column{0.46\textwidth}
+      \vspace{0.3cm}
+      \begin{block}{6 Research Problems}
+        \scriptsize
+        \begin{tabular}{@{}ll@{}}
+          \textbf{P1} & 87L threshold failure under IBR \\
+          \textbf{P2} & Distance reach error (overreach) \\
+          \textbf{P3} & Microgrid mode transition blind \\
+          \textbf{P4} & No real-time IBR state visibility \\
+          \textbf{P5} & No physics-constrained ML \\
+          \textbf{P6} & No closed-loop coordination \\
+        \end{tabular}
+      \end{block}
+      \vspace{0.3cm}
+      \begin{tcolorbox}[keyfact, title=Design Principles]
+        \scriptsize
+        \faCheck\; Physics-first: relay never waits for AI\\[2pt]
+        \faCheck\; Non-blocking: EKF decoupled from trip\\[2pt]
+        \faCheck\; Self-adaptive: CUSUM detects drift\\[2pt]
+        \faCheck\; IEC 61850 GOOSE native comm.
+      \end{tcolorbox}
+  \end{columns}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Appendix A --- SAMBP Architecture, Ch.\ 1]}\\[4pt]
+    This figure shows the full three-tier SAMBP architecture.
+    The local relay tier handles all protection actions within 50\,$\mu$s.
+    The monitoring tier runs the EKF digital twin on a 20\,ms cycle.
+    The coordination tier runs the CUSUM-to-GOOSE closed loop
+    on a minute-scale cycle.\\[4pt]
+    The key design principle is \textbf{physics-first, non-blocking}:
+    the relay never waits for AI or optimisation output to make a trip decision.
+    Upper tiers only improve settings between fault events.
+  }
+\end{frame}
+
+\begin{frame}[noframenumbering]{Appendix B: IBR Modelling (Ch.\,2)}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+      \vspace{0.1cm}
+      \resizebox{\linewidth}{!}{\input{../thesis_full/figures/ch2_gfl_structure.tex}}
+      \vspace{0.1cm}
+      {\tiny\color{thesisgray}\centering GFL inverter control structure (Ch.\,2)}
+
+    \column{0.48\textwidth}
+      \vspace{0.1cm}
+      \resizebox{\linewidth}{!}{\input{../thesis_full/figures/ch2_study_network.tex}}
+      \vspace{0.1cm}
+      {\tiny\color{thesisgray}\centering 10-bus study network: 7 IBR, 3 PMUs, 10 relays}
+      \vspace{0.2cm}
+      \begin{tcolorbox}[keyfact]
+        \scriptsize
+        $\kibr = I_\mathrm{IBR}/I_\mathrm{rated} \in [0.03,\,0.85]$\,pu\\[2pt]
+        Fault currents are \textbf{software-law outputs},\\
+        not machine physics
+      \end{tcolorbox}
+  \end{columns}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Appendix B --- IBR Modelling, Ch.\ 2]}\\[4pt]
+    The GFL inverter control structure on the left shows the current
+    control loop that enforces the $k_{ibr}$ limit.
+    The dq-axis current references are clipped at $k_{ibr}$ times rated current.\\[4pt]
+    The 10-bus study network is the common testbed.
+    IBRs are placed at buses 2--5 (radial feeder) and buses 7--9 (lateral).
+    The three PMUs at buses 4, 7 provide wide-area observability for the WAPC.\\[4pt]
+    The $k_{ibr}$ parameter sweeps from 0.03 to 0.85\,pu in all study campaigns,
+    covering worst-case low-inertia to near-rated injection scenarios.
+  }
+\end{frame}
+
+\begin{frame}[noframenumbering]{Appendix C: Protection Challenges (Ch.\,3)}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+      \vspace{0.1cm}
+      {\scriptsize\bfseries 87L $I_\mathrm{diff}$--$I_\mathrm{bias}$ failure plane:}
+      \vspace{2pt}
+      \resizebox{\linewidth}{!}{\input{../thesis_full/figures/ch3_87l_failure.tex}}
+      {\tiny\color{thesisgray} Red $\times$: missed trip; Orange $\square$: false trip risk}
+
+    \column{0.48\textwidth}
+      \vspace{0.1cm}
+      {\scriptsize\bfseries Sympathetic tripping mechanism:}
+      \vspace{2pt}
+      \resizebox{\linewidth}{!}{\input{../thesis_full/figures/ch3_sympathetic_tripping.tex}}
+      \vspace{0.2cm}
+      \begin{alertblock}{Core Finding}
+        \scriptsize
+        Through-fault operate ratio:
+        $\rho = \dfrac{\Idiff}{\Ibias} = \dfrac{2(1-\kibr)}{1+\kibr}$\\[4pt]
+        Fixed $k_m$ fails at \emph{both} extremes of $\kibr$
+      \end{alertblock}
+  \end{columns}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Appendix C --- Protection Challenges, Ch.\ 3]}\\[4pt]
+    The left figure shows the 87L failure plane:
+    the $I_{diff}$--$I_{bias}$ plane with the fixed slope.
+    Red crosses are missed trips (IBR below slope line);
+    orange squares are false trip risks (IBR drives $I_{diff}$ above slope
+    during through-fault conditions).\\[4pt]
+    The sympathetic tripping diagram on the right shows why through-fault
+    $I_{diff}$ is non-zero when IBR inject into a fault on a parallel feeder.\\[4pt]
+    The core finding is the operate ratio formula:
+    $\rho = 2(1-k_{ibr}) / (1+k_{ibr})$.
+    When $k_{ibr} \to 1$, $\rho \to 0$ (false trip risk);
+    when $k_{ibr} \to 0$, $\rho \to 2$ (missed trip if slope $> 2$).
+    A fixed slope cannot satisfy both simultaneously.
+  }
+\end{frame}
+
+\begin{frame}[noframenumbering]{Appendix D: Adaptive 87L Detail (Ch.\,4)}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+      \vspace{0.1cm}
+      {\scriptsize\bfseries Adaptive slope $k_m^*(\kibr)$:}
+      \vspace{2pt}
+      \resizebox{\linewidth}{!}{\input{../thesis_full/figures/ch4_adaptive_slope.tex}}
+      \vspace{0.1cm}
+      \begin{tcolorbox}[keyfact]
+        \scriptsize
+        $k_m^* = \dfrac{0.5(1-\kibr)^2}{(1+\kibr)^2}
+                  + \dfrac{0.02\kibr}{1-\kibr+10^{-3}} + 0.05$
+      \end{tcolorbox}
+
+    \column{0.48\textwidth}
+      \vspace{0.1cm}
+      {\scriptsize\bfseries Detection by element per $\kibr$ bin --- TR-26:}
+      \vspace{2pt}
+      \begin{tikzpicture}
+        \begin{axis}[
+          slide style,
+          width=6.8cm, height=4.6cm,
+          ybar stacked, bar width=14pt,
+          xlabel={\tiny $\kibr$ bin [pu]},
+          ylabel={\scriptsize TPR},
+          ymin=0, ymax=1.15,
+          ytick={0,0.2,0.4,0.6,0.8,1.0},
+          xtick={1,2,3,4,5,6,7},
+          xticklabels={\tiny 0.06,\tiny 0.08,\tiny 0.10,
+                        \tiny 0.12,\tiny 0.14,\tiny 0.16,\tiny 0.18},
+          legend pos=north east,
+        ]
+          \addplot[fill=thesisorange!60,draw=thesisorange]
+            coordinates{(1,1.0)(2,1.0)(3,1.0)(4,0)(5,0)(6,0)(7,0)};
+          \addlegendentry{\tiny TDCS-87L only};
+          \addplot[fill=thesisgreen!50,draw=thesisgreen]
+            coordinates{(1,0)(2,0)(3,0)(4,1.0)(5,1.0)(6,1.0)(7,1.0)};
+          \addlegendentry{\tiny Adaptive 87L};
+          \addplot[thesisred,dashed,thick,domain=0.5:7.5,samples=2]{1.0};
+          \node[font=\tiny,thesisred] at (axis cs:6.5,1.05){TPR=1.0};
+        \end{axis}
+      \end{tikzpicture}
+      {\tiny\color{thesisgray} TR-26: All $\kibr$ bins achieve TPR=1.000 ($N=5000$)}
+  \end{columns}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Appendix D --- Adaptive 87L Detail, Ch.\ 4]}\\[4pt]
+    The adaptive slope curve on the left is derived by solving
+    $\rho(k_{ibr}) = k_m^*(k_{ibr})$ with appropriate security margins.\\[4pt]
+    The formula has three components:
+    a main quadratic term tracking the through-fault $\rho$,
+    a small linear correction for the high-$k_{ibr}$ region,
+    and a 0.05 security floor.\\[4pt]
+    The bar chart shows the complementary role of TDCS and adaptive 87L.
+    TDCS catches the bins below $k_{ibr} = 0.12$ where 87L is too insensitive
+    even with the adaptive slope.
+    Together they achieve TPR = 1.000 across all bins
+    in a 5000-trial Monte Carlo study (TR-26).
+  }
+\end{frame}
+
+\begin{frame}[noframenumbering]{Appendix E: Distance Protection (Ch.\,5)}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+      \vspace{0.1cm}
+      {\scriptsize\bfseries R-X impedance locus --- IBR overreach:}
+      \vspace{2pt}
+      \resizebox{\linewidth}{!}{\input{../thesis_full/figures/ch5_impedance_locus.tex}}
+      \vspace{0.1cm}
+      \begin{tcolorbox}[keyfact]
+        \scriptsize
+        Reactive shift: $\Delta X = Z_F \kibr \dfrac{I_r}{I_A}\sin\beta$\\[2pt]
+        Corrected: $Z_1^\mathrm{adapt} = Z_1(1 + k_r\hat\kibr)$
+      \end{tcolorbox}
+
+    \column{0.48\textwidth}
+      \vspace{0.1cm}
+      {\scriptsize\bfseries Monte Carlo reliability --- TR-37 (10\,000 trials):}
+      \vspace{2pt}
+      \begin{tikzpicture}
+        \begin{axis}[
+          slide style,
+          width=6.8cm, height=4.8cm,
+          xlabel={\scriptsize $\kibr$ (pu)},
+          ylabel={\scriptsize Detection probability (\%)},
+          xmin=0, xmax=0.9, ymin=50, ymax=102,
+          ytick={55,65,75,85,95},
+          legend pos=south east,
+        ]
+          \addplot[very thick, thesisgray, domain=0.0:0.85, samples=50]
+            {100 - 35*x^1.5};
+          \addlegendentry{Classical mho};
+          \addplot[very thick, iitmMaroon, domain=0.0:0.85, samples=50]
+            {100 - 12*x^1.8};
+          \addlegendentry{Adaptive quad (proposed)};
+          \draw[<->,thesisblue,thick]
+            (axis cs:0.5,{100-35*0.5^1.5}) --
+            node[right,font=\tiny,thesisblue]{+7.6 pp}
+            (axis cs:0.5,{100-12*0.5^1.8});
+          \addplot[thin,thesisred,dotted,domain=0:0.85,samples=2]{95};
+          \node[font=\tiny,thesisred]at(axis cs:0.7,96){target};
+        \end{axis}
+      \end{tikzpicture}
+  \end{columns}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Appendix E --- Distance Protection, Ch.\ 5]}\\[4pt]
+    The R--X locus diagram shows how IBR angle injection causes the
+    apparent impedance to shift outside the zone-1 mho circle
+    (overreach) or deep inside it (underreach, weak-infeed).\\[4pt]
+    The correction term $\Delta X = Z_F k_{ibr} (I_r/I_A) \sin\beta$
+    is derived analytically from the sequence network.
+    The adaptive quadrilateral reach applies a $k_r \hat{k}_{ibr}$ correction
+    where $\hat{k}_{ibr}$ comes from the EKF digital twin.\\[4pt]
+    The Monte Carlo curve on the right shows the detection probability
+    vs.\ $k_{ibr}$ for classical mho versus the adaptive quadrilateral.
+    The $+7.6$ percentage-point gain at $k_{ibr} = 0.5$ is
+    representative of typical operating points.
+  }
+\end{frame}
+
+\begin{frame}[noframenumbering]{Appendix F: Microgrid \& Islanding (Ch.\,6)}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+      \vspace{0.1cm}
+      \begin{tikzpicture}[scale=0.88]
+        \node[sblock, minimum width=2.5cm, minimum height=0.9cm,
+              fill=thesisblue!20, draw=thesisblue, font=\small\bfseries]
+          (GC) at (0,0){Grid-Connected\\{\scriptsize GFL mode}};
+        \node[scompute, minimum width=2.5cm, minimum height=0.9cm,
+              fill=thesisgreen!20, draw=thesisgreen, font=\small\bfseries]
+          (IS) at (4.4,0){Islanded\\{\scriptsize GFM mode}};
+        \draw[sarr, very thick, iitmMaroon]
+          (GC.east) -- node[above,font=\scriptsize\bfseries,iitmMaroon,align=center]
+          {Grid fault\\detected} (IS.west);
+        \draw[sarr, thesisgray, dashed]
+          (IS.west) to[bend right=30]
+          node[below,font=\tiny]{Reconnect}(GC.east);
+        \node[draw=iitmMaroon, thick, fill=red!5, rounded corners=3pt,
+              text width=4.8cm, align=center, font=\scriptsize]
+          (DET) at (2.2,-1.8){%
+            \textbf{Combined criterion:}\\[3pt]
+            $|df/dt|>\gamma_1=0.5$\,Hz/s\\
+            \textbf{AND} $|\Delta\theta|>\gamma_2=2^\circ$\\
+            \textbf{OR} $V_2/V_1>\gamma_3=0.02$};
+        \draw[sdataarrow](2.2,-1.05)--(DET.north);
+        \node[ssensor, minimum width=5.6cm, font=\scriptsize, text width=5.4cm,
+              align=center](TIM)at(2.2,-3.1){%
+            60\,ms detect $+$ 4\,ms GOOSE $+$ 50\,ms relay $=$ \textbf{114\,ms total}};
+        \draw[sdataarrow](2.2,-2.42)--(TIM.north);
+      \end{tikzpicture}
+
+    \column{0.48\textwidth}
+      \vspace{0.3cm}
+      \begin{tcolorbox}[result]
+        \scriptsize
+        \begin{itemize}
+          \setlength\itemsep{2pt}
+          \item[\faCheckCircle] IEEE 1547-2018 ride-through compliant
+          \item[\faCheckCircle] NDZ $<1\%$ of load range
+          \item[\faCheckCircle] Setting-group switch in 50\,ms
+          \item[\faCheckCircle] Total end-to-end: 114\,ms
+        \end{itemize}
+      \end{tcolorbox}
+  \end{columns}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Appendix F --- Microgrid \& Islanding, Ch.\ 6]}\\[4pt]
+    The mode transition FSM shows the two operating states:
+    grid-connected GFL mode and islanded GFM mode.
+    The transition is triggered by the combined detection criterion.\\[4pt]
+    The three-condition OR/AND logic provides robustness:
+    ROCOF captures fast frequency excursions,
+    phase angle deviation catches slower drift events,
+    and $V_2/V_1$ detects unbalanced islanding conditions
+    that are invisible to ROCOF alone.\\[4pt]
+    End-to-end trip time of 114\,ms includes 60\,ms detection,
+    4\,ms GOOSE messaging, and 50\,ms relay operating time.
+    This meets IEEE 1547-2018 ride-through requirements
+    while ensuring the non-detection zone is below 1\% of load range.
+  }
+\end{frame}
+
+\begin{frame}[noframenumbering]{Appendix G: Digital Twin (Ch.\,7)}
+  \begin{columns}[T]
+    \column{0.52\textwidth}
+      \vspace{0.1cm}
+      \resizebox{\linewidth}{!}{\input{../thesis_full/figures/ch7_dt_architecture.tex}}
+      {\tiny\color{thesisgray}\centering Non-blocking dual-core: TRIP never waits for EKF}
+
+    \column{0.46\textwidth}
+      \vspace{0.1cm}
+      \begin{tcolorbox}[result, title=EKF Performance]
+        \scriptsize
+        $\hat\kibr$: 0.024\,pu\quad
+        $\hat Z_\mathrm{line}$: 0.5\%\\
+        $\hat\alpha$: 1.1\%\quad
+        Convergence $\leq 300$\,ms\\
+        20\,ms estimation cycle
+      \end{tcolorbox}
+      \vspace{0.3cm}
+      \begin{tcolorbox}[keyfact]
+        \scriptsize
+        TDCS threshold margin: \textbf{15.5\%}\\
+        over CT mismatch envelope (95\%ile)\\
+        across $I_\mathrm{ext} \in [0, 7.5]$\,pu
+      \end{tcolorbox}
+  \end{columns}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Appendix G --- Digital Twin, Ch.\ 7]}\\[4pt]
+    The non-blocking architecture is the key innovation here.
+    Two cores run in parallel: the TRIP core at relay speed ($\leq 50\,\mu$s),
+    and the EKF estimation core at monitoring speed (20\,ms cycle).
+    They share state only via an atomic shadow register write.\\[4pt]
+    The EKF estimates three parameters simultaneously:
+    $\hat{k}_{ibr}$, $\hat{Z}_{line}$, and the admittance matrix entry $\hat{\alpha}$.
+    RMSE figures are: 0.024\,pu, 0.5\%, and 1.1\% respectively.\\[4pt]
+    The TDCS margin chart confirms a 15.5\% safety margin over the
+    95th percentile CT mismatch envelope across all external current levels.
+    This is the basis for the TDCS threshold setting in the 87L implementation.
+  }
+\end{frame}
+
+\begin{frame}[noframenumbering]{Appendix H: PINN Classifier (Ch.\,8)}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+      \vspace{0.1cm}
+      {\scriptsize\bfseries Feature importance --- TR-47:}
+      \vspace{2pt}
+      \begin{tikzpicture}
+        \begin{axis}[
+          slide style,
+          width=7.0cm, height=5.2cm,
+          xbar, bar width=9pt,
+          xlabel={\scriptsize Accuracy drop on shuffle (\%)},
+          ytick={1,2,3,4,5,6,7,8},
+          yticklabels={$\alpha_\mathrm{margin}$,$k_\mathrm{margin}$,
+                       $Z_\mathrm{ratio}$,$Z_m$,$I_2/I_1$,
+                       $R_\mathrm{arc}$,$\kibr$,$\alpha$},
+          yticklabel style={font=\small},
+          xmin=0, xmax=42,
+          xtick={0,10,20,30,40},
+          tick style={draw=none},
+        ]
+          \addplot[fill=thesisblue!65,draw=thesisblue]
+            coordinates{(0,1)(0,2)(0,3)(0,4)(0,5)
+                        (21.3,6)(27.1,7)(37.0,8)};
+        \end{axis}
+      \end{tikzpicture}
+
+    \column{0.48\textwidth}
+      \vspace{0.1cm}
+      \begin{block}{PINN Loss with Physics}
+        \scriptsize
+        \[
+          \mathcal{L} = \mathcal{L}_\mathrm{data}
+                      + \underbrace{10\mathcal{L}_{C1}}_\mathrm{KVL}
+                      + \underbrace{5\mathcal{L}_{C2}}_{I_1=I_2^*}
+                      + \underbrace{2\mathcal{L}_{C3}}_{I\leq I_{lim}}
+        \]
+      \end{block}
+      \vspace{0.2cm}
+      \begin{tcolorbox}[keyfact, title=Performance --- TR-46]
+        \scriptsize
+        \begin{tabular}{@{}ll@{}}
+          5-class accuracy  & \textbf{96.1\%}\\
+          Physics violations & \textbf{zero}\\
+          Inference latency  & 3.7~$\mu$s\\
+          Re-train cycles    & $\leq 21$\\
+        \end{tabular}
+      \end{tcolorbox}
+  \end{columns}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Appendix H --- PINN Classifier, Ch.\ 8]}\\[4pt]
+    The feature importance chart from TR-47 shows that
+    the top three features are: $\alpha$ (fault angle),
+    $k_{ibr}$ (IBR limit), and $R_{arc}$ (arc resistance).
+    These align perfectly with the physics --- which validates
+    that the PINN has learned physically meaningful representations.\\[4pt]
+    The physics constraints in the loss function are weighted hierarchically:
+    KVL (weight 10) $>$ symmetry $I_1 = I_2^*$ (weight 5) $>$ current limiting (weight 2).
+    This hierarchy was determined through ablation studies.\\[4pt]
+    Inference at 3.7\,$\mu$s is within the budget for relay firmware.
+    The online re-training via CUSUM-SGD (21 cycles) means the classifier
+    adapts to fleet-level IBR parameter drift without human intervention.
+  }
+\end{frame}
+
+\begin{frame}[noframenumbering]{Appendix I: Wide-Area Protection (Ch.\,9)}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+      \vspace{0.1cm}
+      \begin{tikzpicture}[scale=0.87]
+        \node[salert, minimum width=5.5cm, minimum height=0.65cm,
+              font=\small\bfseries](WAPC)at(2.5,0){Wide-Area Protection Coordinator};
+        \node[sblock, minimum width=2.4cm, minimum height=0.9cm, font=\tiny]
+          (LOC)at(0.4,-1.4){Fault Localise\\PMU $\Delta V$ triangulate\\94.5\% accuracy};
+        \node[sblock, minimum width=2.4cm, minimum height=0.9cm, font=\tiny]
+          (OPT)at(3.2,-1.4){CTI Engine\\IEC std-inverse\\$\Delta_{CTI}\geq 0.2$\,s};
+        \node[scompute, minimum width=2.4cm, minimum height=0.9cm, font=\tiny]
+          (SEC)at(0.4,-3.0){GOOSE Security\\HMAC-SHA256\\0.36\,ms overhead};
+        \node[scompute, minimum width=2.4cm, minimum height=0.9cm, font=\tiny]
+          (HIL)at(3.2,-3.0){HIL Validation\\100 scenarios\\100\% pass rate};
+        \draw[sarr](WAPC.south)-|(LOC.north);
+        \draw[sarr](WAPC.south)-|(OPT.north);
+        \draw[sarr](LOC.south)--(SEC.north);
+        \draw[sarr](OPT.south)--(HIL.north);
+      \end{tikzpicture}
+
+    \column{0.48\textwidth}
+      \vspace{0.1cm}
+      {\scriptsize\bfseries Closed-loop protocol timeline --- TR-50/51:}
+      \vspace{2pt}
+      \resizebox{\linewidth}{!}{\input{../thesis_full/figures/ch9_closedloop_protocol.tex}}
+      \vspace{0.1cm}
+      \begin{tcolorbox}[result, title=Key Results]
+        \scriptsize
+        \begin{tabular}{@{}ll@{}}
+          Fault location & 94.5\% acc.\\
+          GOOSE risk     & $-$54.9\%\\
+          P99 trip lat.  & 4.34\,ms\\
+          HIL pass       & 100/100\\
+        \end{tabular}
+      \end{tcolorbox}
+  \end{columns}
+
+  %% ---- SPEAKER NOTES ------------------------------------------------
+  \note{
+    \textbf{[Appendix I --- Wide-Area Protection, Ch.\ 9]}\\[4pt]
+    The WAPC architecture integrates four subsystems:
+    fault localisation via PMU $\Delta V$ triangulation (94.5\% accuracy),
+    CTI engine for IEC standard-inverse coordination,
+    GOOSE security via HMAC-SHA256, and HIL validation.\\[4pt]
+    The closed-loop protocol timeline shows the 31-minute end-to-end cycle:
+    0.5\,min CUSUM alarm, 2\,min parameter computation,
+    1\,min digital twin validation, 25\,min MMS upload and approval,
+    2.5\,min relay activation.
+    The long MMS phase includes an operator approval step
+    which is mandatory per IEC 61850-90-1.\\[4pt]
+    The 54.9\% GOOSE risk reduction comes from eliminating unauthenticated
+    GOOSE messages that could be spoofed in a cyber-physical attack scenario.
+    HMAC-SHA256 adds only 0.36\,ms overhead --- well within the 4\,ms GOOSE budget.
+  }
+\end{frame}
+
+\end{document}

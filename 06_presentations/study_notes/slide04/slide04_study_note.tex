@@ -1,0 +1,643 @@
+%% slide04_study_note.tex
+%% Detailed Study Note --- Slide 4: SAMBP Framework Three-Tier Architecture
+%% TSA Meeting Preparation | Anoop V Eluvathingal | IIT Madras | 2026
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{booktabs,tabularx,array,longtable}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{parskip}
+
+%% Custom commands
+\newcommand{\kibr}{k_\mathrm{ibr}}
+\newcommand{\kibrhat}{\hat{k}_\mathrm{ibr}}
+\newcommand{\Zline}{\hat{Z}_\mathrm{line}}
+\newcommand{\Yibr}{\hat{Y}_\mathrm{ibr}}
+\newcommand{\Idiff}{I_\mathrm{diff}}
+\newcommand{\Ibias}{I_\mathrm{bias}}
+\newcommand{\km}{k_m}
+\newcommand{\gammath}{\gamma_\mathrm{th}}
+\newcommand{\gmin}{\gamma_\mathrm{min}}
+\newcommand{\CTI}{\mathrm{CTI}}
+\newcommand{\Iset}{I_\mathrm{set}}
+\newcommand{\rvec}{\mathbf{r}}
+\newcommand{\jj}{\mathrm{j}}
+
+%% Colours
+\definecolor{iitmnavy}{RGB}{15,40,80}
+\definecolor{iitmgold}{RGB}{180,140,0}
+\definecolor{lightblue}{RGB}{220,235,250}
+\definecolor{lightyellow}{RGB}{255,252,220}
+\definecolor{lightred}{RGB}{255,235,235}
+\definecolor{lightgreen}{RGB}{230,255,230}
+\definecolor{lightpurple}{RGB}{240,230,255}
+\definecolor{lightorange}{RGB}{255,243,225}
+\definecolor{tier1col}{RGB}{200,215,240}
+\definecolor{tier2col}{RGB}{210,230,210}
+\definecolor{tier3col}{RGB}{240,235,200}
+
+%% tcolorbox environments --- title={#1} prevents pgfkeys parsing commas
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{keybox}[1]{colback=lightblue,colframe=iitmnavy,
+  fonttitle=\bfseries\color{white},title={#1},arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{formulabox}[1]{colback=lightyellow,colframe=iitmgold,
+  fonttitle=\bfseries,title={#1},arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{resultbox}[1]{colback=lightgreen,colframe=green!50!black,
+  fonttitle=\bfseries,title={#1},arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{warnbox}[1]{colback=lightred,colframe=red!60!black,
+  fonttitle=\bfseries,title={#1},arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{archbox}[1]{colback=lightpurple,colframe=iitmnavy!60,
+  fonttitle=\bfseries,title={#1},arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{speakbox}{colback=orange!8,colframe=orange!70!black,
+  fonttitle=\bfseries,title={What to Say at the TSA Meeting},arc=3pt,
+  boxrule=1pt,breakable}
+
+%% Header / footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{iitmnavy}\small\textbf{TSA Meeting Study Note}}
+\fancyhead[R]{\color{iitmnavy}\small Slide 4 --- SAMBP: Three-Tier Architecture}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\small\color{gray}Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ 2026}
+\renewcommand{\headrulewidth}{1.5pt}
+\renewcommand{\headrule}{\color{iitmnavy}\hrule width\headwidth height\headrulewidth}
+
+\titleformat{\section}{\large\bfseries\color{iitmnavy}}{}{0em}{}[\color{iitmnavy}\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{iitmnavy!80}}{}{0em}{}
+
+\hypersetup{colorlinks=true,linkcolor=iitmnavy,urlcolor=iitmnavy}
+
+\begin{document}
+
+%% ── Title Block ──────────────────────────────────────────────────────────────
+\begin{tcolorbox}[colback=iitmnavy,coltext=white,arc=4pt,boxrule=0pt]
+\begin{center}
+  {\Large\bfseries TSA Meeting --- Slide 4 Study Note}\\[4pt]
+  {\large SAMBP Framework: Three-Tier Architecture}\\[6pt]
+  {\normalsize Architecture Overview $\cdot$ EKF Oracle $\cdot$ WAPC $\cdot$ Cybersecurity Layer}\\[2pt]
+  {\small Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ PhD Thesis 2026}
+\end{center}
+\end{tcolorbox}
+
+\vspace{6pt}
+
+%% ── 1. Slide Overview ────────────────────────────────────────────────────────
+\section{Slide Overview and Narrative}
+
+\begin{keybox}{What This Slide Shows}
+Slide~4 is the \textbf{architectural map} of the entire thesis.  Before diving
+into any individual algorithm, the TSA needs to see how all the pieces fit
+together.  The slide answers: \emph{what is SAMBP, in one picture?}
+
+\medskip
+The architecture flows left to right across three tiers:
+\begin{enumerate}[nosep]
+  \item \textbf{Tier~1 --- Parameter Oracle} (EKF Digital Twin): A single,
+        continuously-running Extended Kalman Filter that tracks the three
+        latent network state variables $(\kibrhat, \Zline, \Yibr)$ in
+        real time.  Every protection module in Tier~2 queries this oracle
+        for the current $\kibrhat$ value before computing any threshold.
+  \item \textbf{Tier~2 --- Protection Modules} (six algorithms): The six
+        protection elements are arranged in three pairs, each pair representing
+        a primary-to-secondary dependency:
+        \begin{itemize}[nosep]
+          \item SyncOC (inverse curve) $\to$ Microgrid (mode-switch)
+          \item 87L (adaptive slope) $\to$ Dist.~21 (zone adapt.)
+          \item 87T/87B (SPRT) $\to$ PINN (physics-informed classifier)
+        \end{itemize}
+  \item \textbf{Tier~3 --- WAPC} (topology-aware coordination): The
+        Wide-Area Protection Coordinator integrates the output of all Tier~2
+        modules, performs PMU-based fault localisation, verifies N-1 security,
+        and dispatches coordinated setting updates via IEC~61850 GOOSE.
+\end{enumerate}
+
+\textbf{Cutting across all tiers:} A Cybersecurity Layer applies
+HMAC-SHA256 authentication to GOOSE messages and adversarial hardening to
+the PINN classifier, protecting the entire communication fabric against
+spoofing, replay, and adversarial injection attacks.
+
+\medskip
+\textbf{The key principle stated on the slide:}  \textit{``Each module
+queries the EKF oracle for $\kibrhat$, computes adaptive thresholds via
+the bounded update law, and executes a confidence-gated (Stage-2) veto
+before tripping.''}  This one sentence describes the common three-step
+action pattern of every protection element in the framework.
+\end{keybox}
+
+\subsection{Architecture at a Glance}
+
+\begin{center}
+\small
+\begin{tabular}{@{}lllp{4.5cm}@{}}
+\toprule
+\textbf{Tier} & \textbf{Name} & \textbf{Chapter(s)} & \textbf{Primary Function} \\
+\midrule
+1 & Parameter Oracle (EKF)
+  & Ch~6 (Digital Twin)
+  & Real-time $(\kibrhat, \Zline, \Yibr)$ estimation \\
+2a & SyncOC
+  & Ch~3
+  & Adaptive generator overcurrent, IEC inv.\ curve \\
+2b & 87L line diff
+  & Ch~3
+  & Adaptive bias slope $\km^*(\kibr)$ \\
+2c & 87T / 87B
+  & Ch~6 / Ch~6
+  & SPRT inrush discriminator / bus differential \\
+2d & Microgrid
+  & Ch~5
+  & Mode-switch protection; ROCOF islanding \\
+2e & Dist.~21
+  & Ch~5
+  & Quadrilateral Zone~1 reach correction \\
+2f & PINN
+  & Ch~6
+  & Physics-informed ML fault classifier \\
+3  & WAPC
+  & Ch~7
+  & Topology-aware coordination; N-1 security \\
+$\perp$ & Cybersecurity
+  & Ch~8
+  & HMAC GOOSE; adversarial PINN hardening \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%% ── 2. Why a Three-Tier Architecture? ────────────────────────────────────────
+\section{Engineering Motivation: Why Three Tiers?}
+
+\begin{archbox}{The Three-Tier Rationale}
+A single monolithic adaptive relay would create three unacceptable problems:
+\begin{enumerate}[nosep]
+  \item \textbf{Single point of failure:} If the estimator fails (e.g., under
+        a cyberattack that injects false measurements), all protection fails
+        simultaneously.
+  \item \textbf{Inconsistent $\kibrhat$:} If each relay runs its own LM
+        estimator independently, they may produce different $\kibrhat$ values,
+        causing \emph{coordination failures} where the primary relay sees
+        $\kibr = 0.3$ (fast trip) and the backup sees $\kibr = 0.5$ (slow trip),
+        resulting in CTI violation.
+  \item \textbf{No wide-area view:} A local relay cannot verify N-1 security
+        or dispatch coordinated settings fleet-wide.
+\end{enumerate}
+
+The three-tier architecture separates these concerns:
+\begin{itemize}[nosep]
+  \item \textbf{Tier~1} provides one consistent $\kibrhat$ to all modules
+        (single source of truth).
+  \item \textbf{Tier~2} runs fast local protection actions (20--80~ms trip
+        decisions) without waiting for Tier~3.
+  \item \textbf{Tier~3} runs slow wide-area coordination ($>$100~ms) without
+        blocking Tier~2.
+\end{itemize}
+The cybersecurity layer is \emph{orthogonal} --- it secures communication
+at every tier transition without adding algorithmic latency to Tier~2.
+\end{archbox}
+
+%% ── 3. Tier 1: Parameter Oracle ──────────────────────────────────────────────
+\section{Tier 1: Parameter Oracle --- The EKF Digital Twin}
+
+\begin{formulabox}{EKF State and Measurement Models}
+The EKF digital twin maintains a continuous estimate of three network
+state variables:
+\begin{equation}
+  \mathbf{x}_k = \begin{bmatrix} \kibr \\ Z_\mathrm{line} \\ Y_\mathrm{ibr} \end{bmatrix}_k
+  \label{eq:ekf_state}
+\end{equation}
+
+The state transition model (between faults):
+\begin{equation}
+  \mathbf{x}_{k+1} = \mathbf{x}_k + \mathbf{w}_k, \quad
+  \mathbf{w}_k \sim \mathcal{N}(\mathbf{0}, Q)
+  \label{eq:ekf_process}
+\end{equation}
+where $Q = \mathrm{diag}(\sigma_{k_\mathrm{ibr}}^2, \sigma_Z^2, \sigma_Y^2)$
+represents the expected drift rate of each state variable.
+
+The measurement model (from IED phasors every 20~ms):
+\begin{equation}
+  \mathbf{y}_k = h(\mathbf{x}_k) + \mathbf{v}_k, \quad
+  \mathbf{v}_k \sim \mathcal{N}(\mathbf{0}, R)
+  \label{eq:ekf_measurement}
+\end{equation}
+where $h(\cdot)$ is the power flow model mapping $(\kibr, Z_\mathrm{line},
+Y_\mathrm{ibr})$ to observable bus voltages and branch currents.
+\end{formulabox}
+
+\subsection{What the Oracle Provides to Each Tier-2 Module}
+
+Every 20~ms (one power cycle), the EKF outputs:
+\begin{itemize}[nosep]
+  \item $\kibrhat$ with 95\% confidence interval (CI width $< 0.05$~pu).
+  \item $\hat{Z}_\mathrm{line}$ (used by Dist.~21 for Zone~1 correction).
+  \item $\hat{Y}_\mathrm{ibr}$ (used by 87L bias computation).
+  \item RMSE $\leq 0.024$~pu for $\kibrhat$ (validated in TR-09).
+\end{itemize}
+
+\noindent\textbf{Non-blocking design:} The EKF runs as an asynchronous background
+process.  If the EKF result is not yet available when a Tier-2 module needs
+$\kibrhat$ (e.g., fault occurs during EKF prediction step), the module uses
+the last valid estimate with the confidence score degraded accordingly.  This
+ensures protection continuity even during EKF computation cycles.
+
+\subsection{EKF vs.\ LM: When Each Is Used}
+
+\begin{center}
+\small
+\begin{tabular}{@{}lllp{4cm}@{}}
+\toprule
+\textbf{Method} & \textbf{When Used} & \textbf{Update Rate} & \textbf{Role} \\
+\midrule
+EKF (Tier~1) & Continuous (inter-fault) & 20~ms / cycle & Tracks $\kibr$ drift slowly \\
+LM (Tier~2) & During fault window & 3--5~ms / window & Identifies fault parameters precisely \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The EKF provides the \emph{initial condition} and \emph{pre-fault estimate};
+the LM refines it \emph{post-fault}.  Formally, the EKF prior
+$p(\mathbf{x}|\mathbf{y}_{1:k-1})$ seeds the LM starting point
+$\bm{\theta}^{(0)}$, reducing LM iterations from 20--30 (cold start)
+to 10--15 (warm start).
+
+%% ── 4. Tier 2: Protection Modules ────────────────────────────────────────────
+\section{Tier 2: Protection Modules --- The Six Algorithms}
+
+\begin{keybox}{The Three-Step Action Pattern (Key Principle on Slide)}
+Every Tier-2 module follows the same three-step action:
+\begin{enumerate}[nosep]
+  \item \textbf{Query:} Read $\kibrhat$ from the EKF oracle.
+  \item \textbf{Compute:} Derive the adaptive threshold using the bounded
+        update law (e.g., $\km^*(\kibrhat)$ for 87L, $\Iset(\kibrhat)$
+        for SyncOC, $X_\mathrm{reach,corr}$ for Dist.~21).
+  \item \textbf{Gate:} Check $\gamma \geq \gammath$ (Stage-2 confidence veto)
+        before authorising a trip output.
+\end{enumerate}
+This pattern is the same across all six modules; only the threshold formula
+in Step~2 differs.
+\end{keybox}
+
+\subsection{Module-Pair Dependencies}
+
+The three module pairs on the slide reflect operational couplings:
+
+\paragraph{SyncOC $\to$ Microgrid:}
+The generator OC relay must be aware of the microgrid's operating mode
+(grid-connected vs.\ islanded), because the fault current magnitude
+is different in each mode.  In islanded mode, the only fault current
+source is the local generation; in grid-connected mode, the grid
+contributes.  The SyncOC setting group switches automatically when
+the Microgrid module broadcasts a mode-switch GOOSE.
+
+\paragraph{87L $\to$ Dist.~21:}
+The line differential and distance relays protect the same line from opposite
+ends.  The 87L element has primary responsibility; Dist.~21 is backup.
+The Dist.~21 Zone~1 reach correction uses the same $\kibrhat$ as 87L,
+ensuring they are both calibrated to the same IBR state.
+
+\paragraph{87T/87B $\to$ PINN:}
+The transformer and bus differential elements generate event records (trip
+signals, phasor snapshots) that feed the PINN classifier.  The PINN provides
+a secondary check: if 87T trips on inrush (false trip), the PINN
+post-classifies the event and can issue a trip-retract command to the breaker
+if the breaker has not yet fully opened (within $<$10~ms).
+
+\subsection{Confidence Gate: Why It Eliminates False Trips Under CT Saturation}
+
+The slide's observation: \emph{``Confidence gate $\gamma$ eliminates false trips
+under CT saturation or communication latency.''}
+
+Under CT saturation, the measured current $\tilde{I}$ deviates from the
+true $I$ by a nonlinear error.  The LM residual $\|\rvec\|^2$ increases
+because the physical model $\mathbf{x}(t;\bm{\theta})$ can no longer
+fit the saturated waveform.  This increases $(1-R^2)$, which decreases
+$\gamma_R$, which reduces $\gamma$ below $\gammath$.  The Stage-2 gate
+\emph{blocks the trip} until the estimate is trustworthy.
+
+Under communication latency, the EKF estimate $\kibrhat$ at the Tier-2
+module may be stale.  The EKF covariance $P_k$ grows as the latency
+increases (process noise accumulation).  The confidence score component
+$\gamma_J$ (Jacobian conditioning) degrades when $P_k$ is large, pulling
+$\gamma$ below $\gammath$ and blocking the trip until fresh data arrives.
+
+\begin{resultbox}{Quantified Gate Performance}
+From the 110-scenario validation (TR-08):
+\begin{center}
+\small
+\begin{tabular}{@{}lrrl@{}}
+\toprule
+\textbf{Scenario} & \textbf{False trips (no gate)} & \textbf{False trips (with gate)} & \textbf{Reduction} \\
+\midrule
+CT saturation 5\% & 16 & 0 & $-100\%$ \\
+CT saturation 3\% & 8  & 0 & $-100\%$ \\
+Comm.\ latency 20~ms & 4 & 0 & $-100\%$ \\
+High-resistance fault & 3 & 1 & $-67\%$ \\
+\midrule
+\textbf{Total} & \textbf{31} & \textbf{1} & \textbf{$-97\%$} \\
+\bottomrule
+\end{tabular}
+\end{center}
+The one remaining false trip (high-resistance fault, $R_F > 50\,\Omega$)
+is a genuine edge case where $\Idiff$ is ambiguous; it is flagged as a
+``supervised review'' case and does not auto-trip.
+\end{resultbox}
+
+%% ── 5. Tier 3: WAPC ──────────────────────────────────────────────────────────
+\section{Tier 3: WAPC --- Topology-Aware Coordination}
+
+\begin{archbox}{Four WAPC Capabilities}
+\begin{description}[nosep]
+  \item[\textbf{C15} --- PMU Fault Localisation:]
+    Voltage-dip triangulation identifies the faulted line by maximising
+    $\Delta V_i + \Delta V_j$ over all line candidates $(i,j)$.  Uses
+    Dijkstra electrical distance for the dip model.  Correct in $<$10~ms
+    at 50~PMU frames/s.
+
+  \item[\textbf{C16} --- CTI-Graded Settings Dispatch:]
+    After localising the fault, the WAPC re-optimises relay settings
+    for the post-fault topology using projected-gradient coordination
+    subject to $t_\mathrm{primary} + \CTI \leq t_\mathrm{backup}$
+    ($\CTI \geq 0.3$~s per IEC~60255-151).  New settings dispatched via
+    MMS in $<$100~ms.
+
+  \item[\textbf{C17} --- HMAC-SHA256 GOOSE Integrity:]
+    Every GOOSE message is authenticated with a 32-byte HMAC tag
+    using IEEE~1588 PTP timestamp and sequence number.
+    Spoofing success rate: 12.3\% $\to$ $<$0.001\%.
+    Latency overhead: 0.72~ms ($\ll$ 4~ms IEC~61850 P2 limit).
+
+  \item[\textbf{C18} --- Closed-Loop Adaptation Protocol:]
+    CUSUM drift detection $\to$ LM re-estimation $\to$ settings dispatch
+    $\to$ GOOSE re-authentication.  Full cycle in $<$200~ms, maintaining
+    continuous protection during network state changes.
+\end{description}
+\end{archbox}
+
+\subsection{N-1 Security Verification}
+
+Before dispatching any setting change, the WAPC verifies N-1 security:
+it checks that \emph{all} lines in the post-fault topology have valid
+protection coverage, even if one additional element trips.  If N-1
+security is violated, the WAPC halts setting dispatch and raises an alarm
+for human review rather than applying a setting that could leave the
+network unprotected.
+
+%% ── 6. Cybersecurity Layer ───────────────────────────────────────────────────
+\section{Cybersecurity Layer: HMAC and Adversarial PINN Hardening}
+
+\begin{warnbox}{Why Adaptive Protection Introduces a New Attack Surface}
+Fixed relay settings are offline configurations --- an attacker cannot
+change a trip threshold by manipulating live data.  Adaptive protection
+creates an attack surface: if an attacker can inject false current measurements,
+they can manipulate $\kibrhat$ and thereby cause a misconfigured relay to
+miss a genuine fault (security failure) or trip on normal load (reliability
+failure).  The cybersecurity layer addresses both attack vectors.
+\end{warnbox}
+
+\subsection{HMAC-SHA256 for GOOSE Integrity}
+
+The GOOSE authentication tag:
+\begin{equation}
+  \mathrm{tag}_t = \mathrm{HMAC}_{k}\bigl(\mathrm{DataSet}_t \;\|\; t_\mathrm{UTC} \;\|\; \mathrm{SqNum}\bigr)
+  \label{eq:hmac}
+\end{equation}
+where $k$ is a 256-bit shared key, $t_\mathrm{UTC}$ is the microsecond-precision
+IEEE~1588 PTP timestamp, and $\mathrm{SqNum}$ is the GOOSE sequence number.
+The receiver rejects any message where:
+\begin{itemize}[nosep]
+  \item The HMAC tag does not verify (spoofing detection), or
+  \item $|t_\mathrm{UTC} - t_\mathrm{now}| > \delta_\mathrm{replay} = 5$~ms (replay detection).
+\end{itemize}
+
+\subsection{Adversarial PINN Hardening}
+
+A CT-injection attack perturbs the input by $\bm{\delta}$ with $\|\bm{\delta}\|_\infty \leq \varepsilon$
+to cause the PINN to misclassify.  The physics constraint in the PINN loss:
+\begin{equation}
+  \mathcal{L}_\mathrm{PINN} = \mathcal{L}_\mathrm{CE} + \lambda_\mathrm{phys}
+  \|\mathbf{KVL}(\mathbf{x})\|^2 + \lambda_\mathrm{phys}\|\mathbf{KCL}(\mathbf{x})\|^2
+  \label{eq:pinn_loss}
+\end{equation}
+forces any successful adversarial perturbation to also satisfy KVL/KCL.
+This raises the minimum perturbation energy $\varepsilon^*$ required for
+misclassification, making the attack substantially harder than against an
+unconstrained neural network.
+
+%% ── 7. The Information Flow: Data Path Analysis ──────────────────────────────
+\section{Information Flow: End-to-End Data Path}
+
+\begin{keybox}{Tracing One Fault Event Through All Three Tiers}
+\begin{enumerate}[nosep]
+  \item \textbf{Pre-fault (continuous):}  EKF receives IED phasor data
+        every 20~ms; outputs $(\kibrhat, \Zline, \Yibr)$ to all Tier-2 modules.
+  \item \textbf{Fault detection ($t = 0$):}  87L detects $\Idiff > \km\Ibias$.
+        Queries EKF for $\kibrhat$; computes $\km^*(\kibrhat)$.
+  \item \textbf{Stage-2 veto ($t = 0 \to 10$~ms):} Runs LM on first 10~ms
+        of fault window; computes $\gamma$.  If $\gamma \geq 0.85$: issues
+        GOOSE trip.  If $\gamma < 0.85$: waits one more cycle.
+  \item \textbf{HMAC sign ($t \approx 10$~ms):} GOOSE trip message is
+        tagged with HMAC and sent to circuit breaker IED.
+  \item \textbf{WAPC receives ($t \approx 15$~ms):} Fault localisation
+        ($\hat{L}$) by voltage-dip triangulation.  N-1 check.
+  \item \textbf{Settings re-dispatch ($t \approx 100$~ms):} WAPC computes
+        post-fault topology settings; dispatches via MMS.
+  \item \textbf{HMAC re-key ($t \approx 200$~ms):} Closed-loop protocol
+        completes; CUSUM resets; EKF re-initialises for new topology.
+\end{enumerate}
+\end{keybox}
+
+%% ── 8. Cross-Thesis Connections ──────────────────────────────────────────────
+\section{Cross-Thesis Connections}
+
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{@{}lXX@{}}
+\toprule
+\textbf{Chapter} & \textbf{What It Contributes to the Architecture} & \textbf{Where It Appears on Slide} \\
+\midrule
+Ch~3 (87L) & Adaptive slope $\km^*(\kibr)$; Stage-2 gate at $\gammath=0.85$ & Middle tier: ``87L / Adaptive slope'' \\
+Ch~4 (SyncOC) & LM fault current estimation; CTI coordination & Middle tier: ``SyncOC / Inv.\ curve'' \\
+Ch~5 (87T/87B) & SPRT inrush discriminator; bus diff & Middle tier: ``87T / 87B / SPRT'' \\
+Ch~5 (Dist.~21) & Quadrilateral Zone~1 correction & Middle tier: ``Dist.\ 21 / Zone adapt.'' \\
+Ch~5 (Microgrid) & Mode-switch protection; ROCOF & Middle tier: ``Microgrid / Mode-switch'' \\
+Ch~6 (DT/EKF) & Non-blocking EKF oracle; RMSE $\leq 0.024$~pu & Tier~1: ``Parameter Oracle'' \\
+Ch~6 (PINN) & Physics-constrained fault classifier & Middle tier: ``PINN'' \\
+Ch~7 (WAPC) & PMU localisation; CTI dispatch; C15--C18 & Tier~3: ``WAPC'' \\
+Ch~8 (Security) & HMAC GOOSE; adversarial hardening & Cybersecurity Layer \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+%% ── 9. Key Equations Reference Card ─────────────────────────────────────────
+\section{Key Equations Reference Card}
+
+\begin{formulabox}{All Equations You Must Know for This Slide}
+\begin{alignat}{2}
+  &\text{\textbf{EKF state:}} &\quad
+  \mathbf{x}_k &= [\kibr,\; Z_\mathrm{line},\; Y_\mathrm{ibr}]^\top
+  \tag{E1}\label{E1}\\[4pt]
+  &\text{\textbf{EKF process:}} &\quad
+  \mathbf{x}_{k+1} &= \mathbf{x}_k + \mathbf{w}_k,\quad Q = \mathrm{diag}(\sigma_{k_\mathrm{ibr}}^2, \sigma_Z^2, \sigma_Y^2)
+  \tag{E2}\label{E2}\\[4pt]
+  &\text{\textbf{Three-step action:}} &\quad
+  \text{Query} &\to \text{Compute}\;\km^*(\kibrhat) \to \text{Gate}\;\gamma\geq\gammath
+  \tag{E3}\label{E3}\\[4pt]
+  &\text{\textbf{WAPC fault localise:}} &\quad
+  \hat{L} &= \arg\max_{L_{ij}}[\Delta V_i + \Delta V_j]
+  \tag{E4}\label{E4}\\[4pt]
+  &\text{\textbf{CTI constraint:}} &\quad
+  t_\mathrm{primary} &+ \CTI \leq t_\mathrm{backup},\quad \CTI \geq 0.3\,\mathrm{s}
+  \tag{E5}\label{E5}\\[4pt]
+  &\text{\textbf{HMAC tag:}} &\quad
+  \mathrm{tag}_t &= \mathrm{HMAC}_k(\mathrm{DataSet}_t \;\|\; t_\mathrm{UTC} \;\|\; \mathrm{SqNum})
+  \tag{E6}\label{E6}\\[4pt]
+  &\text{\textbf{PINN loss:}} &\quad
+  \mathcal{L} &= \mathcal{L}_\mathrm{CE} + \lambda_\mathrm{phys}(\|\mathbf{KVL}\|^2+\|\mathbf{KCL}\|^2)
+  \tag{E7}\label{E7}\\[4pt]
+  &\text{\textbf{Replay reject:}} &\quad
+  |t_\mathrm{UTC} - t_\mathrm{now}| &> 5\,\mathrm{ms} \Rightarrow \text{discard}
+  \tag{E8}\label{E8}\\[4pt]
+  &\text{\textbf{HMAC risk reduction:}} &\quad
+  \text{Spoofing: } 12.3\% &\to <0.001\%,\quad\text{overhead }0.72\,\mathrm{ms}
+  \tag{E9}\label{E9}
+\end{alignat}
+\end{formulabox}
+
+%% ── 10. Speaker Script ────────────────────────────────────────────────────────
+\section{Timed Speaker Script (3 Minutes)}
+
+\begin{speakbox}
+\textbf{[0:00--0:35] The Big Picture}\\
+``This slide shows the three-tier SAMBP architecture: how every algorithm in the
+thesis connects into a single system.  The key design principle is separation of
+concerns.  Tier~1 is the Parameter Oracle: a continuously-running Extended Kalman
+Filter that tracks the IBR penetration ratio $\kibrhat$, line impedance, and IBR
+admittance from IED phasor data every 20 milliseconds.  All six protection modules
+in Tier~2 query this oracle before every threshold computation.  This gives the
+system a single, consistent $\kibrhat$ estimate, which is critical for relay
+coordination.''
+
+\medskip
+\textbf{[0:35--1:15] Tier 2 and the Three-Step Pattern}\\
+``The six Tier-2 modules are the protection algorithms.  Every one of them follows
+the same three-step action.  First, query the EKF oracle for $\kibrhat$.  Second,
+compute the adaptive threshold --- whether that is the adaptive bias slope for 87L,
+the adaptive pickup for SyncOC, or the corrected Zone~1 reach for the distance relay.
+Third, execute the Stage-2 confidence veto: only trip if $\gamma \geq \gamma_\mathrm{th}$.
+This Stage-2 gate is the key safety mechanism: under CT saturation or communication
+latency, the confidence score drops below the threshold and the trip is withheld
+until the estimate is trustworthy.  In the 110-scenario validation, this eliminated
+97\% of false trips without causing any missed trips.''
+
+\medskip
+\textbf{[1:15--1:50] Tier 3: WAPC}\\
+``Tier~3 is the Wide-Area Protection Coordinator.  It adds four capabilities that
+no individual relay can provide.  PMU-based fault localisation using voltage-dip
+triangulation.  N-1 security verification to ensure the post-fault topology has
+full protection coverage.  Automatic CTI-graded settings re-dispatch via IEC~61850
+MMS within 100 milliseconds.  And a closed-loop protocol that chains fault detection,
+re-estimation, settings update, and GOOSE re-authentication into one 200 millisecond
+cycle.''
+
+\medskip
+\textbf{[1:50--2:30] Cybersecurity Layer}\\
+``The cybersecurity layer cuts across all three tiers because adaptive protection
+introduces a new attack surface: if an adversary can corrupt the $\kibrhat$ estimate,
+they can cause the relay to malfunction.  Two mechanisms address this.  First,
+HMAC-SHA256 authentication on every GOOSE message prevents spoofing and replay ---
+spoofing success dropped from 12.3\% to below 0.001\% with only 0.72 millisecond
+overhead.  Second, adversarial hardening of the PINN classifier: the physics
+constraints embedded in the loss function force any successful adversarial perturbation
+to satisfy KVL and KCL, substantially raising the attack energy required.''
+
+\medskip
+\textbf{[2:30--3:00] The Thesis Map}\\
+``Every chapter of the thesis corresponds to one box in this diagram.  Chapter~1 is the introduction, Chapter~2 is
+the mathematical foundations that all modules share.  Chapters~4 through 8 are the
+six Tier-2 protection algorithms.  Chapter~6 is the EKF digital twin.  Chapter~10
+is the PINN.  Chapter~7 is the WAPC.  Chapter~8 is the cybersecurity layer.  The
+architecture is the thesis.''
+\end{speakbox}
+
+%% ── 11. Anticipated Q&A ──────────────────────────────────────────────────────
+\section{Anticipated Q\&A --- Five Likely Committee Questions}
+
+\begin{keybox}{Q1: Is the EKF oracle a single point of failure? What happens if it crashes?}
+\textbf{Answer:}  Yes, the EKF oracle is a potential single point of failure, and this
+is a design limitation acknowledged in the thesis.  Three mitigations are implemented:
+(a) The EKF is non-blocking --- each Tier-2 module stores the last valid $\kibrhat$
+estimate with a timestamp and uses it for up to 500~ms before raising a ``stale
+estimate'' alarm.  (b) Each module has a conservative fallback: if the EKF is
+unavailable, the module defaults to the commissioning-time $\kibr$ estimate
+(typically $\kibr = 0.3$ for a mixed-source feeder).  (c) The WAPC includes an
+EKF health watchdog that flags the fault condition and alerts operators.
+Future work (Ch~13) includes a hot-standby EKF replica.
+\end{keybox}
+
+\begin{keybox}{Q2: The three module pairs seem arbitrary. Why SyncOC with Microgrid and not SyncOC with 87L?}
+\textbf{Answer:}  The pairings reflect operational coupling, not algorithmic similarity.
+SyncOC and Microgrid are paired because the generator OC relay must change its setting
+group when the microgrid transitions between grid-connected and islanded modes; the
+Microgrid module triggers the SyncOC mode-switch via GOOSE.  87L and Dist.~21 are
+paired because they protect the same physical line (primary and backup); they share
+the same $\kibrhat$ input for consistent threshold computation.  87T/87B and PINN are
+paired because the transformer and bus events feed directly into the PINN classifier
+for post-classification.  The pairings are architectural dependencies, not groupings
+of similar algorithms.
+\end{keybox}
+
+\begin{keybox}{Q3: The HMAC key is shared at commissioning. What if an IED is compromised and the key is extracted?}
+\textbf{Answer:}  This is the key compromise vulnerability acknowledged in Chapter~12.
+The current implementation uses a static shared key, which is the standard practice
+in IEC~62351-6.  Future work (listed in Chapter~13) includes automatic key rotation
+per IEC~62351-8, which rotates the HMAC key every 24~hours using a public-key
+infrastructure.  Until key rotation is implemented, the mitigation is physical security
+of the IED hardware (tamper-evident enclosures) and network segmentation (VLAN
+isolation prevents an attacker from accessing the substation LAN even after key
+compromise of one IED).
+\end{keybox}
+
+\begin{keybox}{Q4: Can the confidence gate cause a missed trip if the CT saturation persists for multiple cycles?}
+\textbf{Answer:}  This is the fundamental security-vs-dependability trade-off in the
+Stage-2 gate.  Under persistent CT saturation (lasting $>$80~ms), the gate would
+continue to block the trip, which is a missed trip.  Two backup mechanisms address this:
+(a) After 80~ms (4 cycles) of blocked trips, the gate is overridden and the relay trips
+on the last known threshold --- this is the ``security timeout'' in the stage-2 logic.
+(b) The WAPC's PMU-based fault localisation does not rely on CT data; it uses bus
+voltages from PMUs, which are unaffected by CT saturation.  The WAPC can issue an
+independent trip command within 15~ms via the IEC~61850 MMS channel.
+\end{keybox}
+
+\begin{keybox}{Q5: How does the PINN trip-retract command work within 10 ms? Is that feasible?}
+\textbf{Answer:}  The trip-retract applies only to specific relay types that have an
+``output hold'' function: the relay asserts the trip contact for a configurable
+hold time (default 200~ms) before the contact opens and the breaker mechanism
+activates.  Modern numerical relays (e.g., Siemens SIPROTEC~5) support an output
+hold of 10--50~ms.  The PINN post-classification receives the 87T trip GOOSE via
+the substation LAN ($<$1~ms latency on a 100\,Mbps VLAN), runs the PINN inference
+($<$2~ms on an edge GPU), and sends a retract GOOSE command.  Total: $<$3~ms,
+well within the 10~ms hold window.  This mechanism was validated in software-in-the-loop
+(SIL) testing.
+\end{keybox}
+
+\vspace{1em}
+\begin{tcolorbox}[colback=iitmnavy!5,colframe=iitmnavy,arc=3pt,boxrule=1pt]
+\small\centering
+\textbf{Summary for the TSA Committee}\\[3pt]
+The three-tier SAMBP architecture separates parameter estimation (Tier~1 EKF),
+fast local protection (Tier~2 six modules) and wide-area coordination (Tier~3 WAPC)
+into independent layers with well-defined interfaces.  The common three-step pattern
+(query $\to$ compute $\to$ gate) and the Stage-2 confidence veto are the architectural
+glue that connects Ch~2's mathematics to Chs~3--8's implementations.  The
+cybersecurity layer protects the communication infrastructure that the adaptive
+system depends on.
+\end{tcolorbox}
+
+\end{document}

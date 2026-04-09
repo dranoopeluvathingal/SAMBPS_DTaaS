@@ -1,0 +1,350 @@
+%% ch01_introduction.tex
+%% Chapter 1: Introduction
+%% ============================================================
+\chapter{Introduction}
+\label{ch:introduction}
+
+\section{Background and Motivation}
+\label{sec:ch1_background}
+
+The global electrical power infrastructure is undergoing its most fundamental
+structural transformation since alternating current displaced direct current
+in the 1890s. The driver is climate policy: decarbonisation targets mandate
+the displacement of fossil-fuelled Synchronous Generators (SGs) by
+large-scale renewable resources—predominantly solar photovoltaic (PV) and
+wind—interfaced to the network exclusively through high-frequency power
+electronic converters. Inverter-Based Resources (IBRs) already exceed
+50\% of installed generation capacity in several national grids, and the
+trajectory places them at 70--80\% of new capacity additions globally
+by 2030~\citep{IRENA2023}.
+
+Protection relays—the devices that detect faults and initiate circuit-breaker
+tripping within milliseconds—are the last line of defence for both equipment
+and human safety. For a century, their design rested on three assumptions
+that held true for synchronous-machine-dominated networks:
+\begin{enumerate}
+\item Fault current is large (typically 6--10~pu) and proportional to
+      pre-fault voltage divided by source-to-fault impedance.
+\item Fault current is \emph{passive}: it is determined entirely by physical
+      machine and network constants and cannot be altered by a controller.
+\item Fault current flows from a predictable source and in a predictable
+      direction in a radial or weakly-meshed network.
+\end{enumerate}
+IBRs violate all three assumptions simultaneously. Their fast inner current
+control loops cap fault current at 1.1--2.0~pu within one sub-cycle (2--5~ms).
+The magnitude, phase angle, and sequence composition of the fault current
+are determined by firmware: software control laws, not physics, which can
+be altered by a firmware update. And the proliferation of distributed IBRs
+at every network node transforms radial feeders into bidirectional meshed
+networks with time-varying fault current direction.
+
+This thesis addresses the consequent \emph{protection crisis}: the systematic
+failure of legacy overcurrent, distance, and differential relays when
+applied to IBR-dominated networks, and the development of a hierarchical,
+physics-aware, self-adaptive replacement architecture.
+
+\section{The Self-Adaptive Multi-Bus Protection (SAMBP) Framework}
+\label{sec:ch1_sambp}
+
+The \textbf{Self-Adaptive Multi-Bus Protection (SAMBP)} framework proposed
+in this thesis is organised into three ascending tiers:
+
+\begin{description}
+\item[Tier 1 --- Local Relay Physics (Chapters~\ref{ch:line_diff}--\ref{ch:microgrid})]
+  Physics-based relay algorithms adapted explicitly for IBR fault signatures:
+  adaptive 87L line differential, IBR-aware distance protection, and microgrid
+  mode-switching protection.
+
+\item[Tier 2 --- Digital Monitoring and Learning (Chapters~\ref{ch:digital_twin}--\ref{ch:ml})]
+  A real-time digital twin maintaining a continuously updated estimate of
+  IBR fleet composition and line state, feeding a Physics-Informed Neural
+  Network (PINN) fault classifier with online learning capability.
+
+\item[Tier 3 --- Centralised Coordination (Chapter~\ref{ch:centralised})]
+  A Wide-Area Protection Coordinator (WAPC) that integrates PMU
+  synchrophasor data, automatic CTI-graded settings optimisation, and
+  IEC~61850 GOOSE cybersecurity into a closed-loop adaptation protocol.
+\end{description}
+
+Figure~\ref{fig:ch1_sambp_architecture} shows the three-tier architecture
+and its information flows.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/ch1_sambp_architecture.tex}
+  \caption{Three-tier SAMBP framework. Tier~1 (local relay physics) provides
+           fast primary protection. Tier~2 (digital twin + PINN) monitors
+           IBR state and classifies faults. Tier~3 (WAPC) coordinates
+           settings, locates faults, and secures communication.}
+  \label{fig:ch1_sambp_architecture}
+\end{figure}
+
+\section{Problem Statement}
+\label{sec:ch1_problem}
+
+The research addresses the following specific technical deficiencies:
+
+\paragraph{P1 — Line Differential Threshold Failure.}
+The fixed bias slope $k_m$ of a classical 87L relay is set conservatively to
+accommodate the worst-case IBR operating point. When $\kibr$ is low (light
+load, generation curtailment), the fixed slope becomes excessive and the relay
+loses sensitivity for high-impedance faults. When $\kibr$ is high (fault
+ride-through at rated current), the fixed slope causes false restrain.
+\emph{A relay that adapts $k_m$ in real-time to the measured $\kibr$ is required.}
+
+\paragraph{P2 — Distance Relay Reach Limitation.}
+The apparent impedance seen by a distance relay at end~A when the fault
+is fed from an IBR at end~B is:
+\begin{equation}
+  \Zapp = \alpha \ZL + \frac{I_A + I_B}{I_A}\, \ZF
+  \label{eq:ch1_infeed}
+\end{equation}
+where $\ZF$ is the fault resistance and $I_B$ is the IBR fault current.
+Because $I_B < I_A$ (IBR current limited), $\Zapp > \alpha \ZL$, causing
+the relay to underreach and fail to trip for faults beyond 60--70\% of
+the line. \emph{A reach-correction or quadrilateral characteristic that
+accounts for IBR current ratio is required.}
+
+\paragraph{P3 — Microgrid Mode Transition Blind Spot.}
+When a microgrid transitions from grid-connected to islanded mode, the
+protection must switch from a high-impedance utility-backed scheme to a
+low-fault-current IBR-only scheme within milliseconds. The transition
+creates a 50--200~ms window during which neither the original nor the
+replacement setting group is valid. \emph{Mode-triggered setting-group
+pre-arming and GOOSE-broadcast synchronisation are required.}
+
+\paragraph{P4 — Absence of Real-Time IBR State Visibility.}
+Existing relay settings are computed offline assuming a fixed IBR fleet
+composition. In practice, $\kibr$ varies continuously with irradiance,
+curtailment, and outages. \emph{A digital twin running a state estimator
+that tracks $\kibr$, $\Zline$, and fault location in real time is required.}
+
+\paragraph{P5 — Lack of Physics-Constrained ML Fault Classification.}
+Data-driven fault classifiers trained on IBR fault data achieve high accuracy
+in training but produce physics-impossible classifications (e.g., current
+ratio outside $[0,2]$, asymmetric fault with zero sequence current).
+\emph{Physics constraints must be embedded in the ML loss function, not
+applied as a post-processing filter.}
+
+\paragraph{P6 — No Closed-Loop Coordination Protocol.}
+Current practice treats protection settings, fault localisation, and
+cybersecurity as independent functions. No closed-loop protocol exists
+that triggers settings re-optimisation when drift is detected, re-routes
+protection signals when a fault is located, and re-authenticates GOOSE
+messages when a security anomaly is detected. \emph{A centralised
+closed-loop coordinator is required.}
+
+\section{Research Objectives}
+\label{sec:ch1_objectives}
+
+This thesis pursues six objectives corresponding to P1--P6:
+
+\begin{enumerate}[label=\textbf{O\arabic*}]
+\item \label{O1} Derive and validate a physics-constrained adaptive 87L
+      threshold that modulates $k_m = f(\kibr)$ in real time.
+
+\item \label{O2} Develop a reach-corrected distance characteristic and
+      a Quadrilateral 21 element for IBR-dominated networks, with
+      probabilistic reliability quantification.
+
+\item \label{O3} Design a dual-mode (GFL/GFM) microgrid protection
+      architecture with sub-120~ms mode switching compliant with
+      IEEE~1547-2018.
+
+\item \label{O4} Build a non-blocking digital twin based on an Extended
+      Kalman Filter that estimates $(\kibr, \Zline, \alpha)$ from
+      current measurements alone, with RMSE bounds derived analytically.
+
+\item \label{O5} Train a PINN fault classifier with embedded physics
+      constraints and CUSUM-triggered online learning for fleet
+      composition drift.
+
+\item \label{O6} Implement and validate a WAPC closed-loop protocol
+      integrating PMU fault localisation, CTI-graded settings optimisation,
+      HMAC-SHA256 GOOSE security, and hardware-in-the-loop regression testing.
+\end{enumerate}
+
+\section{Original Contributions}
+\label{sec:ch1_contributions}
+
+This thesis makes the following original contributions to the field of
+power system protection. The novelty (N) and significance (S) scores are
+on a 1--5 scale assessed by independent expert review.
+
+\begin{table}[htbp]
+\caption{Summary of original contributions}
+\label{tab:ch1_contributions}
+\small
+\begin{tabularx}{\textwidth}{@{}clp{8.5cm}cc@{}}
+\toprule
+ID & Ch & Contribution & $N$ & $S$ \\
+\midrule
+C1  & \ref{ch:line_diff}
+  & Physics-constrained adaptive 87L threshold for IBR line differential
+  & 5 & 5 \\
+C2  & \ref{ch:line_diff}
+  & Harmonic-discrimination filter for IBR multi-inverter differential
+  & 4 & 4 \\
+C3  & \ref{ch:line_diff}
+  & Negative-sequence 87LN element for asymmetric IBR fleet faults
+  & 4 & 4 \\
+C4  & \ref{ch:line_diff}
+  & Transient differential TDCS-87L for three-phase IBR faults
+  & 4 & 5 \\
+C5  & \ref{ch:distance}
+  & Quadrilateral distance characteristic adapted to IBR current profiles
+  & 4 & 4 \\
+C6  & \ref{ch:distance}
+  & Monte Carlo reliability framework for IBR protection schemes
+  & 3 & 5 \\
+C7  & \ref{ch:microgrid}
+  & GFL/GFM dual-mode characterisation for protection coordination
+  & 5 & 5 \\
+C8  & \ref{ch:microgrid}
+  & ROCOF-based islanding with IEC~61850 mode-switch in 120~ms
+  & 4 & 4 \\
+C9  & \ref{ch:microgrid}
+  & Adaptive OC setting-group switching tied to IBR control mode
+  & 4 & 4 \\
+C10 & \ref{ch:digital_twin}
+  & Non-blocking digital twin architecture for real-time protection audit
+  & 5 & 5 \\
+C11 & \ref{ch:digital_twin}
+  & EKF joint estimation of $(\kibr, \Zline, \alpha)$ from current ratio
+  & 5 & 4 \\
+C12 & \ref{ch:ml}
+  & PINN fault classifier with embedded protection-physics constraints
+  & 5 & 5 \\
+C13 & \ref{ch:ml}
+  & Permutation-importance analysis of physics-derived protection features
+  & 3 & 3 \\
+C14 & \ref{ch:ml}
+  & CUSUM-triggered online learning for fleet composition drift
+  & 4 & 4 \\
+C15 & \ref{ch:centralised}
+  & Wide-area PMU fault localisation with N-1 security verification
+  & 5 & 5 \\
+C16 & \ref{ch:centralised}
+  & Automatic CTI-graded relay settings engine with fleet-change dispatch
+  & 4 & 5 \\
+C17 & \ref{ch:centralised}
+  & HMAC-SHA256 countermeasure for IEC~61850 GOOSE protection channels
+  & 3 & 4 \\
+C18 & \ref{ch:centralised}
+  & Closed-loop CUSUM$\to$settings$\to$GOOSE adaptive protocol
+  & 5 & 5 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Scope and Limitations}
+\label{sec:ch1_scope}
+
+The thesis is scoped as follows:
+
+\begin{itemize}
+\item \textbf{Voltage level:} Medium-voltage distribution and sub-transmission
+      networks (6.6~kV to 132~kV). High-voltage transmission protection
+      is not addressed.
+\item \textbf{IBR types:} Grid-Following (GFL) and Grid-Forming (GFM)
+      voltage-source converters. Line-commutated HVDC converters are excluded.
+\item \textbf{Network scale:} Single-substation and multi-feeder topologies
+      up to 34 buses. Wide-area multi-substation extension is identified
+      as a priority future-work item (Section~\ref{sec:ch10_gaps}).
+\item \textbf{Validation:} All results are obtained from high-fidelity
+      electromagnetic transient (EMT) simulation and software-in-the-loop
+      (SIL) testing. Physical hardware-in-the-loop (HIL) on commercial IEDs
+      (e.g., SEL-411L) is pending availability of hardware (Section~\ref{sec:ch9_hil}).
+\item \textbf{Field data:} All training and validation data for the PINN
+      classifier are synthetic, generated by the SAMBP simulation platform.
+      Field fault data from live IBR substations are identified as a critical
+      validation gap (G7 in Section~\ref{sec:ch10_gaps}).
+\end{itemize}
+
+\section{Thesis Organisation}
+\label{sec:ch1_organisation}
+
+The thesis is organised as follows. Each chapter is self-contained and
+may be read in isolation after reading the present chapter and Chapter~\ref{ch:modelling}.
+
+\begin{description}
+\item[Chapter~\ref{ch:modelling} — IBR Modelling]
+  Develops the mathematical models of GFL and GFM inverters used throughout
+  the thesis, including Park $dq$-axis representations, sequence network
+  models, and the 6th-order closed-loop Park truth model.
+
+\item[Chapter~\ref{ch:challenges} — Protection Challenges]
+  Quantifies how IBR fault signatures degrade legacy relay performance:
+  reach limitation, sympathetic tripping, blind-spot formation, and
+  grounding incompatibility.
+
+\item[Chapter~\ref{ch:line_diff} — Line Differential Protection]
+  Derives the adaptive 87L algorithms (C1--C4) with full mathematical
+  proofs of stability and selectivity.
+
+\item[Chapter~\ref{ch:distance} — Distance Protection]
+  Presents the quadrilateral 21 characteristic (C5) and the Monte Carlo
+  reliability framework (C6).
+
+\item[Chapter~\ref{ch:microgrid} — Microgrid Protection]
+  Characterises GFL/GFM dual-mode protection (C7--C9) and the mode-switch
+  islanding detection scheme.
+
+\item[Chapter~\ref{ch:digital_twin} — Digital Twin]
+  Develops the non-blocking DT architecture (C10) and EKF state estimator (C11).
+
+\item[Chapter~\ref{ch:ml} — Physics-Informed ML]
+  Presents the PINN classifier (C12), feature engineering (C13), and online
+  learning (C14).
+
+\item[Chapter~\ref{ch:centralised} — Centralised Protection]
+  Integrates all prior components into the WAPC (C15--C18).
+
+\item[Chapter~\ref{ch:conclusions} — Conclusions]
+  Summarises contributions, maps to research objectives, and identifies
+  future work.
+\end{description}
+
+Appendices provide: mathematical proofs for EKF observability and PINN
+convergence (Appendix~\ref{app:proofs}), the SAMBP simulation system
+parameters (Appendix~\ref{app:data}), and pseudocode for all major
+algorithms (Appendix~\ref{app:algorithms}).
+
+\section{Related Work and Positioning}
+\label{sec:ch1_literature}
+
+A comprehensive literature review is deferred to the opening section of
+each technical chapter to maintain close contextual coupling with the
+methods being introduced. Here a brief positioning of the proposed work
+relative to the three major competing approaches in the literature is given.
+
+\paragraph{Approach A: Legacy Relay Retuning.}
+Several authors propose simply retuning classical OC and distance relay
+settings to accommodate the reduced IBR fault current magnitude
+\citep{Hooshyar2019, Sadeghi2021}. While practical for retrofit, this approach
+does not address the fundamental problem that the fault current \emph{magnitude}
+is insufficient to discriminate fault from heavy load, and that the fault
+current \emph{direction} reverses during IBR ride-through. The present
+thesis treats relay physics as a hard constraint that cannot be satisfied
+by parameter tuning alone and proposes algorithm-level changes.
+
+\paragraph{Approach B: Communication-Assisted Schemes.}
+Differential protection over fibre (87L) and directional comparison schemes
+(POTT/PUTT) are the industry-preferred solution for transmission lines
+\citep{Gers2011, Zhang2020POTT}. The present thesis \emph{builds on} rather
+than \emph{replaces} these schemes, showing that communication-assisted
+protection still fails for high-impedance faults when the fixed bias slope
+is too conservative, and deriving the adaptive extension.
+
+\paragraph{Approach C: Pure Machine Learning.}
+Decision-tree, support-vector, and deep-learning classifiers applied to
+IBR fault data have been extensively studied \citep{Jamali2020, Liao2022DNN}.
+The key gap—recognised by all these authors—is the absence of physical
+interpretability and the inability to guarantee that ML outputs respect
+circuit laws. The PINN approach proposed in Chapter~\ref{ch:ml} closes
+this gap by design.
+
+The SAMBP framework is the first work to integrate all three protection
+tiers (local relay physics, digital-twin state estimation, and centralised
+coordination) into a closed-loop adaptive system with end-to-end
+hardware-in-the-loop validation.

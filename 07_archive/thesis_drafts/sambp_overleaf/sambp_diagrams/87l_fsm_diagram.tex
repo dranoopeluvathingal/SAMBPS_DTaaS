@@ -1,0 +1,21 @@
+% 87L Communication Fallback FSM
+% Compile with: pdflatex 87l_fsm_diagram.tex
+
+\documentclass{standalone}
+\usepackage{tikz}
+\usetikzlibrary{automata,positioning}
+
+\begin{document}
+\begin{tikzpicture}[shorten >=1pt,node distance=3cm,on grid,auto]
+    \node[state,initial] (healthy) {Healthy};
+    \node[state] (degraded) [right=of healthy] {Degraded};
+    \node[state,accepting] (loss) [right=of degraded] {Loss};
+
+    \path[->]
+        (healthy) edge [bend left] node {Channel OK} (healthy)
+        (healthy) edge node {Jitter} (degraded)
+        (degraded) edge [bend left] node {Recovery} (healthy)
+        (degraded) edge node {Packet Loss} (loss)
+        (loss) edge [bend left] node {Restore} (healthy);
+\end{tikzpicture}
+\end{document}

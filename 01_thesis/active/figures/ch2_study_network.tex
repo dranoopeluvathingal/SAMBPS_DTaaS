@@ -1,0 +1,64 @@
+% ch2_study_network.tex — SAMBP 10-bus study network
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  bus/.style={circle, draw=black, thick, fill=gray!15,
+              minimum size=0.60cm, inner sep=0pt},
+  ibr/.style={ibrbox},
+  line/.style={draw=black, thick},
+  relay/.style={relaybox, minimum width=0.9cm, minimum height=0.4cm,
+                font=\tiny},
+  pmu/.style={pmunode, font=\tiny},
+]
+
+%% Bus positions
+\node[bus] (B0) at (0,   0) {0};
+\node[bus] (B1) at (-3,  -2) {1};
+\node[bus] (B2) at (3,   -2) {2};
+\node[bus] (B3) at (-4,  -4) {3};
+\node[bus] (B4) at (4,   -4) {4};
+\node[bus] (B5) at (-4,  -6) {5};
+\node[bus] (B6) at (4,   -6) {6};
+\node[bus] (B7) at (-3,  -8) {7};
+\node[bus] (B8) at (3,   -8) {8};
+\node[bus] (B9) at (0,   -9.5) {9};
+
+%% Grid infeed at Bus 0
+\node[draw=black, fill=yellow!20, minimum width=0.8cm, minimum height=0.5cm,
+      align=center, font=\tiny, above=0.2cm of B0] {Grid\\Infeed};
+
+%% Lines with relay labels
+\draw[line] (B0) -- node[relay, midway, left] {R01} (B1);
+\draw[line] (B0) -- node[relay, midway, right] {R02} (B2);
+\draw[line] (B1) -- node[relay, midway, left] {R03} (B3);
+\draw[line] (B2) -- node[relay, midway, right] {R04} (B4);
+\draw[line] (B3) -- node[relay, midway, left] {R05} (B5);
+\draw[line] (B4) -- node[relay, midway, right] {R06} (B6);
+\draw[line] (B5) -- node[relay, midway, left] {R07} (B7);
+\draw[line] (B6) -- node[relay, midway, right] {R08} (B8);
+\draw[line] (B7) -- node[relay, midway, below left] {R09} (B9);
+\draw[line] (B8) -- node[relay, midway, below right] {R10} (B9);
+
+%% IBR units
+\node[ibr, right=0.5cm of B3] {IBR\\0.5~pu};
+\node[ibr, left=0.5cm of B4] {IBR\\0.8~pu};
+\node[ibr, right=0.5cm of B5] {IBR\\0.4~pu};
+\node[ibr, left=0.5cm of B6] {IBR\\0.6~pu};
+\node[ibr, right=0.5cm of B7] {GFM\\1.0~pu};
+\node[ibr, left=0.5cm of B8] {GFM\\0.9~pu};
+\node[ibr, right=0.5cm of B9] {GFM\\1.0~pu};
+
+%% PMU markers at buses 0, 4, 7
+\node[pmu, above right=0.1cm of B0] {PMU};
+\node[pmu, above right=0.1cm of B4] {PMU};
+\node[pmu, above left=0.1cm of B7] {PMU};
+
+%% Legend
+\draw[line] (5.5,-8.5) -- (6.5,-8.5) node[right]{Transmission line};
+\node[ibr, right=0.1cm] at (5.5,-9.0) {IBR};
+\node[font=\tiny, right=1.0cm] at (5.5,-9.0) {IBR generation};
+\node[pmu, right=0.1cm] at (5.5,-9.5) {PMU};
+\node[font=\tiny, right=0.9cm] at (5.5,-9.5) {PMU location};
+\node[relay, right=0.1cm] at (5.5,-10.0) {Rxx};
+\node[font=\tiny, right=0.9cm] at (5.5,-10.0) {Distance relay};
+
+\end{tikzpicture}

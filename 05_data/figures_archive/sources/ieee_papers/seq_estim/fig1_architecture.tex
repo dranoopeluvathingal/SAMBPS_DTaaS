@@ -1,0 +1,94 @@
+% ============================================================
+%  Figure 1 — Architecture comparison: Stage 1 vs Stage 2
+%  Stand-alone tikzpicture; \input{} this in the main paper.
+% ============================================================
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  blk/.style   ={draw, thick, fill=gray!10,
+                  minimum width=1.5cm, minimum height=0.55cm,
+                  align=center},
+  sblk/.style  ={draw, thick, fill=blue!10,
+                  minimum width=1.5cm, minimum height=0.55cm,
+                  align=center},
+  cblk/.style  ={draw, thick, fill=orange!15,
+                  minimum width=1.5cm, minimum height=0.55cm,
+                  align=center},
+  rblk/.style  ={draw, thick, fill=green!12,
+                  minimum width=1.5cm, minimum height=0.55cm,
+                  align=center},
+  arr/.style   ={->, thick},
+  >=Latex
+]
+
+%% ---- Stage 1 (left column) -----------------------------------------
+\node[blk]              (s1in)   at (0, 0)    {$i_a(t)$\\\scriptsize(Phase A)};
+\node[sblk, below=0.45 of s1in]  (s1lm)              {2-Pass LM\\Estimator};
+\node[cblk, below=0.45 of s1lm]  (s1gate)            {Confidence\\Gate $\gamma$};
+\node[rblk, below=0.45 of s1gate] (s1out)             {Relay Update\\$I_p^*,\;TMS^*$};
+
+\draw[arr] (s1in)   -- (s1lm);
+\draw[arr] (s1lm)   -- (s1gate)   node[midway,right]{$\hat{\bm{\theta}}$};
+\draw[arr] (s1gate) -- (s1out)    node[midway,right]{$\hat{\bm{\theta}}^{pos}$};
+
+% label
+\node[above=0.05 of s1in, font=\small\bfseries,
+      align=center] {\underline{Stage 1 (Phase-Domain)}};
+
+% limitation box
+\node[draw, red!60, thick, dashed, fill=red!5,
+      minimum width=1.7cm, minimum height=0.55cm, align=center,
+      below=0.45 of s1out] (s1warn)
+     {\textcolor{red!70}{Phase-B/C residual}\\
+      \textcolor{red!70}{unmodelled for LL/SLG}};
+\draw[arr, red!60, dashed] (s1out) -- (s1warn);
+
+%% ---- Stage 2 (right column) ----------------------------------------
+\begin{scope}[xshift=4.5cm]
+
+\node[blk]  (s2in) at (0, 0)
+     {$i_a,i_b,i_c$\\\scriptsize(3 phases)};
+
+\node[sblk, below=0.45 of s2in]  (hilb)
+     {Analytic Signal\\$\mathcal{H}\{\cdot\}$};
+
+\node[sblk, below=0.45 of hilb]  (fort)
+     {Fortescue\\Decompose};
+
+\node[cblk, below=0.45 of fort]  (sel)
+     {Fault-Type\\Selector};
+
+% three branches
+\node[sblk, below left=0.5 and 0.8 of sel]  (lmp) {LM Est.\\$\hat{\bm\theta}^{(1)}$};
+\node[sblk, below=0.5 of sel]               (lmn) {LM Est.\\$\hat{\bm\theta}^{(2)}$};
+\node[sblk, below right=0.5 and 0.8 of sel] (lmz) {LM Est.\\$\hat{\bm\theta}^{(0)}$};
+
+% merge
+\node[cblk, below=1.25 of sel]     (merge)  {Confidence\\Gate $\gamma$};
+\node[rblk, below=0.45 of merge]   (s2out)  {Relay Update\\(from $\hat{\bm\theta}^{(1)}$)};
+
+\draw[arr] (s2in) -- (hilb);
+\draw[arr] (hilb) -- (fort)  node[midway,right]{$\mathcal{I}_{a,b,c}$};
+\draw[arr] (fort) -- (sel)   node[midway,right]{$I_1,I_2,I_0$};
+\draw[arr] (sel)  -- (lmp);
+\draw[arr] (sel)  -- (lmn);
+\draw[arr] (sel)  -- (lmz);
+\draw[arr] (lmp)  -- (merge);
+\draw[arr] (lmn)  -- (merge);
+\draw[arr] (lmz)  -- (merge);
+\draw[arr] (merge) -- (s2out) node[midway,right]{$\hat{\bm\theta}^{(1)}$};
+
+\node[above=0.05 of s2in, font=\small\bfseries, align=center]
+     {\underline{Stage 2 (Sequence-Domain)}};
+
+% "Active" labels on branches
+\node[above=0.05 of lmp, font=\tiny, blue!70] {Pos.};
+\node[above=0.05 of lmn, font=\tiny, blue!70] {Neg.};
+\node[above=0.05 of lmz, font=\tiny, blue!70] {Zero};
+
+\end{scope}
+
+% ---- Divider ----------------------------------------------------------------
+\draw[gray!50, thick, dashed] (2.2,-5.8) -- (2.2,0.4);
+\node[rotate=90, font=\footnotesize, gray!60] at (2.2,-2.8) {Extension};
+
+\end{tikzpicture}

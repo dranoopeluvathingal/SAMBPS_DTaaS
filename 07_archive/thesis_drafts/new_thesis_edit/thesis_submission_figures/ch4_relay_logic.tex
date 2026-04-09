@@ -1,0 +1,68 @@
+% ch4_relay_logic.tex — Hierarchical vote logic flowchart
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  blk/.style={block, minimum width=2.8cm, minimum height=0.7cm},
+  and/.style={draw=thesisblue, thick, fill=lightblue!40, circle,
+              minimum size=0.55cm, inner sep=0pt, font=\tiny},
+  or/.style={draw=thesisgreen, thick, fill=lightgreen!40, circle,
+             minimum size=0.55cm, inner sep=0pt, font=\tiny},
+]
+
+%% Input phasors
+\node[blk, fill=gray!10] (IN) at (0,0) {Input: $\phasor{I}_A$, $\phasor{I}_B$,
+                                          $\phasor{V}_{abc}$};
+
+%% Four elements
+\node[blk, draw=thesisblue] (E1) at (-4.5, -2.0) {T1: Adaptive 87L\\$k_m^\ast(\kibr)$};
+\node[blk, draw=thesisorange] (E2) at (-1.5, -2.0) {T2: Harmonic\\87LH};
+\node[blk, draw=thesisgreen] (E3) at ( 1.5, -2.0) {T3: Neg-seq\\87LN};
+\node[blk, draw=thesisgray] (E4) at ( 4.5, -2.0) {T4: TDCS\\Transient};
+
+\foreach \e in {E1,E2,E3,E4}
+  \draw[arr] (IN.south) -- (\e.north);
+
+%% Physics veto
+\node[blk, draw=thesisgray!70, fill=gray!10, minimum width=2.0cm] (VET) at (0,-4.0)
+  {Physics Veto\\$\hat{\kibr}, \hat{\alpha}, \hat{\Zline}$};
+
+%% PINN advisory
+\node[blk, draw=thesisgray, fill=violet!10, minimum width=2.0cm] (PINN) at (3.5,-4.0)
+  {PINN Advisory\\$p_c > 0.90$};
+
+%% OR gate
+\node[or] (OR) at (0, -5.5) {$\vee$};
+\foreach \e in {E1, E2, E3, E4}
+  \draw[arr, thesisblue] (\e.south) -- ++(0,-1.0) -| (OR.north);
+
+%% AND gate for PINN
+\node[and] (AND) at (2.5, -5.5) {$\wedge$};
+\draw[arr, thesisgray] (VET.south) -- ++(0,-0.5) -| (AND.north);
+\draw[arr, thesisgray] (PINN.south) -- ++(0,-0.5) -| (AND.north);
+
+%% Final OR
+\node[or] (FIN) at (0, -7.0) {$\vee$};
+\draw[arr, thesisblue] (OR.south) -- (FIN.north);
+\draw[arr, thesisgray] (AND.south) -- ++(0,-0.5) -| (FIN.north);
+
+%% Blocking condition
+\node[blk, draw=thesisred, fill=red!10, minimum width=2.0cm] (BLOCK)
+  at (-3.5, -7.0) {Block: $I_c/I_\mathrm{bias} > 0.10$};
+\draw[arrrev, thesisred, thick] (BLOCK.east) -- node[above, font=\tiny]{inhibit}
+  (FIN.west);
+
+%% Trip output
+\node[blk, fill=thesisred!20, draw=thesisred, minimum width=2.0cm] (TRIP)
+  at (0, -8.5) {TRIP OUTPUT\\$T \in \{0, 1\}$};
+\draw[arr, thesisred, very thick] (FIN.south) -- (TRIP.north);
+
+%% Coverage annotations
+\node[annotbox, right=0.1cm of E1] at (-2.8,-2.4)
+  {\tiny All faults\\nominal $\kibr$};
+\node[annotbox, right=0.1cm of E2] at (0.2,-2.4)
+  {\tiny IBR harmonic\\faults};
+\node[annotbox, right=0.1cm of E3] at (3.0,-2.4)
+  {\tiny Asymmetric\\IBR faults};
+\node[annotbox, right=0.1cm of E4] at (6.0,-2.4)
+  {\tiny 3P IBR-only\\lines};
+
+\end{tikzpicture}

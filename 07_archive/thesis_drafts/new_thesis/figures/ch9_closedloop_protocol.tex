@@ -1,0 +1,53 @@
+% ch9_closedloop_protocol.tex --- Closed-loop adaptive protocol timeline
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  phase/.style={draw=thesisblue, thick, fill=lightblue, rounded corners=3pt,
+                minimum height=0.8cm, align=center},
+]
+
+%% Timeline axis
+\draw[arr, black, very thick] (-0.5,0) -- (13.5, 0)
+  node[right, font=\small]{Time (minutes)};
+
+%% Time marks
+\foreach \t/\lab in {0/0, 0.5/0.5, 2.5/2.5, 3.5/3.5, 28.5/28.5, 30.5/30.5, 31/31}{
+  \draw (\t*0.42, 0.1) -- (\t*0.42, -0.1);
+  \node[below, font=\tiny] at (\t*0.42, -0.1) {\lab};
+}
+
+%% Phase boxes
+\node[phase, fill=thesisorange!20, draw=thesisorange,
+      minimum width=0.8cm, font=\tiny,align=center] at (0.3*0.42, 0.55) {Step 1\\EKF};
+
+\node[phase, fill=thesisgray!20, draw=thesisgray,
+      minimum width=1.2cm, font=\tiny,align=center] at (1.5*0.42, 0.55) {Step 2\\Settings};
+
+\node[phase, fill=lightblue, minimum width=0.5cm, font=\tiny]
+  at (3.0*0.42, 0.55) {Step 3\\Validate};
+
+\node[phase, fill=lightgreen, draw=thesisgreen,
+      minimum width=14cm, font=\tiny] at (5.8, 0.55) {Step 4: MMS Upload to 10 IEDs (sequential, 2.5~s each)};
+
+\node[phase, fill=lightorange, draw=thesisorange,
+      minimum width=0.8cm, font=\tiny]
+  at (30.0*0.042+0.5, 0.55) {S5\\Confirm};
+
+\node[phase, fill=red!15, draw=thesisred, minimum width=0.4cm, font=\tiny]
+  at (31.0*0.042+0.2, 0.55) {S6\\Activate};
+
+%% Horizontal brace for upload time
+\draw[decorate, decoration={brace, amplitude=6pt}]
+  (3.5*0.042+0.5, 1.0) -- (28.5*0.042+0.5, 1.0)
+  node[midway, above=6pt, font=\tiny]{25~s upload (bottleneck)};
+
+%% Annotations
+\node[font=\tiny, thesisorange, align=center] at (0.5*0.42, -0.7) {CUSUM\\alarm};
+\node[font=\tiny, thesisgreen,align=center] at (28.5*0.042+0.5, -0.7) {All IEDs\\updated};
+\node[font=\tiny, thesisred,align=center] at (31.0*0.042+0.5, -0.7) {GOOSE\\broadcast};
+
+%% Automated steps annotation
+\draw[decorate, decoration={brace, mirror, amplitude=5pt}]
+  (-0.2, -1.0) -- (31.0*0.042+0.6, -1.0)
+  node[midway, below=5pt, font=\tiny]{8/9 steps automated (Step 3 requires operator approval)};
+
+\end{tikzpicture}

@@ -1,0 +1,50 @@
+% ============================================================
+%  Figure 15 — Controller contribution to residual at L=300ms
+%  ybar chart: No ctrl / AVR / AVR+Gov / AVR+Gov+PSS
+% ============================================================
+\begin{tikzpicture}
+\begin{axis}[
+  width=\columnwidth, height=6.0cm,
+  ybar=4pt, bar width=14pt,
+  symbolic x coords={No ctrl, AVR, AVR$+$Gov, AVR$+$Gov$+$PSS},
+  xtick=data,
+  x tick label style={font=\small},
+  xlabel={Controller configuration},
+  ylabel={$\varepsilon_{\mathrm{RMS}}$ at $L=300\,\text{ms}$ (p.u.)},
+  ymin=0, ymax=0.20,
+  ytick={0,0.05,0.10,0.15,0.20},
+  ymajorgrids=true, grid style={gray!20},
+  label style={font=\small},
+  tick label style={font=\scriptsize},
+  title={Reduced-model mismatch at $L=300\,\text{ms}$: controller contribution},
+  title style={font=\small},
+  nodes near coords,
+  nodes near coords align={vertical},
+  every node near coord/.style={font=\tiny},
+  clip=false
+]
+
+\addplot[fill=gray!55, draw=gray!70]    coordinates { (No ctrl, 0.038) };
+\addplot[fill=red!35,  draw=red!55]     coordinates { (AVR, 0.097) };
+\addplot[fill=orange!40, draw=orange!60] coordinates { (AVR$+$Gov, 0.158) };
+\addplot[fill=blue!30, draw=blue!50]    coordinates { (AVR$+$Gov$+$PSS, 0.112) };
+
+% Acceptance threshold
+\draw[thick, red!60!black, dashed]
+     (axis cs:No ctrl, 0.05) -- (axis cs:AVR$+$Gov$+$PSS, 0.05);
+\node[right, font=\tiny, red!60!black]
+     at (axis cs:AVR$+$Gov$+$PSS, 0.055) {$\varepsilon_{\max}$};
+
+% Annotation: AVR is primary driver
+\draw[->, red!70!black, thick]
+     (axis cs:AVR, 0.125) -- (axis cs:AVR, 0.105)
+     node[above, font=\tiny, red!70!black, align=center]
+     at (axis cs:AVR, 0.130) {AVR: primary\\driver};
+
+% Annotation: PSS reduces residual
+\draw[<->, gray!60]
+     (axis cs:AVR$+$Gov, 0.165) -- (axis cs:AVR$+$Gov$+$PSS, 0.165)
+     node[midway, above, font=\tiny, gray!60] {PSS damps};
+
+\end{axis}
+\end{tikzpicture}

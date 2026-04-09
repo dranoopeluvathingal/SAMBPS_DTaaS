@@ -1,0 +1,472 @@
+%% slide07_study_note.tex
+%% Detailed Study Note --- Slide 7: Ch 4 SAMBP-87L Adaptive Line Differential
+%% TSA Meeting Preparation | Anoop V Eluvathingal | IIT Madras | 2026
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{booktabs,tabularx,array,longtable}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\algrenewcommand\algorithmicrequire{\textbf{Input:}}
+\algrenewcommand\algorithmicensure{\textbf{Output:}}
+\newcommand{\kibr}{k_\mathrm{ibr}}
+\newcommand{\Idiff}{I_\mathrm{diff}}
+\newcommand{\Ibias}{I_\mathrm{bias}}
+\newcommand{\km}{k_m}
+\newcommand{\kbase}{k_\mathrm{base}}
+\newcommand{\kfloor}{k_\mathrm{floor}}
+
+\definecolor{iitmnavy}{RGB}{15,40,80}
+\definecolor{iitmgold}{RGB}{180,140,0}
+\definecolor{lightblue}{RGB}{220,235,250}
+\definecolor{lightyellow}{RGB}{255,252,220}
+\definecolor{lightred}{RGB}{255,235,235}
+\definecolor{lightgreen}{RGB}{230,255,230}
+\definecolor{lightpurple}{RGB}{240,230,255}
+\definecolor{lightorange}{RGB}{255,243,225}
+
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{keybox}[1]{colback=lightblue,colframe=iitmnavy,
+  fonttitle=\bfseries\color{white},title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{formulabox}[1]{colback=lightyellow,colframe=iitmgold,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{resultbox}[1]{colback=lightgreen,colframe=green!50!black,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{warnbox}[1]{colback=lightred,colframe=red!60!black,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{archbox}[1]{colback=lightpurple,colframe=iitmnavy!60,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{speakbox}{colback=orange!8,colframe=orange!70!black,
+  fonttitle=\bfseries,title={What to Say at the TSA Meeting},arc=3pt,
+  boxrule=1pt,breakable}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{iitmnavy}\small\textbf{TSA Meeting Study Note}}
+\fancyhead[R]{\color{iitmnavy}\small Slide 7 --- Ch~3 SAMBP-87L Adaptive Line Differential}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\small\color{gray}Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ 2026}
+\renewcommand{\headrulewidth}{1.5pt}
+\renewcommand{\headrule}{\color{iitmnavy}\hrule width\headwidth height\headrulewidth}
+
+\titleformat{\section}{\large\bfseries\color{iitmnavy}}{}{0em}{}[\color{iitmnavy}\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{iitmnavy!80}}{}{0em}{}
+
+\hypersetup{colorlinks=true,linkcolor=iitmnavy,urlcolor=iitmnavy}
+
+\begin{document}
+
+%% ── Title Block ──────────────────────────────────────────────────────────────
+\begin{tcolorbox}[colback=iitmnavy,coltext=white,arc=4pt,boxrule=0pt]
+\begin{center}
+  {\Large\bfseries TSA Meeting --- Slide 7 Study Note}\\[4pt]
+  {\large Ch~3: SAMBP-87L --- Adaptive Line Current Differential Protection}\\[6pt]
+  {\normalsize Contributions C1, C2, C3, C4 $\cdot$ Chapter 3 $\cdot$ SAMBP Framework}\\[2pt]
+  {\small Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ PhD Thesis 2026}
+\end{center}
+\end{tcolorbox}
+
+\vspace{6pt}
+
+%% ── 1. Slide Overview ────────────────────────────────────────────────────────
+\section{Slide Overview and Narrative}
+
+\begin{keybox}{What This Slide Shows}
+Slide~7 presents \textbf{Ch~3: SAMBP-87L}, the adaptive line current differential relay. The slide shows two complementary aspects:
+
+\textbf{Left panel --- Adaptive slope law:} The central equation is the IBR-aware bias slope:
+\[
+  \km(\kibr) = \kbase \cdot \frac{(1-\kibr)^2}{(1+\kibr)^2} + \kfloor
+\]
+with two limiting behaviours: as $\kibr \to 1$ (IBR dominates), $\km \to \kfloor$ (minimum slope, preserving sensitivity); as $\kibr \to 0$ (SG network), $\km \to \kbase$ (classical conservative setting). The Stage-2 veto gate requires $\gamma \geq 0.85$ before the trip command is issued. The Lyapunov stability proof --- $V = \|\kibr - \hat{\kibr}\|^2$, $\dot{V} < 0$ under bounded CT noise --- guarantees estimation convergence.
+
+\textbf{Right panel --- Relay logic:} Six-step execution loop: (1) sample phasors $I_S$, $I_R$ at 1~kHz; (2) compute $\kibr$ via LM inverse estimator; (3) update $\km(\hat{\kibr})$ every 20~ms; (4) evaluate the operate/restrain criterion; (5) Stage-2 veto (check $\gamma \geq 0.85$); (6) issue trip if both stages pass.
+
+\textbf{Key observation:} The 20~ms update latency is within the IEC~60255 protection-response window, meaning the adaptive boundary tracks IBR operating changes fast enough to remain valid throughout the fault transient.
+\end{keybox}
+
+\subsection{Four Contributions in Chapter~3}
+
+The slide focuses on C1 (adaptive slope). The full chapter delivers four complementary contributions:
+
+\begin{center}
+\begin{tabular}{@{}clll@{}}
+\toprule
+\textbf{ID} & \textbf{Element} & \textbf{Target fault type} & \textbf{Key mechanism} \\
+\midrule
+C1 & Adaptive 87L  & All fault types, main element & Adaptive slope $\km(\kibr)$ \\
+C2 & 87LH harmonic & IBR harmonic, blocks inrush  & 2nd/5th harmonic ratio $h_2 < 0.15$ \\
+C3 & 87LN neg-seq  & Asymmetric (SLG, LL, LLG)   & $\rho_2 = 2$ guarantee \\
+C4 & TDCS-87L      & 3-phase faults on IBR-only lines & Transient $dI/dt$ spike \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Combined result (TR-23/TR-27):} Baseline 87L alone covers 12/21 scenarios (57\%). Adding 87LN (C3) recovers 5 SLG cases: 17/21 (81\%). Adding TDCS-87L (C4) recovers the remaining 4 symmetric 3-phase IBR scenarios: 21/21 (100\%).
+
+%% ── 2. Engineering Challenge ─────────────────────────────────────────────────
+\section{Engineering Challenge: Why Fixed Slope Fails at High IBR Penetration}
+
+\begin{warnbox}{The Core Problem: Operate-to-Bias Ratio Collapses with IBR}
+The classical 87L relay operates when $\Idiff > \km \cdot \Ibias + I_0$. During an internal fault:
+\[
+  \Idiff = |\hat{I}_A + \hat{I}_B|, \qquad \Ibias = \frac{|\hat{I}_A| + |\hat{I}_B|}{2}
+\]
+where $\hat{I}_A$ is the grid-fed current and $\hat{I}_B = \kibr \cdot I_\mathrm{rated}$ is the IBR current. The operate-to-bias ratio (OBR) is:
+\begin{equation}
+  \rho = \frac{\Idiff}{\Ibias} = \frac{2\sqrt{I_A^2 + I_B^2 + 2I_A I_B \cos\Delta\phi}}{I_A + I_B}
+  \label{eq:rho_general}
+\end{equation}
+The \emph{minimum} OBR (worst case: sources in anti-phase, $\cos\Delta\phi = -1$) is:
+\begin{equation}
+  \rho_\mathrm{min} = \frac{2|I_A - I_B|}{I_A + I_B}
+    = \frac{2(1-\kibr)}{1+\kibr}
+  \label{eq:rho_min}
+\end{equation}
+
+\medskip
+\begin{tabular}{@{}lrll@{}}
+\toprule
+$\kibr$ & $\rho_\mathrm{min}$ & Fixed slope $\km = 0.30$ & Verdict \\
+\midrule
+0.10 & 1.636 & $1.636 > 0.30$ & \textbf{Operate} (easy) \\
+0.40 & 0.857 & $0.857 > 0.30$ & \textbf{Operate} \\
+0.50 & 0.667 & $0.667 > 0.30$ & \textbf{Operate} (marginal) \\
+0.70 & 0.176 & $0.176 < 0.30$ & \textbf{FAIL --- no trip} \\
+0.85 & 0.081 & $0.081 < 0.30$ & \textbf{FAIL --- no trip} \\
+\bottomrule
+\end{tabular}
+
+\medskip
+At $\kibr = 0.70$, the minimum OBR ($\rho_\mathrm{min} = 0.176$) falls below the fixed slope ($0.30$). The relay does not trip even for a solid internal fault. The solution: make $\km$ decrease as $\kibr$ increases. But decrease it \emph{safely} --- not so far that CT errors cause a false trip.
+\end{warnbox}
+
+\subsection{The Fundamental Tension}
+
+There is a design tension between two requirements:
+\begin{itemize}[nosep]
+  \item \textbf{Sensitivity} (trip for internal faults): requires $\km < \rho_\mathrm{min} = 2(1-\kibr)/(1+\kibr)$.
+  \item \textbf{Stability} (no false trip during CT errors): requires $\km > 2\epsilon_\mathrm{CT}$ (Class~1P: $\km > 0.02$).
+\end{itemize}
+A fixed slope cannot satisfy both simultaneously across all $\kibr$: for low $\kibr$, $\km = 0.30$ provides a 15:1 stability margin but is unnecessarily conservative for sensitivity; for high $\kibr$, $\km = 0.30$ provides adequate stability but exceeds $\rho_\mathrm{min}$, blocking the trip. The adaptive slope resolves this tension by tracking $\kibr$ in real time.
+
+%% ── 3. Adaptive Slope Derivation ─────────────────────────────────────────────
+\section{Adaptive Slope Derivation (Contribution C1)}
+
+\begin{formulabox}{Adaptive Bias Slope: Physics Derivation}
+The optimal slope simultaneously satisfies stability and sensitivity at every $\kibr$:
+\begin{equation}
+  \km^\ast(\kibr) = \max\!\left[
+    \underbrace{2\epsilon_\mathrm{CT} + \frac{I_c}{I_\mathrm{bias}}}_{\text{stability floor}},\;
+    \frac{1}{1-\delta_m}\underbrace{\frac{2\sqrt{1+\kibr^2-2\kibr\cos\psi}}{1+\kibr}}_{\text{sensitivity ceiling}}
+  \right]
+  \label{eq:km_optimal}
+\end{equation}
+where $\psi = \arg(Z_F/(Z_S + Z_L)) + \pi$ is the fault angle and $\delta_m = 0.05$ (5\% design margin).
+
+\textbf{Simplified closed form (the slide equation):}
+\begin{equation}
+  \km(\kibr) = \kbase \cdot \frac{(1-\kibr)^2}{(1+\kibr)^2} + \kfloor
+  \label{eq:km_slide}
+\end{equation}
+where $\kbase \approx 0.5$ and $\kfloor \approx 0.05$.
+
+\textbf{Physical interpretation of the two limits:}
+\begin{itemize}[nosep]
+  \item $\kibr \to 0$ (all-SG network): $(1-0)^2/(1+0)^2 = 1$, so $\km \to \kbase + \kfloor \approx 0.55$. This is the conservative high-slope setting used in classical SG-only networks.
+  \item $\kibr \to 1$ (IBR-dominated): $(1-1)^2/(1+1)^2 = 0$, so $\km \to \kfloor \approx 0.05$. The slope reaches its minimum --- just above the CT error floor --- to preserve sensitivity for the weak IBR fault current.
+\end{itemize}
+
+\textbf{Why $(1-\kibr)^2/(1+\kibr)^2$?} This ratio tracks $\rho_\mathrm{min}^2/4$, the squared operate-to-bias ratio at worst-case phase angle. The adaptive slope therefore stays always just below the sensitivity ceiling while remaining above the stability floor.
+\end{formulabox}
+
+\subsection{Real-Time k-ibr Estimation}
+
+The relay estimates $\kibr$ from the received remote current phasor:
+\begin{equation}
+  \hat{\kibr}(t) = \frac{|\hat{I}_R(t)|}{I_\mathrm{rated}}
+  \label{eq:kibr_est}
+\end{equation}
+where $\hat{I}_R$ is received over IEC~61850 GOOSE within 4~ms from the remote relay ($I_R \equiv I_B$ in the slide notation, Remote end current). A first-order smoothing filter prevents noise spikes from causing erratic slope updates:
+\begin{equation}
+  \hat{\kibr}(t) \leftarrow (1-\lambda)\hat{\kibr}(t-1) + \lambda\hat{\kibr}_\mathrm{raw}(t), \quad \lambda = 0.10
+  \label{eq:kibr_filter}
+\end{equation}
+Time constant: $\approx 10$ samples at 1~kHz sampling = 10~ms. The slope is then updated every 20~ms (two filter time constants), ensuring the estimate has converged before it is applied.
+
+%% ── 4. Lyapunov Stability Proof ──────────────────────────────────────────────
+\section{Lyapunov Stability Proof}
+
+\begin{archbox}{The Slide Claim: V-dot less than zero under bounded CT noise}
+The slide states a Lyapunov stability result for the $\kibr$ estimator:
+\[
+  V = \|\kibr - \hat{\kibr}\|^2, \qquad \dot{V} < 0 \;\text{under bounded CT noise}
+\]
+
+\textbf{What this means:} $V$ is the squared estimation error --- the gap between the true IBR penetration $\kibr$ and the relay's real-time estimate $\hat{\kibr}$. The Lyapunov condition $\dot{V} < 0$ (negative time derivative) means the estimation error is strictly decreasing --- the estimator converges. This holds as long as the CT measurement noise is bounded (not arbitrarily large).
+
+\textbf{Proof sketch:}
+\begin{enumerate}[nosep]
+  \item Define the estimation update: $\hat{\kibr}_{k+1} = (1-\lambda)\hat{\kibr}_k + \lambda \cdot (|\hat{I}_R|/I_\mathrm{rated})$.
+  \item The CT-corrupted measurement is $|\hat{I}_R| = \kibr I_\mathrm{rated} + \nu$ where $|\nu| \leq \bar{\nu}$ (bounded noise).
+  \item The update error: $\kibr - \hat{\kibr}_{k+1} = (1-\lambda)(\kibr - \hat{\kibr}_k) - \lambda\nu$.
+  \item Then $V_{k+1} = (1-\lambda)^2 V_k + \lambda^2\nu^2 - 2\lambda(1-\lambda)(\kibr-\hat{\kibr}_k)\nu$.
+  \item In expectation (zero-mean noise): $\mathbb{E}[V_{k+1}] = (1-\lambda)^2 \mathbb{E}[V_k] + \lambda^2\bar{\nu}^2$.
+  \item For $(1-\lambda)^2 < 1$ (satisfied for $\lambda \in (0,1)$): $\mathbb{E}[V_{k+1}] < \mathbb{E}[V_k]$ whenever $V_k > \lambda^2\bar{\nu}^2/(1-(1-\lambda)^2)$ --- i.e., the estimator converges to an error ball of radius proportional to $\bar{\nu}$ (bounded by CT noise).
+\end{enumerate}
+
+\textbf{Why it matters to the examiner:} This proves the adaptive relay is \emph{not} ``guessing'' the IBR level --- it provably converges to the correct $\kibr$ and therefore applies the correct slope. Without this proof, the examiners could argue that $\hat{\kibr}$ might diverge or oscillate.
+\end{archbox}
+
+%% ── 5. Four Elements: C2, C3, C4 ────────────────────────────────────────────
+\section{The Three Additional Elements: C2, C3, C4}
+
+\subsection{C2: Harmonic Discrimination 87LH}
+
+IBR fault current contains 2nd and 5th harmonic components from filter resonance during current controller transients. The harmonic ratio is:
+\begin{equation}
+  h_2 = \frac{I_2}{I_1} \approx 0.15 \quad \text{(GFL inverter, 500~Hz bandwidth)}
+  \label{eq:h2}
+\end{equation}
+The 87LH element trips when the fundamental differential exceeds threshold ($I_{\mathrm{diff},1} > \km \Ibias + I_0$) \textbf{AND} the harmonic ratio is below the inrush blocking threshold:
+\begin{equation}
+  \frac{I_{\mathrm{diff},2}}{I_{\mathrm{diff},1}} < h_\mathrm{block} = 0.15
+  \label{eq:87lh}
+\end{equation}
+This specifically distinguishes IBR faults ($h_2 \approx 0.15$, large fundamental differential) from transformer inrush ($h_2 > 0.20$, near-zero fundamental differential). Note: \textbf{the harmonic block threshold is lower than the standard inrush criterion of 0.20} --- providing a 5\% margin that prevents the 87LH from blocking on IBR fault currents.
+
+\subsection{C3: Negative-Sequence 87LN Element}
+
+\begin{resultbox}{Key Result: IBR Suppression Helps 87LN (not hurts)}
+For asymmetric faults (SLG, LL, LLG), IBR negative-sequence suppression produces a counterintuitive benefit:
+
+When IBR suppresses its negative-sequence output ($\hat{I}_{B,2}^\mathrm{IBR} = 0$), the negative-sequence differential current equals only the grid-side contribution:
+\[
+  \hat{I}_{\mathrm{diff},2} = \hat{I}_{A,2}
+\]
+The negative-sequence bias is $I_{\mathrm{bias},2} = (I_{A,2} + 0)/2 = I_{A,2}/2$.
+
+Therefore the negative-sequence OBR is:
+\begin{equation}
+  \rho_2 = \frac{\hat{I}_{\mathrm{diff},2}}{I_{\mathrm{bias},2}} = \frac{I_{A,2}}{I_{A,2}/2} = 2
+  \label{eq:rho2}
+\end{equation}
+
+$\rho_2 = 2$ \textbf{regardless of $\kibr$}. Since the slope threshold $k_{m,2} = 1.5 < 2$, the 87LN element \textit{always} operates for any asymmetric internal fault when the IBR suppresses negative-sequence. IBR sequence suppression --- usually viewed as a weakness for protection --- here becomes an \textbf{asset}.
+\end{resultbox}
+
+\subsection{C4: Transient Differential Current Signature (TDCS-87L)}
+
+Three-phase IBR-only faults produce $I_2 = I_0 = 0$ at the relay terminal --- making 87LN and all sequence elements inactive. TDCS-87L exploits the travelling-wave transient in the first 5~ms post-fault:
+
+\begin{equation}
+  S_\mathrm{TDCS}(t) = \sum_{k=t-N_w}^{t}
+  \left[\frac{d}{dt}\bigl(\Idiff(t)\bigr)\right]^2 \Delta t
+  \label{eq:tdcs}
+\end{equation}
+where $N_w = 5$~ms sliding window. An internal fault produces a sharp $dI_\mathrm{diff}/dt$ spike when the travelling wave arrives. External faults and load steps produce near-zero differential transients (Kirchhoff: $\Delta I = 0$ for balanced load steps). Threshold: $S_\mathrm{TDCS} > 3\sigma$ above pre-fault RMS.
+
+\textbf{TR-23 results:} TDCS detection limit $k_\mathrm{det,min} \geq 0.040$~pu. Security: 7/7 balanced load steps correctly rejected (no false trips). External fault security: 7/7 correct (CT mismatch $\leq 0.5\%$, margin $1.77\times$).
+
+%% ── 6. Stage-2 Veto Gate ─────────────────────────────────────────────────────
+\section{Stage-2 Veto Gate}
+
+\begin{archbox}{Stage-2 Gate: gamma greater than or equal to 0.85}
+The Stage-2 veto gate is the SAMBP framework's quality supervisor. For the 87L relay, the gate requires $\gamma \geq 0.85$ before any trip command is issued (higher threshold than the 0.70 used in SAMBP-SyncOC, reflecting the greater consequence of a line differential mis-trip).
+
+$\gamma$ is computed from the LM estimator quality metrics:
+\begin{itemize}[nosep]
+  \item \textbf{$\gamma_R$} (residual fit): $R^2$ of the current waveform fit to the differential model.
+  \item \textbf{$\gamma_J$} (Jacobian condition): $\exp(-\alpha_J \kappa_n)$; poor conditioning (CT saturation) lowers this.
+  \item \textbf{$\gamma_\Delta$} (stability): change in $\hat{\kibr}$ from the previous estimate.
+  \item \textbf{$\gamma_P$} (physical bounds): all parameters within the feasible set $\Theta$.
+\end{itemize}
+
+\textbf{If $\gamma < 0.85$:} Trip is vetoed. The relay holds its current decision. This prevents spurious trips during:
+\begin{itemize}[nosep]
+  \item CT saturation (high-load through-fault): $\kappa_n$ spikes, $\gamma_J$ drops.
+  \item Line energisation transients: large $\hat{\kibr}$ change, $\gamma_\Delta$ drops.
+  \item Communication interruption (GOOSE loss): $\hat{I}_R$ unavailable, $\gamma_P$ fails.
+\end{itemize}
+
+\textbf{Timing:} Stage-2 check adds $< 1$~ms to the relay cycle (confidence score is evaluated in the same DSP loop as the LM estimator). Total relay cycle: phasor sampling (1~ms) + LM estimation (5~ms) + Stage-2 check ($< 1$~ms) + slope update (1~ms) = $\approx 8$~ms per trip decision.
+\end{archbox}
+
+%% ── 7. Results ───────────────────────────────────────────────────────────────
+\section{Results: Cumulative Coverage from 57 to 100 Percent}
+
+\begin{resultbox}{TR-23 Figure 3: Cascading Improvement Across Three SAMBP Generations}
+The 21-scenario test suite covers the full $(\kibr, R_F, \text{fault type})$ operating space. The three bars show cumulative coverage as each element is added:
+
+\medskip
+\begin{center}
+\begin{tabular}{@{}clrll@{}}
+\toprule
+\textbf{Generation} & \textbf{Configuration} & \textbf{Scenarios correct} & \textbf{Coverage} & \textbf{Gap closed} \\
+\midrule
+Baseline & 87L only (fixed slope)  & 12/21 & 57\% & --- \\
+TR-22    & 87L + 87LN              & 17/21 & 81\% & SLG with IBR neg-seq suppr. \\
+TR-23    & 87L + 87LN + TDCS       & 21/21 & 100\% & Symmetric 3PH, IBR-only lines \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+\textbf{The 9 baseline failures:}
+\begin{itemize}[nosep]
+  \item 5 SLG failures: $\kibr < 0.12$~pu --- baseline 87L fundamental current below threshold; recovered by 87LN.
+  \item 4 three-phase failures: symmetric fault on IBR-only line --- $I_2 = I_0 = 0$, no sequence element active; recovered by TDCS.
+\end{itemize}
+
+\textbf{TR-27 integration test (21 scenarios including IBR-specific):} All 21/21 correctly resolved by the combined protection chain (87L + 87LN + TDCS + adaptive slope). No false trips in 7 load-step security tests.
+\end{resultbox}
+
+%% ── 8. Best Figure Recommendation ───────────────────────────────────────────
+\section{Best Figure to Show at the TSA Meeting}
+
+\begin{keybox}{Recommended Figure: TR-23 Figure 3 --- Cumulative Scenario Coverage Bar Chart}
+\textbf{What it shows:} Three grouped bars (Baseline 87L only, TR-22 with 87LN, TR-23 with TDCS) with colour coding: dark green = baseline correct, medium green = recovered by 87LN (SLG), light green = recovered by TDCS (3PH IBR), red = undetected failure. The chart shows the progression 12/21 (57\%) $\to$ 17/21 (81\%) $\to$ 21/21 (100\%).
+
+\textbf{Why it is the best figure:}
+\begin{enumerate}[nosep]
+  \item It is the thesis's ``zero-gap'' result in visual form --- a single figure proves all 21 scenarios are covered.
+  \item Each colour segment identifies which element closed which gap, making the design logic immediately visible.
+  \item Examiners can immediately see that the 4 TDCS-recovered cases (light green) would have been completely missed without C4, and can ask an intelligent question about why.
+  \item It does not require any mathematical knowledge to understand --- the story is told entirely visually.
+\end{enumerate}
+
+\textbf{Where to find it:} TR-23/2026, page~5, Figure~3. Source: SAMBP test suite, integration module.
+
+\textbf{Secondary figure:} The adaptive slope curve $\km^\ast(\kibr)$ vs $\kibr$ (ch04 Figure~1). This is the best figure for explaining the slide's main equation: it shows the classical fixed slope (dashed line at $\km = 0.30$) crossing the sensitivity ceiling for $\kibr > 0.5$, and the adaptive slope (solid curve) tracking just below the ceiling while staying above the stability floor. Draw this on the whiteboard if the figure is not printed.
+
+\textbf{Whiteboard supplement (60 seconds):} Draw two curves vs $\kibr$: (1) the sensitivity ceiling $\rho_\mathrm{min} = 2(1-\kibr)/(1+\kibr)$ --- a decreasing curve from 2 at $\kibr=0$ to 0 at $\kibr=1$; (2) a horizontal fixed slope at 0.30. Mark where they cross ($\kibr \approx 0.54$) as the ``over-restraint boundary''. Then draw the adaptive slope tracking below the ceiling. This makes the design motivation unmistakable.
+\end{keybox}
+
+%% ── 9. Cross-Thesis Connections ──────────────────────────────────────────────
+\section{Cross-Thesis Connections}
+
+\begin{archbox}{How This Chapter Connects to Other Work}
+\textbf{Depends on (upstream):}
+\begin{itemize}[nosep]
+  \item \textbf{Ch~2 (SAMBP Foundations)}: The LM inverse estimator, Stage-2 gate, Lyapunov stability framework, and bounded update law are all developed in Ch~2 and applied here. This is the \emph{first thesis chapter to deploy the full SAMBP framework}.
+  \item \textbf{Ch~3 (IBR Characterisation)}: The failure modes addressed --- fixed slope insensitive for $\kibr > 0.5$, sequence element blind spots on IBR lines --- are identified as F2 and F3 in Ch~3.
+\end{itemize}
+
+\textbf{Enables (downstream):}
+\begin{itemize}[nosep]
+  \item \textbf{Ch~6 (SAMBP-87T)}: The adaptive slope concept is extended from line to transformer differential in Ch~6. The SPRT replaces the threshold comparison, but the same $\hat{\kibr}$-based adaptation drives the likelihood model.
+  \item \textbf{Ch~5 (Distance Protection)}: The TDCS concept (transient differential current) is adapted in Ch~7 to the Zone~1 adaptive reach update. Both exploit the travelling-wave transient as a discriminating feature.
+  \item \textbf{Ch~7 (WAPC)}: The 87L trip signal feeds into the Wide-Area Protection Coordinator's N-1 logic. The WAPC uses 87L as the ``indispensable back-stop'' for all $\kibr \geq 0.06$ scenarios (TR-35 terminology).
+  \item \textbf{Ch~8 (Cybersecurity)}: The GOOSE messages carrying $\hat{I}_R$ from the remote relay are the attack surface for GOOSE spoofing and replay attacks (Ch~12/TR-52). HMAC-SHA256 authentication adds 0.36~ms overhead --- negligible against the 20~ms update period.
+\end{itemize}
+
+\textbf{Design pattern across SAMBP:} Ch~4 establishes the 3-layer pattern used in all subsequent protection chapters: (1) Physics-derived adaptation law; (2) Stage-2 quality gate; (3) Hierarchical vote of specialised elements. Chapters 4, 5, 6, 7, 8 all use this same architecture.
+\end{archbox}
+
+%% ── 10. Key Equations Reference Card ────────────────────────────────────────
+\section{Key Equations Reference Card}
+
+\begin{formulabox}{Equations You Must Be Able to Write and Explain}
+
+\textbf{1. Classical 87L criterion:}
+\[
+  \Idiff > \km \cdot \Ibias + I_0, \quad
+  \Idiff = |\hat{I}_S + \hat{I}_R|, \quad
+  \Ibias = \tfrac{|\hat{I}_S| + |\hat{I}_R|}{2}
+\]
+Say: ``Differential = phasor sum of send and receive currents. Bias = average magnitude. The criterion is: differential exceeds slope times bias plus a minimum pickup.''
+
+\textbf{2. Minimum operate-to-bias ratio (why the problem exists):}
+\[
+  \rho_\mathrm{min} = \frac{2(1-\kibr)}{1+\kibr}
+\]
+Say: ``At $\kibr = 0.7$, $\rho_\mathrm{min} = 0.18$. A fixed slope of 0.30 blocks the trip. The relay is over-restrained. This is the core problem.''
+
+\textbf{3. Adaptive slope (slide equation):}
+\[
+  \km(\kibr) = \kbase \cdot \frac{(1-\kibr)^2}{(1+\kibr)^2} + \kfloor
+\]
+Say: ``$k_\mathrm{base} \approx 0.5$ tracks the sensitivity ceiling. $k_\mathrm{floor} \approx 0.05$ is the minimum slope, set above the CT error floor. As $k_\mathrm{ibr} \to 1$, only the floor remains.''
+
+\textbf{4. 87LN negative-sequence OBR (the key insight):}
+\[
+  \rho_2 = \frac{\hat{I}_{\mathrm{diff},2}}{I_{\mathrm{bias},2}}
+    = \frac{I_{A,2}}{I_{A,2}/2} = 2, \quad \text{when } I_{B,2}^\mathrm{IBR} = 0
+\]
+Say: ``When the IBR suppresses its negative-sequence output --- which it does for grid compliance --- the OBR is exactly 2 regardless of $k_\mathrm{ibr}$. IBR suppression makes 87LN more sensitive, not less.''
+
+\textbf{5. TDCS score:}
+\[
+  S_\mathrm{TDCS}(t) = \sum_{k=t-N_w}^{t} \!\left[\frac{d\Idiff}{dt}\right]^2 \Delta t, \quad N_w = 5\;\text{ms}
+\]
+Say: ``This is the energy of the differential current derivative in a 5~ms window. An internal fault produces a sharp travelling-wave spike. A balanced load step produces zero differential current by Kirchhoff, so $S_\mathrm{TDCS} = 0$.''
+
+\textbf{6. Lyapunov stability:}
+\[
+  V = \|\kibr - \hat{\kibr}\|^2, \qquad \dot{V} < 0 \;\text{under bounded CT noise}
+\]
+Say: ``$V$ is the estimation error squared. $\dot{V} < 0$ means the error decreases --- the estimator converges. The proof uses the exponential filter's contraction property. The adaptive slope is therefore tracking a convergent estimate.''
+\end{formulabox}
+
+%% ── 11. Speaker Script ───────────────────────────────────────────────────────
+\section{Speaker Script (Timed to 3 Minutes)}
+
+\begin{speakbox}
+\textbf{[0:00--0:35] Open with the problem:}\\
+``Line current differential protection is the gold standard for line protection: it needs no voltage measurement, it is immune to power swings, and it detects high-impedance faults that defeat every other protection scheme. But it has one critical vulnerability with IBR: the bias slope. The classical relay operates when the differential current exceeds a fixed percentage of the bias current. As IBR penetration increases, the IBR current-limits to around 1 pu of rated during a fault. The grid side still sees the fault current, but the IBR side contribution is small. The operate-to-bias ratio collapses as $2(1-k_\mathrm{ibr})/(1+k_\mathrm{ibr})$. At $k_\mathrm{ibr} = 0.7$, that ratio is 0.18 --- less than the fixed slope of 0.30. The relay refuses to trip. That is over-restraint.''
+
+\textbf{[0:35--1:20] Explain the adaptive slope:}\\
+``SAMBP-87L fixes this with an adaptive slope $k_m(k_\mathrm{ibr}) = k_\mathrm{base} \cdot (1-k_\mathrm{ibr})^2/(1+k_\mathrm{ibr})^2 + k_\mathrm{floor}$. As $k_\mathrm{ibr}$ increases toward 1, the slope automatically decreases toward $k_\mathrm{floor} = 0.05$ --- the minimum value that keeps the relay stable against CT measurement error. As $k_\mathrm{ibr}$ decreases toward 0, the slope increases to the classical conservative setting. The relay estimates $k_\mathrm{ibr}$ from the received remote current phasor every 20~ms. A Lyapunov stability proof --- $V = ||k_\mathrm{ibr} - \hat{k}_\mathrm{ibr}||^2$, $\dot{V} < 0$ --- guarantees the estimate converges under bounded CT noise. Before issuing any trip, the Stage-2 veto gate checks $\gamma \geq 0.85$ to confirm the estimate is trustworthy.''
+
+\textbf{[1:20--2:00] Explain the three additional elements:}\\
+``The adaptive slope handles most scenarios, but three gaps remain. For SLG faults when $k_\mathrm{ibr}$ is very low --- below 0.12 --- the fundamental differential current is too small to trigger the main element. The 87LN negative-sequence element fills this gap. Here is a key insight: when the IBR suppresses its negative-sequence output for grid compliance, the negative-sequence OBR is always exactly 2, regardless of $k_\mathrm{ibr}$. IBR suppression actually helps 87LN. The second gap is symmetric three-phase faults on IBR-only lines, where all sequence elements are blind. The TDCS element uses the differential current derivative in a 5~ms window to detect the travelling-wave spike from the fault inception. Balanced load steps produce zero differential current by Kirchhoff's law, so TDCS is immune to them.''
+
+\textbf{[2:00--2:40] Present the results:}\\
+``The TR-23 cumulative coverage chart shows the progression clearly. The baseline 87L alone correctly handles 12 of 21 test scenarios --- 57\%. Adding the 87LN element recovers 5 SLG cases, taking coverage to 17/21 or 81\%. Adding TDCS recovers the remaining 4 symmetric three-phase IBR scenarios: 21/21, 100\% coverage. The system integration test in TR-27 confirms all 21 scenarios resolved with no false trips on 7 balanced load-step security tests.''
+
+\textbf{[2:40--3:00] Close:}\\
+``This is Contributions C1 through C4. Each element is physics-derived: the adaptive slope from the sensitivity-stability constraint, 87LN from sequence suppression analysis, TDCS from travelling-wave physics. Together they cover the full IBR operating envelope that the classical 87L cannot reach. The 20~ms update latency is within the IEC~60255 protection-response window, confirmed by measurement.''
+\end{speakbox}
+
+%% ── 12. Anticipated Q and A ──────────────────────────────────────────────────
+\section{Anticipated Questions and Answers}
+
+\begin{keybox}{Q1: Could the adaptive slope go too low and cause a false trip during through-fault CT saturation?}
+\textbf{Answer:} This is the core security concern, and it is directly addressed by the stability condition. The adaptive slope has a hard floor $\kfloor = 0.05$, which is above $2\epsilon_\mathrm{CT} = 0.02$ for Class~1P CTs. So even at $\kibr = 1$ (minimum slope), the relay is stable for CT errors up to 2.5\%. For Class~1P CTs ($\epsilon_\mathrm{CT} \leq 1\%$), the stability margin is $0.05 - 0.02 = 0.03$ --- a 50\% buffer above the CT error. The Proposition (stability under CT saturation) in the chapter proves this formally: provided the CT composite error satisfies $\epsilon_\mathrm{CT} \leq (k_m^*(\kibr) - I_c/I_\mathrm{bias})/2$, the relay never false-trips on a through-fault. Additionally, the Stage-2 gate will veto any trip where the Jacobian condition number (indicating CT saturation) is elevated.
+\end{keybox}
+
+\begin{keybox}{Q2: Why does the 87LN use k-m2 = 1.5 when the guaranteed OBR is 2? Why not use 1.9?}
+\textbf{Answer:} Setting $k_{m,2} = 1.5$ provides a 25\% margin below the guaranteed $\rho_2 = 2$. This margin accounts for: (1) partial IBR negative-sequence suppression (some IBRs inject limited $I_2$ for unbalance compensation under grid codes); (2) CT measurement error in the sequence extraction (unbalanced CT errors can corrupt $I_2$ estimation); (3) communication-induced phase error in $\hat{I}_{R,2}$. A setting of 1.9 would leave only a 5\% margin, insufficient for these practical error sources. The 1.5 setting is validated by TR-22: all 17 recovered SLG scenarios operate correctly with $k_{m,2} = 1.5$.
+\end{keybox}
+
+\begin{keybox}{Q3: The TDCS relies on a 5 ms window. What if the fault inception is missed in that window?}
+\textbf{Answer:} The TDCS window is not a one-shot trigger. The score $S_\mathrm{TDCS}$ is computed on a \emph{sliding} 5~ms window, updated every sample (1~ms). If the travelling wave arrives at any point during the fault transient, the next 5~ms window will capture the $dI_\mathrm{diff}/dt$ spike. The relay sampling rate is 1~kHz, so the window advances every 1~ms and the TDCS evaluates every 1~ms. The first spike above $3\sigma$ threshold triggers the element. For a fault at $\alpha = 0.5$ on a 10~km line with wave speed $v_p = 0.8c$: $\tau_A = 5\,\mathrm{km}/(2.4\times10^8\,\mathrm{m/s}) \approx 20\,\mu\mathrm{s}$ --- the wave arrives within one sample. Detection latency is therefore 1--2~ms from fault inception.
+\end{keybox}
+
+\begin{keybox}{Q4: How is the relay logic different from conventional percentage-bias relays that use dual-slope characteristics?}
+\textbf{Answer:} Conventional dual-slope relays use a two-slope bilinear characteristic: low slope (e.g., 0.25) for low bias current (through-load), high slope (e.g., 0.50) for high bias current (through-fault with CT saturation). The slope is a function of $I_\mathrm{bias}$, not $\kibr$. SAMBP-87L makes the slope a function of $\kibr$ --- the IBR penetration level --- which is a network characteristic, not a current magnitude. This is a fundamentally different parameterisation: a dual-slope relay would still use slope 0.30 for all $\kibr$ at a given $I_\mathrm{bias}$, causing over-restraint at $\kibr > 0.5$. The adaptive slope uses the same $k_m = 0.05$ at $\kibr = 0.8$ regardless of $I_\mathrm{bias}$, maintaining sensitivity where the OBR is inherently low.
+\end{keybox}
+
+\begin{keybox}{Q5: Does the 87LH threshold of 0.15 risk failing to block a real transformer inrush}
+\textbf{Answer:} The 87LH element does not replace the transformer inrush blocking function --- it supplements the main 87L element for IBR-specific discrimination. The conventional 2nd-harmonic inrush block ($h_2 > 0.20$ $\Rightarrow$ block) is maintained separately in the SAMBP-87T (Ch~6) relay, which specifically handles transformer differential protection. The 87LH on the line differential side uses $h_\mathrm{block} = 0.15$ to prevent the harmonic ratio from being falsely elevated by IBR harmonic injection ($h_2 \approx 0.15$) from triggering an inrush-like block on a genuine line fault. The two elements cover different protected zones: 87LH covers the line, 87T (with SPRT) covers the transformer. A transformer inrush would not produce a differential current in the 87L measurement zone unless the transformer is inside the 87L zone, in which case the 87T operates first and the 87L is coordinated to reset.
+\end{keybox}
+
+\vspace{1em}
+\begin{center}
+\begin{tcolorbox}[colback=iitmnavy!10,colframe=iitmnavy,arc=4pt,boxrule=1pt,width=0.88\textwidth]
+\centering
+\textbf{Chapter~4 One-Line Summary for Examiners}\\[4pt]
+\textit{``Fixed-slope 87L over-restrains when $\kibr > 0.5$ because $\rho_\mathrm{min} = 2(1-\kibr)/(1+\kibr) < \km$. SAMBP-87L tracks $\hat{\kibr}$ every 20~ms (Lyapunov-stable, $\dot{V} < 0$) and sets $\km = \kbase(1-\kibr)^2/(1+\kibr)^2 + \kfloor$. Three additional elements cover sequence-blind and travelling-wave scenarios. Combined: 12/21 (57\%) $\to$ 21/21 (100\%). Stage-2 gate ($\gamma \geq 0.85$) prevents false trips under CT saturation.''}
+\end{tcolorbox}
+\end{center}
+
+\end{document}

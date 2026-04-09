@@ -1,0 +1,220 @@
+% =============================================================
+% THESIS EXTENDED TIKZ STYLES
+% File: thesis_tikz_styles.tex
+% Purpose: Power-system-specific TikZ styles, pgfplots themes,
+%          and macros for the PhD thesis
+% =============================================================
+
+%% ── Additional TikZ libraries ────────────────────────────────
+\usetikzlibrary{%
+  shapes, shapes.geometric, shapes.symbols,
+  arrows, arrows.meta,
+  calc, positioning, fit,
+  decorations.pathmorphing,
+  decorations.pathreplacing,
+  decorations.markings,
+  patterns,
+  matrix,
+  mindmap,
+  trees,
+  shadows,
+  3d,
+  perspective,
+}
+
+%% ── Thesis colour palette ────────────────────────────────────
+\definecolor{thesisblue}   {RGB}{0,  70, 140}
+\definecolor{thesisred}    {RGB}{180, 30,  30}
+\definecolor{thesisgreen}  {RGB}{ 20,120,  60}
+\definecolor{thesisorange} {RGB}{200, 90,   0}
+\definecolor{thesisgray}   {RGB}{100,100, 110}
+\definecolor{thesisteal}   {RGB}{  0,130, 130}
+\definecolor{thesispurple} {RGB}{100,  0, 150}
+\definecolor{thesisyellow} {RGB}{220,180,   0}
+\definecolor{lightblue}    {RGB}{220,235,255}
+\definecolor{lightgreen}   {RGB}{220,245,225}
+\definecolor{lightorange}  {RGB}{255,240,220}
+\definecolor{lightgray}    {RGB}{240,240,242}
+
+%% ── pgfplots global theme ────────────────────────────────────
+\pgfplotsset{
+  thesis style/.style={
+    width         = 0.82\textwidth,
+    height        = 6.5cm,
+    grid          = both,
+    grid style    = {gray!15, very thin},
+    tick style    = {draw=none},
+    axis line style = {thesisgray},
+    label style   = {font=\small},
+    tick label style = {font=\scriptsize},
+    legend style  = {font=\scriptsize, draw=gray!40,
+                     fill=white, rounded corners=2pt},
+    every axis plot/.append style = {thick},
+    cycle list name = exotic,
+  },
+  thesis bar/.style={
+    thesis style,
+    ybar,
+    bar width   = 8pt,
+    xtick align = center,
+    enlarge x limits = 0.12,
+  },
+}
+
+%% ── Block-diagram node styles ────────────────────────────────
+\tikzset{
+  %% Generic blocks
+  block/.style   = {rectangle, draw=thesisblue, thick,
+                    fill=lightblue, rounded corners=3pt,
+                    minimum width=2.8cm, minimum height=0.85cm,
+                    align=center, font=\small},
+  smallblock/.style = {rectangle, draw=thesisblue, thick,
+                    fill=lightblue, rounded corners=2pt,
+                    minimum width=2.0cm, minimum height=0.65cm,
+                    align=center, font=\scriptsize},
+  %% Process / computation blocks
+  compute/.style = {rectangle, draw=thesisgreen, thick,
+                    fill=lightgreen, rounded corners=3pt,
+                    minimum width=2.8cm, minimum height=0.85cm,
+                    align=center, font=\small},
+  %% Alert / warning blocks
+  alert/.style   = {rectangle, draw=thesisred, thick,
+                    fill=red!6, rounded corners=3pt,
+                    minimum width=2.8cm, minimum height=0.85cm,
+                    align=center, font=\small},
+  %% Sensor / measurement blocks
+  sensor/.style  = {rectangle, draw=thesisorange, thick,
+                    fill=lightorange, rounded corners=3pt,
+                    minimum width=2.2cm, minimum height=0.70cm,
+                    align=center, font=\scriptsize},
+  %% Decision diamond
+  decision/.style = {diamond, draw=thesisblue, thick,
+                    fill=lightblue!60, aspect=1.8,
+                    minimum width=3.0cm, minimum height=1.0cm,
+                    align=center, font=\scriptsize},
+  %% Summing junction
+  sumjunct/.style = {circle, draw=black, thick, fill=white,
+                    minimum size=0.55cm, inner sep=0pt, font=\small},
+  %% Bus bar
+  busbar/.style  = {draw=black, very thick, line cap=round},
+  %% Arrow styles
+  arr/.style     = {-{Stealth[length=2.5mm,width=1.8mm]}, thick},
+  arrrev/.style  = {{Stealth[length=2.5mm,width=1.8mm]}-, thick},
+  arrdbl/.style  = {{Stealth[length=2.5mm,width=1.8mm]}-
+                   {Stealth[length=2.5mm,width=1.8mm]}, thick},
+  arrblue/.style = {arr, thesisblue},
+  arrdash/.style = {arr, dashed, thesisgray},
+  %% Communication / data link
+  datalink/.style = {-{Stealth[length=2.5mm,width=1.8mm]},
+                    thesisgray!80, dashed, thick},
+  %% Relay symbol (rectangle with protection icon label)
+  relaybox/.style = {rectangle, draw=thesisred, thick,
+                    fill=red!5, rounded corners=2pt,
+                    minimum width=1.8cm, minimum height=0.65cm,
+                    align=center, font=\scriptsize},
+  %% PMU / sensor node
+  pmunode/.style  = {circle, draw=thesisorange, thick,
+                    fill=lightorange, minimum size=0.7cm,
+                    align=center, font=\tiny},
+  %% Bus node
+  busnode/.style  = {circle, draw=black, thick,
+                    fill=gray!15, minimum size=0.55cm,
+                    inner sep=0pt, font=\scriptsize},
+  %% IBR inverter box
+  ibrbox/.style   = {rectangle, draw=thesisgreen, thick,
+                    fill=lightgreen!70, rounded corners=2pt,
+                    minimum width=1.6cm, minimum height=0.60cm,
+                    align=center, font=\scriptsize},
+  %% Annotation bubble
+  annotbox/.style = {rectangle, draw=thesisgray!70, thin,
+                    fill=white, rounded corners=2pt,
+                    align=left, font=\scriptsize,
+                    inner sep=3pt},
+  %% Data/measurement arrow (thin dashed)
+  dataarrow/.style = {-{Stealth[length=2mm,width=1.5mm]},
+                      thesisgray, thin},
+}
+
+%% ── Circuit element macros ───────────────────────────────────
+%% Draws a simple inductor symbol between two horizontal points
+\newcommand{\drawinductor}[3][]{%
+  % #1 = options, #2 = start point, #3 = end point
+  \draw[#1] (#2) -- ++(0.15,0)
+    \foreach \i in {1,2,3,4}{arc(90:-90:0.08) -- ++(0,0)}
+    -- (#3);
+}
+
+%% ── Mathematical shorthand macros ────────────────────────────
+\newcommand{\phasor}[1]{\underline{#1}}
+\newcommand{\cplx}[1]{\mathbf{#1}}
+\newcommand{\jj}{\mathrm{j}}
+\newcommand{\dq}[1]{#1_{dq}}
+\newcommand{\pu}{\ \mathrm{pu}}
+\newcommand{\degs}{^{\circ}}
+\newcommand{\dt}{\mathrm{d}t}
+\newcommand{\Ts}{T_\mathrm{s}}
+
+%% Sequence component notation
+\newcommand{\seqpos}[1]{#1^{(+)}}
+\newcommand{\seqneg}[1]{#1^{(-)}}
+\newcommand{\seqzer}[1]{#1^{(0)}}
+\newcommand{\Ipos}{\seqpos{I}}
+\newcommand{\Ineg}{\seqneg{I}}
+\newcommand{\Izer}{\seqzer{I}}
+\newcommand{\Vpos}{\seqpos{V}}
+\newcommand{\Vneg}{\seqneg{V}}
+\newcommand{\Vzer}{\seqzer{V}}
+
+%% Park transform notation
+\newcommand{\vd}{v_d}
+\newcommand{\vq}{v_q}
+\newcommand{\id}{i_d}
+\newcommand{\iq}{i_q}
+
+%% Protection element notation
+\newcommand{\Irated}{I_\mathrm{rated}}
+\newcommand{\Ipickup}{I_\mathrm{pu}}
+\newcommand{\Iscc}{I_\mathrm{sc}}
+\newcommand{\ttrip}{t_\mathrm{trip}}
+\newcommand{\Zreach}{Z_\mathrm{reach}}
+\newcommand{\Zs}{Z_\mathrm{S}}
+\newcommand{\ZR}{Z_\mathrm{R}}
+\newcommand{\ZL}{Z_L}
+\newcommand{\ZF}{Z_F}
+
+%% ── Framed definition box ─────────────────────────────────────
+\mdfdefinestyle{defbox}{%
+  linecolor    = thesisblue,
+  linewidth    = 1.2pt,
+  leftmargin   = 0,
+  rightmargin  = 0,
+  innertopmargin    = 6pt,
+  innerbottommargin = 6pt,
+  innerleftmargin   = 8pt,
+  innerrightmargin  = 8pt,
+  backgroundcolor   = lightblue!40,
+  roundcorner  = 4pt,
+}
+
+\newenvironment{thesisdef}[1]{%
+  \begin{mdframed}[style=defbox]
+  \textbf{Definition:} \textit{#1} ---
+}{%
+  \end{mdframed}
+}
+
+%% ── Framed equation highlight box ────────────────────────────
+\mdfdefinestyle{eqbox}{%
+  linecolor    = thesisgreen,
+  linewidth    = 1pt,
+  innerleftmargin  = 6pt,
+  innerrightmargin = 6pt,
+  backgroundcolor  = lightgreen!30,
+  roundcorner  = 3pt,
+}
+
+\newenvironment{keyeq}{%
+  \begin{mdframed}[style=eqbox]
+}{%
+  \end{mdframed}
+}

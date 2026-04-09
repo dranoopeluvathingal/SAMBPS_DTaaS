@@ -1,0 +1,91 @@
+% fig_charging_residual.tex
+% Charging residual noise floor before and after pi-section correction.
+% Left: waveform comparison (healthy line, phase A)
+% Right: bar chart of residual RMS by correction method
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={
+    group size=2 by 1,
+    horizontal sep=1.6cm,
+  },
+]
+
+% ===================== LEFT: Waveform comparison ==========================
+\nextgroupplot[
+  width=0.52\columnwidth, height=5.0cm,
+  xlabel={Time (ms)},
+  ylabel={$i_{\mathrm{diff,A}}$ (pu)},
+  xmin=0, xmax=20,
+  ymin=-0.030, ymax=0.030,
+  xtick={0,5,10,15,20},
+  ytick={-0.03,-0.02,-0.01,0,0.01,0.02,0.03},
+  grid=both,
+  grid style={gray!22,line width=0.3pt},
+  tick label style={font=\scriptsize},
+  label style={font=\small},
+  title={\textbf{(a)} Phase-A healthy-line differential},
+  title style={font=\small},
+  legend style={at={(0.97,0.97)},anchor=north east,
+                font=\tiny,fill=white,draw=black!40},
+]
+  % Fixed-model residual (charging amplitude varies ±5%)
+  % After subtracting I_C_nom × cos(ωt): residual peaks at ~0.018 pu
+  \addplot[blue!70!black, thick, samples=100, domain=0:20]
+    { 0.0065*sin(2*pi*50*x/1000*360 + 32) + 0.001*sin(2*pi*150*x/1000*360) };
+  \addlegendentry{After fixed comp.\ (baseline)}
+
+  % Pi-section residual: nearly zero
+  \addplot[red!60!black, thick, dashed, samples=100, domain=0:20]
+    { 0.0006*sin(2*pi*50*x/1000*360 + 10) + 0.0003*sin(2*pi*250*x/1000*360) };
+  \addlegendentry{After $\pi$-section comp.}
+
+  % Noise floor annotation
+  \draw[<->, gray!60]
+    (axis cs:18,-0.0065) -- (axis cs:18,0.0065)
+    node[midway,right,font=\tiny,gray!60]{0.013\,pu};
+  \draw[<->, orange!70]
+    (axis cs:14,-0.0006) -- (axis cs:14,0.0006)
+    node[midway,right,font=\tiny,orange!70]{0.0006\,pu};
+
+% ===================== RIGHT: RMS bar chart ================================
+\nextgroupplot[
+  width=0.40\columnwidth, height=5.0cm,
+  xlabel={},
+  ylabel={Residual RMS (pu)},
+  xmin=0.5, xmax=3.5,
+  ymin=0, ymax=0.025,
+  xtick={1,2,3},
+  xticklabels={Nominal\\fixed, Pre-fault\\$\pi$-sec., Voltage\\$\pi$-sec.},
+  ybar=4pt, bar width=18pt,
+  ytick={0,0.005,0.010,0.015,0.020},
+  yticklabel style={font=\scriptsize},
+  xticklabel style={font=\scriptsize,align=center},
+  ymajorgrids=true,
+  grid style={gray!22,line width=0.3pt},
+  tick label style={font=\scriptsize},
+  label style={font=\small},
+  title={\textbf{(b)} Charging residual RMS},
+  title style={font=\small},
+]
+  % Bar: nominal fixed (baseline)
+  \addplot[fill=blue!50, draw=blue!70!black]
+    coordinates {(1, 0.018)};
+  % Bar: pre-fault pi-section
+  \addplot[fill=red!50, draw=red!70!black]
+    coordinates {(2, 0.0009)};
+  % Bar: voltage-based pi-section
+  \addplot[fill=green!45, draw=green!60!black]
+    coordinates {(3, 0.0005)};
+
+  % Annotations
+  \node[font=\tiny\bfseries, blue!70!black]   at (axis cs:1,0.021)  {0.018};
+  \node[font=\tiny\bfseries, red!70!black]    at (axis cs:2,0.0035) {0.0009};
+  \node[font=\tiny\bfseries, green!60!black]  at (axis cs:3,0.003)  {0.0005};
+
+  % Threshold line: I_fund_thresh for pi-section
+  \draw[orange!80!black, thick, dotted]
+    (axis cs:0.5, 0.012) -- (axis cs:3.5, 0.012)
+    node[right, font=\tiny, orange!80!black]{$I_{\rm thresh}^{\pi}/10$};
+
+\end{groupplot}
+\end{tikzpicture}

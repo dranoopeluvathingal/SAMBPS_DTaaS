@@ -1,0 +1,67 @@
+% ch1_sambp_architecture.tex — SAMBP three-tier architecture
+\begin{tikzpicture}[
+  every node/.style={font=\small},
+  tier/.style={draw=thesisblue, thick, fill=lightblue!60,
+               rounded corners=4pt, minimum width=3.2cm,
+               minimum height=0.80cm, align=center},
+  module/.style={draw=thesisblue!70, fill=lightblue!30,
+                 rounded corners=3pt, minimum width=2.6cm,
+                 minimum height=0.60cm, align=center, font=\scriptsize},
+  arrow/.style={-{Stealth[length=2mm]}, thick, thesisblue},
+  dataarrow/.style={-{Stealth[length=2mm]}, dashed, thesisgray},
+]
+
+%% ── Tier 1 ───────────────��───────────────────────────────────
+\node[tier, fill=thesisblue!15] (T1) at (0,0) {\textbf{Tier 1}\\[-2pt]\scriptsize Local Relay Physics};
+
+\node[module] (87L)  at (-3.5,-1.5) {87L Adaptive\\Differential};
+\node[module] (21)   at (0,  -1.5) {21 Quadrilateral\\Distance};
+\node[module] (MG)   at ( 3.5,-1.5) {Microgrid\\Mode-Switch};
+
+\foreach \n in {87L, 21, MG}
+  \draw[arrow] (T1.south) -- (\n.north);
+
+%% ── Tier 2 ──────────────────────────────────────────────��────
+\node[tier, fill=thesisgreen!20, draw=thesisgreen] (T2) at (0,-3.2)
+  {\textbf{Tier 2}\\[-2pt]\scriptsize Digital Monitoring \& Learning};
+
+\node[module, draw=thesisgreen!80] (DT)   at (-2.0,-4.7) {Digital Twin\\EKF};
+\node[module, draw=thesisgreen!80] (PINN) at ( 2.0,-4.7) {PINN Classifier\\+ Online SGD};
+
+\foreach \n in {DT, PINN}
+  \draw[arrow, thesisgreen] (T2.south) -- (\n.north);
+
+%% ── Tier 3 ───────────────────────────────────────────────────
+\node[tier, fill=thesisorange!15, draw=thesisorange] (T3) at (0,-6.5)
+  {\textbf{Tier 3}\\[-2pt]\scriptsize Centralised Coordination (WAPC)};
+
+\node[module, draw=thesisorange!80] (WAPC) at (-3.5,-8.0) {PMU Fault\\Localisation};
+\node[module, draw=thesisorange!80] (SET)  at ( 0,  -8.0) {CTI Settings\\Engine};
+\node[module, draw=thesisorange!80] (SEC)  at ( 3.5,-8.0) {GOOSE\\Security};
+
+\foreach \n in {WAPC, SET, SEC}
+  \draw[arrow, thesisorange] (T3.south) -- (\n.north);
+
+%% ── Inter-tier data flows ────────────────────────────────────
+\draw[dataarrow] (T2.north) -- node[right, font=\scriptsize]
+  {$\hat{\kibr}, \hat{\alpha}$} (T1.south);
+\draw[dataarrow] (T3.north) -- node[right, font=\scriptsize]
+  {Settings, GOOSE} (T2.south);
+
+%% ── Tier labels on right ─────────────────────────────────────
+\node[font=\tiny, thesisblue, anchor=west] at (5.5, 0)
+  {Ch 4--6};
+\node[font=\tiny, thesisgreen!70!black, anchor=west] at (5.5,-3.2)
+  {Ch 7--8};
+\node[font=\tiny, thesisorange!80!black, anchor=west] at (5.5,-6.5)
+  {Ch 9};
+
+%% ── PMU / GOOSE infrastructure at bottom ────────────────────
+\node[draw=thesisgray, fill=lightgray, rounded corners=3pt,
+      font=\scriptsize, minimum width=9cm, minimum height=0.5cm,
+      align=center] (LAN) at (0,-9.3) {IEC~61850 GOOSE + IEEE C37.118 PMU Network};
+
+\foreach \n in {WAPC, SET, SEC}
+  \draw[dataarrow] (\n.south) -- (LAN.north -| \n);
+
+\end{tikzpicture}

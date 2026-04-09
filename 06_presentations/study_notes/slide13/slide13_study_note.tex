@@ -1,0 +1,505 @@
+%% slide13_study_note.tex
+%% Detailed Study Note — Slide 13: Ch 9 Non-Blocking EKF Digital Twin
+%% TSA Meeting Preparation | Anoop V Eluvathingal | IIT Madras | 2026
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,tabularx,array}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{parskip}
+\newcommand{\kibr}{k_\mathrm{ibr}}
+
+\definecolor{iitmnavy}{RGB}{15,40,80}
+\definecolor{iitmgold}{RGB}{180,140,0}
+\definecolor{lightblue}{RGB}{220,235,250}
+\definecolor{lightyellow}{RGB}{255,252,220}
+\definecolor{lightred}{RGB}{255,235,235}
+\definecolor{lightgreen}{RGB}{230,255,230}
+\definecolor{lightpurple}{RGB}{240,230,255}
+
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{keybox}[1]{colback=lightblue,colframe=iitmnavy,
+  fonttitle=\bfseries\color{white},title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{formulabox}[1]{colback=lightyellow,colframe=iitmgold,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{resultbox}[1]{colback=lightgreen,colframe=green!50!black,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{warnbox}[1]{colback=lightred,colframe=red!60!black,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{archbox}[1]{colback=lightpurple,colframe=iitmnavy!60,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{speakbox}{colback=orange!8,colframe=orange!70!black,
+  fonttitle=\bfseries,title={What to Say at the TSA Meeting},arc=3pt,
+  boxrule=1pt,breakable}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{iitmnavy}\small\textbf{TSA Meeting Study Note}}
+\fancyhead[R]{\color{iitmnavy}\small Slide 13 — Non-Blocking EKF Digital Twin}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\small\color{gray}Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ 2026}
+\renewcommand{\headrulewidth}{1.5pt}
+\renewcommand{\headrule}{\color{iitmnavy}\hrule width\headwidth height\headrulewidth}
+
+\titleformat{\section}{\large\bfseries\color{iitmnavy}}{}{0em}{}[\color{iitmnavy}\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{iitmnavy!80}}{}{0em}{}
+
+\hypersetup{colorlinks=true,linkcolor=iitmnavy,urlcolor=iitmnavy}
+
+\begin{document}
+
+%% ── Title Block ──────────────────────────────────────────────────────────────
+\begin{tcolorbox}[colback=iitmnavy,coltext=white,arc=4pt,boxrule=0pt]
+\begin{center}
+{\Large\bfseries TSA Meeting Preparation --- Detailed Study Note}\\[6pt]
+{\large Slide 13: Ch 9 --- Non-Blocking EKF Digital Twin}\\[4pt]
+{\normalsize SAMBP Framework $\cdot$ Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ 2026}
+\end{center}
+\end{tcolorbox}
+
+\vspace{0.5em}
+\begin{center}
+\small\textit{Sources: SAMBP TR-43, TR-44, TR-45 / 2026}
+\end{center}
+
+%% ── 1. Overview ──────────────────────────────────────────────────────────────
+\section{1.\; Slide Overview and Purpose}
+
+\begin{keybox}{What This Slide Is About}
+This slide introduces the \textbf{Digital Twin (DT)} — the real-time brain of the
+entire SAMBP framework. While every other slide describes a specific protection
+element (87L, OC, distance, microgrid), this slide describes the \emph{shared
+infrastructure} that feeds them all.
+
+The DT continuously estimates three network parameters
+$\boldsymbol{\theta} = \{k_\mathrm{ibr},\, Z_\mathrm{line},\, Y_\mathrm{shunt}\}$
+from PMU and IED measurements. These estimates are broadcast to every protection
+module in real time, enabling all adaptive thresholds and confidence gates to
+respond to the current state of the IBR fleet — without human intervention.
+
+The slide establishes three key properties of the DT: \textbf{accuracy} (RMSE
+results), \textbf{speed} (convergence $<2$ cycles), and \textbf{safety}
+(non-blocking and bounded update law).
+\end{keybox}
+
+\noindent\textbf{Position in the thesis:} Chapter~6 (Monitoring and ML), slide~13
+of~22. This is the first of three Ch~6 slides (DT architecture, PINN classifier,
+online learning). It is a pivotal slide because the DT underpins every contribution:
+without reliable $\hat{k}_\mathrm{ibr}$, all adaptive thresholds revert to fixed settings.
+
+%% ── 2. The Role ──────────────────────────────────────────────────────────────
+\section{2.\; The Role of the Digital Twin}
+
+\begin{archbox}{DT as the Central Parameter Hub}
+\begin{center}
+\begin{tabular}{@{}lp{9cm}@{}}
+\toprule
+\textbf{Module receives} & \textbf{What it uses from the DT}\\
+\midrule
+87L (Chapter~3) & $\hat{k}_\mathrm{ibr}$ → adaptive slope $k_m^*(\kibr)$\\
+87T (Chapter~3) & $\hat{k}_\mathrm{ibr}$ → adaptive transformer bias $k_T^*(\kibr)$\\
+SyncOC (Chapter~4) & $\hat{k}_\mathrm{ibr}$ → confidence gate threshold\\
+Distance 21 (Chapter~4) & $\hat{Z}_\mathrm{line}$ → reach correction, IBR shift\\
+Microgrid 67 (Chapter~5) & $\hat{k}_\mathrm{ibr}$ → mode detector prior\\
+PINN (Chapter~6) & $\hat{k}_\mathrm{ibr}$ → feature input to classifier\\
+WAPC (Chapter~7) & all $\boldsymbol{\theta}$ → wide-area settings update trigger\\
+\bottomrule
+\end{tabular}
+\end{center}
+Without the DT, every module above would need its own parameter estimator.
+The DT centralises this into a single, validated, non-blocking component.
+\end{archbox}
+
+%% ── 3. EKF Prediction-Correction ────────────────────────────────────────────
+\section{3.\; EKF Prediction--Correction Algorithm}
+
+\subsection{The state vector}
+
+The DT tracks three parameters jointly:
+\begin{itemize}[nosep]
+  \item $k_\mathrm{ibr}$ — IBR penetration ratio (primary, controls all thresholds)
+  \item $Z_\mathrm{line}$ — line impedance magnitude (for distance reach and fault location)
+  \item $Y_\mathrm{shunt}$ — shunt admittance (charging current, affects 87L stability)
+\end{itemize}
+
+\subsection{The update equation (from the slide)}
+
+\begin{formulabox}{EKF Prediction--Correction (slide equation)}
+\begin{equation}
+  \hat{\boldsymbol{\theta}}_{k|k} = \hat{\boldsymbol{\theta}}_{k|k-1}
+    + K_k\!\left(z_k - h\!\left(\hat{\boldsymbol{\theta}}_{k|k-1}\right)\right)
+  \label{eq:ekf}
+\end{equation}
+\begin{itemize}[nosep]
+  \item $\hat{\boldsymbol{\theta}}_{k|k}$ — updated state estimate at step $k$
+        (posterior)
+  \item $\hat{\boldsymbol{\theta}}_{k|k-1}$ — predicted state (prior, from
+        previous cycle)
+  \item $K_k$ — Kalman gain matrix: $K_k = P_{k|k-1}H_k^\top
+        (H_k P_{k|k-1} H_k^\top + R_k)^{-1}$
+  \item $z_k$ — measurement vector: PMU voltage phasors, IED current measurements,
+        and the sequence current ratio $I_2/I_1$
+  \item $h(\cdot)$ — nonlinear measurement model (hence \emph{Extended} KF — the
+        Jacobian $H_k = \partial h/\partial\boldsymbol{\theta}$ is evaluated
+        at each step)
+  \item $z_k - h(\hat{\boldsymbol{\theta}}_{k|k-1})$ — innovation: difference between
+        measured and model-predicted outputs; drives the update
+\end{itemize}
+\end{formulabox}
+
+\subsection{Why EKF and not a simple RLS?}
+
+Recursive Least Squares (used in TR-43) estimates $k_\mathrm{ibr}$ alone. The EKF
+jointly estimates all three states, propagating their \emph{covariance} — it knows
+how uncertain each estimate is and weighs the Kalman gain accordingly. This matters
+because:
+\begin{enumerate}[nosep]
+  \item $Y_\mathrm{shunt}$ and $Z_\mathrm{line}$ are coupled in the measurement
+        model; estimating them separately introduces bias.
+  \item The EKF's covariance $P_{k|k}$ feeds directly into the confidence score
+        $\gamma$ used by every adaptive protection module.
+  \item Pre-fault warm-starting (tracking $\boldsymbol{\theta}$ in normal operation)
+        reduces convergence time by \textbf{7$\times$} compared to a cold start.
+\end{enumerate}
+
+%% ── 4. Non-Blocking Property ─────────────────────────────────────────────────
+\section{4.\; The Non-Blocking Property}
+
+\begin{warnbox}{Why Non-Blocking Matters — The Safety Argument}
+If the EKF update were \emph{in the critical path} of the relay trip decision, then:
+\begin{itemize}[nosep]
+  \item A slow convergence or numerical issue in the EKF could \textbf{delay a
+        trip signal} by tens of milliseconds — causing a missed fault clearance.
+  \item This would violate IEC~60255 operating time requirements and potentially
+        cause equipment damage or arc flash.
+\end{itemize}
+The non-blocking design \emph{guarantees} this cannot happen.
+\end{warnbox}
+
+\subsection{Implementation: the shadow register pattern}
+
+\begin{center}
+\begin{tabular}{@{}lp{5cm}p{5.5cm}@{}}
+\toprule
+\textbf{Thread} & \textbf{Cycle time} & \textbf{Action}\\
+\midrule
+\textbf{Relay thread} (high priority) & 50~$\mu$s & Reads $\hat{\boldsymbol{\theta}}$
+  from the shadow register; executes trip logic; issues GOOSE\\
+\textbf{EKF thread} (low priority) & 20~ms (50~Hz) & Runs prediction--correction;
+  writes result to shadow register when done\\
+\midrule
+\multicolumn{3}{l}{\textit{The relay thread never waits for the EKF thread.}}\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{The convergence guard (from the slide)}
+
+The slide states: \emph{``if convergence $>3$ cycles, previous $\hat{\boldsymbol{\theta}}$
+is held — relay never waits.''}
+
+This means: if the EKF has not converged after 3 update cycles ($3 \times 20 = 60$~ms),
+the relay continues using the last valid estimate. This is safe because:
+\begin{itemize}[nosep]
+  \item The pre-fault warm-start estimate is already within $\pm 5\%$ of the true value.
+  \item The protection elements are designed with \emph{margin} that accommodates
+        $\pm 10\%$ uncertainty in $\hat{k}_\mathrm{ibr}$.
+  \item A 3-cycle convergence failure is a diagnostic flag, not a protection failure.
+\end{itemize}
+
+\subsection{End-to-end latency (TR-45)}
+
+\begin{center}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+\textbf{Stage} & \textbf{Latency [ms]} & \textbf{Cumulative [ms]}\\
+\midrule
+CT/VT transducer          & 0.5  & 0.5 \\
+IEC~61869-9 digital sampling & 0.5 & 1.0 \\
+Merging unit $\to$ relay  & 1.0  & 2.0 \\
+Relay algorithm (Z1/87L)  & 18.0 & 20.0 \\
+GOOSE trip signal         & 2.0  & 22.0 \\
+Circuit breaker operation & 30.0 & 52.0 \\
+\midrule
+\textbf{Total fault clearance} & \textbf{52.0} & \\
+$T_\mathrm{mem}$ margin   & 48.0 & (within 100~ms) \\
+\textbf{DT latency contribution} & \textbf{0.0} & \textbf{parallel, non-blocking} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%% ── 5. Bounded Update Law ────────────────────────────────────────────────────
+\section{5.\; Bounded Update Law}
+
+\begin{formulabox}{Bounded Update Law (slide equation)}
+\begin{equation}
+  \|\boldsymbol{\theta}_{k+1} - \boldsymbol{\theta}_k\| \leq \delta_\mathrm{max}
+  \label{eq:bounded}
+\end{equation}
+This constraint clips the EKF step size at each cycle. If the raw Kalman update
+would produce a step larger than $\delta_\mathrm{max}$, the update is scaled back
+to exactly $\delta_\mathrm{max}$ in the $\ell_2$ norm.
+\end{formulabox}
+
+\subsection{Why this is needed — the adversarial data threat}
+
+A \textbf{CT-injection attack} (or a CT saturation transient) can cause a sudden
+large spike in the measured currents, which would cause the EKF innovation
+$z_k - h(\hat{\boldsymbol{\theta}}_{k|k-1})$ to become very large. Without the
+bound, a single bad measurement could:
+\begin{itemize}[nosep]
+  \item Shift $\hat{k}_\mathrm{ibr}$ by 0.5~pu in one cycle, disabling the 87L element.
+  \item Cause the distance relay to ``see'' a phantom fault location outside Zone~1.
+\end{itemize}
+The bounded update law limits the damage any single measurement can do to the
+state estimate. This connects directly to Slide~17 (Ch~11 cybersecurity) where the
+adversarial PINN robustness framework is formally established.
+
+\subsection{Design of $\delta_\mathrm{max}$}
+
+$\delta_\mathrm{max}$ is set to be:
+\begin{itemize}[nosep]
+  \item \emph{Large enough} to track genuine fast fleet changes
+        (typical IBR dispatch ramp: $\Delta k_\mathrm{ibr} \approx 0.02$~pu/min
+        $= 3.3 \times 10^{-4}$~pu/cycle at 50~Hz).
+  \item \emph{Small enough} to reject adversarial step injections
+        ($\delta_\mathrm{attack} \sim 0.1$--$0.5$~pu/cycle from CT saturation).
+  \item In practice: $\delta_\mathrm{max} = 0.05$~pu provides a $150\times$ margin
+        between tracking need and attack rejection.
+\end{itemize}
+
+%% ── 6. Results ───────────────────────────────────────────────────────────────
+\section{6.\; Results — What the Table in the Slide Means}
+
+\begin{resultbox}{EKF Digital Twin Results Table Explained}
+\begin{tabular}{@{}lp{2cm}p{7.5cm}@{}}
+\toprule
+\textbf{Parameter} & \textbf{RMSE} & \textbf{Explanation}\\
+\midrule
+$\hat{k}_\mathrm{ibr}$ & \textbf{0.024~pu} &
+  Primary result. On a typical $k_\mathrm{ibr} = 0.20$~pu fleet, this is
+  12\% relative error — well within the $\pm 10\%$ protection margin.
+  Maintained even at $>5\%$ PMU measurement noise.\\[4pt]
+$\hat{Z}_\mathrm{line}$ (mag.) & \textbf{0.018~pu} &
+  Line impedance magnitude. Lower RMSE than $k_\mathrm{ibr}$ because
+  $Z_\mathrm{line}$ changes slowly (temperature drift only) and pre-fault
+  warm-starting provides a very accurate prior.\\[4pt]
+$\hat{Y}_\mathrm{shunt}$ & \textbf{0.031~pu} &
+  Shunt admittance (charging current). Hardest to estimate — it appears
+  only weakly in the current ratio measurement. Acceptable because 87L
+  stability uses a $3\sigma$ threshold that accommodates 0.03~pu $Y_\mathrm{shunt}$
+  uncertainty.\\[4pt]
+Convergence time & \textbf{$<$2 cycles} &
+  With warm-starting: EKF reaches $<3\%$ error within $1.9$ updates
+  ($\approx$38~ms at 50~Hz). This is before Zone-1 distance relay operates
+  (20~ms) only with the warm-start advantage; cold-start would take 13 updates.\\[4pt]
+Max update latency & \textbf{1.8~ms} &
+  Total DT cycle computation time within the relay firmware. This is the
+  worst-case time the EKF thread holds the shadow register write lock —
+  the relay thread is never blocked for longer than this.\\
+\bottomrule
+\end{tabular}
+\end{resultbox}
+
+\subsection{The headline observation}
+
+\emph{``RMSE $\leq 0.024$~pu for $k_\mathrm{ibr}$ across all operating conditions
+including $>5\%$ PMU measurement noise.''}
+
+This is the \textbf{robustness claim}: even with severely degraded PMU measurements
+(5\% noise is double the IEC class~1P CT error of 2.5\%), the DT maintains
+sufficient accuracy for all downstream protection decisions. This directly
+addresses a common examiner concern: \textit{``what happens when PMU data quality
+is poor?''}
+
+%% ── 7. Best Supporting Figure ────────────────────────────────────────────────
+\section{7.\; Best Supporting Figure}
+
+\begin{keybox}{Recommended Figure — TR-45 Figure 3 (Non-Blocking Timeline)}
+\textbf{Source:} SAMBP TR-45/2026, Figure~3 (page~3)\\
+\textbf{Title:} End-to-end fault clearance latency chain\\[4pt]
+The figure is a horizontal timeline showing:
+\begin{itemize}[nosep]
+  \item \textbf{Relay chain} (top, orange): CT/VT (0.5~ms) $\to$ MU (1~ms) $\to$
+        relay algorithm (18~ms) $\to$ GOOSE (2~ms) $\to$ CB (30~ms) $= 52$~ms total
+  \item \textbf{DT thread} (bottom, green): 1~ms cycle running in parallel,
+        \emph{contributing zero latency}
+  \item $T_\mathrm{mem} = 100$~ms boundary and 48~ms margin clearly marked
+\end{itemize}
+\textbf{Why it is the best match:} The figure directly proves the slide's central
+claim — ``Update runs in a parallel thread; relay never waits.'' It is
+self-explanatory, has immediate visual impact, and pre-empts the most obvious
+committee question (\textit{``does the digital twin slow down your relay?''}).
+\end{keybox}
+
+\noindent\textbf{Secondary figure (TR-43, Figure~1):} The 4-layer DT architecture
+diagram (Physical $\to$ Relay $\to$ Digital Twin $\to$ Validation) provides context
+for explaining the DT's role as a system-wide parameter hub.
+
+\noindent\textbf{Tertiary figure (TR-44, Figure~3):} The DT cycle budget pie chart
+(285~$\mu$s used, 71.5\% margin) explains the 1.8~ms max update latency result and
+demonstrates computational headroom for future extensions.
+
+%% ── 8. Connections Across the Thesis ────────────────────────────────────────
+\section{8.\; Connections Across the Thesis}
+
+\begin{center}
+\begin{tabular}{@{}lp{10cm}@{}}
+\toprule
+\textbf{Chapter/Contribution} & \textbf{Connection}\\
+\midrule
+C1 — Differential (Ch~3) & $\hat{k}_\mathrm{ibr}$ drives slope $k_m^*$ and
+  $k_T^*$; $\hat{Y}_\mathrm{shunt}$ sets charging current threshold $I_c$\\
+C2 — OC/Distance (Ch~4) & $\hat{k}_\mathrm{ibr}$ gates confidence score $\gamma$;
+  $\hat{Z}_\mathrm{line}$ corrects distance reach\\
+C2 — Microgrid (Ch~5) & $\hat{k}_\mathrm{ibr}$ feeds the Bayesian mode detector
+  prior (slide~12 equation)\\
+C3 — PINN (Ch~6, next slides) & $\hat{k}_\mathrm{ibr}$ is the most important
+  input feature (37~pp permutation importance drop)\\
+C4 — WAPC (Ch~7) & CUSUM monitors the EKF's $\hat{k}_\mathrm{ibr}$ trajectory
+  to detect fleet composition drift and trigger settings update\\
+Appendix A & EKF Jacobian derivation and local observability proof\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%% ── 9. Equations Quick Reference ─────────────────────────────────────────────
+\section{9.\; Equations Quick Reference}
+
+\begin{formulabox}{Key Equations for This Slide}
+\textbf{EKF prediction step:}
+\begin{equation}
+  \hat{\boldsymbol{\theta}}_{k|k-1} = \hat{\boldsymbol{\theta}}_{k-1|k-1},
+  \quad P_{k|k-1} = P_{k-1|k-1} + Q
+\end{equation}
+
+\textbf{Kalman gain:}
+\begin{equation}
+  K_k = P_{k|k-1} H_k^\top \bigl(H_k P_{k|k-1} H_k^\top + R\bigr)^{-1}
+\end{equation}
+
+\textbf{EKF correction step (slide):}
+\begin{equation}
+  \hat{\boldsymbol{\theta}}_{k|k} = \hat{\boldsymbol{\theta}}_{k|k-1}
+    + K_k\bigl(z_k - h(\hat{\boldsymbol{\theta}}_{k|k-1})\bigr)
+\end{equation}
+
+\textbf{Bounded update constraint (slide):}
+\begin{equation}
+  \|\boldsymbol{\theta}_{k+1} - \boldsymbol{\theta}_k\| \leq \delta_\mathrm{max}
+  \quad (\delta_\mathrm{max} = 0.05\;\text{pu in deployment})
+\end{equation}
+
+\textbf{Cramér--Rao Lower Bound (accuracy floor):}
+\begin{equation}
+  \mathrm{RMSE}(\hat{\boldsymbol{\theta}}) \geq
+    \sqrt{\mathrm{diag}\!\left[\mathbf{I}(\boldsymbol{\theta})^{-1}\right]}
+\end{equation}
+where $\mathbf{I}(\boldsymbol{\theta})$ is the Fisher information matrix.
+The reported RMSE values (0.024, 0.018, 0.031~pu) are all within a factor of
+$1.5\times$ of the CRLB, confirming near-optimal estimation efficiency.
+
+\textbf{Warm-start convergence speedup (TR-44):}
+\begin{equation}
+  \frac{N_\mathrm{cold}}{N_\mathrm{warm}} = \frac{13.3\;\text{updates}}{1.9\;\text{updates}}
+  \approx 7\times
+\end{equation}
+\end{formulabox}
+
+%% ── 10. Speaker Script ───────────────────────────────────────────────────────
+\section{10.\; TSA Meeting Speaker Script}
+
+\begin{speakbox}
+``Slide~13 introduces what I think of as the \textbf{nervous system} of the SAMBP
+framework — the non-blocking EKF digital twin.
+
+Every adaptive threshold I showed in the previous slides — the 87L slope, the OC
+pickup, the Bayesian mode detector, the distance reach correction — they all depend
+on knowing $k_\mathrm{ibr}$, the current IBR penetration level. The digital twin
+estimates this continuously from PMU and IED measurements, and broadcasts it to all
+modules.
+
+The estimation uses an Extended Kalman Filter because the measurement model is
+nonlinear. The filter jointly tracks three parameters: IBR penetration $k_\mathrm{ibr}$,
+line impedance $Z_\mathrm{line}$, and shunt admittance $Y_\mathrm{shunt}$.
+
+The most important design decision is that the EKF runs in a \textbf{parallel
+thread}. The relay never waits for the EKF to finish. If the filter hasn't
+converged after three cycles, the relay simply uses the last valid estimate. This is
+the shadow register pattern — the relay reads a snapshot; the EKF writes to the
+background copy without ever blocking the protection logic.
+
+I also impose a \textbf{bounded update law}: no single EKF step can change the
+estimate by more than $\delta_\mathrm{max}$. This prevents a CT injection attack
+or a CT saturation transient from corrupting the state estimate in one cycle and
+causing a relay mis-operation.
+
+The results: RMSE of 0.024~pu for $k_\mathrm{ibr}$, 0.018~pu for $Z_\mathrm{line}$,
+and 0.031~pu for $Y_\mathrm{shunt}$. These are maintained even with PMU noise above
+5\% — double the rated class accuracy. Convergence takes less than two power
+frequency cycles thanks to the pre-fault warm-start. And the maximum EKF thread
+latency is 1.8~milliseconds, which contributes \textbf{zero additional delay} to
+the 52-millisecond fault clearance chain.''
+\end{speakbox}
+
+%% ── 11. Anticipated Committee Questions ──────────────────────────────────────
+\section{11.\; Anticipated TSA Committee Questions and Answers}
+
+\begin{enumerate}
+\item \textbf{Q: What happens if the EKF diverges during a fault?}\\
+      A: Divergence is detected by monitoring the innovation sequence. If
+      $\|z_k - h(\hat{\boldsymbol{\theta}}_{k|k-1})\|$ exceeds $3\sigma$ for
+      two consecutive cycles, the EKF is re-initialised with the warm-start
+      prior. The relay continues with the last valid estimate throughout.
+      The bounded update law also limits how far a diverging estimate can drift.
+
+\item \textbf{Q: The RMSE for $Z_\mathrm{line}$ is 0.018~pu — how does this
+      affect distance protection accuracy?}\\
+      A: The distance Zone~1 reach is set at 80\% of the line impedance with a
+      $\pm$10\% margin. A 0.018~pu RMSE on a typical $Z_\mathrm{line} = 0.05$~pu
+      line is 36\% relative error — this \emph{is} significant for impedance
+      magnitude, but the product $\alpha Z_\mathrm{line}$ (fault location $\times$
+      impedance) is better conditioned and the distance relay uses the corrected
+      apparent impedance locus, not $Z_\mathrm{line}$ directly.
+
+\item \textbf{Q: Why not use a particle filter or unscented KF instead of EKF?}\\
+      A: The EKF Jacobian is analytically derived (Appendix A) and the nonlinearity
+      is mild for $k_\mathrm{ibr} \in [0.03, 0.85]$~pu. The EKF update completes in
+      17.6~$\mu$s; a particle filter with $N=100$ particles would require
+      $\sim$1.76~ms — exceeding the 1.8~ms cycle budget. The UKF is a reasonable
+      future extension but provides no significant accuracy gain for this problem.
+
+\item \textbf{Q: How do you handle PMU data dropouts or communication latency?}\\
+      A: The EKF prediction step runs even without a new measurement, using only the
+      process model. If a PMU frame is missing, $\hat{\boldsymbol{\theta}}_{k|k}
+      = \hat{\boldsymbol{\theta}}_{k|k-1}$ (no correction applied). This is standard
+      KF missing-data handling and is safe for up to 200~ms (10 missed cycles at
+      50~Hz) before the estimate uncertainty grows beyond the protection margin.
+
+\item \textbf{Q: Is the bounded update law compatible with fast fleet changes,
+      such as sudden IBR disconnection?}\\
+      A: A sudden disconnection causes $k_\mathrm{ibr}$ to drop by up to 0.3~pu
+      in one event. With $\delta_\mathrm{max} = 0.05$~pu/cycle, the EKF takes
+      $0.30/0.05 = 6$ cycles ($\approx$120~ms) to track this change. During this
+      window, the relay uses a slightly over-estimated $k_\mathrm{ibr}$, making
+      protection elements more conservative (higher threshold). This is fail-safe:
+      it produces fewer false trips rather than missed trips.
+\end{enumerate}
+
+%% ── Footer ───────────────────────────────────────────────────────────────────
+\vspace{2em}
+\begin{center}
+\small\color{gray}
+Study note prepared from SAMBP Technical Reports TR-43, TR-44, TR-45 (2026).\\
+Best supporting figure: TR-45/2026, Figure~3 — End-to-End Non-Blocking Latency Timeline.\\
+File: \texttt{slide13\_study\_note.pdf} $\cdot$ Generated \today
+\end{center}
+
+\end{document}

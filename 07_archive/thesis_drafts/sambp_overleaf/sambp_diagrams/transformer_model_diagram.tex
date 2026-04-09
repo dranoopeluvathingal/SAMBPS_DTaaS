@@ -1,0 +1,26 @@
+% Transformer Differential Current Model
+% Compile with: pdflatex transformer_model_diagram.tex
+
+\documentclass{standalone}
+\usepackage{tikz}
+\usepackage{pgfplots}
+
+\begin{document}
+\begin{tikzpicture}
+    \begin{axis}[
+        width=10cm,
+        height=6cm,
+        xlabel={Time (ms)},
+        ylabel={Current (A)},
+        title={Transformer Differential Current Components},
+        legend pos=north east
+    ]
+    \addplot[domain=0:20, samples=100, color=blue] {sin(2*pi*x/10)};
+    \addlegendentry{Fundamental}
+    \addplot[domain=0:20, samples=100, color=red] {0.3*sin(4*pi*x/10)};
+    \addlegendentry{2nd Harmonic}
+    \addplot[domain=0:20, samples=100, color=green] {0.1*sin(10*pi*x/10)};
+    \addlegendentry{5th Harmonic}
+    \end{axis}
+\end{tikzpicture}
+\end{document}

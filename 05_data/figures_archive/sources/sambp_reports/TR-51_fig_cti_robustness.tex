@@ -1,0 +1,52 @@
+% fig_cti_robustness.tex
+% TR-51: Per-pair CTI distribution under ±10% impedance uncertainty (Study E)
+
+\begin{tikzpicture}
+\begin{axis}[
+  name         = ctiax,
+  width        = 0.88\textwidth,
+  height       = 6.5cm,
+  ybar,
+  bar width    = 9pt,
+  ylabel       = {Mean CTI [s]},
+  ylabel style = {font=\small},
+  xlabel       = {Primary $\to$ backup pair},
+  xlabel style = {font=\small},
+  xtick        = {1,2,3,4,5,6,7,8,9,10},
+  xticklabels  = {R09→R08, R08→R07, R10→R04, R04→R03,
+                  R11→R03, R07→R06, R03→R02, R06→R05,
+                  R05→R01, R02→R01},
+  xticklabel style = {font=\scriptsize, rotate=40, anchor=east},
+  xmin=0.4, xmax=10.6,
+  ymin=0, ymax=0.50,
+  ytick        = {0,0.10,0.20,0.30,0.40,0.50},
+  yticklabel style = {font=\scriptsize},
+  tick style   = {draw=none},
+  axis line style = {gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  nodes near coords,
+  nodes near coords align = {vertical},
+  every node near coord/.append style = {font=\tiny, yshift=3pt},
+]
+
+%% Mean CTI bars
+\addplot[fill=sambpblue!70, draw=sambpblue]
+  coordinates {
+    (1, 0.213) (2, 0.218) (3, 0.223) (4, 0.217)
+    (5, 0.391) (6, 0.216) (7, 0.222) (8, 0.214)
+    (9, 0.214) (10, 0.395)
+  };
+
+%% CTI_MIN reference line
+\draw[red!60!black, thick, dashed]
+  (axis cs:0.4, 0.200) -- (axis cs:10.6, 0.200);
+\node[red!60!black, font=\small, anchor=west]
+  at (axis cs:0.5, 0.215) {$\mathrm{CTI}_\mathrm{min}=0.200$\,s};
+
+%% 100% pass annotation
+\node[green!40!black, font=\small\bfseries]
+  at (axis cs:5.5, 0.46) {All 10 pairs: 100\% pass rate at $\pm10\%$ Z};
+
+\end{axis}
+\end{tikzpicture}

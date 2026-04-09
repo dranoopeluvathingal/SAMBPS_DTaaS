@@ -1,0 +1,95 @@
+%% appC_algorithms.tex  ─ Appendix C: Algorithm Pseudocode Reference
+\chapter{Algorithm Pseudocode Reference}
+\label{app:algorithms}
+
+This appendix consolidates the pseudocode for all major algorithms
+in the SAMBP framework for reference. Chapter cross-references are given.
+
+\section{Complete SAMBP Relay Decision Algorithm}
+\label{app:alg_sambp_relay}
+
+\begin{algorithm}[htbp]
+\caption{SAMBP Relay: Complete Decision Logic (50~$\mu$s cycle)}
+\label{alg:app_sambp_relay}
+\begin{algorithmic}[1]
+\Require $\phasor{I}_A$, $\phasor{I}_B$, $V_{abc}$, DT estimates
+         $\hat{\kibr}$, $\hat{\alpha}$, $\hat{\Zline}$
+\Ensure Trip signal $T \in \{0,1\}$
+\State \Comment{\textbf{Element T1: Adaptive 87L}}
+\State $k_m \leftarrow k_m^\ast(\hat{\kibr})$ via Eq.~\eqref{eq:ch4_km_formula}
+\State $T_1 \leftarrow \mathbf{1}[|\phasor{I}_A + \phasor{I}_B| > k_m(|\phasor{I}_A|+|\phasor{I}_B|)/2 + I_0]$
+\State \Comment{\textbf{Element T2: Harmonic 87LH}}
+\State Compute DFT: $I_\mathrm{diff,1}$, $I_\mathrm{diff,2}$ at $f_0$, $2f_0$
+\State $T_2 \leftarrow \mathbf{1}[I_\mathrm{diff,1} > k_m I_\mathrm{bias,1}] \cdot
+         \mathbf{1}[I_\mathrm{diff,2}/I_\mathrm{diff,1} < 0.15]$
+\State \Comment{\textbf{Element T3: Neg-seq 87LN}}
+\State $I_{A,2} \leftarrow$ negative-seq component of $\phasor{I}_A$
+\State $T_3 \leftarrow \mathbf{1}[|I_{A,2}| > k_{m,2}|I_{A,2}|/2 + I_{0,2}]$
+\State \Comment{\textbf{Element T4: TDCS}}
+\State $S_\mathrm{TDCS} \leftarrow \sum_{t-N_w}^{t}(dI_\mathrm{diff}/dt)^2 \Delta t$
+\State $T_4 \leftarrow \mathbf{1}[S_\mathrm{TDCS} > S_\mathrm{thr}] \cdot \mathbf{1}[|\phasor{I}_A + \phasor{I}_B| > I_0]$
+\State \Comment{\textbf{Physics veto}}
+\State $\mathrm{veto} \leftarrow \mathbf{1}[\hat{\kibr} \in [0, 2]] \cdot
+         \mathbf{1}[\hat{\alpha} \in [0, 1]] \cdot \mathbf{1}[|\hat{\Zline}| > 0]$
+\State \Comment{\textbf{PINN advisory (from Ch.~\ref{ch:ml})}}
+\State $T_\mathrm{PINN} \leftarrow \mathrm{PINN}(\mathbf{f}; \theta)$ if $\mathrm{veto}$
+\State \Comment{\textbf{Vote logic}}
+\State $T \leftarrow T_1 \cup T_2 \cup T_3 \cup T_4 \cup (T_\mathrm{PINN} \cap \mathrm{veto})$
+\State \Return $T$
+\end{algorithmic}
+\end{algorithm}
+
+\section{WAPC Centralised Decision Cycle}
+\label{app:alg_wapc}
+
+\begin{algorithm}[htbp]
+\caption{WAPC Centralised Decision Cycle (200~ms cycle)}
+\label{alg:app_wapc}
+\begin{algorithmic}[1]
+\Require PMU synchrophasors $\{V_k, \theta_k\}$; IED status; EMS topology
+\Ensure Settings $\{TMS_i, I_{p,i}\}$; GOOSE coordination signals
+\State Receive PMU frames (50 Hz)
+\State \Comment{\textbf{Fault detection}}
+\If{any $|\Delta V_k| > 0.1$~pu}
+  \State $\hat{L} \leftarrow \arg\max_L [\Delta V_{L,\mathrm{end A}} + \Delta V_{L,\mathrm{end B}}]$
+  \State Run N-1 BFS for tripping $\hat{L}$
+  \If{N-1 secure} issue GOOSE trip to relays on $\hat{L}$
+  \Else\ issue conditional trip + EMS notification
+  \EndIf
+\EndIf
+\State \Comment{\textbf{Settings audit}}
+\State Receive $\hat{\kibr}$ from DT EKF; check CUSUM alarm
+\If{CUSUM alarm}
+  \State Re-run CTI settings engine (Algorithm~\ref{alg:ch9_settings})
+  \State Validate against N-1 contingencies
+  \State Upload new settings via MMS (sequential)
+  \State Rotate HMAC keys via PKI
+  \State Broadcast GOOSE activation
+\EndIf
+\State \Return updated settings, GOOSE signals
+\end{algorithmic}
+\end{algorithm}
+
+\section{Islanding Detection and Mode-Switch}
+\label{app:alg_island}
+
+\begin{algorithm}[htbp]
+\caption{ROCOF Islanding Detection and GFM Mode-Switch (Ch.~\ref{ch:microgrid})}
+\label{alg:app_island}
+\begin{algorithmic}[1]
+\Require Frequency $f(t)$ at 50~Hz; voltage $V(t)$
+\Ensure Island flag; GOOSE mode-switch broadcast
+\State Estimate $\widehat{ROCOF} \leftarrow (f(t) - f(t - 3/f_0)) / (3/f_0)$
+\State Estimate vector surge $\Delta\theta$ from phase angle difference
+\State Compute neg-seq ratio $V_2/V_1$
+\If{$|ROCOF| > 0.5$~Hz/s \textbf{AND} $|\Delta\theta| > 2^\circ{}$
+   \textbf{OR} $V_2/V_1 > 0.02$}
+  \State Set island flag
+  \State Broadcast \texttt{GOOSE.mode = ISLAND} (within 4~ms)
+  \State Pre-arm setting-group 2 (islanded settings)
+  \State Start 5~ms delay timer
+  \If{timer expires} activate SG2
+  \EndIf
+\EndIf
+\end{algorithmic}
+\end{algorithm}

@@ -1,0 +1,86 @@
+% fig_adaptive_detection.tex
+% TR-24: Bar chart — detection comparison fixed vs adaptive, S4 drift scenario
+% Shows: ΔI for k_ibr=0.07,0.09,0.11 with fixed threshold (0.040) and adaptive
+% threshold (0.025+3σ ≈ 0.0297 pu for S4)
+% Key: k=0.07 bar (ΔI=0.0344) clears adaptive (0.0297) but NOT fixed (0.040)
+\begin{tikzpicture}
+\begin{axis}[
+  name        = detax,
+  ybar,
+  bar width   = 18pt,
+  width       = 0.78\textwidth,
+  height      = 6.5cm,
+  ylabel      = {Adaptive $\Delta I_{\rm rms}$ vs threshold [pu]},
+  ylabel style= {font=\small},
+  xlabel      = {IBR current limit $k_{\rm ibr}$ [pu]},
+  xlabel style= {font=\small},
+  ymin=0, ymax=0.075,
+  ytick       = {0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07},
+  yticklabels = {0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07},
+  yticklabel style={font=\scriptsize},
+  xtick       = {1, 2, 3},
+  xticklabels = {0.07, 0.09, 0.11},
+  xticklabel style={font=\scriptsize},
+  enlarge x limits=0.35,
+  legend style={at={(0.97,0.98)}, anchor=north east,
+                font=\scriptsize, draw=gray!60},
+  grid         = major,
+  grid style   = {gray!20, dashed},
+  tick style   = {draw=none},
+  axis line style={gray!60},
+]
+
+% ΔI_rms values for S4 (drift, μ_pre=0.015):
+%   k=0.07: rms_post=0.04950 → ΔI=0.04950−0.01513=0.03437 pu
+%   k=0.09: rms_post=0.06364 → ΔI=0.06364−0.01513=0.04851 pu
+%   k=0.11: rms_post=0.07778 → ΔI=0.07778−0.01513=0.06265 pu
+
+% k=0.07 only trips adaptive (highlight red→yellow transition)
+\addplot[fill=orange!50, draw=orange!80!black]
+  coordinates { (1, 0.03437) };
+\addlegendentry{TDCS-only (adaptive trips; fixed misses)}
+
+% k=0.09 and k=0.11 trip both
+\addplot[fill=green!40, draw=green!70!black]
+  coordinates { (2, 0.04851) (3, 0.06265) };
+\addlegendentry{Both fixed + adaptive trip}
+
+% Adaptive threshold line
+\addplot[red!60!black, thick, dashed, mark=none, domain=0.5:3.5, samples=2]
+  ({x}, {0.02967});
+\addlegendentry{$\Delta_{\rm thr,adapt}=0.0297$\,pu (S4)}
+
+% Fixed threshold line
+\addplot[gray!60, thick, dotted, mark=none, domain=0.5:3.5, samples=2]
+  ({x}, {0.040});
+\addlegendentry{$\Delta_{\rm thr,fixed}=0.040$\,pu (TR-23)}
+
+% Value labels
+\node[font=\tiny, blue!70!black, rotate=90]
+  at (axis cs:1, 0.03437+0.007) {0.034};
+\node[font=\tiny, blue!70!black, rotate=90]
+  at (axis cs:2, 0.04851+0.007) {0.049};
+\node[font=\tiny, blue!70!black, rotate=90]
+  at (axis cs:3, 0.06265+0.007) {0.063};
+
+% Gap annotation: missed by fixed
+\draw[{latex[length=3pt]}-{latex[length=3pt]}, red!60!black]
+  (axis cs:0.6, 0.03437) -- node[left, font=\tiny, red!70!black, align=left]
+    {gap\\0.006\,pu}
+  (axis cs:0.6, 0.040);
+
+% "MISSED BY FIXED" label
+\node[font=\scriptsize, red!70!black, align=center]
+  at (axis cs:1.0, 0.066)
+  {Fixed\\MISSES};
+\draw[-latex, red!60!black, thin]
+  (axis cs:1.0, 0.061) -- (axis cs:1.0, 0.040);
+
+\node[font=\scriptsize, green!60!black, align=center]
+  at (axis cs:1.0, 0.022)
+  {Adaptive\\TRIPS};
+\draw[-latex, green!60!black, thin]
+  (axis cs:1.0, 0.025) -- (axis cs:1.0, 0.029);
+
+\end{axis}
+\end{tikzpicture}

@@ -1,0 +1,150 @@
+%% ch08_conclusions.tex
+%% Chapter 8: Conclusions
+%% Thesis: Advanced Protection for Distributed Power Systems and Microgrids
+%% ============================================================
+\chapter{Conclusions}
+\label{ch:conclusions}
+
+\section{Summary of Contributions}
+\label{sec:ch13_summary}
+
+This thesis has developed, analysed, and validated the \textbf{Self-Adaptive
+Model-Based Protection (SAMBP)} framework---a hierarchical, physics-aware
+architecture for protection of future power systems dominated by
+Inverter-Based Resources (IBRs). The framework treats adaptive protection
+as an \emph{inverse estimation problem}: each protection element maintains
+an explicit physical model of its protected device and continuously
+identifies the current model parameters from real-time measurements.
+Adaptation decisions are gated by a four-component confidence score and
+bounded by a provably safe update law.
+
+The thesis delivers four original contributions, each validated with
+full numerical simulation results.
+
+\subsection{C1: Adaptive Differential Protection (Chapter~\ref{ch:differential})}
+
+The physics-constrained adaptive 87L line differential relay modulates
+the bias slope $k_m^*(\kibr)$ in real time, achieving TPR\,=\,1.000 and
+zero false trips across the full IBR penetration range
+$\kibr \in [0.03, 0.85]$~pu. The negative-sequence element (87LN) proves
+that IBR negative-sequence suppression \emph{improves} sensitivity
+($\rho_2 = 2$, independent of $\kibr$). The 87T-SPRT scheme replaces
+ad-hoc second-harmonic blocking with a Wald sequential probability ratio
+test, providing explicit false-trip and miss-rate guarantees
+($\alpha = \beta = 0.001$), and the IBR-adaptive transformer bias slope
+$k_T^*(\kibr)$ closes the restrain-during-internal-fault failure mode.
+
+\subsection{C2: Adaptive Overcurrent and Distance Protection (Chapter~\ref{ch:oc_distance})}
+
+The SAMBP-SyncOC framework introduces inverse-estimation-based adaptive
+overcurrent protection for synchronous generators. The two-pass
+Levenberg--Marquardt estimator achieves $R^2 > 0.999$ with Jacobian
+condition number $\kappa_n(J) < 20$ across three-phase, line-to-line,
+and SLG faults. The four-component confidence-gated bounded update law
+reduces spurious relay pickups by $\approx 60\%$ with no security
+degradation. For distance protection, the IBR-corrected quadrilateral
+characteristic achieves $P_\mathrm{detect} = 99.3\%$ and
+$P_\mathrm{secure} = 99.97\%$, and the Monte Carlo reliability framework
+provides the first probabilistic reliability quantification for IBR
+distance protection. The microgrid protection architecture
+(Chapter~\ref{ch:microgrid}) extends this to islanded operation:
+ROCOF-supervised islanding detection achieves NDZ\,$< 1\%$ and 114~ms
+isolation time compliant with IEEE~1547-2018, and the adaptive OC
+setting-group switches within 5~ms of GOOSE receipt.
+
+\subsection{C3: Digital Twin and Physics-Informed ML (Chapter~\ref{ch:monitoring_ml})}
+
+The non-blocking EKF digital twin jointly estimates the state vector
+$(\kibr, \Zline, \alpha)$ from IED phasor measurements, achieving
+RMSE\,$\leq 0.024$~pu, $\leq 0.5\%$, $\leq 1.1\%$ respectively,
+bounded by the analytically derived Cramér--Rao Lower Bound. The shadow
+register pattern guarantees that EKF updates never delay primary trip
+decisions. The integrated PINN fault classifier embeds three KVL/KCL
+physics constraints in the loss function, achieving 96.1\% five-class
+accuracy with zero physics-constraint violations. CUSUM-triggered online
+learning detects fleet composition drift within 21 samples with
+$< 2$~pp catastrophic forgetting.
+
+\subsection{C4: Wide-Area Coordination and Cybersecurity (Chapter~\ref{ch:coordination_security})}
+
+The Wide-Area Protection Coordinator integrates PMU synchrophasor data
+for fault localisation (94.5\% correct-line identification at
+$\sigma_V = 0.01$~pu), automatic CTI-graded relay settings dispatch
+(100\% CTI-compliant in $< 3$~s), and a closed-loop
+CUSUM$\to$settings$\to$GOOSE adaptive protocol completing the full
+cycle in $\approx 31$~minutes with 8 of 9 steps automated.
+HMAC-SHA256 authentication reduces GOOSE attack risk by 54.9\%
+at 0.72~ms latency overhead, meeting IEC~61850 Class~P2 requirements.
+
+\section{Mapping to Research Objectives}
+\label{sec:ch13_objectives}
+
+\begin{table}[htbp]
+\caption{Research objectives and their fulfilment status}
+\label{tab:ch13_objectives}
+\small
+\begin{tabularx}{\textwidth}{@{}lp{2.5cm}p{5cm}p{3cm}l@{}}
+\toprule
+Obj. & Chapter & Contribution & Key metric & Status \\
+\midrule
+O1 & \ref{ch:differential} & C1: Adaptive 87L/87T differential
+  & TPR\,=\,1.000, all $\kibr$ & [P] \\
+O2 & \ref{ch:oc_distance}, \ref{ch:microgrid} & C2: Adaptive OC, distance \& microgrid
+  & $R^2 > 0.999$; $P_d = 99.3\%$; 114~ms & [P] \\
+O3 & \ref{ch:monitoring_ml} & C3: EKF digital twin + PINN classifier
+  & RMSE\,$\leq 0.024$~pu; 96.1\% & [P] \\
+O4 & \ref{ch:coordination_security} & C4: WAPC + cybersecurity
+  & 94.5\% localisation; 54.9\% risk reduction & [P] \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Limitations}
+\label{sec:ch13_limitations}
+
+\begin{enumerate}
+\item \textbf{Validated scope:} All contributions are validated
+      by EMT simulation and software-in-the-loop. Physical hardware-in-the-loop
+      on commercial IEDs (SEL-411L) is an identified next step.
+
+\item \textbf{Synthetic training data:} PINN training and EKF validation
+      data are synthetic. Real field fault recordings from live IBR
+      substations are needed for independent validation.
+
+\item \textbf{Single-substation WAPC:} The WAPC architecture is designed
+      for up to 34 buses within one substation. Multi-substation
+      coordination requires a hierarchical extension.
+
+\item \textbf{GFM model horizon:} GFM inverters are modelled as VSMs
+      valid for $t \leq 150$~ms. AVR dynamics beyond this horizon are
+      not captured.
+
+\end{enumerate}
+
+\section{Concluding Remarks}
+\label{sec:ch13_concluding}
+
+The displacement of synchronous machines by IBRs is irreversible and
+accelerating. The protection crisis it creates is not a temporary
+transition problem but a permanent structural feature of all future
+high-IBR power systems. Legacy relay algorithms, designed for passive,
+high-current, physics-determined fault current sources, fail systematically
+when the fault current is controlled, software-limited, and compositionally
+variable.
+
+The SAMBP framework proposed in this thesis addresses this crisis from
+first principles: by treating adaptive protection as an inverse estimation
+problem, it provides a unified mathematical structure applicable to every
+protection element---line differential, generator overcurrent, transformer
+differential, distance, and islanding---and to every source type.
+The framework is the first to integrate model identification, real-time
+state estimation, and centralised coordination into a closed-loop
+self-adaptive system with provable safety guarantees.
+
+The four validated contributions establish that the framework works: relay
+algorithms adapting in real-time to measured IBR fleet composition achieve
+full detection coverage across the operating envelope, with quantified
+reliability and security bounds. Future extensions to multi-substation
+scaling, hardware-in-the-loop firmware validation, and real field fault
+data will build directly on the foundational methodology, validated
+algorithms, and documented performance bounds established here.

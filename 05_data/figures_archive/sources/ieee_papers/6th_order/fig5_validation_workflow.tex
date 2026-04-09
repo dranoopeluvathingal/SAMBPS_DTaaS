@@ -1,0 +1,60 @@
+% ============================================================
+%  Figure 5 — Validation methodology workflow
+% ============================================================
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  proc/.style={draw, thick, rounded corners=2pt,
+               minimum width=3.2cm, minimum height=0.55cm,
+               align=center},
+  dec/.style ={draw, thick, fill=gray!18, diamond, aspect=2.8,
+               minimum width=3.0cm, align=center},
+  arr/.style ={->, thick, >=Latex},
+  node distance=0.5cm
+]
+
+%% --- Left track (truth) --------------------------------------
+\node[proc, fill=green!12] (truth)
+     {Sixth-order simulation\\$i_a^{(6\text{th})}(t)$};
+
+\node[proc, fill=green!12, below=of truth] (sample)
+     {Sample at relay rate\\$10\,\text{kHz}$, window $\mathcal{W}_L$};
+
+%% --- Right track (estimator) ---------------------------------
+\node[proc, fill=red!10, right=2.0cm of truth] (lm)
+     {Reduced inverse fit\\$\hat{\bm\theta} = \textsc{TwoPassLM}(i_a,\mathcal{W}_L)$};
+
+\node[proc, fill=red!10, below=of lm] (recon)
+     {Reconstruct $\hat{i}_a^{(\mathrm{red})}(t)$\\from $\hat{\bm\theta}$};
+
+%% --- Merge ---------------------------------------------------
+\node[dec, below=1.0cm of sample] (cmp) {Compare};
+\draw[arr] (sample.south) |- (cmp.west);
+\draw[arr] (recon.south)  |- (cmp.east);
+
+%% --- Output tracks -------------------------------------------
+\node[proc, fill=blue!10, below left=0.7cm and -0.5cm of cmp] (wave)
+     {Waveform metrics\\$\varepsilon_{\mathrm{RMS}}(L),\;\varepsilon_\infty(L)$};
+
+\node[proc, fill=orange!12, below=0.7cm of cmp] (ident)
+     {Identifiability\\$\kappa_n(J),\;\gamma(L)$};
+
+\node[proc, fill=purple!10, below right=0.7cm and -0.5cm of cmp] (param)
+     {Parameter bias\\$b_{I_{ss}}(L),\;b_{\tau_{ac}}(L)$};
+
+\draw[arr] (cmp.south west) -- (wave.north);
+\draw[arr] (cmp.south)      -- (ident.north);
+\draw[arr] (cmp.south east) -- (param.north);
+
+%% --- Bottom: relay consequence ------------------------------
+\node[proc, fill=green!15, below=0.7cm of ident] (relay)
+     {Relay consequence\\$\Delta I_p^*,\;\Delta TMS^*,\;\Delta t_{\mathrm{op}}$};
+
+\draw[arr] (wave.south)  |- (relay.west);
+\draw[arr] (ident.south) -- (relay.north);
+\draw[arr] (param.south) |- (relay.east);
+
+%% --- Top arrows from parallel tracks -------------------------
+\draw[arr] (truth.south) -- (sample.north);
+\draw[arr] (lm.south)    -- (recon.north);
+
+\end{tikzpicture}

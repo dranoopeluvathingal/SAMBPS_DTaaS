@@ -1,0 +1,68 @@
+%% front-notation.tex
+%% SAMBP thesis notation — loaded by \addNotationDefinitions / \printNotation
+%% Format: \nomenclature{symbol}{description}
+
+%% ── System quantities ────────────────────────────────────────
+\nomenclature{$k_{\mathrm{ibr}}$}{IBR current ratio $= I_{\mathrm{IBR}}/I_{\mathrm{rated}}$, dimensionless}
+\nomenclature{$I_{\mathrm{IBR}}$}{IBR terminal current magnitude (pu)}
+\nomenclature{$I_{\mathrm{rated}}$}{IBR rated current (pu)}
+\nomenclature{$I_{\mathrm{lim}}$}{IBR current limiter ceiling, 1.1--2.0\,pu}
+\nomenclature{$\underline{I}_A,\,\underline{I}_B$}{Phasor currents at relay end A / end B}
+\nomenclature{$V_1,\,V_2,\,V_0$}{Positive-, negative-, zero-sequence voltages}
+\nomenclature{$I_1,\,I_2,\,I_0$}{Positive-, negative-, zero-sequence currents}
+\nomenclature{$Z_{\mathrm{line}}$}{Positive-sequence line impedance ($\Omega$)}
+\nomenclature{$Z_F$}{Fault impedance ($\Omega$)}
+\nomenclature{$Z_{\mathrm{app}}$}{Apparent impedance seen by distance relay ($\Omega$)}
+\nomenclature{$\alpha$}{Fault location parameter, $0\le\alpha\le1$}
+\nomenclature{$\hat\alpha$}{EKF estimate of fault location parameter}
+\nomenclature{$\hat k_{\mathrm{ibr}}$}{EKF estimate of IBR current ratio}
+\nomenclature{$\hat Z_{\mathrm{line}}$}{EKF estimate of line impedance}
+
+%% ── Differential protection ──────────────────────────────────
+\nomenclature{$I_{\mathrm{diff}}$}{Differential operating current $=|\underline{I}_A+\underline{I}_B|$}
+\nomenclature{$I_{\mathrm{bias}}$}{Bias (restraint) current $= (|\underline{I}_A|+|\underline{I}_B|)/2$}
+\nomenclature{$k_m$}{Differential relay operating slope (fixed), 0.2--0.5}
+\nomenclature{$k_m^*$}{Adaptive differential slope (function of $k_{\mathrm{ibr}}$)}
+\nomenclature{$I_{\mathrm{min}}$}{Differential relay minimum-operating current (pu)}
+\nomenclature{$k_{\mathrm{TDCS}}$}{Transient Differential Correlation Score (0--1)}
+
+%% ── Distance protection ──────────────────────────────────────
+\nomenclature{$Z_1$}{Zone-1 reach impedance ($\Omega$)}
+\nomenclature{$k_r$}{IBR reach-correction factor}
+\nomenclature{$\beta$}{IBR reactive current injection angle (rad)}
+
+%% ── Machine learning ─────────────────────────────────────────
+\nomenclature{$\mathcal{L}$}{Total PINN loss function}
+\nomenclature{$\mathcal{L}_{\mathrm{data}}$}{Supervised cross-entropy loss}
+\nomenclature{$\mathcal{L}_{C1},\,\mathcal{L}_{C2},\,\mathcal{L}_{C3}$}{Physics-constraint penalty terms}
+\nomenclature{$\lambda_1,\,\lambda_2,\,\lambda_3$}{Penalty weights (10, 5, 2)}
+\nomenclature{$S_k$}{CUSUM statistic at decision cycle $k$}
+\nomenclature{$\theta$}{CUSUM alarm threshold (= 5)}
+\nomenclature{$\delta$}{CUSUM slack (allowable drift per cycle)}
+
+%% ── Kalman filter ────────────────────────────────────────────
+\nomenclature{$\mathbf{x}_k$}{EKF state vector at time step $k$}
+\nomenclature{$\mathbf{Q}$}{EKF process noise covariance matrix}
+\nomenclature{$\mathbf{R}$}{EKF measurement noise covariance matrix}
+\nomenclature{$\mathbf{H}_k$}{EKF measurement Jacobian}
+\nomenclature{$\mathbf{P}_k$}{EKF error covariance matrix}
+\nomenclature{$\mathbf{K}_k$}{Kalman gain matrix}
+
+%% ── Islanding / ROCOF ────────────────────────────────────────
+\nomenclature{$\mathrm{d}f/\mathrm{d}t$}{Rate of change of frequency (Hz/s)}
+\nomenclature{$\gamma_1$}{ROCOF threshold (0.5\,Hz/s)}
+\nomenclature{$\gamma_2$}{Phase deviation threshold ($2^\circ$)}
+\nomenclature{$\gamma_3$}{Negative-sequence voltage ratio threshold (0.02)}
+
+%% ── Optimisation ─────────────────────────────────────────────
+\nomenclature{$t_{ij}$}{Operating time of relay $R_i$ for fault on feeder $j$}
+\nomenclature{$M_{ij}$}{Plug-setting multiplier of relay $R_i$ for fault $j$}
+\nomenclature{$\mathrm{TMS}_i$}{Time-multiplier setting of relay $R_i$}
+\nomenclature{$\Delta_{\mathrm{CTI}}$}{Coordination time interval, $\ge 0.2$\,s}
+
+%% ── Constants and operators ──────────────────────────────────
+\nomenclature{$\jj$}{Imaginary unit $\sqrt{-1}$}
+\nomenclature{$\mathrm{pu}$}{Per-unit system normalisation}
+\nomenclature{$\underline{\,\cdot\,}$}{Complex phasor quantity}
+\nomenclature{$|\,\cdot\,|$}{Magnitude of complex number}
+\nomenclature{$\angle(\,\cdot\,)$}{Argument (phase angle) of complex number}

@@ -1,0 +1,325 @@
+%% ch06_microgrid_protection.tex
+%% Chapter 6: Protection of IBR Microgrids
+%% ============================================================
+\chapter{Protection of Inverter-Based Microgrids}
+\label{ch:microgrid}
+
+\section{Introduction}
+\label{sec:ch5mg_intro}
+
+A microgrid is a controllable cluster of generation (predominantly IBR),
+storage, and load that can operate either connected to the main grid or
+in an islanded autonomous mode. The transition between these operating modes
+is the most safety-critical event in microgrid operation: the protection
+must reconfigure within milliseconds to handle the radical change in fault
+current magnitude and direction.
+
+This chapter delivers three contributions:
+\begin{itemize}
+\item GFL/GFM dual-mode characterisation for protection
+      coordination (Section~\ref{sec:ch5_characterisation}).
+\item ROCOF-supervised islanding detection with IEC~61850
+      mode-switch achieving isolation within 120~ms
+      (Section~\ref{sec:ch5_islanding}).
+\item Adaptive OC setting-group architecture triggered by
+      GOOSE mode flags (Section~\ref{sec:ch5_adaptiveoc}).
+\end{itemize}
+
+\section{GFL vs.\ GFM: Protection-Relevant Characterisation}
+\label{sec:ch5_characterisation}
+
+\subsection{Operating Mode Definition}
+
+\begin{thesisdef}{Grid-Connected Mode}
+The microgrid is synchronised to the main grid. The grid provides the
+voltage reference and limits frequency excursions. IBRs operate in GFL
+mode (PLL-locked current source) unless VSM/GFM firmware is engaged.
+Fault current levels are high because the grid infeed dominates.
+\end{thesisdef}
+
+\begin{thesisdef}{Islanded Mode}
+The microgrid operates autonomously without grid connection. All voltage
+and frequency regulation must be provided by internal IBRs. Only GFM
+inverters (or droop-controlled GFL with synthetic inertia) can maintain
+stable islanded operation. Fault current is limited to $I_\mathrm{lim,GFM}
+\approx 1.5$--$2.5$~pu from GFM units.
+\end{thesisdef}
+
+\subsection{Fault Current Comparison}
+
+Table~\ref{tab:ch6_fault_comparison} compares the fault current levels
+in grid-connected versus islanded mode for the SAMBP microgrid test system.
+
+\begin{table}[htbp]
+\caption{Fault current levels in microgrid operating modes (33~kV, 10~MVA base)}
+\label{tab:ch6_fault_comparison}
+\begin{tabularx}{\textwidth}{@{}lXXX@{}}
+\toprule
+Fault type & Grid-connected (pu) & Islanded GFL (pu) & Islanded GFM (pu) \\
+\midrule
+3-phase (3P)       & 6.0--10.0 & 1.1--1.5 & 1.5--2.5 \\
+Single LG (SLG)    & 4.0--8.0  & 0.7--1.0 & 1.0--2.0 \\
+Line-to-line (LL)  & 5.0--9.0  & 1.0--1.3 & 1.3--2.2 \\
+High-impedance (HIF) & 0.1--0.5 & 0.05--0.2 & 0.1--0.3 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The fault current reduction from grid-connected to islanded is 4--8$\times$
+for GFL-dominated islands and 3--5$\times$ for GFM-dominated islands.
+This reduction is too large for the protection to accommodate with a
+single setting group.
+
+\subsection{GFL/GFM Transition Dynamics}
+
+When the main breaker opens (island detection), GFL inverters must
+transition to GFM mode within $T_\mathrm{switch} \leq 100$~ms to
+maintain island voltage stability. The transition involves:
+\begin{enumerate}
+\item Disabling the PLL (GFL synchronisation reference lost).
+\item Activating the VSM outer loop with virtual inertia $M$ and damping $D$.
+\item Enabling reactive power droop: $Q = Q_0 - k_V(|V| - |V_0|)$.
+\end{enumerate}
+During the transition window $[0, T_\mathrm{switch}]$, the IBR is in
+an undefined state—neither GFL nor GFM. The protection system must
+withstand this transition without false tripping.
+
+The protection challenge is that during this window:
+\begin{itemize}
+\item $\kibr$ changes rapidly from $\kibr^\mathrm{GFL} \leq 1.5$~pu
+      to $\kibr^\mathrm{GFM} \approx 2.0$~pu.
+\item The current angle $\phi$ jumps by up to $90^\circ$ as the reactive
+      injection priority changes.
+\item The frequency deviates by up to $\pm 2$~Hz before the VSM
+      governor action stabilises it.
+\end{itemize}
+
+\section{ROCOF-Supervised Islanding Detection}
+\label{sec:ch5_islanding}
+
+\subsection{Passive Islanding Detection Methods}
+
+IEEE~1547-2018 mandates that all IBRs cease energizing the grid within
+2~s of islanding. Passive islanding detection methods monitor local
+electrical quantities:
+\begin{itemize}
+\item \textbf{Over/Under Voltage (OV/UV):} Detects islanding when
+      $V < 0.88$~pu or $V > 1.10$~pu. Fails when load exactly equals
+      generation (near-unity load balance).
+\item \textbf{Over/Under Frequency (OF/UF):} Detects islanding when
+      $f < 59.3$~Hz or $f > 60.5$~Hz (IEEE~1547). Fails at load balance.
+\item \textbf{ROCOF:} Rate-of-Change-of-Frequency. Detects the
+      characteristic frequency ramp caused by power imbalance at the
+      moment of islanding.
+\end{itemize}
+
+\subsection{ROCOF Theory}
+
+The frequency dynamics after islanding are governed by the combined
+swing equation:
+\begin{equation}
+  M_\mathrm{total} \frac{d^2\theta}{dt^2} = P_g - P_l
+  \label{eq:ch6_swing}
+\end{equation}
+where $M_\mathrm{total} = \sum_i M_i$ is the total virtual inertia of
+all GFM units, $P_g$ is total generation, and $P_l$ is total load.
+The ROCOF immediately after islanding is:
+\begin{equation}
+  \left.\frac{df}{dt}\right|_{t=0^+} = \frac{f_0 (P_g - P_l)}{2H_\mathrm{total} S_\mathrm{rated}}
+  \label{eq:ch6_rocof}
+\end{equation}
+where $H_\mathrm{total}$ is the total virtual inertia constant (seconds)
+and $S_\mathrm{rated}$ is the aggregate rated power. For a 10\% load-generation
+imbalance with $H = 2$~s, $S = 10$~MVA:
+\begin{equation}
+  \left.\frac{df}{dt}\right|_{t=0^+}
+  = \frac{50 \cdot 0.10 \cdot 10}{2 \cdot 2 \cdot 10} = 1.25\;\mathrm{Hz/s}
+  \label{eq:ch6_rocof_example}
+\end{equation}
+
+\subsection{ROCOF Calculation}
+
+The ROCOF is estimated by fitting a linear frequency trend over a
+sliding window of $N_w$ cycles:
+\begin{equation}
+  \widehat{\mathrm{ROCOF}}(t) = \frac{f(t) - f(t - N_w/f_0)}{N_w/f_0}
+  \label{eq:ch6_rocof_est}
+\end{equation}
+A window $N_w = 3$ cycles (60~ms at 50~Hz) provides a good trade-off
+between speed and noise rejection.
+
+\subsection{Vector Surge Supplement}
+
+The vector surge element detects the instantaneous phase angle jump
+$\Delta\theta$ at the moment of islanding:
+\begin{equation}
+  \Delta\theta = \arctan\!\left(\frac{\omega_0 P_\mathrm{imbalance}}
+    {2 H_\mathrm{total} S_\mathrm{rated} (df/dt)}\right)
+  \label{eq:ch6_vector_surge}
+\end{equation}
+For $P_\mathrm{imbalance} = 10\%$: $\Delta\theta \approx 3$--$8^\circ{}$ (too
+small to detect reliably with classical $2^\circ$ threshold). The vector surge
+element is used only as confirmation, not primary detection.
+
+\subsection{Combined ROCOF + Impedance Islanding Criterion}
+
+The proposed islanding detection criterion combines ROCOF, vector surge,
+and negative-sequence voltage ratio:
+\begin{equation}
+  T_\mathrm{island} = \mathbf{1}\!\left[|df/dt| > \gamma_1\right]
+  \;\cap\; \mathbf{1}\!\left[|\Delta\theta| > \gamma_2\right]
+  \;\cup\; \mathbf{1}\!\left[V_2/V_1 > \gamma_3\right]
+  \label{eq:ch6_island_logic}
+\end{equation}
+where:
+\begin{itemize}
+\item $\gamma_1 = 0.5$~Hz/s (ROCOF threshold; below inadvertent ROCOF
+      for grid disturbances).
+\item $\gamma_2 = 2^\circ{}$ (vector surge threshold).
+\item $\gamma_3 = 0.02$ (negative-sequence voltage ratio threshold;
+      detects unbalanced load after islanding).
+\end{itemize}
+
+\textbf{Non-Detection Zone (NDZ) Analysis:}
+The NDZ is the set of load-generation balance conditions where the
+islanding detector fails. For the ROCOF element:
+\begin{equation}
+  \mathrm{NDZ}_\mathrm{ROCOF} = \left\{(P_g, P_l):\;
+    \left|\frac{f_0(P_g - P_l)}{2H S_r}\right| < \gamma_1 \right\}
+  = \left\{P_\mathrm{imb} < \frac{2H S_r \gamma_1}{f_0}\right\}
+  \label{eq:ch6_ndz}
+\end{equation}
+For $H = 2$~s, $S_r = 10$~MVA, $\gamma_1 = 0.5$~Hz/s:
+NDZ corresponds to $|P_\mathrm{imb}| < 0.4$~MW (4\% of rated). The
+combined criterion reduces the NDZ by additionally monitoring $V_2/V_1$
+and $\Delta\theta$. Simulations show the combined NDZ is $< 1\%$ of
+the $(P_g, P_l)$ operating space.
+
+\subsection{IEC 61850 Mode-Switch Broadcast}
+
+Upon islanding detection, the relay broadcasts a GOOSE mode-switch message
+within $T_\mathrm{GOOSE} \leq 4$~ms:
+\begin{equation}
+  \texttt{GOOSE.mode} = \texttt{ISLAND}
+  \label{eq:ch6_goose_mode}
+\end{equation}
+All IBRs subscribing to this GOOSE message switch from GFL to GFM mode.
+The total mode-switch latency budget is:
+\begin{align}
+  T_\mathrm{total} &= T_\mathrm{detect} + T_\mathrm{GOOSE} + T_\mathrm{switch}
+  \nonumber \\
+  &\leq 60 + 4 + 50 = 114\;\mathrm{ms} < 120\;\mathrm{ms}
+  \label{eq:ch6_latency}
+\end{align}
+where $T_\mathrm{detect} = 60$~ms (3 ROCOF cycles), $T_\mathrm{GOOSE} = 4$~ms,
+and $T_\mathrm{switch} = 50$~ms (GFM activation time). This satisfies
+the 120~ms target and the IEEE~1547-2018 ride-through compliance requirement
+(which requires a 160~ms detection time for normal voltage conditions).
+
+\section{Adaptive OC Setting-Group Architecture}
+\label{sec:ch5_adaptiveoc}
+
+\subsection{Motivation}
+
+The IEC inverse-time overcurrent relay has two setting parameters:
+pickup current $I_\mathrm{pickup}$ and time-multiplier setting $\TMS$.
+In grid-connected mode:
+\begin{equation}
+  I_\mathrm{pickup}^\mathrm{grid} = 1.5\,I_\mathrm{load,max}, \quad
+  \TMS^\mathrm{grid} = 0.15
+  \label{eq:ch6_sg_settings}
+\end{equation}
+In islanded mode, the fault current is 4--8$\times$ lower. The pickup
+threshold must be reduced to remain above load:
+\begin{equation}
+  I_\mathrm{pickup}^\mathrm{island} = 1.25\,I_\mathrm{load,max}, \quad
+  \TMS^\mathrm{island} = 0.05
+  \label{eq:ch6_island_settings}
+\end{equation}
+The transition between these settings must occur within $T_\mathrm{switch}$
+to avoid both missed trips (if settings are too high) and sympathetic
+trips (if settings are too low during the transition window).
+
+\subsection{Setting-Group Pre-Arming Logic}
+
+The setting-group switch is pre-armed when the GOOSE mode-switch signal
+is received, and activates when the fault occurs or at
+$t = T_\mathrm{armed} + 50$~ms (whichever comes first):
+\begin{equation}
+  \texttt{SG.active} = \begin{cases}
+    \texttt{SG2} & \text{if } \texttt{GOOSE.mode = ISLAND} \text{ AND } t > T_\mathrm{armed} + 5\,\mathrm{ms} \\
+    \texttt{SG1} & \text{otherwise (grid-connected)}
+  \end{cases}
+  \label{eq:ch6_sg_logic}
+\end{equation}
+The 5~ms delay prevents the relay from switching to the lower settings
+during the transient portion of the mode-switch event (when fault current
+is temporarily elevated).
+
+\subsection{Bus Differential 87B for Microgrid Busbar}
+
+For the microgrid common busbar, a bus differential (87B) element protects
+against busbar faults that the line OC elements cannot detect:
+\begin{equation}
+  I_\mathrm{bus,diff} = \sum_{k} \phasor{I}_k > k_m^\mathrm{bus} \cdot I_\mathrm{bus,bias}
+  \label{eq:ch6_87b}
+\end{equation}
+The bus differential is immune to the mode transition because it directly
+measures the algebraic sum of all currents entering the busbar—a quantity
+that is zero for any through condition regardless of $\kibr$.
+
+\subsection{Coordination Table: Grid-Connected to Islanded}
+
+Table~\ref{tab:ch6_settings} provides the relay settings for both
+operating modes.
+
+\begin{table}[htbp]
+\caption{Adaptive relay settings for SAMBP microgrid (grid-connected and islanded)}
+\label{tab:ch6_settings}
+\begin{tabularx}{\textwidth}{@{}lXXXl@{}}
+\toprule
+Relay & Setting & Grid-connected & Islanded & Element \\
+\midrule
+R-feeder & $I_\mathrm{pickup}$ & 1.5~pu & 1.25~pu & ITOC~51 \\
+R-feeder & $\TMS$ & 0.15 & 0.05 & ITOC~51 \\
+R-bus & $k_m^\mathrm{bus}$ & 0.30 & 0.20 & 87B \\
+R-bus & $I_{0,\mathrm{bus}}$ & 0.10~pu & 0.05~pu & 87B \\
+R-gen & $I_\mathrm{pickup}^\mathrm{OV}$ & 1.10~pu & 1.20~pu & OV~59 \\
+R-gen & $\TMS^\mathrm{UV}$ & 0.10~s & 0.05~s & UV~27 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Microgrid Integration Study}
+\label{sec:ch5_integration}
+
+The complete microgrid protection architecture is validated through the
+SAMBP microgrid integration study (SAMBP~TR-42).
+The test system consists of:
+\begin{itemize}
+\item 4 GFL inverters (2~MW each), switchable to GFM.
+\item 1 SG (5~MW), used as synchronous condenser.
+\item 3 feeders with mixed load ($\cos\phi = 0.9$).
+\item IEC~61850 GOOSE network (2~ms round-trip latency).
+\end{itemize}
+
+
+\section{Summary}
+\label{sec:ch5mg_summary}
+
+This chapter has developed the protection architecture for IBR microgrids:
+\begin{enumerate}
+\item \textbf{GFL/GFM characterisation:} Fault current levels are
+      4--8$\times$ lower in islanded mode, necessitating dual setting groups.
+      Table~\ref{tab:ch6_fault_comparison} provides quantitative data for
+      setting group design.
+\item \textbf{ROCOF islanding detection:} The combined ROCOF +
+      vector surge + negative-sequence criterion achieves NDZ $< 1\%$
+      and total isolation within 114~ms, within the 120~ms target and
+      compliant with IEEE~1547-2018.
+\item \textbf{Adaptive OC setting-group:} The pre-arming logic
+      switches from grid-connected to islanded settings within 5~ms of
+      GOOSE receipt, eliminating the mode-transition blind spot.
+\item \textbf{Bus differential 87B:} Mode-invariant busbar protection
+      provides 100\% coverage for busbar faults at any $\kibr$.
+\end{enumerate}

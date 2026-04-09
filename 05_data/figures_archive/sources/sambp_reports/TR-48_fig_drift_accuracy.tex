@@ -1,0 +1,69 @@
+% fig_drift_accuracy.tex
+% TR-48: Rolling accuracy comparison — static vs online model under fleet drift
+
+\begin{tikzpicture}
+\begin{axis}[
+  name         = driftax,
+  width        = 0.88\textwidth,
+  height       = 7.0cm,
+  xlabel       = {Sample index $t$},
+  ylabel       = {Rolling accuracy (window=50) [\%]},
+  xlabel style = {font=\small},
+  ylabel style = {font=\small},
+  xmin=0, xmax=1000,
+  ymin=30, ymax=90,
+  xtick        = {0,100,200,300,400,500,600,700,800,900,1000},
+  ytick        = {30,40,50,60,70,80,90},
+  xticklabel style = {font=\scriptsize},
+  yticklabel style = {font=\scriptsize},
+  tick style   = {draw=none},
+  axis line style = {gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  legend style = {at={(0.02,0.05)}, anchor=south west,
+                  font=\scriptsize, draw=gray!50},
+  legend cell align = left,
+]
+
+%% Fleet-2 shift shading
+\addplot[gray!15, fill=gray!10, draw=none]
+  coordinates {(500,30) (1000,30) (1000,90) (500,90)} \closedcycle;
+\node[gray!50, font=\tiny, rotate=90, anchor=south]
+  at (axis cs:520, 35) {Fleet-2 active};
+
+%% Static model rolling accuracy (50-sample windows)
+\addplot[sambpblue, thick, mark=square*, mark size=2pt,
+         mark repeat=2, mark phase=1]
+  coordinates {
+    (50,58) (100,70) (150,58) (200,58) (250,70)
+    (300,60) (350,54) (400,50) (450,54) (500,60)
+    (550,68) (600,70) (650,74) (700,66) (750,66)
+    (800,66) (850,56) (900,64) (950,72) (1000,56)
+  };
+\addlegendentry{Static model}
+
+%% Online model rolling accuracy
+\addplot[orange!80!black, thick, mark=*, mark size=2pt,
+         mark repeat=2, mark phase=2]
+  coordinates {
+    (50,58) (100,66) (150,58) (200,64) (250,64)
+    (300,50) (350,64) (400,68) (450,54) (500,62)
+    (550,66) (600,66) (650,66) (700,64) (750,68)
+    (800,70) (850,58) (900,62) (950,78) (1000,62)
+  };
+\addlegendentry{Online model ($\lambda=0.995$)}
+
+%% Fleet shift vertical line
+\draw[red!60!black, very thick, dashed]
+  (axis cs:500, 30) -- (axis cs:500, 90);
+\node[red!60!black, font=\small\bfseries, anchor=south, rotate=0]
+  at (axis cs:500, 90) {Fleet shift};
+
+%% Trend annotation for online improvement
+\draw[-{Stealth[length=4pt]}, green!50!black, thick]
+  (axis cs:780, 55) -- (axis cs:900, 68);
+\node[green!50!black, font=\tiny, anchor=north, align=center]
+  at (axis cs:790, 52) {Online\\adapting};
+
+\end{axis}
+\end{tikzpicture}

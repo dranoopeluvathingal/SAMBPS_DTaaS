@@ -1,0 +1,82 @@
+% fig_mg_integration_gridcode.tex
+% TR-42: k_ibr threshold ladder showing protection capability vs k
+%
+% Vertical k_ibr axis (0 to 0.30 pu)
+% Horizontal bands showing which elements become active
+
+\begin{tikzpicture}
+\begin{axis}[
+  name         = gcax,
+  width        = 0.80\textwidth,
+  height       = 9.0cm,
+  ybar,
+  bar width    = 1.2cm,
+  xlabel       = {Protection element},
+  ylabel       = {Minimum $k_\mathrm{ibr}$ threshold [pu]},
+  xlabel style = {font=\small},
+  ylabel style = {font=\small},
+  ymin=0, ymax=0.32,
+  ytick        = {0,0.02,0.04,0.06,0.08,0.10,0.12,0.15,0.20,0.25,0.30},
+  yticklabel style={font=\scriptsize},
+  xtick        = {1,2,3,4,5,6},
+  xticklabels  = {OC-G2 (IS),
+                  87L (GC),
+                  67Q GFM,
+                  87B-MG,
+                  Full scheme,
+                  87L + Z1},
+  xticklabel style={font=\scriptsize, rotate=12, anchor=north east},
+  tick style   = {draw=none},
+  axis line style={gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  nodes near coords,
+  nodes near coords style={font=\tiny, anchor=south},
+  every node near coord/.append style={
+    /pgf/number format/.cd, fixed, fixed zerofill, precision=4
+  },
+  legend style={at={(0.98,0.02)}, anchor=south east, font=\tiny,
+                draw=gray!60, fill=white},
+  clip=false,
+]
+
+%% Thresholds
+\addplot[fill=green!45, draw=green!60]
+  coordinates {(1, 0.0075)};
+\addlegendentry{Adaptive OC islanded}
+
+\addplot[fill=blue!40, draw=blue!60]
+  coordinates {(2, 0.0600)};
+\addlegendentry{87L line differential}
+
+\addplot[fill=teal!45, draw=teal!60]
+  coordinates {(3, 0.1000)};
+\addlegendentry{67Q directional (GFM)}
+
+\addplot[fill=orange!50, draw=orange!70]
+  coordinates {(4, 0.1176)};
+\addlegendentry{87B bus differential}
+
+\addplot[fill=purple!40, draw=purple!60]
+  coordinates {(5, 0.2000)};
+\addlegendentry{Full integrated scheme}
+
+\addplot[fill=blue!25, draw=blue!40]
+  coordinates {(6, 0.1000)};
+\addlegendentry{87L + Z1 redundancy}
+
+%% Recommended minimum line
+\addplot[red!60!black, very thick, dashed]
+  coordinates {(0.4, 0.20) (6.6, 0.20)};
+\addlegendentry{Recommended min. $k=0.20$}
+
+%% Grid code proposal box
+\node[draw=red!30, fill=red!5, rounded corners=2pt,
+      font=\tiny, inner sep=3pt, align=center]
+  at (axis cs:3.5, 0.27)
+  {Grid-code proposal:\\
+   $k_\mathrm{ibr}\geq0.10$ per unit (67Q active)\\
+   $k_\mathrm{total}\geq0.20$ fleet (full scheme)};
+
+\end{axis}
+\end{tikzpicture}

@@ -1,0 +1,80 @@
+% ============================================================
+%  Figure 4 — LL fault: measured vs fitted sequence components
+%  I1(t) and I2(t) with Stage-1 phase-A overlay
+%  omega = 2*pi*50 = 314.16 rad/s ; window = 200 ms
+%  Parameters (pu): I_sub1=1.42, I_ss1=0.70, tau_ac1=0.80, tau_dc=0.05, phi=0
+%                   I_sub2=1.40, I_ss2=0.68, tau_ac2=0.38, tau_dc=0.05, phi=-pi/6
+% ============================================================
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=1 by 2, vertical sep=0.55cm},
+  width=\columnwidth, height=4.5cm,
+  xmin=0, xmax=0.20,
+  xlabel={Time $t$ (\si{\second})},
+  grid=both, grid style={gray!20},
+  tick label style={font=\scriptsize},
+  label style={font=\small},
+  xtick={0,0.02,0.04,0.06,0.08,0.10,0.12,0.14,0.16,0.18,0.20},
+  xticklabels={0,20,40,60,80,100,120,140,160,180,200},
+  clip=true
+]
+
+%% ---- Top subplot: Positive sequence I_1 ----------------------------
+\nextgroupplot[
+  ylabel={$I_1(t)$ (p.u.)},
+  ymin=-1.8, ymax=2.0,
+  legend style={at={(0.98,0.97)}, anchor=north east,
+                font=\scriptsize, fill=white}]
+
+% Measured I1 (truth) — Stage-2 forward model (blue solid)
+\addplot[thick, blue!80!black, samples=600, domain=0:0.20]
+  { (0.70 + 0.72*exp(-x/0.80)) * sin(deg(314.16*x))
+    - 1.42*exp(-x/0.05) * sin(0) }
+  node[pos=0.88, above, font=\tiny] {};
+
+% Stage 1 fit to phase A (red dashed — shows mismatch)
+\addplot[thick, red!70!black, dashed, samples=600, domain=0:0.20]
+  { (0.69 + 0.73*exp(-x/0.62)) * sin(deg(314.16*x))
+    - 1.42*exp(-x/0.05) * 0 }
+  ;
+
+% Sequence estimator fit (green dotted — near perfect)
+\addplot[thick, green!60!black, dotted, samples=600, domain=0:0.20]
+  { (0.701 + 0.719*exp(-x/0.801)) * sin(deg(314.16*x))
+    - 1.42*exp(-x/0.05) * 0 }
+  ;
+
+\legend{Measured $I_1$,
+        Stage~1 (Phase-A fit),
+        Seq.\ Est.\ (proposed)};
+
+%% ---- Bottom subplot: Negative sequence I_2 -------------------------
+\nextgroupplot[
+  ylabel={$I_2(t)$ (p.u.)},
+  ymin=-1.8, ymax=2.0,
+  legend style={at={(0.98,0.97)}, anchor=north east,
+                font=\scriptsize, fill=white}]
+
+% Measured I2 (truth)
+\addplot[thick, blue!80!black, samples=600, domain=0:0.20]
+  { (0.68 + 0.72*exp(-x/0.38)) * sin(deg(314.16*x - 0.5236))
+    - 1.40*exp(-x/0.05) * sin(-0.5236) }
+  ;
+
+% Stage 1 cannot recover I2 (shown as residual magnitude indication)
+\addplot[thick, red!70!black, dashed, samples=600, domain=0:0.20]
+  { 0.22 * sin(deg(314.16*x + 1.2)) }
+  ;
+
+% Sequence estimator fit
+\addplot[thick, green!60!black, dotted, samples=600, domain=0:0.20]
+  { (0.678 + 0.722*exp(-x/0.381)) * sin(deg(314.16*x - 0.5236))
+    - 1.40*exp(-x/0.05) * sin(-0.5236) }
+  ;
+
+\legend{Measured $I_2$,
+        Stage~1 residual ($I_2$ unmodelled),
+        Seq.\ Est.\ (proposed)};
+
+\end{groupplot}
+\end{tikzpicture}

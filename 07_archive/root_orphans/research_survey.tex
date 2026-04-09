@@ -1,0 +1,788 @@
+% =============================================================================
+%  research_survey.tex — Complete Chronological Research Survey
+%  PhD Thesis: Self-Adaptive Model-Based Protection (SAMBP)
+%  Author: Anoop V. Eluvathingal | IIT Madras
+%  Date: April 2026
+%  NOTE: Built from full filesystem scan of /root/phd_thesis
+% =============================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{amsmath,amssymb}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{mdframed}
+\usepackage{multicol}
+
+% ---- Colours ----------------------------------------------------------------
+\definecolor{sambpblue}{RGB}{0,76,153}
+\definecolor{phasegreen}{RGB}{0,120,60}
+\definecolor{alertred}{RGB}{180,0,0}
+\definecolor{lightgray}{RGB}{245,245,245}
+\definecolor{rulegray}{RGB}{100,100,100}
+\definecolor{trackedgreen}{RGB}{0,130,60}
+\definecolor{untrackedorange}{RGB}{200,100,0}
+
+% ---- Section formatting -----------------------------------------------------
+\titleformat{\section}{\large\bfseries\color{sambpblue}}{\thesection.}{0.6em}{}[\vspace{-4pt}\rule{\linewidth}{0.8pt}]
+\titleformat{\subsection}{\normalsize\bfseries\color{phasegreen}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{0.5em}{}
+
+% ---- Header/footer ----------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small\textcolor{rulegray}{SAMBP PhD Research Survey — Complete Filesystem Audit}}
+\fancyhead[R]{\small\textcolor{rulegray}{Anoop V. Eluvathingal, April 2026}}
+\fancyfoot[C]{\small\thepage}
+
+% ---- Phase box environment --------------------------------------------------
+\newmdenv[
+  backgroundcolor=lightgray,
+  linecolor=sambpblue,
+  linewidth=1.2pt,
+  innerleftmargin=8pt,innerrightmargin=8pt,
+  innertopmargin=6pt,innerbottommargin=6pt,
+  skipabove=6pt,skipbelow=4pt,
+]{phasebox}
+
+\newmdenv[
+  backgroundcolor={rgb}{0.95,1.0,0.95},
+  linecolor=phasegreen,linewidth=1pt,
+  innerleftmargin=8pt,innerrightmargin=8pt,
+  innertopmargin=4pt,innerbottommargin=4pt,
+  skipabove=4pt,skipbelow=4pt,
+]{greenbox}
+
+% ---- Misc -------------------------------------------------------------------
+\setlength{\parindent}{0pt}
+\hypersetup{colorlinks=true,linkcolor=sambpblue,urlcolor=sambpblue,citecolor=sambpblue}
+
+% =============================================================================
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{sambpblue}
+    Self-Adaptive Model-Based Protection (SAMBP)\\[4pt]
+    Complete PhD Research Survey}\\[10pt]
+  {\large Full Filesystem Audit $\cdot$ Chronological Inventory $\cdot$ Future Directions}\\[8pt]
+  {\normalsize Anoop V.\ Eluvathingal \quad|\quad
+    Supervisor: Prof.\ K.\ Shanti Swarup \quad|\quad
+    IIT Madras \quad|\quad April 2026}
+\end{center}
+
+\vspace{4pt}\rule{\linewidth}{1.2pt}\vspace{6pt}
+
+\begin{abstract}
+\noindent
+This document provides a \textbf{complete, filesystem-verified} chronological
+survey of all technical work in the SAMBP PhD thesis project.
+The previous survey was incomplete, having been built from session memory rather
+than a live directory scan. This version is based on a full traversal of
+\texttt{/root/phd\_thesis}, including all 55 technical reports (TR-3 through
+TR-55 for the SG/IBR SyncOC/87L/87B/Distance/Microgrid/Digital-Twin/ML chain),
+four confirmed IEEE journal papers, six internal SyncOC sub-reports, four
+additional IBR reports (TR-56, TR-57, TR-58, TR-62), the thesis submission
+skeleton, and the new\_thesis chapter drafts.
+Git tracking status is noted for every major item.
+\end{abstract}
+
+\vspace{4pt}
+\tableofcontents
+
+% =============================================================================
+\newpage
+\section{Inventory Overview}
+
+\begin{table}[h!]
+\centering
+\caption{Summary of all work items found in \texttt{/root/phd\_thesis}}
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{Category} & \textbf{Contents} & \textbf{Count} \\
+\midrule
+SAMBP Technical Reports & TR-3 through TR-62 (with gaps at 59–61, 63–65) & 59 reports \\
+SyncOC sub-reports & Internal milestones (report, report2--6) & 6 reports \\
+IEEE Journal Papers & 6th-order, HIF, coord-gen, line-diff, seq-estim, hif-paper & 6 papers \\
+Journal Drafts & Paper A (SyncOC), Paper B (cascade), Paper C (unified) & 3 papers \\
+Thesis Skeletons & thesis\_submission/, new\_thesis/, new\_thesis\_edit/ & 3 drafts \\
+Chapter Script Sets & ch4/ (IPR), ch6/ (AI/ML), Z\_Final\_Thesis\_* & 3 sets \\
+Simulation Libraries & Z\_Synthetic\_Family\_Library (v1, v2) & 2 sets \\
+Presentations & TSA meeting, slides 3--16 & 15+ files \\
+\midrule
+\textbf{Total .tex files} & & $\approx 100$ \\
+\textbf{Total .py files} & & $\approx 200$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Git tracking status:} TR-3 to TR-15 and TR-38--45, TR-56--58, TR-62 are
+fully committed. TR-16--37 and TR-46--55 exist on disk but are
+\textcolor{untrackedorange}{\textbf{untracked}} (never committed to git).
+
+% =============================================================================
+\newpage
+\section{Phase 0 — Pre-SAMBP: Overleaf Thesis Drafts}
+
+\begin{phasebox}
+\textbf{Location:} \texttt{thesis\_submission/}, \texttt{new\_thesis/},
+\texttt{new\_thesis\_edit/}, \texttt{2-mainmatter/}, \texttt{sambp\_overleaf/}\\
+\textbf{Origin:} Overleaf syncs (commits: \texttt{b863b017}, \texttt{ccb693b1},
+\texttt{5f00135d}, multiple ``Update on Overleaf'' commits)
+\end{phasebox}
+
+The thesis was originally written in Overleaf and synced to this git repository.
+Three overlapping drafts survive:
+
+\subsubsection*{thesis\_submission/ (IIT Madras template, most complete)}
+Uses \texttt{iitmdissertation.cls} with compiled \texttt{thesis\_main.pdf}.
+Chapter structure:
+\begin{itemize}[noitemsep]
+  \item Ch.\ 1: Introduction
+  \item Ch.\ 2: Modelling (Park $dq$, reduced-order SG model)
+  \item Ch.\ 3: Challenges (IBR integration, protection gaps)
+  \item Ch.\ 4: Inverse Parameter Relay (IPR) — core SyncOC contribution
+  \item Ch.\ 5: Microgrid Protection
+  \item Ch.\ 6: AI/ML for Protection
+  \item Ch.\ 7: Performance Analysis
+\end{itemize}
+
+\subsubsection*{new\_thesis/ and new\_thesis\_edit/ (extended 13-chapter draft)}
+Chapters cover: Introduction, Mathematical Foundations, IBR Characterisation,
+Line Differential (87L), Generator OC (SyncOC), Transformer Differential (87T),
+Distance Protection, Microgrid Protection, Digital Twin, ML/PINN,
+Centralised Protection, Cybersecurity, Conclusions.
+
+This represents the most ambitious thesis scope — later rationalised into the
+6-chapter SAMBP structure via \texttt{THESIS\_CHAPTER\_MAP.tex}.
+
+\subsubsection*{2-mainmatter/ (earlier chapter-by-chapter drafts)}
+Raw chapter files: \texttt{chap-1Introduction.tex} through
+\texttt{chap-7Performance.tex}, plus \texttt{c4\_1\_sch\_adaptive\_logic.tex}
+(the first TikZ circuit schematic committed to git).
+
+\subsubsection*{Z\_Final\_Thesis\_* (data, figures, scripts)}
+Three parallel directories contain the supporting simulation data and Python
+scripts for ch4 (IPR), ch5 (Microgrid), and ch6 (AI/ML). Also:
+\texttt{Z\_Final\_Thesis\_data/ch6\_generator\_aware\_selector\_v3/} — suggests
+at least three iterations of the generator-aware model selector were developed.
+
+% =============================================================================
+\section{Phase 1 — SyncOC Internal Reports (TR-01 to TR-02B)}
+
+\begin{phasebox}
+\textbf{Location:} \texttt{sambp/sambp\_sync\_oc/report/} through \texttt{report6/}\\
+\textbf{Status:} Committed (as part of sambp\_sync\_oc module)
+\end{phasebox}
+
+Before the numbered TR series, the SyncOC protection function was developed
+through a sequence of internal milestone reports:
+
+\begin{table}[h!]
+\centering
+\caption{SyncOC internal sub-reports}
+\begin{tabular}{lp{10cm}}
+\toprule
+\textbf{Report} & \textbf{Title / Topic} \\
+\midrule
+report (TR-01) & Inverse-Estimation-Based Adaptive Overcurrent Protection for Synchronous Generators — the foundational LM estimator for SyncOC \\
+report2 (TR-02) & Extended Adaptive Overcurrent Protection Framework for Synchronous Generators — multi-mode extension \\
+report3 (TR-02B) & SAMBP-SyncOC HIF Adaptation — high-impedance fault variant \\
+report4 & Sixth-Order Park $dq$ Forward Model for SAMBP-SyncOC — truth model derivation \\
+report5 & (Stage 2 analysis, topic from commit context) \\
+report6 & (Integration milestone) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+These led directly to \textbf{Paper A} (single-generator SyncOC) and the
+branching into the numbered TR series.
+
+% =============================================================================
+\section{Phase 2 — Core SAMBP Framework: TR-3 to TR-11}
+
+\begin{phasebox}
+\textbf{Location:} \texttt{sambp/report3/} through \texttt{sambp/report11/}\\
+\textbf{Git status:} TR-3 to TR-11 all committed (commits
+\texttt{4bb60c40} through \texttt{081b3098})
+\end{phasebox}
+
+This phase established the SAMBP framework across four protection functions and
+validated it statistically.
+
+\begin{longtable}{lp{9.5cm}l}
+\toprule
+\textbf{TR} & \textbf{Title / Topic} & \textbf{Pages} \\
+\midrule
+\endhead
+TR-03 & \textbf{SAMBP Model-Based Differential Protection: Transformer 87T and Line 87L} using Inverse Estimation and Confidence Gating. First report to cover both 87T and 87L functions jointly. Stage-2 model-veto gate introduced. & $\sim$60 \\[3pt]
+TR-04 & \textbf{87B Bus Differential Protection:} Extending the SAMBP framework to busbar differential. 3-parameter zone model, CT-saturation physics constraint. & $\sim$35 \\[3pt]
+TR-05 & \textbf{System Integration Study:} OC, 87T, 87L, 87B operating together. 10/10 scenarios selective — first combined pass. & $\sim$34 \\[3pt]
+TR-06 & \textbf{IEC 61850 GOOSE Integration:} SAMBP state sharing over GOOSE for inter-relay coordination. & $\sim$32 \\[3pt]
+TR-07 & \textbf{Double-Busbar Coordination:} Bus-coupler check zone added to 87B. Complex topology with bus-section switches. & $\sim$29 \\[3pt]
+TR-08 & \textbf{Monte Carlo Robustness Study:} 4000 trials, 20 scenarios. First statistical validation of the framework. & $\sim$42 \\[3pt]
+TR-09 & \textbf{Stage-2 Confidence Gate Recalibration and Extended MC:} TPR $= 1.000$, FPR $= 0.000$ achieved after recalibration. & $\sim$35 \\[3pt]
+TR-10 & \textbf{CT Saturation Injection Study:} Synthetic CT saturation waveforms injected; Stage-2 veto gate validated. & $\sim$32 \\[3pt]
+TR-11 & \textbf{High-Impedance Fault Sensitivity Margin Study:} HIF detection threshold sensitivity under varying soil resistivity. & $\sim$29 \\[3pt]
+\bottomrule
+\end{longtable}
+
+\textbf{Key result from this phase:} The Physics-Reduction Proposition
+formally established — $\kappa_n < 80$ across all four SG protection functions.
+Stage-2 model-veto gate achieves TPR $= 1.00$, FPR $= 0.00$ at 4000 trials.
+
+% =============================================================================
+\section{Phase 3 — 87L Deep Dive: TR-12 to TR-27}
+
+\begin{phasebox}
+\textbf{Location:} \texttt{sambp/report12/} through \texttt{sambp/report27/}\\
+\textbf{Git status:} TR-12 to TR-15 committed (\texttt{c6adb8be}, \texttt{a916e87b},
+\texttt{f783389a}); TR-16 to TR-27 untracked on filesystem
+\end{phasebox}
+
+A deep, systematic investigation of the 87L line differential function under
+complex scenarios.
+
+\begin{longtable}{lp{9.5cm}l}
+\toprule
+\textbf{TR} & \textbf{Title / Topic} & \textbf{Lines} \\
+\midrule
+\endhead
+TR-12 & \textbf{87L Magnitude Override:} Alternative restraint criterion when LM solution is ill-conditioned ($\kappa_n > $ threshold). & 370 \\[3pt]
+TR-13 & \textbf{87L Pi-Section Charging Compensation:} Long-line capacitive charging current subtracted before differential computation. & 532 \\[3pt]
+TR-14 & \textbf{Dynamic Busbar Transfer with GOOSE Zone Reconfiguration:} 87L zone boundaries updated dynamically via IEC 61850 GOOSE. & 480 \\[3pt]
+TR-15 & \textbf{87L Voltage-Based Pi-Section Correction:} Improved charging correction using measured terminal voltages. & 473 \\[3pt]
+TR-16 & \textbf{87B/87L Coordination Study:} 28/28 scenarios all selective with coordinated 87B and 87L. & 425 \\[3pt]
+TR-17 & \textbf{Adaptive 87L Threshold:} Dynamic restraint threshold as a function of $I_{rest}$. & 370 \\[3pt]
+TR-18 & \textbf{Mho Distance Relay (21/21P):} First distance relay introduction, coordinated with 87B/87L. & 389 \\[3pt]
+TR-19 & \textbf{Simultaneous Multi-Feeder Busbar Transfer:} Coordination during concurrent busbar switching events. & 344 \\[3pt]
+TR-20 & \textbf{Frequency-Adaptive 87L Charging-Current Correction:} Off-nominal frequency compensation for microgrid applications. & 450 \\[3pt]
+TR-21 & \textbf{Harmonic-Component Discrimination for 87L:} 2nd/5th harmonic blocking for inrush current in meshed networks. & 386 \\[3pt]
+TR-22 & \textbf{Negative-Sequence 87LN Line Differential:} Asymmetric fault (SLG, LLG) detection via negative-sequence component. & 413 \\[3pt]
+TR-23 & \textbf{Transient Differential Current Supervision (TDCS-87L):} Transient blocking for 3PH close-in faults in IBR-rich networks. & 386 \\[3pt]
+TR-24 & \textbf{Adaptive TDCS Threshold:} Variable TDCS threshold for changing-baseline microgrid networks. & 377 \\[3pt]
+TR-25 & \textbf{Zero-Sequence 87LN0 Line Differential:} Detection of high-resistance earth faults in pure-IBR networks lacking zero-sequence current. & 341 \\[3pt]
+TR-26 & \textbf{IBR Parametric Monte Carlo Robustness Study:} 15k trials across IBR penetration levels; confirmed selectivity with IBR fault current. & 334 \\[3pt]
+TR-27 & \textbf{Updated System Integration: IBR-Aware 87L Chain:} Updated multi-function study incorporating all 87L improvements from TR-12--26. & 325 \\[3pt]
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Phase 4 — Synthesis and Distance Protection: TR-28 to TR-37}
+
+\begin{phasebox}
+\textbf{Location:} \texttt{sambp/report28/} through \texttt{sambp/report37/}\\
+\textbf{Git status:} All \textcolor{untrackedorange}{\textbf{untracked}} (exist on filesystem, never committed)
+\end{phasebox}
+
+\begin{longtable}{lp{9.5cm}l}
+\toprule
+\textbf{TR} & \textbf{Title / Topic} & \textbf{Lines} \\
+\midrule
+\endhead
+TR-28 & \textbf{Master Synthesis TR-03 through TR-27:} Unified results table, gap analysis, and evidence map for all work up to this point. & 500 \\[3pt]
+TR-29 & \textbf{IBR Apparent Impedance Trajectory Analysis for Distance Relay 21:} How IBR current-limiting shifts apparent impedance into mho characteristic — leading to false trips. & 495 \\[3pt]
+TR-30 & \textbf{Cross-Polarised Mho Characteristic for IBR Networks:} Polarisation using memorised positive-sequence voltage avoids false-trip during LVRT. & 418 \\[3pt]
+TR-31 & \textbf{Zero-Sequence Compensation for IBR Earth Faults (21G):} $k_0$ compensation factor re-derived for grids with IBR zero-sequence injection. & 410 \\[3pt]
+TR-32 & \textbf{Negative- and Zero-Sequence Directional Elements (67Q, 67N):} IBR-aware directional elements for asymmetric faults on IBR-fed lines. & 375 \\[3pt]
+TR-33 & \textbf{Permissive Overreaching Transfer Trip (POTT) for IBR Lines:} Communication-aided tripping scheme; POTT logic validated against IBR impedance trajectories. & 388 \\[3pt]
+TR-34 & \textbf{Quadrilateral Distance Characteristic for IBR Lines:} Quadrilateral replaces circular mho for improved reach setting under high-resistance IBR faults. & 359 \\[3pt]
+TR-35 & \textbf{Full IBR Distance Protection Coordination Study:} Combined 21/67Q/67N/POTT in a test network with 40\% IBR penetration. & 376 \\[3pt]
+TR-36 & \textbf{Auto-Reclosing Strategy for IBR Lines:} Dead-time window adjusted for IBR recovery transient; prevents re-trip on restoration current. & 319 \\[3pt]
+TR-37 & \textbf{Monte Carlo Reliability Assessment of IBR Protection Scheme:} End-to-end statistical validation of the distance protection chain. & 300 \\[3pt]
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Phase 5 — Microgrid Protection: TR-38 to TR-42}
+
+\begin{phasebox}
+\textbf{Location:} \texttt{sambp/report38/} through \texttt{sambp/report42/},
+\texttt{sambp/sambp\_system/}\\
+\textbf{Git status:} TR-38 to TR-42 committed (\texttt{3ae4c5cf})
+\end{phasebox}
+
+\begin{longtable}{lp{9.5cm}l}
+\toprule
+\textbf{TR} & \textbf{Title / Topic} & \textbf{Lines} \\
+\midrule
+\endhead
+TR-38 & \textbf{GFL vs.\ GFM Inverter Fault Characterisation:} Systematic comparison of fault current profiles — GFL current-limited vs.\ GFM synchronising. & 353 \\[3pt]
+TR-39 & \textbf{Islanding Detection and Protection Mode Switching:} ROCOF + voltage-vector-shift algorithm; protection mode handover between grid-connected and islanded. & 285 \\[3pt]
+TR-40 & \textbf{Adaptive Overcurrent Coordination for IBR Microgrids:} OC relay coordination re-computed dynamically when microgrid topology changes. & 266 \\[3pt]
+TR-41 & \textbf{87B Bus Differential in IBR Microgrids:} 87B behaviour under IBR fault current (low magnitude, fast decay). & 262 \\[3pt]
+TR-42 & \textbf{Microgrid Protection System Integration Study:} Combined test of all microgrid protection elements — selectivity, speed, security. & 285 \\[3pt]
+\bottomrule
+\end{longtable}
+
+\textbf{Supporting code:} \texttt{sambp/sambp\_system/} contains a comprehensive
+set of study runners including:
+\texttt{run\_gfl\_gfm\_study.py},
+\texttt{run\_islanding\_study.py},
+\texttt{run\_adaptive\_oc\_study.py},
+\texttt{run\_87b\_mg\_study.py},
+\texttt{run\_mg\_integration\_study.py},
+\texttt{run\_ar\_study.py} (auto-reclose),
+and more.
+
+% =============================================================================
+\section{Phase 6 — Digital Twin: TR-43 to TR-45}
+
+\begin{phasebox}
+\textbf{Location:} \texttt{sambp/report43/} through \texttt{sambp/report45/}\\
+\textbf{Git status:} Committed (\texttt{a93ab551})
+\end{phasebox}
+
+\begin{longtable}{lp{9.5cm}l}
+\toprule
+\textbf{TR} & \textbf{Title / Topic} & \textbf{Lines} \\
+\midrule
+\endhead
+TR-43 & \textbf{Digital Twin Architecture for IBR Protection Systems:} Real-time shadow model of the protection system running in parallel with hardware relay. & 261 \\[3pt]
+TR-44 & \textbf{Real-Time Parameter Estimation and State Tracking (EKF):} Extended Kalman Filter for multi-parameter estimation in the digital twin. & 261 \\[3pt]
+TR-45 & \textbf{Digital Twin Validation and Protection System Integration:} DT-relay agreement rate as a new performance metric; validation framework. & 252 \\[3pt]
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Phase 7 — ML/PINN and Advanced Topics: TR-46 to TR-55}
+
+\begin{phasebox}
+\textbf{Location:} \texttt{sambp/report46/} through \texttt{sambp/report55/}\\
+\textbf{Git status:} All \textcolor{untrackedorange}{\textbf{untracked}} on filesystem
+\end{phasebox}
+
+\begin{longtable}{lp{9.5cm}l}
+\toprule
+\textbf{TR} & \textbf{Title / Topic} & \textbf{Lines} \\
+\midrule
+\endhead
+TR-46 & \textbf{Physics-Informed Neural Network (PINN) for IBR Fault Classification:} PINN architecture embedding physics constraints (KCL, KVL) as loss terms. & 230 \\[3pt]
+TR-47 & \textbf{Feature Engineering and Physics Constraints for ML Protection:} Feature set definition; constraint satisfaction layer in the network architecture. & 253 \\[3pt]
+TR-48 & \textbf{Online Learning and Adaptive ML for Changing IBR Fleets:} Continual learning with drift detection for evolving IBR penetration. & 259 \\[3pt]
+TR-49 & \textbf{ML Protection System Integration and Validation:} Full pipeline from raw waveform to trip decision via PINN. & 261 \\[3pt]
+TR-50 & \textbf{Wide-Area Protection Coordinator (WAPC):} Centralised coordinator receiving synchrophasor data from all relays; system-level consistency check. & 313 \\[3pt]
+TR-51 & \textbf{Automatic Protection Settings Optimisation:} Relay settings optimiser under protection selectivity and grading constraints. & 306 \\[3pt]
+TR-52 & \textbf{Cybersecurity of IEC 61850 GOOSE Networks:} Threat modelling and intrusion detection for GOOSE-based relay coordination. & 296 \\[3pt]
+TR-53 & \textbf{Hardware-in-the-Loop Validation Protocol:} HIL test harness architecture; RTDS interface specification. & 271 \\[3pt]
+TR-54 & \textbf{Field Deployment and Commissioning Guide:} Step-by-step commissioning workflow for the full SAMBP system. & 285 \\[3pt]
+TR-55 & \textbf{Thesis Synthesis and Contribution Map:} Report inventory and chapter mapping — the pre-IBR synthesis of all TR-3 to TR-54 work. & 306 \\[3pt]
+\bottomrule
+\end{longtable}
+
+\textbf{Supporting code:} \texttt{sambp/sambp\_system/} contains matching runners:
+\texttt{run\_pinn\_study.py},
+\texttt{run\_feature\_engineering\_study.py},
+\texttt{run\_online\_learning\_study.py},
+\texttt{run\_wapc\_study.py},
+\texttt{run\_settings\_optimisation\_study.py},
+\texttt{run\_cybersecurity\_study.py},
+\texttt{run\_hil\_validation\_study.py},
+\texttt{run\_deployment\_study.py},
+\texttt{run\_thesis\_synthesis.py}.
+
+% =============================================================================
+\section{Phase 8 — IEEE Journal Papers (Parallel Track)}
+
+\begin{phasebox}
+\textbf{Locations:} \texttt{ieee\_6th\_order/}, \texttt{ieee\_hif\_tpwd/},
+\texttt{ieee\_coord\_gen/}, \texttt{ieee\_line\_diff/},
+\texttt{ieee\_seq\_estim/}, \texttt{sambp/hif\_paper/}\\
+\textbf{Git status:} All committed (various commits, latest
+\texttt{a1b80fa5}, \texttt{0c31b6e1})
+\end{phasebox}
+
+Six IEEE-format journal papers were developed in parallel with the TR series:
+
+\begin{table}[h!]
+\centering
+\caption{IEEE journal papers}
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{Folder} & \textbf{Title} & \textbf{Target} \\
+\midrule
+\texttt{ieee\_6th\_order} & Validation Boundaries of Reduced-Order Inverse Protection Models: 6th-order Park $dq$ truth model; $L^* \approx 150\,\mathrm{ms}$ validity boundary; AVR as primary driver & IEEE \\[4pt]
+\texttt{ieee\_hif\_tpwd} & Impedance-Aware Adaptive Very-Inverse Overcurrent Protection for High-Impedance Faults in Synchronous-Generator Feeders & IEEE TPWRD \\[4pt]
+\texttt{sambp/hif\_paper} & (Same HIF paper, earlier draft with \texttt{hif\_sim.py} simulation) & IEEE TPWRD \\[4pt]
+\texttt{ieee\_seq\_estim} & Sequence-Component Inverse Estimation for Adaptive Overcurrent Protection & IEEE \\[4pt]
+\texttt{ieee\_coord\_gen} & Coordinated Adaptive Overcurrent Protection for Parallel Generator Systems & IEEE \\[4pt]
+\texttt{ieee\_line\_diff} & IBR-Adaptive Line Differential Protection: Harmonic Discrimination, Pi-Section Compensation, and IBR Fault Classification (8 pages, full journal depth) & IEEE TIE \\[4pt]
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Presentation materials:} \texttt{TSA\_meeting\_Eluvathingal.tex} (TSA
+committee meeting slides), \texttt{slide03} through \texttt{slide16}
+(16 study-note slides for individual TR summaries).
+
+% =============================================================================
+\section{Phase 9 — IBR Extension: TR-56, TR-57, TR-58, TR-62}
+
+\begin{phasebox}
+\textbf{Location:} \texttt{sambp/report56/}, \texttt{report57/},
+\texttt{report58/}, \texttt{report62/}\\
+\textbf{Git status:} TR-57, TR-62 committed; TR-56, TR-58 untracked
+(content complete, PDF built)\\
+\textbf{Motivation:} \texttt{RESEARCH\_GAP\_PLAN.md} identifies five gaps
+(G1--G5) not covered by TR-3 to TR-55.
+\end{phasebox}
+
+\subsection{TR-56 — DFIG Piecewise-ODE Model (87L/87G)}
+\textbf{Chapter:} Ch.\ 6 \S6.1 \quad \textbf{Target:} IEEE TEC \quad 715 lines
+
+\textbf{Problem:} DFIG fault current has two regimes (RSC-active then
+crowbar-fired). SG 4-parameter model produces false-block rate $>30\%$.
+
+\textbf{10-parameter model:}
+$\theta = [k_{ibr},\varphi_{pre},t_{cb},I_{fund},\varphi_{fund},I_{nat},\varphi_{nat},\omega_{slip},\tau_s,I_{DC}]$
+
+Physics collinearity reduction: $\tau_{DC} = \tau_s$ (DC and natural-response
+share stator transient time constant). Smoothed Heaviside ($\sigma_h = 0.5\,\mathrm{ms}$)
+for LM-compatible crowbar transition. CUSUM crowbar detector (2-cycle windows,
+2048-point FFT): detection latency $10\,\mathrm{ms}$.
+
+\begin{table}[h!]
+\centering
+\caption{$\kappa_n$ vs.\ slip — all within threshold}
+\begin{tabular}{cccc}
+\toprule
+Slip $s$ & $\omega_{slip}$ [rad/s] & $\kappa_n$ & Accept ($<80$)? \\
+\midrule
+3\% & 9.4 & 67 & \checkmark \\
+10\% & 31.4 & 30 & \checkmark \\
+20\% & 62.8 & 19 & \checkmark \\
+35\% & 110.0 & 13 & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{TR-57 — Bayesian 3-Hypothesis SPRT (87T IBR)}
+\textbf{Chapter:} Ch.\ 4 \quad \textbf{Target:} IEEE TPWRD \quad 934 lines
+
+Per-half-cycle asymmetry index $A_k$ drives a three-hypothesis SPRT
+($H_0$: Inrush, $H_1$: IBR fault, $H_2$: CT saturation).
+Wald boundaries $\log A = \pm 6.91$ ($\alpha = \beta = 0.001$).
+Trip time $20\,\mathrm{ms}$ vs.\ $\geq 60\,\mathrm{ms}$ IEC 60255-111.
+
+\subsection{TR-58 — Generalised EAC + CUEP Bound (Relay 78)}
+\textbf{Chapter:} Ch.\ 6 \S6.3 \quad \textbf{Target:} IEEE TPWRD \quad 892 lines
+
+Conservative CUEP lower bound (Proposition~1):
+$P_{max}^{eff} = P_{max}^{SG} - \Delta P_{max}^{GFL}$,
+$\delta_{LB} = \pi - \arcsin(P_m/P_{max}^{eff}) \leq \delta_u$ (proven).
+Conservatism gap $\varepsilon \leq 7.2^\circ$. Standard blinder error:
+up to $+6.7^\circ$ (unsafe).
+
+\subsection{TR-62 — 2-Parameter PV Zone Model (87L)}
+\textbf{Chapter:} Ch.\ 3 \quad \textbf{Target:} IEEE TIE \quad 615 lines
+
+PV SRF controller drives DC to zero in $\leq 15\,\mathrm{ms}$:
+$\theta_{PV} = [I_{fund}, \varphi_{fund}]$,
+$\kappa_n = 1.00$ analytically ($36\times$ improvement over SG model).
+DDR-based model selector separates PV from SG.
+
+% =============================================================================
+\section{Phase 10 — SAMBP Architecture Lock-in and Paper C}
+
+\begin{phasebox}
+\textbf{Locations:} \texttt{THESIS\_CHAPTER\_MAP.tex},
+\texttt{sambp/sambp\_sync\_oc/paper\_c/},
+\texttt{sambp/sambp\_sync\_oc/paper/},
+\texttt{sambp/sambp\_sync\_oc/paper\_b/}\\
+\textbf{Git status:} Committed
+\end{phasebox}
+
+\subsubsection*{Paper A — Real-Time Inverse Parameter Estimation for Adaptive OC Protection}
+8 pages, full journal depth. Target: \emph{IEEE Transactions on Power Delivery}.
+Single-generator SyncOC, composite confidence gate, multi-mode transition.
+
+\subsubsection*{Paper B — Hilbert--Fortescue Sequence Estimation and Greedy Cascade Coordination}
+Target: \emph{IEEE Transactions on Industrial Electronics}.
+Multi-generator cascade (M4), Hilbert--Fortescue symmetrical-component extension (M3).
+
+\subsubsection*{THESIS\_CHAPTER\_MAP.tex}
+Locked TR-to-chapter allocation across 6 technical chapters (Ch.\ 2--7).
+5-rule new-TR checklist. Critical path established:
+TR-56 $\to$ TR-65 $\to$ TR-67 $\to$ Q3\textquoteleft28.
+
+\subsubsection*{Paper C (PaperF) — Unified SAMBP Framework}
+7 pages after Phase~2 update (\texttt{a4222f73}).
+Phase~1: OC, 87T, 87L, 87B for SG networks (26/28 CCR, $\leq 20\,\mathrm{ms}$).
+Phase~2 (early 2027): adds DFIG/PV/Relay-78/gen-suite ($\geq 62$ scenarios).
+Target: \emph{IEEE Transactions on Power Systems}.
+
+% =============================================================================
+\newpage
+\section{Phase 11 — Additional SAMBP Modules}
+
+\begin{phasebox}
+\textbf{Locations:} \texttt{sambp/sambp\_distance/},
+\texttt{sambp/sambp\_double\_bus/},
+\texttt{sambp/sambp\_coordination/},
+\texttt{sambp/sambp\_generator/},
+\texttt{sambp/diagrams\_tikz/},
+\texttt{sambp/sambp\_diagrams/}
+\end{phasebox}
+
+\begin{table}[h!]
+\centering
+\caption{SAMBP Python module directories}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Module} & \textbf{Contents} \\
+\midrule
+\texttt{sambp\_sync\_oc/} & SyncOC: models, inverse\_estimation, adaptation, evaluation, signal\_processing, config \\
+\texttt{sambp\_line\_diff/} & 87L: line zone models (SG 4-param, PV 2-param, DFIG 10-param), DDR selector, estimators \\
+\texttt{sambp\_transformer\_diff/} & 87T: Jiles--Atherton inrush model, SPRT, confidence gate \\
+\texttt{sambp\_bus\_diff/} & 87B: 3-param CT-saturation model, Stage-2 veto \\
+\texttt{sambp\_generator/} & Generator suite: DFIG model (TR-56), CUSUM detector, 2-pass LM estimator \\
+\texttt{sambp\_distance/} & Distance relay (21/21P): mho, quadrilateral, cross-polarisation \\
+\texttt{sambp\_double\_bus/} & Double-busbar: bus-coupler check zone, GOOSE zone reconfiguration \\
+\texttt{sambp\_coordination/} & 87B/87L coordination, simultaneous transfer studies \\
+\texttt{sambp\_system/} & Full system coordinator: 30+ study runners covering all TR-38 to TR-55 topics \\
+\texttt{diagrams\_tikz/} & TikZ circuit schematics (common to all reports) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Supporting Infrastructure}
+
+\begin{table}[h!]
+\centering
+\caption{Supporting directories and their role}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Directory} & \textbf{Role} \\
+\midrule
+\texttt{Z\_Synthetic\_Family\_Library/} & Synthetic fault waveform library v1: waveforms, metadata, benchmark results \\
+\texttt{Z\_Synthetic\_Family\_Library\_v2/} & v2 with benchmark\_results\_v4 subdirectory (extended parameter sweep) \\
+\texttt{PDF\_COLLECTION/} & Organised PDF archive: 01 SAMBP Reports, 02 IEEE Papers, 03 Thesis, 04 Chapter Docs \\
+\texttt{FIGURE\_ARCHIVE/} & Rendered PNGs (F1) and LaTeX source (F2) for all figures \\
+\texttt{ch4/} & Chapter 4 simulation scripts: plotting/, simulation/ \\
+\texttt{ch6/} & Chapter 6 scripts: metrics/, plotting/, protection/, schematics/, selector/, simulation/, training/, validation/ \\
+\texttt{data/} & Processed data: chapter\_4/, chapter\_6/, simulations/, validation/ \\
+\texttt{analytics\_validation/} & Master trainer, batch processor, ICI audit engine, security/latency audits \\
+\texttt{RESEARCH\_GAP\_PLAN.md} & 5-gap research plan that launched TR-56 through TR-67 \\
+\texttt{THESIS\_CHAPTER\_MAP.tex} & Locked TR$\to$chapter mapping \\
+\texttt{sambp\_overleaf/} & Overleaf-compatible SAMBP figures and TikZ diagrams \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\newpage
+\section{What the Previous Survey Missed}
+
+The first survey (built from session memory) missed:
+
+\begin{enumerate}
+  \item \textbf{TR-3 to TR-11 (Phase 2):} The foundational 87T/87L/87B work,
+    4000-trial Monte Carlo, CT saturation study, HIF sensitivity study.
+    These are the core experimental validation of the Physics-Reduction Proposition.
+
+  \item \textbf{TR-12 to TR-27 (Phase 3):} All 16 87L deep-dive reports —
+    pi-section compensation, harmonic discrimination, negative-sequence, TDCS,
+    GOOSE zone reconfiguration, IBR 15k-trial Monte Carlo.
+
+  \item \textbf{TR-28 to TR-37 (Phase 4):} The complete distance protection track —
+    apparent impedance trajectories, cross-polarised mho, zero-sequence compensation,
+    directional elements, POTT, auto-reclose, reliability Monte Carlo.
+
+  \item \textbf{TR-38 to TR-42 (Phase 5):} Microgrid protection —
+    GFL/GFM characterisation, islanding detection, adaptive OC coordination.
+
+  \item \textbf{TR-43 to TR-45 (Phase 6):} Digital twin architecture,
+    EKF parameter estimation, DT-relay agreement validation.
+
+  \item \textbf{TR-46 to TR-55 (Phase 7):} PINN, online ML, WAPC,
+    settings optimisation, cybersecurity, HIL protocol, deployment guide,
+    thesis synthesis.
+
+  \item \textbf{Four additional IEEE papers:} \texttt{ieee\_seq\_estim}
+    (sequence estimation), \texttt{ieee\_coord\_gen} (parallel OC coordination),
+    \texttt{ieee\_hif\_tpwd} (HIF overcurrent), \texttt{sambp/hif\_paper}.
+
+  \item \textbf{SyncOC internal sub-reports:} 6 milestone reports in
+    \texttt{sambp\_sync\_oc/report} through \texttt{report6}.
+
+  \item \textbf{Pre-SAMBP thesis drafts:} \texttt{thesis\_submission/},
+    \texttt{new\_thesis/} (13-chapter draft), \texttt{2-mainmatter/},
+    and all \texttt{Z\_Final\_Thesis\_*} data/figures/scripts.
+\end{enumerate}
+
+% =============================================================================
+\newpage
+\section{Complete TR Inventory Table}
+
+\begin{longtable}{llp{8cm}l}
+\toprule
+\textbf{TR} & \textbf{Phase} & \textbf{Topic} & \textbf{Git} \\
+\midrule
+\endhead
+TR-03 & SG core & 87T + 87L: Differential Protection Framework & \textcolor{trackedgreen}{\checkmark} \\
+TR-04 & SG core & 87B Bus Differential Protection & \textcolor{trackedgreen}{\checkmark} \\
+TR-05 & SG core & System Integration (10/10 selective) & \textcolor{trackedgreen}{\checkmark} \\
+TR-06 & SG core & IEC 61850 GOOSE Integration & \textcolor{trackedgreen}{\checkmark} \\
+TR-07 & SG core & Double-Busbar Coordination & \textcolor{trackedgreen}{\checkmark} \\
+TR-08 & SG core & Monte Carlo Robustness (4000 trials) & \textcolor{trackedgreen}{\checkmark} \\
+TR-09 & SG core & Stage-2 Recalibration (TPR=1.00, FPR=0.00) & \textcolor{trackedgreen}{\checkmark} \\
+TR-10 & SG core & CT Saturation Injection Study & \textcolor{trackedgreen}{\checkmark} \\
+TR-11 & SG core & HIF Sensitivity Margin Study & \textcolor{trackedgreen}{\checkmark} \\
+TR-12 & 87L deep & 87L Magnitude Override & \textcolor{trackedgreen}{\checkmark} \\
+TR-13 & 87L deep & 87L Pi-Section Charging Compensation & \textcolor{trackedgreen}{\checkmark} \\
+TR-14 & 87L deep & Dynamic Busbar Transfer + GOOSE Zone Reconfig & \textcolor{trackedgreen}{\checkmark} \\
+TR-15 & 87L deep & 87L Voltage-Based Pi-Section Correction & \textcolor{trackedgreen}{\checkmark} \\
+TR-16 & 87L deep & 87B/87L Coordination (28/28 scenarios) & \textcolor{untrackedorange}{untracked} \\
+TR-17 & 87L deep & Adaptive 87L Threshold vs.\ $I_{rest}$ & \textcolor{untrackedorange}{untracked} \\
+TR-18 & 87L deep & Mho Distance Relay 21/21P & \textcolor{untrackedorange}{untracked} \\
+TR-19 & 87L deep & Simultaneous Multi-Feeder Transfer & \textcolor{untrackedorange}{untracked} \\
+TR-20 & 87L deep & Frequency-Adaptive 87L Charging Correction & \textcolor{untrackedorange}{untracked} \\
+TR-21 & 87L deep & Harmonic Discrimination for 87L & \textcolor{untrackedorange}{untracked} \\
+TR-22 & 87L deep & Negative-Sequence 87LN Line Differential & \textcolor{untrackedorange}{untracked} \\
+TR-23 & 87L deep & TDCS-87L Transient Supervision & \textcolor{untrackedorange}{untracked} \\
+TR-24 & 87L deep & Adaptive TDCS Threshold & \textcolor{untrackedorange}{untracked} \\
+TR-25 & 87L deep & Zero-Sequence 87LN0 for Pure-IBR Earth Faults & \textcolor{untrackedorange}{untracked} \\
+TR-26 & 87L deep & IBR Parametric Monte Carlo (15k trials) & \textcolor{untrackedorange}{untracked} \\
+TR-27 & 87L deep & Updated IBR-Aware 87L Chain Integration & \textcolor{untrackedorange}{untracked} \\
+TR-28 & Synthesis & Master Synthesis TR-03 to TR-27 & \textcolor{untrackedorange}{untracked} \\
+TR-29 & Distance & IBR Apparent Impedance Trajectory Analysis & \textcolor{untrackedorange}{untracked} \\
+TR-30 & Distance & Cross-Polarised Mho for IBR Networks & \textcolor{untrackedorange}{untracked} \\
+TR-31 & Distance & Zero-Sequence Compensation for IBR Earth Faults & \textcolor{untrackedorange}{untracked} \\
+TR-32 & Distance & Negative/Zero-Sequence Directional Elements & \textcolor{untrackedorange}{untracked} \\
+TR-33 & Distance & POTT Scheme for IBR Lines & \textcolor{untrackedorange}{untracked} \\
+TR-34 & Distance & Quadrilateral Distance Characteristic & \textcolor{untrackedorange}{untracked} \\
+TR-35 & Distance & Full IBR Distance Protection Coordination & \textcolor{untrackedorange}{untracked} \\
+TR-36 & Distance & Auto-Reclosing Strategy for IBR Lines & \textcolor{untrackedorange}{untracked} \\
+TR-37 & Distance & Monte Carlo Reliability — IBR Distance Scheme & \textcolor{untrackedorange}{untracked} \\
+TR-38 & Microgrid & GFL vs.\ GFM Fault Characterisation & \textcolor{trackedgreen}{\checkmark} \\
+TR-39 & Microgrid & Islanding Detection + Mode Switching & \textcolor{trackedgreen}{\checkmark} \\
+TR-40 & Microgrid & Adaptive OC Coordination for IBR Microgrids & \textcolor{trackedgreen}{\checkmark} \\
+TR-41 & Microgrid & 87B in IBR Microgrids & \textcolor{trackedgreen}{\checkmark} \\
+TR-42 & Microgrid & Microgrid Protection System Integration & \textcolor{trackedgreen}{\checkmark} \\
+TR-43 & DT & Digital Twin Architecture & \textcolor{trackedgreen}{\checkmark} \\
+TR-44 & DT & Real-Time EKF Parameter Estimation & \textcolor{trackedgreen}{\checkmark} \\
+TR-45 & DT & Digital Twin Validation + Integration & \textcolor{trackedgreen}{\checkmark} \\
+TR-46 & ML/PINN & PINN for IBR Fault Classification & \textcolor{untrackedorange}{untracked} \\
+TR-47 & ML/PINN & Feature Engineering + Physics Constraints & \textcolor{untrackedorange}{untracked} \\
+TR-48 & ML/PINN & Online Learning for Changing IBR Fleets & \textcolor{untrackedorange}{untracked} \\
+TR-49 & ML/PINN & ML Protection System Integration & \textcolor{untrackedorange}{untracked} \\
+TR-50 & Advanced & Wide-Area Protection Coordinator (WAPC) & \textcolor{untrackedorange}{untracked} \\
+TR-51 & Advanced & Automatic Settings Optimisation & \textcolor{untrackedorange}{untracked} \\
+TR-52 & Advanced & IEC 61850 GOOSE Cybersecurity & \textcolor{untrackedorange}{untracked} \\
+TR-53 & Advanced & HIL Validation Protocol & \textcolor{untrackedorange}{untracked} \\
+TR-54 & Advanced & Field Deployment \& Commissioning Guide & \textcolor{untrackedorange}{untracked} \\
+TR-55 & Synthesis & Thesis Synthesis and Contribution Map & \textcolor{untrackedorange}{untracked} \\
+TR-56 & IBR gen. & DFIG Piecewise-ODE Model (87L/87G) & \textcolor{trackedgreen}{\checkmark} \\
+TR-57 & IBR 87T & Bayesian 3-Hypothesis SPRT (87T IBR) & \textcolor{trackedgreen}{\checkmark} \\
+TR-58 & IBR gen. & Generalised EAC + CUEP Bound (Relay 78) & \textcolor{trackedgreen}{\checkmark} \\
+TR-62 & IBR 87L & 2-Parameter PV Zone Model (87L) & \textcolor{trackedgreen}{\checkmark} \\
+\bottomrule
+\caption{Complete TR inventory (59 reports)}
+\end{longtable}
+
+% =============================================================================
+\newpage
+\section{Future Directions}
+
+\subsection{Immediate — Q2/Q3 2026}
+
+\textbf{TR-59: Virtual 87G-DFIG via Slip-Frequency EKF}
+(Ch.\ 6 \S6.2, IEEE TEC) — DFIG generator differential without rotor CTs,
+using TR-56's slip-frequency observable as EKF state.
+
+\textbf{TR-60: Relay 40 LOE with GFM IBR Admittance Correction}
+(Ch.\ 6 \S6.4, IEEE TPWRD) — GFM virtual admittance shifts mho locus; corrected
+LOE mho setting from commissioning admittance parameters.
+
+\textbf{TR-61: 64G Stator Earth Fault for IBR-Augmented Machine Buses}
+(Ch.\ 6 \S6.5, IEEE TIE) — Optimal sub-harmonic injection frequency $f^*$
+re-derived for IBR-modified bus admittance.
+
+\subsection{Medium Term — Q4 2026 / Q1 2027}
+
+\textbf{TR-63: Relay 81 IFDI for Zero-Inertia GFM Networks}
+(Ch.\ 6 \S6.6, IEEE TSG) — Dynamic virtual inertia tracking via IFDI;
+replaces static ROCOF calibration.
+
+\textbf{TR-64: Complete IBR-Aware 87T Integration + 5000-Trial MC}
+(Ch.\ 4, IEEE TPWRD) — Journal-ready version of TR-57 with full MC validation.
+
+\textbf{TR-65: Comprehensive Generator Protection Suite}
+(Ch.\ 7, IEEE TPWRD) — Unifies TR-56, 58, 59, 60, 61, 63 into one framework
+paper; supersedes Paper~C Phase~2 section.
+
+\subsection{Long Term — Q2 2027 / Q1 2028}
+
+\textbf{TR-66:} 10,000-trial MC per protection element (cluster compute).
+
+\textbf{TR-67:} RTDS HIL with 2\,MW DFIG emulator + PV inverter emulator.
+
+\textbf{Paper C revised submission (early 2027):}
+$\geq 62$ scenarios across all 9 protection functions; Phase~1 HIL results added.
+
+\subsection{Open Research Gaps}
+
+\begin{itemize}
+  \item Multi-machine EAC extension (TR-58 Proposition~1 is single-machine only;
+    EEAC with coherent decomposition needed for multi-machine substations)
+  \item Asymmetric fault handling for DFIG (TR-56 covers balanced 3PH only;
+    SLG requires sequence-domain decomposition)
+  \item GFM IBR loss of synchronism detection (distinct from SG out-of-step;
+    not in current gap plan)
+  \item Git hygiene: TR-16 to TR-37, TR-46 to TR-55 (29 reports) are untracked
+    and at risk of loss — these should be committed
+\end{itemize}
+
+% =============================================================================
+\newpage
+\section{Central Thesis Claim}
+
+\begin{mdframed}[backgroundcolor=lightgray,linecolor=alertred,linewidth=1.5pt,
+  innerleftmargin=10pt,innerrightmargin=10pt,innertopmargin=8pt,innerbottommargin=8pt]
+\textbf{Claim (to be proven by Q3 2028):}
+
+A single physics-parameter-reduction discipline — identifying and analytically
+deriving the most collinear parameter in each zone model — produces
+$\kappa_n < 80$ across all nine protection functions
+(OC, 87T-SG, 87T-IBR, 87L-SG, 87L-PV, 87L-DFIG, 87B, generator suite,
+Relay~78), enabling $\geq 99\%$ correct classification across 10\,000 Monte
+Carlo scenarios, without function-specific signal-processing heuristics.
+\end{mdframed}
+
+\bigskip
+
+\textbf{Critical evidence gap:} Monte Carlo validation for the four IBR
+functions (TR-56, TR-57/64, TR-62, TR-58) is currently deterministic only.
+TR-66 closes this gap.
+
+\textbf{Critical path:}
+\[
+  \underbrace{\text{TR-56}}_{\checkmark}
+  \to \underbrace{\text{TR-64/65}}_{\text{Q4'27}}
+  \to \underbrace{\text{TR-66 MC}}_{\text{Q1'28}}
+  \to \underbrace{\text{TR-67 HIL}}_{\text{Q1'28}}
+  \to \underbrace{\text{Paper C rev.}}_{\text{early'27}}
+  \to \underbrace{\text{Thesis}}_{\text{Q2'28}}
+  \to \underbrace{\text{Submit}}_{\text{Q3'28}}
+\]
+
+\vfill
+\begin{center}
+\rule{0.6\linewidth}{0.4pt}\\[4pt]
+{\small Generated April 2026 $\cdot$ Built from full filesystem scan of
+\texttt{/root/phd\_thesis} $\cdot$ 59 TRs + 6 IEEE papers + 3 thesis drafts}
+\end{center}
+
+\end{document}

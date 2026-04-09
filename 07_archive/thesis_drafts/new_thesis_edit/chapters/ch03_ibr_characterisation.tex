@@ -1,0 +1,332 @@
+%% ch03_ibr_characterisation.tex
+%% Chapter 3: IBR Fault Current Characterisation and Protection Challenges
+%% Covers: GFL/GFM/SG modelling + DFIG/PMSG extended models + protection challenges
+%% ============================================================
+\chapter{IBR Fault Current Characterisation and Protection Challenges}
+\label{ch:ibr_char}
+
+\section{Introduction}
+\label{sec:ch3_intro}
+
+An accurate mathematical model of each generation source is the prerequisite
+for designing protection algorithms that respect physical constraints imposed
+by power electronic interfaces. This chapter develops the models used throughout
+the thesis, quantifies how IBR fault signatures degrade legacy relay performance,
+and motivates the adaptive solutions proposed in Chapters~\ref{ch:line_diff}--\ref{ch:centralised}.
+
+Four source types are treated:
+\begin{enumerate}
+\item \textbf{Synchronous Generator (SG):} The classical three-component
+      subtransient fault current with DC offset (Section~\ref{sec:ch3_sg}).
+\item \textbf{Grid-Following Inverter (GFL):} Current-controlled VSC with
+      fast current limiter (Section~\ref{sec:ch3_gfl}).
+\item \textbf{Grid-Forming Inverter (GFM):} Voltage-controlled VSC emulating
+      synchronous machine inertia (Section~\ref{sec:ch3_gfm}).
+\item \textbf{DFIG Type-3 and PMSG Type-4 Wind:} Models planned for future
+      extension of the SAMBP framework (Section~\ref{sec:ch3_dfig}).
+\end{enumerate}
+
+\section{Synchronous Generator Fault Current Model}
+\label{sec:ch3_sg}
+
+\subsection{Three-Component Fault Current}
+
+The Thevenin equivalent at the SG terminals for a three-phase fault at $t=0^+$ is:
+
+\begin{equation}
+  i_a^\mathrm{SG}(t) =
+    \frac{\sqrt{2} E_0}{X_d''} e^{-t/T_d''}
+    + \left(\frac{1}{X_d'} - \frac{1}{X_d''}\right)\sqrt{2} E_0\, e^{-t/T_d'}
+    + \left(\frac{1}{X_d} - \frac{1}{X_d'}\right)\sqrt{2} E_0
+    + I_\mathrm{DC}\,e^{-t/T_a}
+  \label{eq:ch3_sg_fault}
+\end{equation}
+
+where $X_d''$, $X_d'$, $X_d$ are sub-transient, transient, and synchronous
+direct-axis reactances; $T_d''$, $T_d'$ are the corresponding time constants;
+$T_a = X''_d / (\omega_0 R_a)$ is the DC offset time constant; and
+$I_\mathrm{DC} = \sqrt{2} E_0 / X_d'' \cdot \cos(\phi_0)$ depends on the
+pre-fault power angle $\phi_0$. For a typical large SG, the initial peak
+fault current is 6--10~pu, decaying over hundreds of milliseconds.
+
+The \textbf{reduced-order model} used in Chapter~\ref{ch:generator_oc}
+for the inverse estimation problem collapses Eq.~\eqref{eq:ch3_sg_fault}
+to six identifiable parameters:
+\begin{equation}
+  i_a(t) = I_{ss} + I_{sub}\,e^{-(t-t_0)/\tau_{ac}}\cos(\omega_0 t + \phi_a)
+           + I_{DC}(t_0)\,e^{-(t-t_0)/\tau_{dc}}
+  \label{eq:ch3_sg_reduced}
+\end{equation}
+where $\bm{\theta} = \{t_0, I_{ss}, I_{sub}, \tau_{ac}, \tau_{dc}, \phi_a\}$
+and the DC amplitude $I_{DC}(t_0) = -I_{sub}\cos\phi_a - I_{ss}$
+is fixed by the continuity condition at $t = t_0^+$, eliminating one
+free parameter from the otherwise seven-parameter formulation.
+
+\subsection{Sequence Characteristics}
+
+Under unbalanced faults, the SG exhibits $Z_1 \neq Z_2 \neq Z_0$:
+\begin{equation}
+  Z_1^\mathrm{SG} = \jj X_d'', \quad
+  Z_2^\mathrm{SG} = \jj \frac{X_d'' + X_q''}{2}, \quad
+  Z_0^\mathrm{SG} = \jj X_0 + 3Z_n
+  \label{eq:ch3_sg_seq_z}
+\end{equation}
+The non-zero $Z_2$ and $Z_0$ drive negative-sequence and zero-sequence
+currents during SLG faults, which are the physical basis for the 87LN
+and 87LN0 elements of Chapter~\ref{ch:line_diff}.
+
+\section{Grid-Following Inverter Model}
+\label{sec:ch3_gfl}
+
+\subsection{Inner Current Loop Dynamics}
+
+In the rotating $dq$ reference frame, the converter filter equations are:
+\begin{align}
+  L_f \frac{d\id}{dt} &= -R_f \id + \omega_0 L_f \iq + v_d - e_d \\
+  L_f \frac{d\iq}{dt} &= -R_f \iq - \omega_0 L_f \id + v_q - e_q
+\end{align}
+
+The closed-loop bandwidth $\omega_\mathrm{bw} \approx 2\pi \times 500$~rad/s
+gives a current step response settling time of $\approx 2$~ms.
+
+\subsection{Current Limiter and Fault Current}
+
+The IGBT thermal protection clips $|i_{dq}| \leq I_\mathrm{lim}$:
+\begin{equation}
+  \phasor{I}_\mathrm{GFL} = I_\mathrm{lim}\angle(\theta_\mathrm{PLL} + \phi_\mathrm{cmd}),
+  \quad I_\mathrm{lim} \in [1.1, 1.5]\,I_\mathrm{rated}
+\end{equation}
+
+The \emph{IBR current ratio} is the key protection parameter used throughout
+this thesis:
+\begin{equation}
+  \kibr \triangleq \frac{|\phasor{I}_\mathrm{GFL}|}{I_\mathrm{rated}}
+  \in [0.03, 0.55]
+  \label{eq:ch3_kibr_def}
+\end{equation}
+
+\subsection{Sequence Characteristics of GFL}
+
+Under IEEE~2800 negative-sequence suppression (default):
+\begin{equation}
+  \phasor{I}_2^\mathrm{GFL} = 0, \qquad
+  \phasor{I}_0^\mathrm{GFL} = 0 \quad \text{(3-wire converter)}
+  \label{eq:ch3_gfl_seq}
+\end{equation}
+
+This has critical implications: the 87LN element (negative-sequence
+differential) does \emph{not} depend on the IBR fault current contribution,
+making it IBR-resilient by design (Chapter~\ref{ch:line_diff}).
+
+\section{Grid-Forming Inverter Model}
+\label{sec:ch3_gfm}
+
+\subsection{Virtual Synchronous Machine (VSM)}
+
+The GFM emulates the swing equation:
+\begin{equation}
+  M\ddot{\theta} + D\dot{\theta} = P^\ast - P_e
+\end{equation}
+with virtual impedance $Z_v = R_v + \jj\omega_0 L_v$ giving fault current:
+\begin{equation}
+  I_\mathrm{sc}^\mathrm{GFM} = \frac{|V_0|}{|Z_v|} \approx \frac{|V_0|}{\omega_0 L_v}
+  \in [1.5, 2.5]\,I_\mathrm{rated}
+\end{equation}
+
+GFM fault current is higher than GFL but lower than SG. The VSM model
+is validated against 6th-order Park $dq$ simulations for $t \leq 150$~ms.
+For $t > 150$~ms, AVR dynamics become significant and the reduced model
+diverges by up to 5\% (an open research gap, Section~\ref{sec:ch13_future}).
+
+\begin{table}[htbp]
+\caption{Fault current characteristics: SG vs.\ GFL vs.\ GFM}
+\label{tab:ch3_fault_comparison}
+\begin{tabularx}{\textwidth}{@{}lp{3cm}p{3cm}p{3cm}X@{}}
+\toprule
+Parameter & SG & GFL & GFM (VSM) & Relay impact \\
+\midrule
+Magnitude (pu) & 6--10 & 1.1--1.5 & 1.5--2.5
+  & OC pickup; 87L bias slope \\
+Decay & Exponential ($T_d'' \!\approx\! 30$~ms) & Controlled constant
+  & Controlled constant
+  & TDCS detection window \\
+$I_2$ injection & $\propto V_2$ (physical) & Zero (suppressed)
+  & Zero (suppressed)
+  & 87LN resilience to IBR \\
+$I_0$ injection & $\propto V_0$ (grounding) & Zero (3-wire)
+  & Zero (3-wire)
+  & 87LN0; 21G elements \\
+Phase angle & Fixed (rotor) & Commanded $\pm 90$
+  & Virtual rotor
+  & Directional element \\
+Response time & 5--50~ms & 2--5~ms & 5--20~ms
+  & TDCS time window \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{DFIG Type-3 and PMSG Type-4 Models (Extended Framework)}
+\label{sec:ch3_dfig}
+
+The DFIG and PMSG wind generators represent the dominant wind turbine
+technologies globally, yet their fault current models are substantially
+more complex than the GFL/GFM VSC models. This section presents the
+theoretical models that will underpin the DFIG generator OC extension
+(Section~\ref{sec:ch5_dfig}) and is the planned future work for the
+18--24 month research timeline.
+
+\subsection{DFIG Type-3 Fault Current: Crowbar-Switched Piecewise Model}
+
+The DFIG Type-3 wind turbine has a partially-rated rotor-side converter
+(RSC) that injects current through the wound rotor. During a voltage dip,
+the DC bus overvoltage protection activates the \emph{crowbar}---a
+resistive shorting of the rotor circuit---within 2--5~ms. The fault
+current exhibits two distinct phases:
+
+\textbf{Phase I (pre-crowbar, $0 < t < t_{cb}$):}
+\begin{equation}
+  i_s(t) = I_{s0}\,e^{-t/T_s'}\cos(\omega_0 t + \phi_0)
+          + I_{r,\mathrm{RSC}}\,e^{-t/T_r}
+  \label{eq:ch3_dfig_phase1}
+\end{equation}
+where $T_s' = L_s'/R_s$ and the RSC current $I_{r,\mathrm{RSC}}$ is
+limited by the converter current controller.
+
+\textbf{Phase II (post-crowbar, $t \geq t_{cb}$):}
+\begin{equation}
+  i_s(t) = I_{s,cb}\,e^{-(t-t_{cb})/T_{s,cb}}\cos(\omega_0 t + \phi_{cb})
+          + I_{s,dc}\,e^{-(t-t_{cb})/T_{dc}}
+  \label{eq:ch3_dfig_phase2}
+\end{equation}
+with $T_{s,cb} = L_s / (R_s + R_{cb})$ where $R_{cb}$ is the crowbar
+resistance. The crowbar activation introduces a step discontinuity at
+$t = t_{cb}$ that is not captured by the SG reduced-order model.
+
+The \textbf{DFIG inverse estimation problem} parameterised as:
+\begin{equation}
+  \bm{\theta}_\mathrm{DFIG} = \{t_0, t_{cb}, I_{s0}, I_{r,\mathrm{RSC}},
+    T_s', T_r, I_{s,cb}, T_{s,cb}\}
+  \label{eq:ch3_dfig_params}
+\end{equation}
+is an 8-parameter two-phase LM problem with the phase transition time
+$t_{cb}$ as an additional free parameter. The two-pass LM strategy of
+Chapter~\ref{ch:foundations} generalises directly: Pass~1 identifies
+$\{I_{s0}, T_s', T_r\}$ over Phase~I, and Pass~2 identifies
+$\{I_{s,cb}, T_{s,cb}\}$ over Phase~II with $t_{cb}$ from Pass~1.
+
+\begin{tcolorbox}[colback=orange!5,colframe=orange!60!black,
+  fonttitle=\bfseries\small,
+  title={Section~\ref{sec:ch3_dfig} (Pending: 18--24 month timeline)},
+  breakable]
+\small
+The DFIG and PMSG models above are the theoretical framework for planned
+research extensions:
+\begin{itemize}
+\item Implementation of piecewise-ODE DFIG fault current simulator
+\item Execution of two-pass LM estimation on DFIG waveforms
+\item Validation of adaptive OC for DFIG at $R_{cb} \in [0.05, 0.50]$~pu
+      across 30 crowbar activation scenarios
+\item PMSG Type-4 model: full-converter GFL with wind-specific current
+      profile (peak $\to$ steady-state in $<5$~ms)
+\end{itemize}
+Placeholder results are in Section~\ref{sec:ch5_dfig}.
+\end{tcolorbox}
+
+\subsection{PMSG Type-4 Model}
+
+The PMSG Type-4 connects to the grid through a full-converter back-to-back
+VSC. The grid-side converter (GSC) is functionally identical to the GFL
+model (Section~\ref{sec:ch3_gfl}): the fault current is
+$|\phasor{I}_\mathrm{PMSG}| = I_\mathrm{lim}^{GSC} \in [1.1, 1.5]$~pu.
+The protection implications are therefore identical to GFL, and no new
+relay algorithm development is required for PMSG protection beyond the
+framework of Chapter~\ref{ch:line_diff}.
+
+\section{Protection Challenges Quantified}
+\label{sec:ch3_challenges}
+
+\subsection{Overcurrent Relay: Pickup Failure at Low $\kibr$}
+
+The minimum detectable fault current with a standard ITOC relay is
+$I_\mathrm{pickup} = k_s I_\mathrm{load,max}$ with $k_s = 1.3$.
+For a pure-IBR feeder at maximum load ($I_\mathrm{load} \approx I_\mathrm{rated}$)
+and minimum fault ($I_\mathrm{fault}^\mathrm{min} = 1.1\,I_\mathrm{rated}$):
+
+\begin{equation}
+  I_\mathrm{pickup} = 1.3\,I_\mathrm{rated} > I_\mathrm{fault}^\mathrm{min} = 1.1\,I_\mathrm{rated}
+\end{equation}
+
+The ITOC relay is \textbf{incapable of detecting faults} on IBR-only feeders
+under maximum load. The adaptive OC framework of Chapter~\ref{ch:generator_oc}
+addresses this for generator protection by tracking the generator model
+rather than using a fixed pickup.
+
+\subsection{87L Differential Relay: Bias Slope Conflict}
+
+The classical 87L relay operates on:
+$I_\mathrm{diff} > k_m I_\mathrm{bias} + I_0$.
+For an internal fault with IBR at end~B:
+\begin{equation}
+  I_\mathrm{diff} = \sqrt{I_A^2 + I_B^2 + 2 I_A I_B \cos(\phi_A - \phi_B)}
+\end{equation}
+When $\kibr$ is low, $I_B \ll I_A$, so $I_\mathrm{diff} \approx I_A$ and the
+relay is sensitive. When $\kibr$ is high (IBR at rated during ride-through)
+but the phase angle $\phi_A - \phi_B \approx 90$ (reactive support mode),
+$I_\mathrm{diff}$ drops to $\sqrt{I_A^2 + I_B^2}$, potentially below
+$k_m I_\mathrm{bias} = k_m (I_A + I_B)/2$. The adaptive threshold of
+Chapter~\ref{ch:line_diff} resolves this conflict.
+
+\subsection{Distance Relay: Reach Limitation from IBR Reactive Injection}
+
+The apparent impedance seen by a distance relay at end~A with IBR at end~B:
+\begin{equation}
+  \Zapp = \alpha \Zline + \frac{I_A + I_B}{I_A}\, Z_F
+  \label{eq:ch3_zapp}
+\end{equation}
+
+The IBR injects reactive current $I_B = I_\mathrm{lim}\angle 90$,
+shifting $\Zapp$ in the reactive direction on the R-X plane. For a
+purely resistive fault ($Z_F = R_F$), the shift is:
+\begin{equation}
+  \Delta Z^\mathrm{react} = \frac{I_B^\mathrm{react}}{I_A}\, R_F
+  \label{eq:ch3_reach_shift}
+\end{equation}
+This causes the relay to see $|\Zapp| > |\alpha \Zline|$ and underreach
+(miss the fault). The quadrilateral correction of
+Chapter~\ref{ch:distance} subtracts this shift using the DT estimate of $\kibr$.
+
+\subsection{Transformer Differential: Inrush Mis-Discrimination at Low IBR}
+
+The classical 87T relay uses second-harmonic blocking to restrain during
+transformer energisation inrush. The threshold is set at:
+$I_{2f}/I_{1f} > 0.15$ (15\% second harmonic ratio).
+When IBRs supply the energisation current, the high-frequency harmonics
+generated by the switching converters can suppress the inrush signature
+below the 15\% threshold, causing the 87T to \emph{operate} (false trip)
+during energisation. Conversely, internal turn-to-turn faults may generate
+a small harmonic content that incorrectly blocks the 87T.
+The SPRT solution of Chapter~\ref{ch:transformer_diff} replaces the fixed
+harmonic threshold with a sequential likelihood ratio test that adapts to
+the observed harmonic envelope.
+
+\subsection{Summary of Failure Modes}
+
+\begin{table}[htbp]
+\caption{Legacy relay failure modes in IBR-dominated networks}
+\label{tab:ch3_failures}
+\small
+\begin{tabularx}{\textwidth}{@{}lp{3cm}p{3.5cm}X@{}}
+\toprule
+Failure Mode & Element & Root Cause & SAMBP Solution \\
+\midrule
+F1 & ITOC pickup failure & $I_\mathrm{fault} < I_\mathrm{pickup}$ & Adaptive OC (Ch.~\ref{ch:generator_oc}) \\
+F2 & 87L bias conflict & Fixed $k_m$, variable $\kibr$ & Adaptive 87L (Ch.~\ref{ch:line_diff}) \\
+F3 & 87L SLG miss & IBR suppresses $I_2$ & 87LN + 87LN0 (Ch.~\ref{ch:line_diff}) \\
+F4 & 87T inrush mis-discrim. & IBR distorts harmonic ratio & SPRT 87T (Ch.~\ref{ch:transformer_diff}) \\
+F5 & Distance underreach & IBR reactive injection & Quadrilateral 21 (Ch.~\ref{ch:distance}) \\
+F6 & Islanding blind spot & Mode-switch timing & Microgrid prot.\ (Ch.~\ref{ch:microgrid}) \\
+F7 & PINN physics violation & No constraint in loss & PINN + KVL/KCL (Ch.~\ref{ch:ml}) \\
+F8 & No closed-loop adaptation & Manual settings process & WAPC protocol (Ch.~\ref{ch:centralised}) \\
+\bottomrule
+\end{tabularx}
+\end{table}

@@ -1,0 +1,84 @@
+\documentclass[tikz,border=6pt]{standalone}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usetikzlibrary{arrows.meta,calc,positioning,shapes.geometric,shapes.misc,backgrounds,fit}
+
+\begin{document}
+\begin{tikzpicture}[
+  font=\small,
+  >=Stealth,
+  state/.style  ={draw,rounded rectangle,minimum width=3.0cm,minimum height=0.9cm,
+                  align=center,font=\small\bfseries},
+  modeA/.style  ={state,fill=green!20,draw=green!60!black},
+  modeB/.style  ={state,fill=orange!20,draw=orange!60!black},
+  modeC/.style  ={state,fill=red!20,draw=red!60!black},
+  trans/.style  ={->,thick},
+  tlabel/.style ={font=\scriptsize,align=center,fill=white,inner sep=1pt},
+]
+
+%% ===== States ================================================================
+\node[modeA] (A) at (0,  4) {Mode A\\Healthy channel\\Full 87L active};
+\node[modeB] (B) at (0,  0) {Mode B\\Degraded channel\\87L + tightened thresholds};
+\node[modeC] (C) at (0, -4) {Mode C\\Channel loss\\Single-end OC (50/51) only};
+
+%% ===== Transitions A → B =====================================================
+\draw[trans,orange!70!black]
+      (A.west) .. controls +(-3.5,0) and +(-3.5,0) ..
+      node[tlabel,left]{Skew$>2$ samp \textbf{OR} \\jitter$>3$ samp \textbf{OR}\\packet loss detected}
+      (B.west);
+
+%% ===== Transitions B → A =====================================================
+\draw[trans,green!60!black]
+      (B.east) .. controls +(3.5,0) and +(3.5,0) ..
+      node[tlabel,right]{Channel clean\\for $T_{restore}=0.5$\,s}
+      (A.east);
+
+%% ===== Transitions B → C =====================================================
+\draw[trans,red!70!black]
+      (B.west) .. controls +(-2.5,0) and +(-2.5,0) ..
+      node[tlabel,left]{Contiguous loss\\$>T_{loss,max}=0.1$\,s}
+      (C.west);
+
+%% ===== Transitions C → B =====================================================
+\draw[trans,orange!60!black]
+      (C.east) .. controls +(2.5,0) and +(2.5,0) ..
+      node[tlabel,right]{Channel restored\\for $T_{restore}=0.5$\,s}
+      (B.east);
+
+%% ===== Direct A → C (severe loss) ==========================================
+\draw[trans,red!40!black,dashed]
+      (A.south east) .. controls +(1.5,-0.5) and +(1.5,0.5) ..
+      node[tlabel,right]{Severe loss\\(direct)}
+      (C.north east);
+
+%% ===== Protection annotations ===============================================
+\node[draw,fill=green!6,rounded corners=2pt,
+      right=1.8cm of A,align=left,font=\scriptsize,minimum width=3.5cm] (annA)
+      {\textbf{Mode A actions:}\\
+       Full differential active\\
+       $n_{confirm}=2$ cycles\\
+       Model gate enabled\\
+       κ_n threshold: 30};
+
+\node[draw,fill=orange!6,rounded corners=2pt,
+      right=1.8cm of B,align=left,font=\scriptsize,minimum width=3.5cm] (annB)
+      {\textbf{Mode B actions:}\\
+       Differential active\\
+       $n_{confirm}=3$ cycles\\
+       Skew compensation via\\
+       cross-correlation};
+
+\node[draw,fill=red!6,rounded corners=2pt,
+      right=1.8cm of C,align=left,font=\scriptsize,minimum width=3.5cm] (annC)
+      {\textbf{Mode C actions:}\\
+       Differential suspended\\
+       Instantaneous: $I>6$\,pu\\
+       Time-OC: $I_{rms}>2.5$\,pu\\
+       No selectivity};
+
+\draw[dashed,gray!50] (A.east) -- (annA.west);
+\draw[dashed,gray!50] (B.east) -- (annB.west);
+\draw[dashed,gray!50] (C.east) -- (annC.west);
+
+\end{tikzpicture}
+\end{document}

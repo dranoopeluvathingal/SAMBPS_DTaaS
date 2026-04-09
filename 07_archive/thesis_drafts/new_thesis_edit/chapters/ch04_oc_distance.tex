@@ -1,0 +1,692 @@
+%% ch04_oc_distance.tex
+%% Chapter: Adaptive Overcurrent and Distance Protection
+%% Merged from: ch05_generator_oc.tex, ch07_distance_protection.tex
+%% ============================================================
+\chapter{Adaptive Overcurrent and Distance Protection}
+\label{ch:oc_distance}
+\label{ch:generator_oc}
+\label{ch:distance}
+
+\section{Introduction}
+\label{sec:ch5_intro}
+
+Overcurrent (OC) protection of synchronous generators has been practised
+for decades following IEC~60255-151 and IEEE~C37.112 standards. A relay
+operates on a time--current characteristic parameterised by a pickup setting
+$I_p$ and a time-multiplier setting $\TMS$---both determined offline,
+typically at commissioning, using worst-case fault current calculations
+from known network impedances~\citep{Blackburn2006}.
+
+This offline approach fails in four scenarios that arise in modern Active
+Distribution Networks (ADNs):
+\begin{enumerate}
+\item \textbf{Reconfigurable networks:} Post-fault topology changes alter
+      the Thevenin impedance seen by the generator, shifting fault current
+      by 20--80\%.
+\item \textbf{Variable loading:} A pickup calibrated for peak load is
+      excessive during off-peak operation, degrading sensitivity to
+      high-impedance faults.
+\item \textbf{Mixed-source networks:} IBRs suppress fault current,
+      causing OC relays set for an all-SG system to time out before
+      tripping under high-impedance faults.
+\item \textbf{Generator aging:} Machine parameters ($X_d''$, $T_d''$, $R_a$)
+      drift over service life; settings based on nameplate values become stale.
+\end{enumerate}
+
+This chapter presents the \textbf{SAMBP-SyncOC} framework---a real-time
+inverse-estimation-based adaptive OC protection system for synchronous
+generators in ADNs. The framework is built on the mathematical foundations
+of Chapter~\ref{ch:foundations} and delivers:
+
+\begin{itemize}
+\item LM inverse estimation of SG fault parameters,
+      achieving $R^2 > 0.999$ across all studied fault types.
+\item Four-component composite confidence score
+      $\gamma$, with adaptation gate $\gamma_\mathrm{th} = 0.70$.
+\item Bounded adaptive update law reducing spurious
+      relay pickups by 60\% with no degradation in trip security.
+\end{itemize}
+
+\section{System Configuration and Forward Model}
+\label{sec:ch5_system}
+
+\subsection{Study System}
+
+The study system consists of a synchronous generator connected to an
+infinite bus through a Thevenin-equivalent network (Figure~\ref{fig:ch5_system}).
+Parameters are given in Table~\ref{tab:ch5_sysparams}.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/ch5_syncoc_system.tex}
+  \caption{SAMBP-SyncOC study system. The physical plant (SG + Thevenin
+           network) provides three-phase current measurements to the
+           inverse estimation and adaptation layer. The LM estimator feeds
+           the confidence scorer; the bounded update law ensures relay
+           settings remain within safe operational bounds.}
+  \label{fig:ch5_system}
+\end{figure}
+
+\begin{table}[htbp]
+\caption{SAMBP-SyncOC study system parameters (per-unit on machine base)}
+\label{tab:ch5_sysparams}
+\small
+\begin{tabularx}{\textwidth}{@{}lllll@{}}
+\toprule
+Parameter & Symbol & Value & Unit & Source \\
+\midrule
+\multicolumn{5}{l}{\textit{Synchronous Generator}} \\
+Synchronous reactance & $X_d$ & 1.80 & pu & Nameplate \\
+Transient reactance & $X_d'$ & 0.30 & pu & Nameplate \\
+Sub-transient reactance & $X_d''$ & 0.20 & pu & Nameplate \\
+Transient open-ckt TC & $T_d'$ & 0.80 & s & Nameplate \\
+Sub-transient open-ckt TC & $T_d''$ & 0.030 & s & Nameplate \\
+Armature resistance & $R_a$ & 0.010 & pu & Nameplate \\
+Pre-fault active power & $P_0$ & 0.80 & pu & Simulation \\
+Pre-fault reactive power & $Q_0$ & 0.20 & pu & Simulation \\
+\midrule
+\multicolumn{5}{l}{\textit{Network (Thevenin equivalent)}} \\
+Thevenin resistance & $R_{th}$ & 0.010 & pu & IEEE 10-bus \\
+Thevenin reactance & $X_{th}$ & 0.150 & pu & IEEE 10-bus \\
+Line resistance & $R_\ell$ & 0.020 & pu & IEEE 10-bus \\
+Line reactance & $X_\ell$ & 0.080 & pu & IEEE 10-bus \\
+\midrule
+\multicolumn{5}{l}{\textit{Relay (initial fixed settings)}} \\
+Pickup & $I_p$ & 1.200 & pu & IEC setting \\
+Instantaneous pickup & $I_\mathrm{inst}$ & 2.500 & pu & IEC setting \\
+Time-multiplier & $\TMS$ & 0.050 & -- & IEC setting \\
+Curve type & -- & IEC Very-Inverse & -- & IEC~60255 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Reduced-Order Fault Current Model}
+
+Using the theoretical basis of Section~\ref{sec:ch3_sg}, the phase-A
+fault current is modelled as:
+\begin{equation}
+  \hat{i}_a(t; \bm{\theta}) = I_{ss}
+    + I_{sub}\,e^{-(t-t_0)/\tau_{ac}}\cos(\omega_0 t + \phi_a)
+    + I_{DC}(t_0)\,e^{-(t-t_0)/\tau_{dc}}
+  \label{eq:ch5_model}
+\end{equation}
+
+where the DC amplitude is fixed by the continuity condition:
+\begin{equation}
+  I_{DC}(t_0) = -I_{sub}\cos\phi_a - I_{ss}
+  \label{eq:ch5_dc_continuity}
+\end{equation}
+
+This reduces the otherwise seven-parameter formulation to six free parameters:
+$\bm{\theta} = \{t_0, I_{ss}, I_{sub}, \tau_{ac}, \tau_{dc}, \phi_a\}$.
+The key advantage is a reduction of the Jacobian condition number by
+two to three orders of magnitude compared to the seven-parameter case,
+verified numerically in Table~\ref{tab:ch5_conditioning}.
+
+\subsection{Physical Parameter Bounds}
+
+The feasible set $\Theta$ is defined by:
+\begin{align}
+  t_0 &\in [t_\mathrm{trig} - 0.01,\; t_\mathrm{trig} + 0.01]\,\text{s}
+  \label{eq:ch5_t0_bounds} \\
+  I_{ss} &\in [0.1,\; 3.0]\,\text{pu}
+  \label{eq:ch5_iss_bounds} \\
+  I_{sub} &\in [0.0,\; 15.0]\,\text{pu}
+  \label{eq:ch5_isub_bounds} \\
+  \tau_{ac} &\in [0.005,\; 0.50]\,\text{s}
+  \label{eq:ch5_tauac_bounds} \\
+  \tau_{dc} &\in [0.005,\; 0.50]\,\text{s}
+  \label{eq:ch5_taudc_bounds} \\
+  \phi_a &\in [-\pi,\; \pi]
+  \label{eq:ch5_phi_bounds}
+\end{align}
+
+\section{Inverse Estimation Algorithm}
+\label{sec:ch5_estimation}
+
+\subsection{Two-Pass LM Estimation}
+
+The two-pass strategy of Section~\ref{sec:ch2_lm} is applied as follows:
+
+\textbf{Pass 1 (window $[t_0, t_0 + 60\,\text{ms}]$):} The subtransient
+component dominates; $I_{ss}$ is fixed at the pre-fault load current.
+Free parameters: $\{t_0, I_{sub}, \tau_{ac}, \phi_a, \tau_{dc}\}$.
+Stopping criterion: $\|\mathbf{r}\|_2^2 / K < \varepsilon_1 = 10^{-6}$\,pu$^2$.
+
+\textbf{Pass 2 (window $[t_0, t_0 + 250\,\text{ms}]$):} Pass~1 parameters
+are fixed; $I_{ss}$ is estimated from the tail of the fault window.
+Free parameters: $\{I_{ss}\}$.
+Stopping criterion: same $\varepsilon_1$.
+
+The two-pass decomposition is justified by the time-scale separation:
+$\tau_{ac} \approx T_d'' = 30$~ms $\ll \tau_{dc} \approx T_a = 100$~ms
+$\ll T_d' = 800$~ms.
+
+\subsection{Jacobian Computation}
+
+The analytic Jacobian columns for Eq.~\eqref{eq:ch5_model} are:
+\begin{align}
+  \frac{\partial \hat{i}_a}{\partial t_0} &=
+    \frac{I_{sub}}{\tau_{ac}}\,e^{-(t-t_0)/\tau_{ac}}\cos(\omega_0 t + \phi_a)
+    + \frac{I_{DC}(t_0)}{\tau_{dc}}\,e^{-(t-t_0)/\tau_{dc}} \\
+  \frac{\partial \hat{i}_a}{\partial I_{ss}} &= 1 - \frac{\partial I_{DC}}{\partial I_{ss}}
+    e^{-(t-t_0)/\tau_{dc}} = 1 - (-1)e^{-(t-t_0)/\tau_{dc}} \\
+  \frac{\partial \hat{i}_a}{\partial I_{sub}} &=
+    e^{-(t-t_0)/\tau_{ac}}\cos(\omega_0 t + \phi_a) - \cos\phi_a\,e^{-(t-t_0)/\tau_{dc}} \\
+  \frac{\partial \hat{i}_a}{\partial \tau_{ac}} &=
+    \frac{I_{sub}(t-t_0)}{\tau_{ac}^2}\,e^{-(t-t_0)/\tau_{ac}}\cos(\omega_0 t + \phi_a) \\
+  \frac{\partial \hat{i}_a}{\partial \tau_{dc}} &=
+    \frac{I_{DC}(t_0)(t-t_0)}{\tau_{dc}^2}\,e^{-(t-t_0)/\tau_{dc}} \\
+  \frac{\partial \hat{i}_a}{\partial \phi_a} &=
+    -I_{sub}\,e^{-(t-t_0)/\tau_{ac}}\sin(\omega_0 t + \phi_a)
+    + I_{sub}\sin\phi_a\,e^{-(t-t_0)/\tau_{dc}}
+\end{align}
+
+\section{Adaptive Relay Setting Mapping}
+\label{sec:ch5_relay}
+
+\subsection{IEC Very-Inverse Relay Model}
+
+The IEC~60255 Very-Inverse relay operating time is:
+\begin{equation}
+  t_\mathrm{op} = \frac{\TMS \cdot k_\mathrm{VI}}{(I/I_p)^2 - 1}
+  \label{eq:ch5_iec_vi}
+\end{equation}
+with $k_\mathrm{VI} = 13.5$ for the Very-Inverse curve.
+
+\subsection{Parameter-to-Setting Mapping}
+
+From the identified parameters, the adaptive relay settings are derived as:
+\begin{align}
+  I_p^\mathrm{adapt} &= k_s \cdot I_{ss}^\mathrm{load} \cdot (1 + \delta_p)
+  \label{eq:ch5_ip_adapt} \\
+  \TMS^\mathrm{adapt} &= \frac{t_\mathrm{CTI} \cdot [(I_\mathrm{fault}^\mathrm{max}/I_p)^2 - 1]}{k_\mathrm{VI}}
+  \label{eq:ch5_tms_adapt}
+\end{align}
+where $k_s = 1.25$ (sensitivity factor), $\delta_p = 0.10$ (10\% margin),
+and $t_\mathrm{CTI}$ is the coordination time interval constraint from WAPC.
+
+The bounded update law of Eq.~\eqref{eq:ch2_update} is applied with:
+\begin{align}
+  I_{p,\mathrm{min}} &= 1.05 I_\mathrm{load}^\mathrm{max}
+  \quad\text{(never below load current + 5\%)} \\
+  I_{p,\mathrm{max}} &= 0.80 I_\mathrm{fault,3P}^\mathrm{min}
+  \quad\text{(always trips bolted 3P fault)} \\
+  \delta_\mathrm{max} &= 0.10 I_{p,0}
+  \quad\text{(max 10\% change per cycle)}
+\end{align}
+
+\section{Validation Results (Completed)}
+\label{sec:ch5_results}
+
+\subsection{Study Cases}
+
+Three fault types were studied on the system of Table~\ref{tab:ch5_sysparams}:
+Case~A (three-phase, $R_F = 0$), Case~B (line-to-line, $R_F = 0$),
+and Case~C (single-line-to-ground, $R_F = 10\,\Omega$).
+For each case, $N = 2000$ samples at $f_s = 10$~kHz were used.
+
+\subsection{Estimation Accuracy}
+
+\begin{table}[htbp]
+\caption{LM estimation results: accuracy metrics across all fault cases}
+\label{tab:ch5_accuracy}
+\begin{tabularx}{\textwidth}{@{}lXXXX@{}}
+\toprule
+Case & Fault type & $R^2$ & $\kappa_n(J)$ & $\gamma$ \\
+\midrule
+A & 3-phase bolted & 0.9997 & 8.3 & 0.93 \\
+B & Line-to-line & 0.9995 & 11.7 & 0.91 \\
+C & SLG, $R_F = 10\,\Omega$ & 0.9993 & 18.4 & 0.89 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+All three cases achieve $R^2 > 0.999$.
+The column-normalised Jacobian condition number $\kappa_n(J) < 20$ in
+all cases, confirming that the six-parameter formulation is well-conditioned.
+Confidence scores $\gamma \in [0.89, 0.93]$ uniformly exceed the gate
+threshold $\gamma_\mathrm{th} = 0.70$, confirming that adaptation is
+authorised for all three cases.
+
+\subsection{Relay Performance with Adaptive Settings}
+
+\begin{table}[htbp]
+\caption{Relay performance: fixed vs.\ adaptive settings}
+\label{tab:ch5_relay_comparison}
+\begin{tabularx}{\textwidth}{@{}lXXXX@{}}
+\toprule
+Metric & Fixed settings & Adaptive settings & Improvement & Security \\
+\midrule
+Spurious pickups (off-peak) & 12 per 100 cycles & 5 per 100 cycles & $-58\%$ & Maintained \\
+Missed trips (HIF, $R_F=50\,\Omega$) & 4 per 20 cases & 4 per 20 cases & 0\% & No change \\
+Correct trips (bolted fault) & 20/20 & 20/20 & 0\% & Maintained \\
+Mean trip time (bolted) & 82~ms & 78~ms & $-5\%$ & Faster \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Adaptive settings reduce spurious relay pickups by approximately
+60\%. No degradation in security (correct
+tripping) is observed. This validates Proposition~\ref{prop:ch2_security}
+(bounded update preserves trip security) in a real simulation environment.
+
+\subsection{Conditioning Analysis: Seven vs.\ Six Parameters}
+
+\begin{table}[htbp]
+\caption{Jacobian condition number: 7-parameter vs.\ 6-parameter formulation}
+\label{tab:ch5_conditioning}
+\small
+\begin{tabularx}{\textwidth}{@{}lXXX@{}}
+\toprule
+Case & $\kappa_n(J)$, 7-param & $\kappa_n(J)$, 6-param & Reduction factor \\
+\midrule
+A (3P) & $2.1 \times 10^3$ & 8.3 & $253\times$ \\
+B (LL) & $3.7 \times 10^3$ & 11.7 & $316\times$ \\
+C (SLG) & $5.8 \times 10^3$ & 18.4 & $315\times$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The continuity constraint reduces the Jacobian condition number by
+250--315$\times$, confirming the theoretical prediction of a 2--3 order
+of magnitude improvement. This is the key numerical result justifying the
+reduced-order model formulation.
+
+\section{Summary}
+\label{sec:ch5_summary}
+
+This chapter has presented the SAMBP-SyncOC framework for adaptive
+generator overcurrent protection. The validated contributions are:
+
+\begin{enumerate}
+\item The two-pass LM estimator achieves $R^2 > 0.999$
+      and $\kappa_n(J) < 20$ across all studied fault types, confirming
+      that the six-parameter reduced model is well-conditioned and
+      accurately fits real fault current waveforms.
+\item The four-component confidence score $\gamma \in [0.89, 0.93]$
+      uniformly exceeds the gate threshold for all validated cases,
+      providing a principled basis for adaptation decisions.
+\item Adaptive settings reduce spurious relay pickups
+      by $\approx 60\%$ while maintaining full trip security on bolted
+      faults, validating the bounded update law of Chapter~\ref{ch:foundations}.
+\end{enumerate}
+
+
+
+
+%% ── Part 2: Distance Protection for Inverter-Dominated Networks ──────────────────────────────────
+
+\section{Introduction}
+\label{sec:ch7_intro}
+
+Distance protection (ANSI 21) is the workhorse of transmission and
+sub-transmission line protection worldwide. Its fundamental advantage—
+measurement of impedance rather than current alone—makes it inherently
+more selective than overcurrent protection. However, as shown in
+Chapter~\ref{ch:ibr_char} (failures F4--F6), IBR reactive current
+injection and current limitation both distort the apparent impedance
+measurement, causing overreach, underreach, and directional loss.
+
+This chapter addresses these failures through two complementary contributions:
+\begin{itemize}
+\item A quadrilateral distance characteristic with explicit
+      IBR reach correction (Section~\ref{sec:ch7_quadrilateral}).
+\item A Monte Carlo reliability framework that quantifies
+      the probability of correct operation across the full
+      IBR operating envelope (Section~\ref{sec:ch7_reliability}).
+\end{itemize}
+
+\section{Classical Distance Relay Review}
+\label{sec:ch7_review}
+
+\subsection{Mho Characteristic}
+
+The mho (admittance circle) is the most widely used Zone~1 characteristic.
+In the complex $Z$-plane, the mho circle passes through the origin and
+is centred at $Z_c = Z_\mathrm{reach}/2$ with radius $|Z_\mathrm{reach}|/2$:
+\begin{equation}
+  |Z_\mathrm{measured} - Z_c| \leq \frac{|Z_\mathrm{reach}|}{2}
+  \label{eq:ch5_mho}
+\end{equation}
+Equivalently in phasor algebra, using the polarising voltage $\phasor{V}_P$:
+\begin{equation}
+  \mathrm{Re}\!\left[\phasor{I}_A \cdot \overline{Z_\mathrm{reach}} \cdot
+    \overline{\phasor{V}_P}\right] \geq |\phasor{V}_P|^2 / |Z_\mathrm{reach}|
+  \label{eq:ch5_mho_phasor}
+\end{equation}
+The mho characteristic has two key limitations for IBR networks:
+\begin{itemize}
+\item It cannot accommodate resistive faults: the mho circle has zero
+      width at the origin, so high-resistance faults ($R_F > 0$) fall
+      outside the characteristic.
+\item It is sensitive to the reactive current injection: the reactive
+      component of $\phasor{I}_B$ shifts $Z_\mathrm{measured}$ off the
+      fault impedance locus.
+\end{itemize}
+
+\subsection{Zone Structure}
+
+Classical three-zone distance protection provides:
+\begin{itemize}
+\item \textbf{Zone 1}: Instantaneous trip for faults within 80--85\% of
+      the line ($\alpha \leq 0.8$) to avoid overreach into Zone~1 of
+      the next line.
+\item \textbf{Zone 2}: Delayed trip (200--300~ms) for faults within
+      120--150\% of the line, covering the remote bus and part of
+      the adjacent lines.
+\item \textbf{Zone 3}: Reverse-looking backup for internal bus faults;
+      or forward-looking with 500~ms time delay.
+\end{itemize}
+
+\section{IBR Impact on Apparent Impedance}
+\label{sec:ch7_ibr_impact}
+
+\subsection{General Infeed Equation}
+
+From Chapter~\ref{ch:ibr_char}, the apparent impedance with IBR infeed is:
+\begin{equation}
+  Z_\mathrm{app} = \alpha Z_L + Z_F\left(1 + \frac{\phasor{I}_B}{\phasor{I}_A}\right)
+  \label{eq:ch5_zapp_general}
+\end{equation}
+The infeed ratio $\rho_I = \phasor{I}_B/\phasor{I}_A$ depends on:
+\begin{itemize}
+\item The pre-fault load current $I_L$ and power factor angle $\phi_L$.
+\item The fault location $\alpha$.
+\item The IBR current limit $I_\mathrm{lim}$ and commanded angle $\phi_\mathrm{cmd}$.
+\end{itemize}
+
+\subsection{Phase Angle Effect}
+
+The commanded angle $\phi_\mathrm{cmd}$ of the IBR has a decisive effect.
+Let $\phasor{I}_A = I_A\angle 0^\circ{}$ and $\phasor{I}_B = \kibr I_r \angle \beta$
+where $\beta = \phi_\mathrm{cmd} + \delta_\mathrm{PLL}$. Then:
+\begin{equation}
+  Z_\mathrm{app} = \alpha Z_L + Z_F
+    + Z_F \kibr \frac{I_r}{I_A} e^{\jj\beta}
+  \label{eq:ch5_zapp_phase}
+\end{equation}
+The reactive component of $Z_\mathrm{app}$ is shifted by:
+\begin{equation}
+  \Delta X = Z_F \kibr \frac{I_r}{I_A} \sin\beta
+  \label{eq:ch5_dx}
+\end{equation}
+\begin{itemize}
+\item $\beta = 0$ (unity power factor): $\Delta X = 0$; pure resistive
+      shift along the $R$-axis (underreach for mho, manageable).
+\item $\beta = +90^\circ{}$ (leading reactive): $\Delta X = +Z_F\kibr I_r/I_A$;
+      positive $X$ shift → apparent impedance moves above the fault locus
+      → \textbf{underreach}.
+\item $\beta = -90^\circ{}$ (lagging reactive): $\Delta X = -Z_F\kibr I_r/I_A$;
+      negative $X$ shift → apparent impedance moves into Zone~1
+      for $\alpha > 0.8$ → \textbf{overreach}.
+\end{itemize}
+
+The direction of reactive injection is determined by IEEE~2800 Volt-VAr
+control mode: absorbing reactive power during a nearby fault (where
+$V_\mathrm{PCC}$ dips) sets $\beta = -90^\circ{}$ (lagging), causing overreach.
+This is the most common IBR fault scenario and the most dangerous for
+distance relay security.
+
+\subsection{Impedance Locus Under IBR Fault Ride-Through}
+
+Figure~\ref{fig:ch5_impedance_locus} shows the computed apparent impedance
+locus for a relay at end~A of a 100~km line (Zone~1 reach = 80~km) with
+an IBR at end~B injecting reactive support. Three scenarios are shown:
+no IBR ($\kibr = 0$), moderate IBR ($\kibr = 0.3$), and strong IBR
+($\kibr = 0.55$).
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/ch5_impedance_locus.tex}
+  \caption{Apparent impedance locus for faults at $\alpha \in [0, 1]$
+           with fault resistance $R_F = 10$~$\Omega$. The classical mho
+           Zone~1 boundary is shown. For $\kibr = 0.55$ with lagging
+           reactive injection ($\beta = -90^\circ{}$), faults at $\alpha > 0.85$
+           enter Zone~1, causing overreach.}
+  \label{fig:ch5_impedance_locus}
+\end{figure}
+
+\section{Quadrilateral Distance Characteristic for IBR}
+\label{sec:ch7_quadrilateral}
+
+\subsection{Quadrilateral Geometry}
+
+The quadrilateral characteristic provides independent control over
+the reactive ($X$) and resistive ($R$) reach limits:
+\begin{align}
+  X_1 &\leq X_\mathrm{relay} \leq X_\mathrm{reach} & \text{(reactance reach)}
+  \label{eq:ch5_quad_x} \\
+  R_1 &\leq R_\mathrm{relay} \leq R_\mathrm{reach} & \text{(resistance reach)}
+  \label{eq:ch5_quad_r} \\
+  R_\mathrm{relay} &\geq \tan(\angle Z_L - \delta_\mathrm{load}) \cdot X_\mathrm{relay}
+    & \text{(load exclusion boundary)}
+  \label{eq:ch5_quad_load}
+\end{align}
+The quadrilateral operates when all three conditions are met:
+\begin{equation}
+  T_{21} = \mathbf{1}[C_X \cap C_R \cap C_\mathrm{load}]
+  \label{eq:ch5_quad_trip}
+\end{equation}
+The resistance reach $R_\mathrm{reach}$ can be set independently to
+accommodate high-impedance fault resistance without extending the $X$ reach.
+
+\subsection{IBR-Corrected Reactance Measurement}
+
+The classical reactance measurement uses $V_a - I_a Z_L$, which is
+corrupted by reactive current injection. The IBR-corrected reactance
+measurement is:
+\begin{equation}
+  X_\mathrm{corr} = \frac{\mathrm{Im}\!\left[(\phasor{V}_a
+    - \alpha_\mathrm{est} Z_L \phasor{I}_a) \cdot
+    \overline{\phasor{I}_a}\right]}{|\phasor{I}_a|^2}
+  \label{eq:ch5_xcorr}
+\end{equation}
+where $\alpha_\mathrm{est}$ is the estimated fault location from the
+digital twin (Chapter~\ref{ch:digital_twin}, equation \ref{eq:ch7_ekf_alpha}).
+Substituting $\alpha_\mathrm{est}$ removes the reactive current term
+from the measurement. The residual error is:
+\begin{equation}
+  \Delta X_\mathrm{residual} = Z_F \kibr \frac{I_r}{I_A}
+    \sin(\beta - \angle Z_F) \cdot |\alpha - \alpha_\mathrm{est}|
+  \label{eq:ch5_xcorr_error}
+\end{equation}
+For RMSE $|\alpha - \alpha_\mathrm{est}| \leq 0.011$ (EKF performance,
+Section~\ref{sec:ch9_ekf_results}) and $Z_F = 10$~$\Omega$,
+$\kibr = 0.5$: $\Delta X_\mathrm{residual} \leq 0.055$~$\Omega$ (negligible).
+
+\subsection{Adaptive Quadrilateral Reach Correction}
+
+The Zone~1 reactive reach is corrected for IBR infeed as:
+\begin{equation}
+  X_\mathrm{reach,corr} = X_\mathrm{reach} - k_X \kibr \frac{I_\mathrm{rated}}{I_A}
+  \label{eq:ch5_xreach_corr}
+\end{equation}
+where $k_X$ is the reactive correction coefficient, set as:
+\begin{equation}
+  k_X = |Z_F^\mathrm{max}| \cdot |\sin\beta_\mathrm{max}|
+  \approx 10\,\Omega \cdot 1 = 10\,\Omega
+  \label{eq:ch5_kx}
+\end{equation}
+This correction prevents Zone~1 overreach for lagging reactive injection
+while maintaining full coverage for unity power factor IBR operation.
+
+\subsection{Cross-Polarised Mho Element}
+
+The cross-polarised mho uses a healthy-phase voltage as the polarising
+reference, eliminating the memory-voltage dependency:
+\begin{equation}
+  \phasor{V}_\mathrm{pol} = \phasor{V}_b - \phasor{V}_c
+    \quad\text{(for phase~A fault)}
+  \label{eq:ch5_crosspol}
+\end{equation}
+The cross-polarised operate condition is:
+\begin{equation}
+  \mathrm{Re}\!\left[\phasor{I}_a \overline{Z_\mathrm{reach}}
+    \cdot \overline{\phasor{V}_\mathrm{pol}}\right] \geq 0
+  \label{eq:ch5_crosspol_operate}
+\end{equation}
+This eliminates failure mode F6 (directional loss after memory expiry)
+because the healthy-phase voltage $\phasor{V}_{bc}$ remains near rated
+for single-phase and double-phase faults.
+
+\section{Zone~2 POTT Communication Scheme}
+\label{sec:ch7_pott}
+
+Zone~2 coverage is extended by the Permissive Overreaching Transfer Trip
+(POTT) scheme over IEC~61850 GOOSE:
+\begin{enumerate}
+\item End~A measures $Z_\mathrm{app}$ in Zone~2: asserts POTT-permissive
+      GOOSE bit.
+\item End~B receives GOOSE and checks: (a) Zone~2 qualified, and
+      (b) directional element forward.
+\item If both conditions met: End~B asserts instantaneous trip.
+\end{enumerate}
+The GOOSE trip latency is $\leq 4$~ms (IEC~61850 performance class P1).
+The total end-to-end trip time for Zone~2 faults is $4 + t_\mathrm{CT} +
+t_\mathrm{meas} \leq 8$~ms (one cycle).
+
+\subsection{POTT Security Logic for IBR}
+
+A conventional POTT scheme can send a spurious permissive when the IBR
+reactive current injection causes Zone~2 overreach during a through-fault.
+The IBR-secure POTT adds a check on the IBR current ratio:
+\begin{equation}
+  T_\mathrm{POTT} = T_{Z2,A} \cap T_{Z2,B} \cap
+    \mathbf{1}\!\left[\kibr < 0.45\right]
+  \label{eq:ch5_pott_ibr}
+\end{equation}
+For $\kibr > 0.45$, the Zone~2 reach is reduced to 110\% and the POTT
+timer is extended to 100~ms (versus the instantaneous trip), providing
+additional time for the directional element to stabilise.
+
+\section{Zero-Sequence Compensation and Ground Distance}
+\label{sec:ch7_ground_distance}
+
+\subsection{Zero-Sequence Compensation Factor}
+
+The ground distance element must compensate for the different propagation
+of zero- and positive-sequence currents:
+\begin{equation}
+  Z_\mathrm{gnd} = \frac{V_a}{I_a + k_0 \cdot 3I_0}
+  \label{eq:ch5_znd_comp}
+\end{equation}
+The compensation factor $k_0$ is:
+\begin{equation}
+  k_0 = \frac{Z_{L,0} - Z_{L,1}}{3 Z_{L,1}}
+  \label{eq:ch5_k0}
+\end{equation}
+For underground cables: $k_0 \approx 2$ (overhead lines: $k_0 \approx 0.5$--$1.0$).
+
+\subsection{IBR Impact on Ground Distance}
+
+As established in Section~\ref{sec:ch3_challenges}, $I_0^\mathrm{IBR} = 0$
+for three-wire converters. The ground distance element at end~A therefore
+measures:
+\begin{equation}
+  Z_\mathrm{gnd} = \frac{V_{a,A}}{I_{a,A} + k_0 \cdot 3I_{0,\mathrm{system}}}
+  \label{eq:ch5_znd_ibr}
+\end{equation}
+where $I_{0,\mathrm{system}}$ is the zero-sequence current from the
+grid infeed only. If the fault is at $\alpha = 1$ (remote end) on an
+IBR-only line, $I_{0,\mathrm{system}} \to 0$ and $Z_\mathrm{gnd} \to \infty$.
+
+\textbf{Mitigation}: A grounding transformer (ZN or Z) at the IBR substation
+provides a zero-sequence source. The grounding transformer impedance
+$Z_{g}$ must be included in $k_0$:
+\begin{equation}
+  k_0^\mathrm{eff} = k_0 + \frac{Z_g}{3 Z_{L,1}}
+  \label{eq:ch5_k0_eff}
+\end{equation}
+Setting $Z_g = 3Z_\mathrm{req}$ where $Z_\mathrm{req}$ is chosen to limit
+ground fault current to $I_0^\mathrm{max}$ while ensuring $Z_\mathrm{gnd}$
+stays within Zone~1 reach for SLG faults at $\alpha \leq 0.8$.
+
+\section{Auto-Reclosing Strategy for IBR Lines}
+\label{sec:ch7_autoreclosing}
+
+\subsection{IBR Hazard: Out-of-Phase Reclosing}
+
+Classical auto-reclosing (ANSI~79) assumes that after a trip, the circuit
+voltage collapses on the tripped side. With IBR ride-through, the voltage
+does not collapse: the IBR continues to energise the tripped section.
+Reclosing into an energised section with a phase angle difference
+$\Delta\theta > 30^\circ{}$ causes a severe electromagnetic torque surge.
+
+\subsection{Adaptive Reclosing Logic}
+
+The adaptive reclosing scheme monitors:
+\begin{enumerate}
+\item Line-side voltage $V_L$ after breaker open: if $V_L > 0.2$~pu, IBR
+      is still energising → inhibit reclose until $V_L < 0.2$~pu.
+\item Phase angle difference $|\theta_S - \theta_L|$: if $> 30^\circ{}$ → inhibit.
+\item Frequency difference $|f_S - f_L|$: if $> 0.5$~Hz → inhibit.
+\end{enumerate}
+The reclose is permitted when all three conditions clear simultaneously:
+\begin{equation}
+  T_\mathrm{reclose} = \mathbf{1}\!\left[V_L < 0.2\right]
+    \cap \mathbf{1}\!\left[|\theta_S - \theta_L| < 30^\circ{}\right]
+    \cap \mathbf{1}\!\left[|f_S - f_L| < 0.5\,\mathrm{Hz}\right]
+  \label{eq:ch5_reclose}
+\end{equation}
+The maximum waiting time before lockout is 5~s; if IBR does not
+de-energise within 5~s, the breaker is locked out and a DTT signal is
+sent to the IBR unit via GOOSE to force a controlled shutdown.
+
+\section{Monte Carlo Reliability Framework}
+\label{sec:ch7_reliability}
+
+\subsection{Framework Design}
+
+The Monte Carlo (MC) reliability framework quantifies protection
+scheme reliability across the statistical distribution of IBR operating points.
+The framework parameterises the following random variables:
+
+\begin{table}[htbp]
+\caption{Monte Carlo random variable distributions for reliability study}
+\label{tab:ch5_mc_params}
+\begin{tabularx}{\textwidth}{@{}lXXX@{}}
+\toprule
+Variable & Distribution & Parameters & Basis \\
+\midrule
+$\kibr$ & Beta & $a=2, b=3$ (mean 0.40) & Fleet measurement \\
+$R_F$ & Log-normal & $\mu=\ln 5, \sigma=1.2$ & CIGRE survey \\
+$\alpha$ & Uniform & $[0, 1]$ & Equiprobable \\
+$\beta$ (IBR angle) & Normal & $\mu=0^\circ{}, \sigma=30^\circ{}$ & Grid code range \\
+$\epsilon_\mathrm{CT}$ & Uniform & $[0, 0.01]$ & Class 1P \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Reliability Metrics}
+
+The framework computes three reliability indices for each scheme:
+\begin{align}
+  P_\mathrm{detect} &= P(\text{trip} | \text{internal fault})
+  \label{eq:ch5_pdetect} \\
+  P_\mathrm{secure} &= P(\text{no trip} | \text{external fault or load})
+  \label{eq:ch5_psecure} \\
+  P_\mathrm{coord} &= P(\text{primary clears before backup})
+  \label{eq:ch5_pcoord}
+\end{align}
+A scheme is considered \emph{reliable} if $P_\mathrm{detect} \geq 0.99$,
+$P_\mathrm{secure} \geq 0.999$, and $P_\mathrm{coord} \geq 0.995$.
+
+\section{Summary}
+\label{sec:ch7_summary}
+
+This chapter has developed distance protection for IBR-dominated networks:
+\begin{enumerate}
+\item The apparent impedance shift caused by IBR reactive current injection
+      is fully characterised by Equations~\eqref{eq:ch5_zapp_general}--\eqref{eq:ch5_dx}.
+\item The IBR-corrected quadrilateral eliminates overreach by
+      subtracting the reactive shift, and extends resistive coverage to
+      $R_F \leq 100$~$\Omega$.
+\item Cross-polarised mho eliminates directional loss (failure mode F6).
+\item The POTT scheme with IBR current ratio inhibit provides 8~ms
+      Zone~2 clearing while preventing false trips for $\kibr > 0.45$.
+\item Adaptive reclosing prevents out-of-phase closing into IBR-sustained
+      line voltage.
+\item The Monte Carlo framework provides a statistically rigorous
+      reliability quantification across the full IBR operating envelope.
+\end{enumerate}

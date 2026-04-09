@@ -1,0 +1,68 @@
+% fig_hmac_latency.tex
+% TR-52: GOOSE latency breakdown with and without HMAC (Study D)
+
+\begin{tikzpicture}
+\begin{axis}[
+  name         = hmacax,
+  width        = 0.88\textwidth,
+  height       = 5.5cm,
+  xbar stacked,
+  bar width    = 18pt,
+  xlabel       = {Cumulative latency [ms]},
+  xlabel style = {font=\small},
+  ytick        = {1,2},
+  yticklabels  = {Standard GOOSE\\(no auth),
+                  GOOSE + HMAC\\(SHA-256)},
+  yticklabel style = {font=\small, align=right},
+  xmin=0, xmax=10,
+  xtick        = {0,1,2,3,4,5,6,7,8,9,10},
+  xticklabel style = {font=\scriptsize},
+  tick style   = {draw=none},
+  axis line style = {gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  legend style = {at={(0.50,-0.30)}, anchor=north,
+                  font=\scriptsize, draw=gray!50,
+                  legend columns=4},
+  legend cell align = left,
+]
+
+%% IED processing: 0.1 ms both rows
+\addplot[fill=gray!40, draw=gray!60]
+  coordinates {(0.1,1) (0.1,2)};
+\addlegendentry{IED processing}
+
+%% LAN propagation: 0.2 ms both rows
+\addplot[fill=blue!30, draw=blue!50]
+  coordinates {(0.2,1) (0.2,2)};
+\addlegendentry{LAN propagation}
+
+%% GOOSE retransmission (fast period): 0.5 ms
+\addplot[fill=sambpblue!60, draw=sambpblue]
+  coordinates {(0.5,1) (0.5,2)};
+\addlegendentry{GOOSE period (fast)}
+
+%% Receiving relay processing: 1.2 ms
+\addplot[fill=green!40, draw=green!60]
+  coordinates {(1.2,1) (1.2,2)};
+\addlegendentry{Relay input processing}
+
+%% HMAC compute (sign + verify): 0.360 ms, second row only
+\addplot[fill=red!40, draw=red!60]
+  coordinates {(0.0,1) (0.360,2)};
+\addlegendentry{HMAC sign+verify}
+
+%% Total labels
+\node[font=\small\bfseries, sambpblue]
+  at (axis cs:1.05, 1) {2.0 ms};
+\node[font=\small\bfseries, sambpblue]
+  at (axis cs:1.41, 2) {2.36 ms (+0.72\%)};
+
+%% Trip budget
+\draw[red!40, thick, dashed]
+  (axis cs:50, 0.4) -- (axis cs:50, 2.6);
+\node[red!50, font=\tiny, rotate=90] at (axis cs:9.2, 1.5)
+  {50 ms budget};
+
+\end{axis}
+\end{tikzpicture}

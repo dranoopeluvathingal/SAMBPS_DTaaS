@@ -1,0 +1,668 @@
+%% slide05_study_note.tex
+%% Detailed Study Note --- Slide 5: Ch 2 Unified Inverse-Estimation Framework
+%% TSA Meeting Preparation | Anoop V Eluvathingal | IIT Madras | 2026
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{booktabs,tabularx,array,longtable}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\algrenewcommand\algorithmicrequire{\textbf{Input:}}
+\algrenewcommand\algorithmicensure{\textbf{Output:}}
+
+%% Custom commands
+\newcommand{\kibr}{k_\mathrm{ibr}}
+\newcommand{\thetahat}{\hat{\bm{\theta}}}
+\newcommand{\thetastar}{\bm{\theta}^*}
+\newcommand{\jac}{J}
+\newcommand{\rvec}{\mathbf{r}}
+\newcommand{\TMS}{\mathrm{TMS}}
+\newcommand{\Ip}{I_p}
+\newcommand{\gammath}{\gamma_\mathrm{th}}
+\newcommand{\gmin}{\gamma_\mathrm{min}}
+\newcommand{\sigth}{\sigma_\theta}
+\newcommand{\Idiff}{I_\mathrm{diff}}
+\newcommand{\Ibias}{I_\mathrm{bias}}
+\newcommand{\km}{k_m}
+\newcommand{\jj}{\mathrm{j}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+
+%% Colours
+\definecolor{iitmnavy}{RGB}{15,40,80}
+\definecolor{iitmgold}{RGB}{180,140,0}
+\definecolor{lightblue}{RGB}{220,235,250}
+\definecolor{lightyellow}{RGB}{255,252,220}
+\definecolor{lightred}{RGB}{255,235,235}
+\definecolor{lightgreen}{RGB}{230,255,230}
+\definecolor{lightpurple}{RGB}{240,230,255}
+\definecolor{lightorange}{RGB}{255,243,225}
+
+%% tcolorbox environments --- title={#1} prevents pgfkeys parsing commas
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{keybox}[1]{colback=lightblue,colframe=iitmnavy,
+  fonttitle=\bfseries\color{white},title={#1},arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{formulabox}[1]{colback=lightyellow,colframe=iitmgold,
+  fonttitle=\bfseries,title={#1},arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{resultbox}[1]{colback=lightgreen,colframe=green!50!black,
+  fonttitle=\bfseries,title={#1},arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{warnbox}[1]{colback=lightred,colframe=red!60!black,
+  fonttitle=\bfseries,title={#1},arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{archbox}[1]{colback=lightpurple,colframe=iitmnavy!60,
+  fonttitle=\bfseries,title={#1},arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{speakbox}{colback=orange!8,colframe=orange!70!black,
+  fonttitle=\bfseries,title={What to Say at the TSA Meeting},arc=3pt,
+  boxrule=1pt,breakable}
+
+%% Header / footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{iitmnavy}\small\textbf{TSA Meeting Study Note}}
+\fancyhead[R]{\color{iitmnavy}\small Slide 5 --- Ch~2: Unified Inverse-Estimation Framework}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\small\color{gray}Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ 2026}
+\renewcommand{\headrulewidth}{1.5pt}
+\renewcommand{\headrule}{\color{iitmnavy}\hrule width\headwidth height\headrulewidth}
+
+\titleformat{\section}{\large\bfseries\color{iitmnavy}}{}{0em}{}[\color{iitmnavy}\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{iitmnavy!80}}{}{0em}{}
+
+\hypersetup{colorlinks=true,linkcolor=iitmnavy,urlcolor=iitmnavy}
+
+\begin{document}
+
+%% ── Title Block ──────────────────────────────────────────────────────────────
+\begin{tcolorbox}[colback=iitmnavy,coltext=white,arc=4pt,boxrule=0pt]
+\begin{center}
+  {\Large\bfseries TSA Meeting --- Slide 5 Study Note}\\[4pt]
+  {\large Ch~2: Unified Inverse-Estimation Framework}\\[6pt]
+  {\normalsize Mathematical Foundations $\cdot$ LM Update $\cdot$ Confidence Gate $\cdot$ Theorem 2.1}\\[2pt]
+  {\small Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ PhD Thesis 2026}
+\end{center}
+\end{tcolorbox}
+
+\vspace{6pt}
+
+%% ── 1. Slide Overview ────────────────────────────────────────────────────────
+\section{Slide Overview and Narrative}
+
+\begin{keybox}{What This Slide Shows}
+Slide~5 presents the \textbf{mathematical spine} of the entire thesis.  Every
+adaptive algorithm in Chapters~4--9 (87L, SyncOC, 87T, Distance, Microgrid,
+Digital Twin) is an instantiation of the same three-layer structure:
+
+\begin{enumerate}[nosep]
+  \item \textbf{Inverse estimator:} The LM update rule fits a physical model
+        $\mathbf{x}(t;\bm{\theta})$ to real-time phasor measurements, identifying
+        latent protection parameters $\bm{\theta} = \{\kibr, Z_\mathrm{line}, Y_\mathrm{ibr}\}$
+        that cannot be measured directly by any relay.
+  \item \textbf{Confidence gate (Stage-2):}  A scalar score
+        $\gamma = \exp\!\left(-\|\thetahat - \thetastar\|^2/2\sigth^2\right)$
+        decides whether the estimate is trustworthy enough to update relay settings.
+        Only estimates with $\gamma \geq \gmin$ pass through.
+  \item \textbf{Bounded update law:} A step-limited, clipped projection ensures
+        that even a wrong estimate that passes the gate cannot push settings outside
+        the safe range defined at commissioning.
+\end{enumerate}
+
+The \textbf{Mathematical Foundations table} on the right maps each
+sub-problem to its solver: LM for parameter update, EKF for state estimation,
+Wald SPRT for fault detection, Physics-Informed NN for ML classification, and
+projected gradient for constrained optimisation.
+
+\textbf{Theorem~2.1} provides the formal guarantee: under bounded IBR admittance
+and $\lambda > 0$, the LM update converges to a neighbourhood of the true
+parameters with radius $\mathcal{O}(\sigma_\mathrm{noise})$.  This is the
+thesis's mathematical bedrock --- every claim about algorithm performance
+in later chapters depends on it.
+\end{keybox}
+
+\subsection{Slide at a Glance: The Five Components}
+
+\begin{center}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Item on Slide} & \textbf{Mathematical Object} & \textbf{Purpose} \\
+\midrule
+LM update equation      & $\thetahat_{t+1} = \thetahat_t - \alpha_t J^\top(JJ^\top+\lambda I)^{-1}\rvec(\thetahat_t)$
+                          & Solves nonlinear least-squares online \\
+Parameter vector $\bm{\theta}$ & $\{\kibr, Z_\mathrm{line}, Y_\mathrm{ibr}\}$
+                          & Latent (unobservable) relay parameters \\
+Residual $\rvec$         & $\mathbf{y} - \mathbf{x}(\bm{\theta})$
+                          & Fit error between model and phasor data \\
+Bounded update $\alpha_t$& $\alpha_t \propto (1-\kibr^2)$
+                          & Freezes adaptation at high IBR penetration \\
+Confidence gate $\gamma$ & $\exp(-\|\thetahat-\thetastar\|^2/2\sigth^2) \geq \gmin$
+                          & Authorises relay setting update \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%% ── 2. Engineering Motivation ────────────────────────────────────────────────
+\section{Engineering Motivation: Why a Unified Framework?}
+
+\begin{archbox}{The Unification Argument}
+Without a unified mathematical framework, each protection element would need:
+\begin{itemize}[nosep]
+  \item Its own estimation algorithm (risk of inconsistent performance guarantees).
+  \item Its own confidence metric (no common threshold for ``trustworthy'').
+  \item Its own safety mechanism (risk of unsafe settings in one element while
+        another is conservative).
+\end{itemize}
+
+By casting all problems as \emph{instances of the same inverse estimation problem}
+(Eq.~\eqref{eq:ch2_lsq}), the thesis achieves:
+\begin{itemize}[nosep]
+  \item \textbf{One proof:} Theorem~2.1 covers all algorithms.
+  \item \textbf{One threshold:} $\gammath = 0.70$ (SyncOC) or $0.85$ (87L)
+        is the only design parameter per element.
+  \item \textbf{One update mechanism:} bounded clipped projection, identical in
+        structure across all relay types.
+\end{itemize}
+
+The only things that change per chapter are: the physical model $\mathbf{x}(t;\bm{\theta})$
+and the parameter vector $\bm{\theta}$.  Everything else --- LM, confidence gate,
+bounded update --- is inherited from Chapter~2.
+\end{archbox}
+
+%% ── 3. LM Update Rule: Deep Dive ─────────────────────────────────────────────
+\section{Technical Deep-Dive: The LM Update Rule}
+
+\subsection{Standard vs.\ Slide Form}
+
+The slide shows the LM step as:
+\begin{equation}
+  \thetahat_{t+1} = \thetahat_t
+    - \alpha_t J^\top\!(JJ^\top + \lambda I)^{-1}\rvec(\thetahat_t)
+  \label{eq:slide_lm}
+\end{equation}
+
+The standard form (used in the chapter's Algorithm~2.1) is:
+\begin{equation}
+  \bm{\delta} = -(J^\top J + \mu I)^{-1} J^\top \rvec
+  \label{eq:standard_lm}
+\end{equation}
+
+These are \textbf{algebraically identical} by the Woodbury matrix identity:
+\begin{equation}
+  \underbrace{J^\top(JJ^\top + \lambda I)^{-1}}_{\text{slide form: }(n_K) \times p}
+  \;=\;
+  \underbrace{(J^\top J + \lambda I)^{-1} J^\top}_{\text{standard form: }p \times (n_K)}
+  \label{eq:woodbury}
+\end{equation}
+
+The slide's form (left-multiply by $J^\top$) solves a system of size
+$n_K \times n_K$ (number of measurements), while the standard form solves
+a $p \times p$ system (number of parameters).  When $p \ll n_K$ (6 parameters,
+hundreds of samples), the standard form is cheaper.  When $n_K \ll p$ (the
+inverse problem is underdetermined), the slide's form is preferred.
+
+\begin{formulabox}{Condition Number Reduction: Why LM Damping $\lambda$ Matters}
+The condition number of the undamped normal equations is:
+\[
+  \kappa(J^\top J) = \kappa(J)^2
+\]
+LM damping adds $\lambda I$, yielding:
+\[
+  \kappa(J^\top J + \lambda I) = \frac{\sigma_{\max}^2(J) + \lambda}{\sigma_{\min}^2(J) + \lambda}
+  \;\leq\; \kappa(J)^2
+\]
+As $\lambda \to \infty$: $\kappa \to 1$ (perfectly conditioned gradient descent).\\
+As $\lambda \to 0$: $\kappa \to \kappa(J)^2$ (Gauss-Newton, fastest near solution).
+
+The chapter's adaptive $\mu$ schedule (Section~3.3) interpolates: large $\mu$ far
+from minimum, small $\mu$ near minimum.  This is why LM achieves superlinear
+convergence (between gradient descent's linear and Newton's quadratic).
+\end{formulabox}
+
+\subsection{Residual $\rvec(\thetahat)$: The Physical Model Connection}
+
+The residual is:
+\begin{equation}
+  \rvec(\bm{\theta}) = \mathbf{y}_\mathrm{measured} - \mathbf{x}(t;\bm{\theta})
+  \label{eq:residual}
+\end{equation}
+
+In each chapter, $\mathbf{x}(t;\bm{\theta})$ is a specific physical model:
+
+\begin{center}
+\small
+\begin{tabular}{@{}llp{5.5cm}@{}}
+\toprule
+\textbf{Chapter} & \textbf{Model $\mathbf{x}(t;\bm{\theta})$} & \textbf{Parameters $\bm{\theta}$} \\
+\midrule
+4 (87L)    & IBR differential current model $I_\mathrm{diff}(t;\kibr,\phi_B)$
+             & $\kibr$, $\phi_B$ \\
+5 (SyncOC) & 6-param fault current: $I_{ss} + I_{sub}e^{-t/\tau_{ac}}\cos(\omega_0 t+\phi_a)$
+             & $\{I_{ss}, I_{sub}, \tau_{ac}, \tau_{dc}, \phi_a, t_0\}$ \\
+9 (DT)     & IBR Thevenin admittance $Y_\mathrm{ibr}(\omega)$
+             & $\kibr$, $Z_\mathrm{line}$, $Y_\mathrm{ibr}$ \\
+6 (87T)    & Inrush/fault harmonic envelope
+             & $\{i_2/i_1, \phi_\mathrm{hm}\}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+In the digital twin (Ch~9), $\bm{\theta} = \{\kibr, Z_\mathrm{line}, Y_\mathrm{ibr}\}$
+which is precisely what the slide labels as the ``latent protection parameters.''
+
+\subsection{Jacobian $J$: Sensitivity Analysis}
+
+The Jacobian $J_{ij} = \partial x_i / \partial \theta_j$ measures how sensitive
+each measurement $x_i$ is to each parameter $\theta_j$.  In the protection context:
+\begin{itemize}[nosep]
+  \item $\partial I_\mathrm{diff}/\partial \kibr$: How the differential current
+        changes with IBR penetration --- large early in the fault window.
+  \item $\partial i_a(t)/\partial \tau_{ac}$: How the waveform tail changes with the
+        AC time constant --- large at $t \gg \tau_{ac}$, identifiable only in the
+        tail of the measurement window.
+\end{itemize}
+
+The two-pass LM strategy (Pass~1 for fast params, Pass~2 for slow params) exploits
+this structure to reduce the effective Jacobian condition number $\kappa_n(J)$,
+which directly improves the confidence score component $\gamma_J$.
+
+%% ── 4. Bounded Update Law: $\alpha_t \propto (1-\kibr^2)$ ───────────────────
+\section{Bounded Update Law: $\alpha_t \propto (1-\kibr^2)$}
+
+\begin{keybox}{Why the Step Size Depends on $\kibr$}
+The slide states: \textit{``Bounded update law: $\alpha_t \propto (1 - \kibr^2)$
+prevents parameter drift in healthy state.''}
+
+Interpretation:
+\begin{itemize}[nosep]
+  \item $\kibr = 0$ (no IBR): $\alpha_t \propto 1$ --- maximum step size.  The
+        system is purely SG-dominated and the fault current model is most
+        identifiable; allow fast adaptation.
+  \item $\kibr = 0.5$: $\alpha_t \propto 0.75$ --- moderate adaptation.
+  \item $\kibr \to 1.0$ (pure IBR): $\alpha_t \to 0$ --- adaptation freezes.
+        At full IBR saturation, the fault current is at the controlled limit and
+        carries no new information about the network state.  Continuing to update
+        $\bm{\theta}$ would cause \emph{parameter drift} --- random walk due to
+        measurement noise.
+\end{itemize}
+
+\textbf{Protection security implication:} When $\kibr \approx 1$ (the most
+challenging operating point for protection), the relay settings are \emph{not
+changed}.  This is the conservative choice: keep the last valid settings rather
+than risk a bad update under the most uncertain conditions.
+\end{keybox}
+
+The general bounded update (chapter Eq.~2.16) at each relay setting $\xi_k$:
+\begin{equation}
+  \xi_k^{(n+1)} = \mathrm{clip}\!\left(
+    \xi_k^{(n)} + \delta_\mathrm{max}\,\mathrm{sgn}(\hat{\xi}_k - \xi_k^{(n)})
+    \cdot \min\!\left(1, \frac{|\hat{\xi}_k - \xi_k^{(n)}|}{\delta_\mathrm{max}}\right),\;
+    \xi_\mathrm{min},\; \xi_\mathrm{max}
+  \right)
+  \label{eq:bounded_update}
+\end{equation}
+
+This guarantees (Proposition~2.1): if $\xi_k^{(0)} \in [\xi_\mathrm{min},\xi_\mathrm{max}]$,
+then $\xi_k^{(n)} \in [\xi_\mathrm{min},\xi_\mathrm{max}]$ for all $n \geq 0$.
+Combined with $\alpha_t \propto (1-\kibr^2)$, this means:
+
+\begin{equation}
+  \|\thetahat^{(n+1)} - \thetahat^{(n)}\| \leq \alpha_t \cdot C_\mathrm{LM}(1-\kibr^2)
+  \label{eq:update_bound}
+\end{equation}
+
+The step is bounded by both the LM convergence radius $C_\mathrm{LM}$ and the
+IBR-dependent gain $(1-\kibr^2)$.
+
+%% ── 5. Stage-2 Confidence Gate ───────────────────────────────────────────────
+\section{Stage-2 Confidence Gate: Two Formulations}
+
+\subsection{Theoretical Form (Slide)}
+
+The slide shows the Gaussian confidence score:
+\begin{equation}
+  \gamma = \exp\!\left(-\frac{\|\thetahat - \thetastar\|^2}{2\sigth^2}\right) \geq \gmin
+  \label{eq:gamma_gaussian}
+\end{equation}
+
+This is the \textbf{theoretical motivation}: if the estimation error
+$\thetahat - \thetastar$ follows a zero-mean Gaussian with covariance
+$\sigth^2 I$ (i.e., estimation noise is Gaussian), then $\gamma$ is the
+likelihood of the current estimate being correct.  $\gamma = 1$ at perfect
+estimate; $\gamma \to 0$ as the error grows.
+
+\subsection{Practical Implementation (Chapter)}
+
+The chapter's four-component score (Eq.~2.8) is the \textbf{operational
+approximation}:
+\begin{equation}
+  \gamma = w_1 \gamma_R + w_2 \gamma_J + w_3 \gamma_B + w_4 \gamma_P
+  \label{eq:gamma_weighted}
+\end{equation}
+with weights $[w_1, w_2, w_3, w_4] = [0.35, 0.30, 0.20, 0.15]$:
+
+\begin{center}
+\small
+\begin{tabular}{@{}lllp{5cm}@{}}
+\toprule
+\textbf{Component} & \textbf{Formula} & \textbf{Range} & \textbf{What It Checks} \\
+\midrule
+$\gamma_R$ & $1/(1+100(1-R^2))$ & [0,1] & Normalised fit quality ($R^2 \to 1$) \\
+$\gamma_J$ & $1/(1+0.1\log_{10}\kappa_n)$ & [0,1] & Jacobian condition number
+                                                      (identifiability) \\
+$\gamma_B$ & $1 - N_\mathrm{bounds}/p$ & [0,1] & Fraction of params at physical bounds \\
+$\gamma_P$ & $1 - N_\mathrm{implausible}/p$ & \{0,0.5,1\} & Physics plausibility check \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Connection to the Gaussian form:}  The component $\gamma_R$ approximates
+$\exp(-(1-R^2)/\sigma_R^2)$ for small $(1-R^2)$ --- i.e., the Gaussian form
+evaluated at the residual magnitude.  Components $\gamma_J$, $\gamma_B$, $\gamma_P$
+are engineering guards that do not have direct Gaussian analogues but are
+necessary for protection-grade reliability.
+
+\subsection{Threshold Values Across SAMBP Elements}
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Protection Element} & \textbf{$\gammath$} & \textbf{Reason for Level} \\
+\midrule
+SAMBP-SyncOC (87OC)  & 0.70 & Generator OC is backup; looser gate acceptable \\
+SAMBP-87L (line diff)& 0.85 & Primary protection; must be conservative \\
+SAMBP-87T (transformer)& 0.80 & Primary; 87T false trip is a transformer outage \\
+Digital Twin EKF     & 0.75 & State tracking; moderate conservatism \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%% ── 6. Theorem 2.1 (Convergence) ─────────────────────────────────────────────
+\section{Theorem 2.1 --- Convergence Guarantee}
+
+\begin{resultbox}{Theorem 2.1 (Convergence) --- Formal Statement}
+\textbf{Conditions:}
+\begin{enumerate}[nosep,label=(\roman*)]
+  \item IBR admittance is bounded: $|Y_\mathrm{ibr}| \leq Y_\mathrm{max} < \infty$.
+  \item LM damping: $\lambda > 0$ (strictly positive).
+  \item The model $\mathbf{x}(t;\bm{\theta})$ is Lipschitz in $\bm{\theta}$
+        with constant $L_\theta$.
+  \item Measurement noise: $\mathbf{v}_k \sim \mathcal{N}(\mathbf{0}, \sigma_\mathrm{noise}^2 I)$,
+        i.i.d.\ and independent of $\bm{\theta}$.
+\end{enumerate}
+
+\textbf{Conclusion:} The LM update sequence $\{\thetahat^{(n)}\}$ satisfies:
+\begin{equation}
+  \limsup_{n\to\infty} \mathbb{E}\left[\|\thetahat^{(n)} - \thetastar\|^2\right]
+  = \mathcal{O}(\sigma_\mathrm{noise}^2)
+  \label{eq:thm21}
+\end{equation}
+
+i.e., the expected squared estimation error is asymptotically bounded by a
+constant times the noise variance.  The algorithm converges to a \emph{ball}
+around the true parameters, not necessarily to the exact true value (which
+is unattainable with noisy measurements).
+\end{resultbox}
+
+\begin{keybox}{What Theorem 2.1 Does NOT Guarantee}
+\begin{itemize}[nosep]
+  \item \textbf{Not global convergence:} LM may converge to a local minimum if
+        $\mathbf{x}(t;\bm{\theta})$ is highly non-convex.  The two-pass strategy
+        and physical bounds mitigate this.
+  \item \textbf{Not finite-sample:} The bound is asymptotic ($n \to \infty$).
+        For the protection application, ``convergence'' means within the fault
+        window ($\leq 10$ LM iterations $\approx 3$\,ms).  The empirical
+        convergence to $R^2 > 0.999$ in 15--20 iterations is stronger than
+        what Theorem~2.1 requires.
+  \item \textbf{Not on the confidence gate:} Theorem~2.1 bounds the estimator;
+        the gate $\gamma \geq \gammath$ is a separate mechanism that further
+        reduces the probability of acting on a bad estimate.
+\end{itemize}
+\end{keybox}
+
+%% ── 7. Mathematical Foundations Table ────────────────────────────────────────
+\section{Mathematical Foundations Table: Five Methods}
+
+\begin{archbox}{The Five Methods and Why Each Was Chosen}
+\begin{description}[nosep,leftmargin=0pt]
+  \item[\textbf{Levenberg--Marquardt (Parameter update):}]
+    LM is the gold standard for bounded nonlinear least-squares.  Unlike pure
+    gradient descent, it uses curvature information (Jacobian) for faster
+    convergence.  Unlike pure Newton's method, the $\lambda I$ regularisation
+    prevents divergence on ill-conditioned problems (which arise at low $\kibr$
+    where fault current is weak).
+
+  \item[\textbf{Extended Kalman Filter (State estimation):}]
+    The EKF is the recursive counterpart to LM.  It tracks time-varying
+    parameters ($\kibr(t)$, $Z_\mathrm{line}(t)$) continuously as they
+    evolve between faults.  The EKF prediction step provides implicit
+    Tikhonov regularisation equivalent to $\lambda = Q^{-1}$ (process
+    noise covariance), connecting formally to the LM framework.
+
+  \item[\textbf{Wald SPRT (Fault detection):}]
+    The sequential probability ratio test is the \emph{optimal} fixed-sample
+    test for a binary hypothesis (fault vs.\ no fault) in the Neyman-Pearson
+    sense.  It minimises expected sample number subject to specified false-alarm
+    and miss-detection probabilities.  Used in the 87T element to replace
+    the fixed 15\% second-harmonic threshold.
+
+  \item[\textbf{Physics-Informed NN (ML classification):}]
+    The PINN adds physics constraints (KVL/KCL) to the neural network loss
+    function, preventing the network from learning physically impossible patterns.
+    Used in the ML classification module (Ch~10) for fault-type identification.
+    Without physics constraints, networks trained on simulation data fail on
+    corner-case real measurements.
+
+  \item[\textbf{Projected gradient (Optimisation):}]
+    The projected-gradient descent enforces the CTI coordination constraint
+    $t_\mathrm{primary} + \mathrm{CTI} \leq t_\mathrm{backup}$ during each
+    relay setting update.  Every gradient step is projected back onto the
+    feasible set $\mathcal{C}$ defined by the coordination inequality.  This
+    is the mechanism by which SAMBP-SyncOC maintains relay coordination
+    automatically as $\kibr$ changes.
+\end{description}
+\end{archbox}
+
+%% ── 8. Cross-Thesis Connections ──────────────────────────────────────────────
+\section{Cross-Thesis Connections}
+
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{@{}lXX@{}}
+\toprule
+\textbf{Chapter} & \textbf{Which Ch~2 Component It Uses} & \textbf{Ch~2 Equation Used} \\
+\midrule
+Ch~4 (87L) &
+  LM estimator identifies $\kibr$ from $\Idiff$ waveform; confidence gate
+  threshold $\gammath = 0.85$; bounded update of bias slope $\km^*$ &
+  Eq.~\eqref{eq:slide_lm}; $\gammath = 0.85$ \\
+Ch~5 (SyncOC) &
+  Two-pass LM for 6-parameter SG fault current; $\gammath = 0.70$;
+  projected-gradient CTI constraint &
+  Eq.~\eqref{eq:standard_lm}; Eq.~\eqref{eq:bounded_update} \\
+Ch~7 (Distance) &
+  LM identifies $\kibr$ from pre-fault admittance; updates Zone~1
+  correction factor $k_X$ each 10\,ms &
+  Eq.~\eqref{eq:slide_lm}; $\alpha_t \propto (1-\kibr^2)$ \\
+Ch~9 (Digital Twin) &
+  EKF (recursive LM) tracks $\bm{\theta} = \{\kibr, Z_\mathrm{line},
+  Y_\mathrm{ibr}\}$ continuously between faults &
+  Formal equivalence: EKF $\leftrightarrow$ LM + process noise \\
+Ch~10 (PINN) &
+  Physics-informed loss adds KVL/KCL penalty to NN training &
+  PINN constraint from ``Mathematical Foundations'' table \\
+Ch~6 (87T) &
+  Wald SPRT replaces fixed harmonic threshold; LM identifies harmonic
+  envelope parameters &
+  SPRT + LM for inrush parameter identification \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+%% ── 9. Key Equations Reference Card ─────────────────────────────────────────
+\section{Key Equations Reference Card}
+
+\begin{formulabox}{All Equations You Must Know for This Slide}
+\begin{alignat}{2}
+  &\text{\textbf{LM update (slide form):}} &\quad
+  \thetahat_{t+1} &= \thetahat_t - \alpha_t J^\top(JJ^\top+\lambda I)^{-1}\rvec(\thetahat_t)
+  \tag{E1}\label{E1}\\[4pt]
+  &\text{\textbf{LM step (standard form):}} &\quad
+  \bm{\delta} &= -(J^\top J + \mu I)^{-1}J^\top\rvec
+  \tag{E2}\label{E2}\\[4pt]
+  &\text{\textbf{Woodbury equivalence:}} &\quad
+  J^\top(JJ^\top+\lambda I)^{-1} &= (J^\top J+\lambda I)^{-1}J^\top
+  \tag{E3}\label{E3}\\[4pt]
+  &\text{\textbf{Residual:}} &\quad
+  \rvec(\bm{\theta}) &= \mathbf{y}_\mathrm{measured} - \mathbf{x}(t;\bm{\theta})
+  \tag{E4}\label{E4}\\[4pt]
+  &\text{\textbf{Bounded step size:}} &\quad
+  \alpha_t &\propto (1-\kibr^2)
+  \tag{E5}\label{E5}\\[4pt]
+  &\text{\textbf{Confidence gate (Gaussian):}} &\quad
+  \gamma &= \exp\!\left(-\frac{\|\thetahat-\thetastar\|^2}{2\sigth^2}\right) \geq \gmin
+  \tag{E6}\label{E6}\\[4pt]
+  &\text{\textbf{Confidence gate (practical):}} &\quad
+  \gamma &= 0.35\gamma_R + 0.30\gamma_J + 0.20\gamma_B + 0.15\gamma_P \geq \gammath
+  \tag{E7}\label{E7}\\[4pt]
+  &\text{\textbf{Bounded update (clip):}} &\quad
+  \xi^{(n+1)} &= \mathrm{clip}\!\left(\xi^{(n)}+\Delta\xi,\;\xi_\mathrm{min},\;\xi_\mathrm{max}\right)
+  \tag{E8}\label{E8}\\[4pt]
+  &\text{\textbf{Theorem 2.1:}} &\quad
+  \limsup_{n}\mathbb{E}\|\thetahat^{(n)}-\thetastar\|^2 &= \mathcal{O}(\sigma_\mathrm{noise}^2)
+  \tag{E9}\label{E9}\\[4pt]
+  &\text{\textbf{Condition number (damped):}} &\quad
+  \kappa(J^\top J+\lambda I) &= \frac{\sigma_\mathrm{max}^2+\lambda}{\sigma_\mathrm{min}^2+\lambda}
+  \tag{E10}\label{E10}
+\end{alignat}
+\end{formulabox}
+
+%% ── 10. Speaker Script ────────────────────────────────────────────────────────
+\section{Timed Speaker Script (3 Minutes)}
+
+\begin{speakbox}
+\textbf{[0:00--0:30] The Unification Idea}\\
+``Chapter~2 is the mathematical spine of the thesis.  Before building any individual
+relay algorithm, I established a unified framework so that every adaptive protection
+element --- 87L, OC, transformer, distance, digital twin --- rests on the same
+mathematical foundation.  This slide shows the three-layer structure: an inverse
+estimator, a confidence gate, and a bounded update law.''
+
+\medskip
+\textbf{[0:30--1:10] The LM Update Equation}\\
+``The core is the Levenberg--Marquardt inverse estimator.  The equation on the left
+is the online update rule: $\thetahat_{t+1}$ equals the current estimate minus a
+step proportional to the residual $r$, pre-multiplied by the pseudo-inverse of the
+Jacobian.  The $\lambda I$ damping term is the key: it prevents the step from
+diverging when the Jacobian is ill-conditioned, which happens routinely at low IBR
+penetration when the fault current is weak and parameter identifiability is poor.
+The bounded step size $\alpha_t \propto (1-\kibr^2)$ ensures adaptation freezes at
+pure IBR operation, preventing parameter drift when the signal is least informative.''
+
+\medskip
+\textbf{[1:10--1:50] The Confidence Gate}\\
+``The Stage-2 gate is essential for protection security.  The Gaussian form shown on
+the slide --- $\gamma = \exp(-\|\thetahat - \thetastar\|^2 / 2\sigma_\theta^2)$ ---
+is the theoretical motivation: a high score means the estimate is close to the true
+parameters.  In the implementation, I approximate this with a four-component score:
+fit quality $\gamma_R$, Jacobian conditioning $\gamma_J$, bounds-hit fraction $\gamma_B$,
+and physics plausibility $\gamma_P$.  Only when the composite $\gamma \geq \gamma_\mathrm{th}$
+does the algorithm update relay settings.  The threshold varies per element: 0.70 for
+generator OC, 0.85 for line differential.''
+
+\medskip
+\textbf{[1:50--2:30] Theorem 2.1}\\
+``Theorem~2.1 is the formal guarantee.  Under two conditions --- bounded IBR admittance
+and strictly positive $\lambda$ --- the update law converges to a ball around the true
+parameters with radius $\mathcal{O}(\sigma_\mathrm{noise})$.  This means the algorithm
+is asymptotically unbiased: the only remaining error is due to measurement noise, not
+the algorithm itself.  Empirically, convergence to $R^2 > 0.999$ is achieved within
+15--20 LM iterations, which is approximately 3\,ms --- well within any protection
+decision window.''
+
+\medskip
+\textbf{[2:30--3:00] The Five Methods}\\
+``The table on the right shows how five mathematical tools are assigned to the five
+sub-problems: LM for parameter updates, EKF for continuous state tracking between
+faults, Wald SPRT for fault detection, Physics-Informed NN for ML classification,
+and projected gradient for maintaining relay coordination constraints.  Chapter~2
+establishes all five; subsequent chapters simply specialise them to each protection
+element by plugging in the physical model for that device.''
+\end{speakbox}
+
+%% ── 11. Anticipated Q&A ──────────────────────────────────────────────────────
+\section{Anticipated Q\&A --- Five Likely Committee Questions}
+
+\begin{keybox}{Q1: Why LM and not Adam or other modern optimisers used in deep learning?}
+\textbf{Answer:}  LM is specifically designed for nonlinear \emph{least-squares}
+problems with a Jacobian structure.  Modern ML optimisers (Adam, RMSProp) are
+designed for stochastic gradient descent on large neural networks with millions of
+parameters.  For the protection problem: (a) the parameter count is 6 (not millions);
+(b) the model $\mathbf{x}(t;\bm{\theta})$ is a known physical ODE, not a black-box
+neural network; (c) the measurement window contains 50--200 samples, not a streaming
+mini-batch.  LM exploits the Jacobian structure to achieve superlinear convergence in
+10--20 iterations --- Adam would need thousands.  Additionally, LM has a rigorous
+convergence proof (Theorem~2.1); Adam does not have a general convergence guarantee.
+\end{keybox}
+
+\begin{keybox}{Q2: Theorem 2.1 requires bounded IBR admittance --- what if $Y_\mathrm{ibr}$ is time-varying?}
+\textbf{Answer:}  Theorem~2.1 requires $|Y_\mathrm{ibr}| \leq Y_\mathrm{max}$, which is
+a physical constraint satisfied by any real inverter (the admittance is bounded by the
+converter filter capacitance and transformer impedance).  Time-variation of $Y_\mathrm{ibr}$
+between faults is handled by the EKF in the digital twin, which is a \emph{recursive}
+extension of LM with a process-noise model for $dY_\mathrm{ibr}/dt$.  The EKF prediction
+step provides the equivalent of a time-varying $\lambda(t)$, keeping the estimate
+within the convergence ball even as $Y_\mathrm{ibr}$ drifts.
+\end{keybox}
+
+\begin{keybox}{Q3: The slide shows $\gamma = \exp(-\|\hat\theta - \theta^*\|^2/2\sigma_\theta^2)$ but $\theta^*$ is unknown in practice. How is this computed?}
+\textbf{Answer:}  Correct --- the exact $\thetastar$ is unknown, which is why the
+theoretical Gaussian form cannot be computed directly.  It motivates the approximation:
+the residual $\|\rvec(\thetahat)\|^2$ proxies for $\|\thetahat - \thetastar\|^2$ via
+the model fit quality.  Specifically, $\gamma_R = 1/(1+100(1-R^2))$ is monotone in
+$R^2$, which in turn is monotone in $\|\rvec\|^2$.  The other three components
+($\gamma_J$, $\gamma_B$, $\gamma_P$) provide additional guards that the Gaussian
+form cannot express, making the practical four-component score \emph{more conservative}
+than the Gaussian form alone.
+\end{keybox}
+
+\begin{keybox}{Q4: Proposition 2.1 proves settings stay in bounds. Does this mean the relay could become insensitive if settings drift to the wrong end of the allowed range?}
+\textbf{Answer:}  Yes, in principle.  The bounded update guarantees safety bounds are
+never exceeded, but cannot guarantee optimality.  This is why the security floor is
+explicitly included: the lower bound $\xi_\mathrm{min}$ is not set to zero but to
+the minimum sensitivity needed to detect the worst-case bolted fault with a 20\% margin.
+For the generator OC relay, $\Ip \geq 1.05 I_\mathrm{load}^\mathrm{max}$ (sensitivity
+floor) and $\Ip \leq 0.80 I_\mathrm{fault,3P}^\mathrm{min}$ (coordination floor).  The
+adaptive algorithm operates within this corridor, not at its extremes.
+\end{keybox}
+
+\begin{keybox}{Q5: How does the unified framework handle the diversity of protection elements? Is the parameter vector $\theta$ the same for all chapters?}
+\textbf{Answer:}  No --- $\bm{\theta}$ is specialised per chapter, which is the whole
+point of the unified framework: the \emph{structure} is identical (LM + gate + bounded
+update), but the \emph{content} of $\bm{\theta}$ changes.  For 87L: $\bm{\theta} = \{\kibr, \phi_B\}$
+(2 parameters).  For SyncOC: $\bm{\theta} = \{I_{ss}, I_{sub}, \tau_{ac}, \tau_{dc},
+\phi_a, t_0\}$ (6 parameters, reduced from 7 by the DC continuity constraint).  For
+the digital twin: $\bm{\theta} = \{\kibr, Z_\mathrm{line}, Y_\mathrm{ibr}\}$ (3 complex
+parameters).  The chapter's applicability table (Table~2.1) lists all five elements
+with their specific $\bm{\theta}$, model, and adapted setting.  The unification means
+one convergence proof (Theorem~2.1) covers all five.
+\end{keybox}
+
+\vspace{1em}
+\begin{tcolorbox}[colback=iitmnavy!5,colframe=iitmnavy,arc=3pt,boxrule=1pt]
+\small\centering
+\textbf{Summary for the TSA Committee}\\[3pt]
+Ch~2 provides one unified mathematical framework (LM inverse estimator + Stage-2
+confidence gate + bounded update law) that all SAMBP protection algorithms inherit.
+Theorem~2.1 proves convergence to a noise-bounded ball around true parameters.
+The five-method table maps sub-problems (parameter update, state estimation, fault
+detection, ML, optimisation) to optimal solvers.  Every later chapter is an
+instantiation of this framework with a chapter-specific physical model.
+\end{tcolorbox}
+
+\end{document}

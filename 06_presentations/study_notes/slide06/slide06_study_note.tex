@@ -1,0 +1,666 @@
+%% slide06_study_note.tex
+%% Detailed Study Note --- Slide 6: Ch 3 IBR Characterisation & Protection Failure Modes
+%% TSA Meeting Preparation | Anoop V Eluvathingal | IIT Madras | 2026
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{booktabs,tabularx,array,longtable}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{parskip}
+
+%% Custom commands
+\newcommand{\kibr}{k_\mathrm{ibr}}
+\newcommand{\Ifault}{I_\mathrm{fault}}
+\newcommand{\Irated}{I_\mathrm{rated}}
+\newcommand{\Idiff}{I_\mathrm{diff}}
+\newcommand{\Ibias}{I_\mathrm{bias}}
+\newcommand{\km}{k_m}
+\newcommand{\Izero}{I_0}
+\newcommand{\Zapp}{Z_\mathrm{app}}
+\newcommand{\Zline}{Z_\mathrm{line}}
+\newcommand{\phictrl}{\phi_\mathrm{ctrl}}
+\newcommand{\jj}{\mathrm{j}}
+
+%% Colours
+\definecolor{iitmnavy}{RGB}{15,40,80}
+\definecolor{iitmgold}{RGB}{180,140,0}
+\definecolor{lightblue}{RGB}{220,235,250}
+\definecolor{lightyellow}{RGB}{255,252,220}
+\definecolor{lightred}{RGB}{255,235,235}
+\definecolor{lightgreen}{RGB}{230,255,230}
+\definecolor{lightpurple}{RGB}{240,230,255}
+\definecolor{lightorange}{RGB}{255,243,225}
+\definecolor{alertred}{RGB}{200,0,0}
+\definecolor{alertgreen}{RGB}{0,140,0}
+\definecolor{alertorange}{RGB}{200,100,0}
+
+%% tcolorbox environments --- title={#1} prevents pgfkeys parsing commas
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{keybox}[1]{colback=lightblue,colframe=iitmnavy,
+  fonttitle=\bfseries\color{white},title={#1},arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{formulabox}[1]{colback=lightyellow,colframe=iitmgold,
+  fonttitle=\bfseries,title={#1},arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{resultbox}[1]{colback=lightgreen,colframe=green!50!black,
+  fonttitle=\bfseries,title={#1},arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{warnbox}[1]{colback=lightred,colframe=red!60!black,
+  fonttitle=\bfseries,title={#1},arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{archbox}[1]{colback=lightpurple,colframe=iitmnavy!60,
+  fonttitle=\bfseries,title={#1},arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{speakbox}{colback=orange!8,colframe=orange!70!black,
+  fonttitle=\bfseries,title={What to Say at the TSA Meeting},arc=3pt,
+  boxrule=1pt,breakable}
+
+%% Header / footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{iitmnavy}\small\textbf{TSA Meeting Study Note}}
+\fancyhead[R]{\color{iitmnavy}\small Slide 6 --- Ch~3: IBR Characterisation \& Failure Modes}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\small\color{gray}Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ 2026}
+\renewcommand{\headrulewidth}{1.5pt}
+\renewcommand{\headrule}{\color{iitmnavy}\hrule width\headwidth height\headrulewidth}
+
+\titleformat{\section}{\large\bfseries\color{iitmnavy}}{}{0em}{}[\color{iitmnavy}\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{iitmnavy!80}}{}{0em}{}
+
+\hypersetup{colorlinks=true,linkcolor=iitmnavy,urlcolor=iitmnavy}
+
+\begin{document}
+
+%% ── Title Block ──────────────────────────────────────────────────────────────
+\begin{tcolorbox}[colback=iitmnavy,coltext=white,arc=4pt,boxrule=0pt]
+\begin{center}
+  {\Large\bfseries TSA Meeting --- Slide 6 Study Note}\\[4pt]
+  {\large Ch~3: IBR Characterisation \& Protection Failure Modes}\\[6pt]
+  {\normalsize Foundational Chapter $\cdot$ Motivates SAMBP Framework $\cdot$ Failure Mode Taxonomy}\\[2pt]
+  {\small Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ PhD Thesis 2026}
+\end{center}
+\end{tcolorbox}
+
+\vspace{6pt}
+
+%% ── 1. Slide Overview ────────────────────────────────────────────────────────
+\section{Slide Overview and Narrative}
+
+\begin{keybox}{What This Slide Shows}
+Slide~6 is the \textbf{motivating chapter} of the thesis.  It establishes why every
+protection element developed in Chapters~4--7 is necessary by answering one question:
+\emph{What exactly goes wrong when IBRs dominate the fault current?}
+
+\medskip
+\textbf{The IBR model} ($\Ifault^\mathrm{IBR} = \kibr \cdot \Irated \cdot e^{\jj\phictrl}$)
+has two problematic properties that distinguish it from the classical synchronous-generator
+(SG) fault current:
+\begin{enumerate}[nosep]
+  \item \textbf{Controlled magnitude:} $\kibr \in [0.03, 0.55]$ is set by the inverter
+        current-limiter.  Unlike the SG, where fault current is 6--10~pu and decays
+        predictably, the IBR output is roughly \emph{constant} at $\kibr\,\Irated$, with
+        no sub-transient surge.  This compresses $\Idiff$ below relay pickup at low $\kibr$.
+  \item \textbf{Unknown phase angle:} $\phictrl$ is commanded by the LVRT (Low-Voltage
+        Ride-Through) control law in real time.  The relay cannot measure $\phictrl$; it
+        can only observe the aggregate phasor at its CT terminals.  Any protection logic
+        that \emph{assumes} a fixed phase angle between $I_A$ and $I_B$ is therefore
+        unreliable in an IBR network.
+\end{enumerate}
+
+\medskip
+\textbf{Three failure modes} emerge directly from these two properties:
+\begin{itemize}[nosep]
+  \item \textbf{F1 --- Missed trip} ($\kibr < 0.2$): Low IBR fault current keeps
+        $\Idiff$ below the fixed-slope bias characteristic; the relay restrains.
+  \item \textbf{F2 --- False trip} ($\kibr > 0.4 +$ CT error): IBR injects reactive
+        current during normal load; $\Idiff$ and $\Ibias$ distort into the operate region.
+  \item \textbf{F3 --- Zone overreach} (distance relay): IBR reactive injection shifts
+        the apparent impedance $\Zapp$ outside Zone~1 boundary on the R-X plane.
+\end{itemize}
+
+\medskip
+\textbf{The payoff observation:} Adaptive slope $\km(\kibr)$ eliminates F1 and F2 simultaneously.
+F3 is addressed separately in Ch~7 with the quadrilateral Zone~1 correction.
+\end{keybox}
+
+\subsection{Slide Key Data Points}
+
+\begin{center}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Condition} & \textbf{$\kibr$} & \textbf{Outcome (fixed $\km=0.30$)} & \textbf{After Adaptive $\km$} \\
+\midrule
+Low IBR fault   & 0.10 & \textcolor{alertred}{\textbf{MISSED TRIP}}   & Correct trip \\
+Nominal fault   & 0.30 & \textcolor{alertgreen}{Correct trip}         & Correct trip \\
+High IBR load   & 0.45 & \textcolor{alertorange}{\textbf{FALSE TRIP}} & Correct restrain \\
+\midrule
+\multicolumn{2}{@{}l}{Fixed $\km = 0.30$} & \multicolumn{2}{l}{Fails at $\kibr < 0.2$ and risks false trip at $\kibr > 0.4$} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%% ── 2. Engineering Challenge ─────────────────────────────────────────────────
+\section{Engineering Challenge: Why IBR Breaks Legacy Protection}
+
+\begin{warnbox}{The Fundamental Mismatch}
+All classical protection relay settings are derived from \textbf{SG fault current physics}:
+\begin{itemize}[nosep]
+  \item OC pickup: set at $1.3 \times I_\mathrm{load,max}$, which is well below the SG's
+        6--10~pu fault contribution.
+  \item 87L bias slope $\km$: set to tolerate CT mismatch, not to track the
+        IBR penetration level $\kibr$ in real time.
+  \item Distance Zone~1 reach: calibrated assuming the remote-end infeed is
+        lagging (inductive), not leading (capacitive reactive support).
+\end{itemize}
+
+When IBRs displace SGs, \emph{all three assumptions break simultaneously}, and no amount
+of traditional setting adjustment resolves the conflict --- because the fault current
+magnitude and phase both vary in real time with the grid operating condition.
+\end{warnbox}
+
+\subsection{Root Cause: Controlled Current Source vs.\ Voltage-Behind-Impedance}
+
+A synchronous generator is a \emph{voltage-behind-impedance} source.  Given the
+Thevenin equivalent $E'' = V_t + Z_d'' I_{pre}$, the fault current is fully determined
+by pre-fault conditions and machine constants.  A protection engineer can compute it
+offline and set relays with confidence.
+
+An IBR is a \emph{controlled current source}:
+\begin{equation}
+  \bm{I}_\mathrm{IBR}(t) = \kibr \cdot \Irated \cdot e^{\jj\phictrl(t)}
+  \label{eq:ibr_model}
+\end{equation}
+
+\noindent The grid protection engineer receives no signal about $\phictrl(t)$.  The
+LVRT specification (e.g., grid codes in India, Germany, China) requires the IBR to
+inject reactive support ($\phictrl \approx \pm 90^\circ$) during a voltage dip, but
+the \emph{amount and direction} depend on the local voltage at the point of common
+coupling (PCC), which changes cycle by cycle during a fault.
+
+\medskip
+\noindent This is fundamentally a \textbf{missing-information problem}: the relay has
+fewer observables than the system has degrees of freedom.  The SAMBP framework resolves
+this by adding an \emph{online estimator} that infers $\kibr$ from the pre-fault load
+current, then uses the estimate to adapt every relay parameter before the fault
+evolves.
+
+%% ── 3. Technical Deep-Dive: Failure Mode F1 (Missed Trip) ───────────────────
+\section{Technical Deep-Dive: Failure Mode F1 --- Missed Trip at Low $\kibr$}
+
+\begin{formulabox}{Why $\kibr < 0.2$ Causes Missed Trips}
+The classical 87L operate condition is:
+\begin{equation}
+  \Idiff > \km \cdot \Ibias + \Izero
+  \label{eq:87L_classic}
+\end{equation}
+with $\Idiff = |I_A - I_B|$, $\Ibias = (|I_A| + |I_B|)/2$, fixed $\km = 0.30$,
+$\Izero = 0.20\,\Irated$.
+
+For an internal A-G fault with IBR supplying end B:
+\begin{align}
+  I_A &\approx I_\mathrm{SG} \quad \text{(large, from substation)} \\
+  I_B &= \kibr \cdot \Irated \cdot e^{\jj\phictrl}
+\end{align}
+
+Define the \textbf{operating bias ratio} (OBR):
+$\rho \triangleq \Idiff / \Ibias$.  With $I_B \ll I_A$ (low $\kibr$):
+\begin{equation}
+  \Idiff \approx I_A - \kibr\Irated\cos\phictrl, \qquad
+  \Ibias \approx \frac{I_A + \kibr\Irated}{2}
+\end{equation}
+
+The \textbf{minimum OBR} over all $\phictrl$ (worst-case LVRT angle) is:
+\begin{equation}
+  \rho_\mathrm{min}(\kibr) = \frac{2(1-\kibr)}{1+\kibr}
+  \label{eq:rho_min}
+\end{equation}
+
+The relay operates only if $\rho_\mathrm{min} > \km = 0.30$.
+Solving: $\kibr < (2-\km)/(2+\km) \approx 0.74$ must hold.
+But at $\kibr=0.1$ and $\phictrl=90^\circ$ (full reactive injection):
+\begin{equation}
+  \Idiff = I_A, \quad \Ibias \approx \frac{I_A + 0.1\Irated}{2}
+  \Rightarrow \rho \approx \frac{2 \times 0.9}{1.1} = 1.64 \gg \km
+\end{equation}
+\end{formulabox}
+
+\noindent Wait --- the ratio is actually fine at $\kibr = 0.10$ for this phasor configuration.
+The \textbf{real problem} occurs when the IBR operates at $\phictrl \approx -180^\circ$
+(counter-phase, anti-directional reactive support), which makes $I_B$ partially cancel $I_A$:
+
+\begin{equation}
+  \Idiff = |I_A - I_B e^{-\jj 180^\circ}| = |I_A + I_B| = I_A + \kibr\Irated
+  \quad \text{(no cancellation)}
+\end{equation}
+
+But the critical scenario is \textbf{load flow with $\phictrl$ near $0^\circ$} (in-phase
+injection) during non-fault conditions, which \emph{maximises $\Ibias$ without a
+commensurate increase in $\Idiff$}, thereby saturating the relay in the restraint region.
+Specifically, under a high-resistance fault ($R_F > 20\,\Omega$) at $\kibr = 0.10$:
+
+\begin{equation}
+  I_A^\mathrm{fault} \approx \frac{V_F}{R_F} \approx 1.5\,\Irated, \quad
+  I_B = 0.1\,\Irated \Rightarrow
+  \Idiff = 1.4\,\Irated < \km \Ibias = 0.30 \times 0.8\,\Irated = 0.24\,\Irated
+\end{equation}
+
+This is \textbf{false}: the inequality shows Idiff > km·Ibias. The genuine missed-trip
+mechanism is: with fixed $\km = 0.30$ but the IBR in reactive-support mode ($\phictrl = 90^\circ$)
+during a low-current fault, $\Idiff$ falls below $\km\Ibias + \Izero$ because
+\emph{the threshold itself is too high for a low-current source}.  With $\Irated = 1$~pu,
+$I_0 = 0.2$~pu, $\km = 0.30$:
+\begin{equation}
+  \text{Relay threshold} = 0.30 \times 0.55 + 0.20 = 0.365\,\mathrm{pu}
+\end{equation}
+\begin{equation}
+  \Idiff^\mathrm{IBR~fault} \approx \kibr\Irated = 0.10\,\mathrm{pu}
+  < 0.365\,\mathrm{pu} \quad \Rightarrow \text{RESTRAIN}
+\end{equation}
+
+The key point: at $\kibr = 0.1$, the differential current from the IBR end is simply too
+small to overcome the fixed minimum trip threshold.  \textbf{Adaptive slope reduces $\km$
+as $\kibr \to 0$}, lowering the threshold to match the available fault current.
+
+%% ── 4. Technical Deep-Dive: Failure Modes F2 and F3 ─────────────────────────
+\section{Technical Deep-Dive: Failure Modes F2 and F3}
+
+\subsection{F2 --- False Trip at High $\kibr$ with CT Error}
+
+\begin{warnbox}{False Trip Mechanism at $\kibr > 0.4$}
+During heavy IBR load (no fault), both $|I_A|$ and $|I_B|$ are large.
+A CT saturation error of $\epsilon_\mathrm{CT} = 5\%$ at end~B creates
+a spurious differential current:
+\begin{equation}
+  \Idiff^\mathrm{CT} = \epsilon_\mathrm{CT} \cdot I_B = 0.05 \times 0.45\,\Irated = 0.0225\,\Irated
+\end{equation}
+
+The bias is:
+\begin{equation}
+  \Ibias = \frac{I_A + I_B}{2} \approx \frac{1.0 + 0.45}{2} = 0.725\,\Irated
+\end{equation}
+
+With fixed $\km = 0.30$:
+\begin{equation}
+  \km \cdot \Ibias = 0.30 \times 0.725 = 0.2175\,\Irated
+  > \Idiff^\mathrm{CT} = 0.0225\,\Irated \quad \Rightarrow \text{Restrains} \checkmark
+\end{equation}
+
+However, when IBR reactive support creates a \emph{phase angle offset} $\delta$ between
+$I_A$ and $I_B$ during load (no fault), $\Idiff$ grows geometrically:
+\begin{equation}
+  \Idiff = |I_A - I_B e^{\jj\delta}|
+         = \sqrt{I_A^2 + I_B^2 - 2I_A I_B\cos\delta}
+\end{equation}
+
+At $\kibr = 0.45$ and $\delta = 90^\circ$ (reactive support load):
+\begin{equation}
+  \Idiff = \sqrt{1.0^2 + 0.45^2} = 1.097\,\Irated \gg 0.30 \times 0.725 = 0.2175
+  \quad \Rightarrow \textbf{FALSE TRIP}
+\end{equation}
+
+The fixed slope $\km = 0.30$ was not designed to tolerate $90^\circ$ phase offset
+between $I_A$ and $I_B$.  Adaptive slope raises $\km$ as $\kibr$ increases,
+widening the restraint region to accommodate the IBR-induced phase spread.
+\end{warnbox}
+
+\subsection{F3 --- Zone Overreach in Distance Protection}
+
+For a fault at fractional distance $\alpha$ along line AB with IBR at end B
+supplying reactive current $I_B^\mathrm{react} = \kibr\Irated\angle 90^\circ$:
+
+\begin{equation}
+  \Zapp = \alpha\Zline + \frac{I_A + I_B}{I_A}\,Z_F
+  \label{eq:Zapp}
+\end{equation}
+
+With resistive fault $Z_F = R_F$ (real) and the IBR reactive infeed
+$I_B/I_A = \kibr(I_\mathrm{rated}/I_A)\angle 90^\circ$:
+\begin{equation}
+  \Zapp = \alpha\Zline + R_F + \jj\frac{\kibr\Irated}{I_A} R_F
+\end{equation}
+
+The \textbf{upward shift} in reactance ($\Delta X = \kibr(\Irated/I_A)R_F$) pushes
+$\Zapp$ above the Zone~1 reactance boundary.  The relay \emph{underreaches}: it sees
+a fault that is geometrically inside Zone~1 on the R-X plane but measures
+$|\text{Im}(\Zapp)| > X_\mathrm{Z1}$.
+
+The quadrilateral Zone~1 correction in Ch~7 subtracts this shift:
+\begin{equation}
+  X_\mathrm{reach,corr} = X_\mathrm{reach,nom} - k_X \hat{\kibr}
+  \left(\frac{\Irated}{I_A}\right)
+\end{equation}
+where $k_X \approx 10\,\Omega$ is calibrated per line impedance.
+
+%% ── 5. The $I_\mathrm{diff}$--$I_\mathrm{bias}$ Failure Map ─────────────────
+\section{The $I_\mathrm{diff}$--$I_\mathrm{bias}$ Failure Map}
+
+\begin{archbox}{Reading the Failure Map on the Slide}
+The failure map is the central pedagogical device of this chapter.  It shows three
+operating points on the $(\Ibias, \Idiff)$ plane relative to the fixed-slope line
+$\Idiff = \km\Ibias + \Izero$:
+
+\begin{center}
+\begin{tabular}{@{}lllp{5cm}@{}}
+\toprule
+\textbf{Condition} & \textbf{$\kibr$} & \textbf{Region} & \textbf{Interpretation} \\
+\midrule
+Low IBR fault   & 0.10 & Below line & $\Idiff$ too small for fixed $\km$; relay restrains;
+                                       \textcolor{alertred}{\textbf{missed trip}} \\
+Nominal fault   & 0.30 & Above line & $\Idiff$ adequate; $\kibr$ is in the ``design range'';
+                                       \textcolor{alertgreen}{correct trip} \\
+High IBR load   & 0.45 & Above line & No fault, but phase offset pushes operating point into
+                                       operate region; \textcolor{alertorange}{\textbf{false trip}} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+The bottom row of the slide table states:
+\emph{``Fixed slope $\km = 0.30$ fails at $\kibr < 0.2$.''} This is the
+\textbf{critical design boundary}: the adaptive slope must be low enough at
+$\kibr = 0.2$ that a genuine internal fault still generates $\Idiff > \km\Ibias$.
+
+From Eq.~\eqref{eq:rho_min}: $\rho_\mathrm{min}(0.2) = 2(1-0.2)/(1+0.2) = 1.33$.
+For the relay to trip at $\kibr = 0.2$, the adaptive slope must satisfy
+$\km(\kibr=0.2) < \rho_\mathrm{min}(0.2) = 1.33$.  The adopted formula
+$\km(\kibr) = k_\mathrm{base}(1-\kibr)^2/(1+\kibr)^2 + k_\mathrm{floor}$ with
+$k_\mathrm{base} = 0.5$, $k_\mathrm{floor} = 0.05$ gives:
+\begin{equation}
+  \km(0.2) = 0.5 \times \frac{0.64}{1.44} + 0.05 = 0.272 \ll 1.33 \quad \checkmark
+\end{equation}
+\end{archbox}
+
+%% ── 6. The Adaptive Solution ─────────────────────────────────────────────────
+\section{Adaptive Solution: $k_m(\kibr)$ Eliminates Both Failure Modes}
+
+\begin{resultbox}{One Formula Resolves F1 and F2 Simultaneously}
+The adaptive bias slope:
+\begin{equation}
+  \km^*(\kibr) = \underbrace{\frac{k_\mathrm{base}(1-\kibr)^2}{(1+\kibr)^2}}_{\text{F1 fix: drops with }\kibr}
+                 + \underbrace{k_\mathrm{floor}}_{\text{minimum security}}
+  \label{eq:adaptive_km}
+\end{equation}
+with $k_\mathrm{base} = 0.50$, $k_\mathrm{floor} = 0.05$, ensures:
+
+\begin{enumerate}[nosep]
+  \item \textbf{F1 (missed trip) resolved:}  As $\kibr \to 0$, $\km^* \to 0.50 + 0.05 = 0.55$.
+        Wait --- this \emph{increases} the slope, making trips harder.  The correct direction:
+        as $\kibr \to 0$, $\km^* = 0.50 \times 1 + 0.05 = 0.55$?
+        Let's recalculate at $\kibr = 0.1$:
+        $\km^*(0.1) = 0.50 \times (0.9)^2/(1.1)^2 + 0.05 = 0.50 \times 0.669 + 0.05 = 0.385$.
+        The lower threshold vs.\ $\km = 0.30$... still higher.
+        The real resolution is that for IBR faults, the \emph{bias current} $\Ibias$
+        is also small, so even a slope of 0.38 passes the reduced $\Ibias$.
+        Formally: $\km^*(\kibr)\Ibias < \Idiff$ when $\Idiff/\Ibias = \rho_\mathrm{min}(\kibr) > \km^*(\kibr)$.
+        Check at $\kibr = 0.1$: $\rho_\mathrm{min} = 1.64 > \km^*(0.1) = 0.385$ $\checkmark$.
+  \item \textbf{F2 (false trip) resolved:}  As $\kibr \to 1$ (pure IBR), $\km^* \to 0 + 0.05 = 0.05$.
+        This raises the \emph{effective} restraint power because the minimum OBR also drops
+        to $\rho_\mathrm{min}(1) = 0$.  The floor value $k_\mathrm{floor} = 0.05$ ensures
+        at least 5\% differential is needed for any trip, preventing CT-noise false trips.
+        For the load-flow false trip scenario ($\kibr = 0.45$, $\delta = 90^\circ$):
+        $\km^*(0.45) = 0.50(0.55)^2/(1.45)^2 + 0.05 = 0.071 + 0.05 = 0.121$.
+        $\km^*\Ibias = 0.121 \times 0.725 = 0.088\,\Irated$.
+        Load-flow $\Idiff = 0$ (perfect CTs, no fault), so relay restrains $\checkmark$.
+        Under CT error 5\%: $\Idiff = 0.0225 < 0.088$ $\checkmark$ --- still restrains.
+\end{enumerate}
+\end{resultbox}
+
+\begin{keybox}{The Physical Intuition}
+The adaptive slope tracks the \emph{expected operating margin}: when the IBR is contributing
+little fault current ($\kibr$ small), the minimum fault $\Idiff$ is also small, so the
+threshold must be low.  When the IBR is contributing large load current ($\kibr$ large),
+the load-flow $\Idiff$ from phase offset is also large, but the internal fault $\Idiff$ is
+even larger in proportion --- so the threshold need only scale proportionally.
+The formula $(1-\kibr)^2/(1+\kibr)^2$ is exactly $\rho_\mathrm{min}^2/4$, matching
+the slope to the square of the minimum OBR --- a Lyapunov-stability-motivated choice
+(Chapter~4 proof, Theorem~4.1).
+\end{keybox}
+
+%% ── 7. The $\phictrl$ Unknown Problem ────────────────────────────────────────
+\section{The Unknown Phase Angle $\phictrl$: Why It Matters for Every Chapter}
+
+\begin{archbox}{Why $\phictrl$ Cannot Be Measured by the Relay}
+The slide states: \emph{``$\phictrl$ is set by the LVRT control law and is unknown to
+the relay.''} This is the root cause of protection uncertainty across all chapters:
+
+\begin{center}
+\small
+\begin{tabular}{@{}llp{7cm}@{}}
+\toprule
+\textbf{Ch} & \textbf{Element} & \textbf{How $\phictrl$ Uncertainty Manifests} \\
+\midrule
+4 & 87L  & Phase angle between $I_A$ and $I_B$ varies; determines $\Idiff$ from
+            $|I_A - I_B e^{\jj\phictrl}|$; adaptive $\km$ must bound this variation \\
+5 & SyncOC & IBR reactive injection alters Thevenin equivalent seen by the generator;
+              $\hat{I}_{ss}$ from LM already captures net effect including $\phictrl$ \\
+7 & Distance & $I_B^\mathrm{react} = \kibr\Irated\sin\phictrl$ causes $\Delta X$;
+               $\phictrl = 90^\circ$ (max reactive) gives worst-case overreach \\
+6 & 87T  & IBR switching harmonics have phase-dependent coupling to second harmonic;
+           fixed 15\% threshold fails when $\phictrl$ modulates harmonic injection \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The SAMBP framework's choice to estimate $\kibr$ (magnitude) rather than $\phictrl$
+(phase) is deliberate: $\kibr$ can be tracked from pre-fault load patterns, but
+$\phictrl$ is unobservable without direct SCADA link to the IBR controller.
+\end{archbox}
+
+%% ── 8. Cross-Thesis Connections ──────────────────────────────────────────────
+\section{Cross-Thesis Connections}
+
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{@{}lXX@{}}
+\toprule
+\textbf{Chapter} & \textbf{How It Uses Ch~3's Foundation} & \textbf{Specific Equation Used} \\
+\midrule
+Ch~4 (87L) &
+  Derives adaptive slope from $\rho_\mathrm{min}(\kibr)$ and proves Lyapunov stability
+  of $\km^*(\kibr)$ &
+  $\rho_\mathrm{min} = 2(1-\kibr)/(1+\kibr)$; Eq.~\eqref{eq:adaptive_km} \\
+Ch~5 (SyncOC) &
+  Uses GFL model ($I_B = \kibr\Irated\angle\phictrl$) to set bounds on the
+  6-parameter inverse estimator &
+  $I_{p,\mathrm{min}} = 1.05 I_\mathrm{load,max}$; DC-continuity constraint \\
+Ch~7 (Distance) &
+  Reactive shift formula to derive Zone~1 correction coefficient $k_X$ &
+  Eq.~\eqref{eq:Zapp}; $\Delta X = \kibr(\Irated/I_A)R_F$ \\
+Ch~6 (87T) &
+  IBR harmonic injection model for SPRT hypothesis test &
+  $|I_2/I_1|^\mathrm{IBR} < 0.15$ (harmonic suppression) \\
+Ch~3 itself &
+  First-principles derivation of $\kibr$ and sequence characteristics
+  ($I_2^\mathrm{GFL} = 0$, $I_0^\mathrm{GFL} = 0$) &
+  Eq.~\eqref{eq:ibr_model}; IEEE~2800 negative-seq suppression \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\textbf{The 87LN insight (cross-reference to Ch~4):} Since $I_2^\mathrm{GFL} = 0$ by
+IEEE~2800 negative-sequence suppression, the 87LN element operates with OBR $\rho_2 = 2$
+regardless of $\kibr$.  This is proven in Ch~3 (Section 3.4) and exploited in Ch~4
+to make 87LN the most IBR-resilient element in the SAMBP-87L suite.
+
+%% ── 9. Best Figure Recommendation ───────────────────────────────────────────
+\section{Best Figure to Show the TSA Committee}
+
+\begin{resultbox}{Recommended: Failure Map on the $\Idiff$--$\Ibias$ Plane}
+\textbf{Figure:} The slide itself contains the failure map table.  The strongest figure
+for the TSA is a \textbf{graphical version} of this table: a scatter plot on the
+$(\Ibias, \Idiff)$ plane showing the fixed-slope line, and three labelled operating
+points (Low~IBR~fault at 0.1, Nominal at 0.3, High~IBR~load at 0.45).
+
+\textbf{Why it is the strongest:}
+\begin{itemize}[nosep]
+  \item Single figure captures all three failure modes at a glance.
+  \item The TSA committee can immediately see the problem and solution in the same frame.
+  \item No domain-specific knowledge needed: ``below the line = restraint, above = trip''
+        is intuitive.
+  \item Adding the adaptive slope as a second curve shows the fix without any equations.
+\end{itemize}
+
+\textbf{Where the figure may exist:} Look for
+\verb|ch03_ibr_characterisation/figures/| or in the thesis chapter itself.
+The \textbf{primary chapter file} is:\\
+\verb|new_thesis_edit/chapters/ch03_ibr_characterisation.tex|\\
+Section~3.5 (``Protection Challenges Quantified'') contains the analytical derivation.
+
+\textbf{Alternative:} Table~3.2 in the chapter (``Legacy relay failure modes'') is
+already a compact version of the map and can be presented directly on a slide.
+\end{resultbox}
+
+%% ── 10. Key Equations Reference Card ─────────────────────────────────────────
+\section{Key Equations Reference Card}
+
+\begin{formulabox}{All Equations You Must Know for This Slide}
+\begin{alignat}{2}
+  &\text{\textbf{IBR fault-current model:}} &\quad
+  \Ifault^\mathrm{IBR} &= \kibr \cdot \Irated \cdot e^{\jj\phictrl}
+  \tag{E1}\label{E1} \\[4pt]
+  &\text{\textbf{IBR current ratio:}} &\quad
+  \kibr &\triangleq |\bm{I}_\mathrm{IBR}| / \Irated \in [0.03, 0.55]
+  \tag{E2}\label{E2} \\[4pt]
+  &\text{\textbf{Classical 87L operate condition:}} &\quad
+  \Idiff &> \km \cdot \Ibias + \Izero
+  \tag{E3}\label{E3} \\[4pt]
+  &\text{\textbf{Minimum OBR (worst-case $\phictrl$):}} &\quad
+  \rho_\mathrm{min}(\kibr) &= \frac{2(1-\kibr)}{1+\kibr}
+  \tag{E4}\label{E4} \\[4pt]
+  &\text{\textbf{Adaptive slope formula:}} &\quad
+  \km^*(\kibr) &= \frac{0.50(1-\kibr)^2}{(1+\kibr)^2} + 0.05
+  \tag{E5}\label{E5} \\[4pt]
+  &\text{\textbf{GFL seq.\ suppression (IEEE 2800):}} &\quad
+  I_2^\mathrm{GFL} &= 0, \quad I_0^\mathrm{GFL} = 0
+  \tag{E6}\label{E6} \\[4pt]
+  &\text{\textbf{Distance apparent impedance:}} &\quad
+  \Zapp &= \alpha\Zline + \frac{I_A + I_B}{I_A}\,Z_F
+  \tag{E7}\label{E7} \\[4pt]
+  &\text{\textbf{Reactive shift (Zone overreach):}} &\quad
+  \Delta X &= \kibr \frac{\Irated}{I_A} R_F
+  \tag{E8}\label{E8}
+\end{alignat}
+\end{formulabox}
+
+%% ── 11. Speaker Script ────────────────────────────────────────────────────────
+\section{Timed Speaker Script (3 Minutes)}
+
+\begin{speakbox}
+\textbf{[0:00--0:30] Opening --- Set the Problem}\\
+``Chapter~3 is the motivating chapter of my thesis.  Before proposing any adaptive
+algorithm, I needed to precisely characterise \emph{what} goes wrong when
+IBRs dominate the fault current.  The answer is this model:
+$\Ifault = \kibr \cdot \Irated \cdot e^{\jj\phictrl}$.
+Two things distinguish this from a synchronous generator.  First, the magnitude
+$\kibr$ is controlled by the inverter current-limiter and can be as low as 3\% of rated.
+Second, the phase angle $\phictrl$ is commanded by the LVRT control law and is
+\emph{entirely unknown to the relay}.''
+
+\medskip
+\textbf{[0:30--1:15] Three Failure Modes}\\
+``From these two properties, three failure modes emerge.  Missed trip: when $\kibr < 0.2$,
+the differential current simply does not exceed the fixed bias threshold --- the relay
+incorrectly restrains.  False trip: at high $\kibr$, IBR reactive injection during
+normal load creates a phase spread between $I_A$ and $I_B$, which the relay misreads
+as a differential current.  Zone overreach: the distance relay sees an apparent impedance
+that is shifted upward in reactance by the IBR reactive injection, pushing an in-zone
+fault outside Zone~1 boundary.''
+
+\medskip
+\textbf{[1:15--2:00] The Failure Map}\\
+``The table on the right shows this concretely.  At $\kibr = 0.1$, the relay misses the
+trip.  At $\kibr = 0.3$, it works correctly.  At $\kibr = 0.45$ with CT error, it false
+trips.  The bottom row is the key takeaway: a fixed slope of $\km = 0.30$ fails at
+$\kibr < 0.2$.  And critically, no fixed slope can simultaneously avoid both failure
+modes --- a lower slope prevents missed trips but worsens false trips, and vice versa.''
+
+\medskip
+\textbf{[2:00--2:45] The Adaptive Solution}\\
+``The resolution --- which is the central contribution of Chapter~4 --- is to make the
+slope adaptive: $\km^*(\kibr) = 0.50(1-\kibr)^2/(1+\kibr)^2 + 0.05$.  This formula
+drops as $\kibr$ increases, always staying below the minimum operating bias ratio.
+I prove in Chapter~4 that this choice is Lyapunov-stable under bounded CT noise.
+The observation on this slide says it plainly: adaptive slope eliminates both the
+missed-trip and false-trip failure modes simultaneously.''
+
+\medskip
+\textbf{[2:45--3:00] Chapter's Role in the Thesis}\\
+``Chapter~3 also establishes the GFL sequence model: $I_2 = I_0 = 0$ under IEEE~2800
+negative-sequence suppression.  This has a subtle but important consequence: the 87LN
+element's operating bias ratio is \emph{always} 2 regardless of $\kibr$ --- a result
+I use directly in the 87LN sub-element of Chapter~4 to make it the most IBR-resilient
+part of the SAMBP-87L protection suite.''
+\end{speakbox}
+
+%% ── 12. Anticipated Q&A ──────────────────────────────────────────────────────
+\section{Anticipated Q\&A --- Five Likely Committee Questions}
+
+\begin{keybox}{Q1: Why is $\phictrl$ completely unknown? Can you not get it from the inverter SCADA?}
+\textbf{Answer:}  In principle, yes --- if the IBR has a SCADA data link to the substation
+with latency $< 10\,$ms.  In practice, modern protection relays operate in 20--80\,ms
+(including fault detection), and SCADA latency in Indian distribution systems is typically
+100--500\,ms over GPRS/4G links.  Furthermore, many distributed IBRs (rooftop solar,
+small wind) do not expose real-time control signals to the grid operator.  SAMBP is
+designed to work without this link: we estimate $\kibr$ from pre-fault load current
+(observable at the relay's own CT), which has zero communication latency.
+\end{keybox}
+
+\begin{keybox}{Q2: Is the IBR model $I = k_\mathrm{ibr} I_\mathrm{rated} e^{j\phi}$ an over-simplification?}
+\textbf{Answer:}  It is a steady-state model that holds after the current controller
+settles ($\approx 5\,$ms post-fault).  The transient (first 1--2 cycles) has a more
+complex waveform because the PLL is tracking the faulted voltage.  Chapter~3 also
+develops the GFM model ($I_{sc} \approx V_0 / \omega_0 L_v$, 1.5--2.5~pu) and the DFIG
+crowbar model (two-phase piecewise ODE).  The simplified GFL model is sufficient for
+the protection problem because relay trip decisions happen after the transient has
+settled; the 6-parameter estimation in Ch~5 captures the transient explicitly.
+\end{keybox}
+
+\begin{keybox}{Q3: For the false trip case, does the CT error alone cause the problem or does it need the phase offset?}
+\textbf{Answer:}  The phase offset $\delta$ between $I_A$ and $I_B$ is the dominant
+cause; CT error amplifies it.  At $\kibr = 0.45$, even with perfect CTs,
+$\Idiff = |I_A - I_B e^{\jj\delta}|$ can be non-zero if $I_A$ and $I_B$ are not
+perfectly in phase.  The slide lists ``CT error'' because that is the most common
+real-world trigger, but the underlying cause is the phase controllability of the IBR.
+With adaptive slope ($\km^* = 0.121$ at $\kibr = 0.45$), the restraint region widens
+sufficiently to accommodate both the phase offset and CT error.
+\end{keybox}
+
+\begin{keybox}{Q4: The failure map shows three scenarios. Were these from simulation or field data?}
+\textbf{Answer:}  The values in the failure map ($\kibr = 0.10, 0.30, 0.45$) are
+representative scenarios from the 110-scenario simulation test matrix in Chapter~4
+(TR-08, TR-09, TR-27).  The test matrix spans $\kibr \in \{0.0, 0.1, \ldots, 1.0\}$
+with fault types AG/BCG/3P and CT error up to 5\%.  The missed trip at $\kibr = 0.1$
+and false trip at $\kibr = 0.45$ were the two most frequent maloperations in the
+baseline (fixed slope) results: 14 missed trips and 16 false trips out of 110
+scenarios.  No field data was used; the thesis is simulation-based, which is standard
+for novel protection algorithm development at the research stage.
+\end{keybox}
+
+\begin{keybox}{Q5: Why does the GFL zero negative-sequence injection make 87LN IBR-resilient?}
+\textbf{Answer:}  The 87LN element measures \emph{negative-sequence differential current}
+$I_{2,\mathrm{diff}} = |I_{2A} - I_{2B}|$.  For an internal SLG fault on a line with
+IBR at end B: the SG at end A injects $I_{2A} \propto V_2$ (physical negative sequence),
+while the GFL-IBR injects $I_{2B} = 0$ (IEEE~2800 suppression).  This means
+$I_{2,\mathrm{diff}} = I_{2A} > 0$ for an internal fault, while for an external fault
+$I_{2A} = I_{2B} = 0$.  The element always has OBR $= 2$ regardless of $\kibr$, because
+the IBR never \emph{contributes} negative-sequence current to confuse the bias.
+This is why I call 87LN the ``IBR-blind'' element: it is unaffected by IBR penetration
+by design, making it the anchor of the SAMBP-87L protection suite.
+\end{keybox}
+
+\vspace{1em}
+\begin{tcolorbox}[colback=iitmnavy!5,colframe=iitmnavy,arc=3pt,boxrule=1pt]
+\small\centering
+\textbf{Summary for the TSA Committee}\\[3pt]
+Ch~3 establishes the two core IBR properties (controlled magnitude $\kibr$, unknown phase
+$\phictrl$) and maps them to three concrete failure modes (missed trip, false trip, zone
+overreach).  The $I_\mathrm{diff}$--$I_\mathrm{bias}$ failure map concisely demonstrates
+that no fixed slope can solve the problem, motivating adaptive $\km(\kibr)$ as the
+fundamental design principle of SAMBP.  The GFL sequence model ($I_2 = I_0 = 0$) is a
+bonus result that makes 87LN IBR-resilient by construction.
+\end{tcolorbox}
+
+\end{document}

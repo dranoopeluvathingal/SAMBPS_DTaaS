@@ -1,0 +1,614 @@
+%% slide03_study_note.tex
+%% Detailed Study Note --- Slide 3: Research Gaps & Objectives
+%% TSA Meeting Preparation | Anoop V Eluvathingal | IIT Madras | 2026
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{booktabs,tabularx,array,longtable}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{parskip}
+
+%% Custom commands
+\newcommand{\kibr}{k_\mathrm{ibr}}
+\newcommand{\km}{k_m}
+\newcommand{\Zline}{Z_\mathrm{line}}
+\newcommand{\Yibr}{Y_\mathrm{ibr}}
+\newcommand{\CTI}{\mathrm{CTI}}
+\newcommand{\gammath}{\gamma_\mathrm{th}}
+
+%% Colours
+\definecolor{iitmnavy}{RGB}{15,40,80}
+\definecolor{iitmgold}{RGB}{180,140,0}
+\definecolor{lightblue}{RGB}{220,235,250}
+\definecolor{lightyellow}{RGB}{255,252,220}
+\definecolor{lightred}{RGB}{255,235,235}
+\definecolor{lightgreen}{RGB}{230,255,230}
+\definecolor{lightpurple}{RGB}{240,230,255}
+\definecolor{lightorange}{RGB}{255,243,225}
+\definecolor{gapcol}{RGB}{255,230,230}
+\definecolor{objcol}{RGB}{220,240,220}
+
+%% tcolorbox environments --- title={#1} prevents pgfkeys parsing commas
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{keybox}[1]{colback=lightblue,colframe=iitmnavy,
+  fonttitle=\bfseries\color{white},title={#1},arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{formulabox}[1]{colback=lightyellow,colframe=iitmgold,
+  fonttitle=\bfseries,title={#1},arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{resultbox}[1]{colback=lightgreen,colframe=green!50!black,
+  fonttitle=\bfseries,title={#1},arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{warnbox}[1]{colback=lightred,colframe=red!60!black,
+  fonttitle=\bfseries,title={#1},arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{archbox}[1]{colback=lightpurple,colframe=iitmnavy!60,
+  fonttitle=\bfseries,title={#1},arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{speakbox}{colback=orange!8,colframe=orange!70!black,
+  fonttitle=\bfseries,title={What to Say at the TSA Meeting},arc=3pt,
+  boxrule=1pt,breakable}
+
+%% Header / footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{iitmnavy}\small\textbf{TSA Meeting Study Note}}
+\fancyhead[R]{\color{iitmnavy}\small Slide 3 --- Research Gaps \& Objectives}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\small\color{gray}Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ 2026}
+\renewcommand{\headrulewidth}{1.5pt}
+\renewcommand{\headrule}{\color{iitmnavy}\hrule width\headwidth height\headrulewidth}
+
+\titleformat{\section}{\large\bfseries\color{iitmnavy}}{}{0em}{}[\color{iitmnavy}\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{iitmnavy!80}}{}{0em}{}
+
+\hypersetup{colorlinks=true,linkcolor=iitmnavy,urlcolor=iitmnavy}
+
+\begin{document}
+
+%% ── Title Block ──────────────────────────────────────────────────────────────
+\begin{tcolorbox}[colback=iitmnavy,coltext=white,arc=4pt,boxrule=0pt]
+\begin{center}
+  {\Large\bfseries TSA Meeting --- Slide 3 Study Note}\\[4pt]
+  {\large Research Gaps \& Objectives}\\[6pt]
+  {\normalsize 6 Identified Gaps $\cdot$ 6 Research Objectives $\cdot$ Prior Art Positioning}\\[2pt]
+  {\small Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ PhD Thesis 2026}
+\end{center}
+\end{tcolorbox}
+
+\vspace{6pt}
+
+%% ── 1. Slide Overview ────────────────────────────────────────────────────────
+\section{Slide Overview and Narrative}
+
+\begin{keybox}{What This Slide Shows}
+Slide~3 is the \textbf{research positioning} slide.  It answers the two most
+important questions a TSA committee will ask: \emph{What has not been done
+before?} (identified gaps) and \emph{What exactly are you doing?} (research
+objectives).  Every claim of novelty in the thesis is traceable to one of
+the six gaps on the left; every experimental chapter in the thesis delivers
+one of the six objectives on the right.
+
+\medskip
+\textbf{The six gaps} can be grouped into three clusters:
+\begin{itemize}[nosep]
+  \item \textbf{Standards and modelling gap} (G1, G2):
+        No relay standard handles real-time $\kibr$; grid-forming IBR
+        protection-control coupling is unstudied.
+  \item \textbf{Algorithmic gap} (G3, G4):
+        No unified inverse-estimation framework exists; existing digital
+        twins lack formal bounded non-blocking update guarantees.
+  \item \textbf{System-level gap} (G5, G6):
+        WAPC designs ignore IBR-induced coherency breakdown; adversarial
+        ML attacks on protection are unmitigated.
+\end{itemize}
+
+\textbf{The six objectives} map one-to-one to these clusters:
+O1--O2 address the standards/modelling and algorithmic gaps;
+O3--O4 address the digital twin and ML gaps; O5--O6 address the
+system-level and security gaps.  The slide is deliberately structured
+as a symmetrical 6-to-6 map.
+\end{keybox}
+
+\subsection{Gap-to-Objective Master Map}
+
+\begin{center}
+\small
+\begin{tabular}{@{}lp{4.5cm}lp{4.5cm}@{}}
+\toprule
+\textbf{Gap} & \textbf{Statement} & \textbf{Objective} & \textbf{How It Closes the Gap} \\
+\midrule
+G1 & No standard accounts for real-time $\kibr$
+   & O1: Unified SAMBP LM framework
+   & LM identifies $\kibr$ online for all relay types \\[4pt]
+G2 & GFM protection-control coupling unstudied
+   & O2: Self-adaptive modules (incl.\ microgrid)
+   & Microgrid module handles GFL/GFM dual-mode \\[4pt]
+G3 & No unified inverse-estimation across relays
+   & O1 (unified framework)
+   & One LM solver with element-specific model \\[4pt]
+G4 & DT lacks bounded non-blocking updates
+   & O3: Non-blocking EKF digital twin
+   & EKF + bounded update law + non-blocking design \\[4pt]
+G5 & WAPC ignores IBR coherency breakdown
+   & O5: WAPC with topology-aware IBR coherency
+   & WAPC uses $\kibr$ in N-1 coherency checks \\[4pt]
+G6 & Adversarial ML attacks unmitigated
+   & O4: Physics-informed ML; O6: Cybersecurity layer
+   & PINN loss + HMAC GOOSE authentication \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%% ── 2. The Six Gaps: Deep Dive ───────────────────────────────────────────────
+\section{The Six Gaps: Why Each Is Genuinely a Gap}
+
+\subsection{G1 --- No Relay Standard Accounts for Real-Time IBR Admittance $\kibr$}
+
+\begin{warnbox}{Standards Gap: IEC 60255 and IEEE C37 Assume Fixed Fault Current}
+The two governing relay standards are:
+\begin{itemize}[nosep]
+  \item \textbf{IEC~60255-151} (overcurrent relay characteristics): Defines
+        ITOC/IDMT curves with fixed pickup $I_p$ and time multiplier TMS.
+        No provision for real-time pickup adaptation based on source composition.
+  \item \textbf{IEEE~C37.112} (inverse-time relay characteristics): Similarly
+        assumes the fault current model is determined at commissioning.
+  \item \textbf{IEC~61869} (instrument transformer standards): Specifies CT
+        accuracy classes but does not address the distortion of fault current
+        by IBR current limiting.
+\end{itemize}
+
+The standards were written when the only adjustable parameters were $I_p$,
+TMS, and zone reach --- all set offline by a protection engineer.  The concept
+of a relay that updates its own settings every 20~ms based on a real-time
+$\kibr$ estimate does not appear in any relay standard.
+
+\textbf{Industry gap:} Even the latest ``adaptive relay'' products (Siemens
+SIPROTEC~5, ABB REL~670) use ``setting groups'' --- a finite set of pre-configured
+offline settings that are switched based on topology events.  They do not compute
+relay settings from first-principles model identification during the fault itself.
+\end{warnbox}
+
+\subsection{G2 --- GFM Protection-Control Coupling Unstudied}
+
+Grid-forming (GFM) inverters operate as voltage-controlled sources emulating
+a virtual synchronous machine.  Unlike GFL inverters, the GFM fault current is
+determined by its virtual impedance $Z_v = R_v + \jmath\omega_0 L_v$:
+\begin{equation}
+  I_\mathrm{sc}^\mathrm{GFM} = \frac{|V_0|}{|Z_v|} \in [1.5, 2.5]\,I_\mathrm{rated}
+  \label{eq:gfm_isc}
+\end{equation}
+
+The protection challenge: the same $Z_v$ that limits fault current also participates
+in the microgrid's voltage regulation and frequency droop.  Changing $Z_v$ to improve
+protection performance (e.g., raise fault current for relay visibility) directly
+compromises the GFM's control stability.  This \emph{protection-control coupling}
+is documented in the power electronics literature (Taul~2020, Paquette~2015) but no
+protection relay design has explicitly addressed the constraint.
+
+The SAMBP microgrid module (Ch~5) operates within the GFM control constraints by
+adapting \emph{relay settings}, not inverter parameters --- this is the only design
+approach that does not require changes to the GFM firmware.
+
+\subsection{G3 --- No Unified Inverse-Estimation Framework Across Relay Types}
+
+Prior work addresses each relay type in isolation:
+\begin{itemize}[nosep]
+  \item Adamiak~(2018): Adaptive 87L using online slope estimation for HVDC
+        lines --- specific to DC sources, not GFL/GFM.
+  \item Hooshyar~(2019): Retuned OC settings for high-IBR feeders --- offline
+        process, not inverse estimation during fault.
+  \item Sadeghi~(2021): Distance relay reach correction for IBR networks ---
+        element-specific correction table, no model identification.
+\end{itemize}
+
+Each paper proposes a \emph{different} estimation method tailored to \emph{one}
+relay type.  There is no published work that:
+(a) defines a single mathematical problem class (bounded nonlinear
+least-squares) that covers 87L, OC, 87T, and distance simultaneously; and
+(b) proves convergence and safety properties for the unified solver.
+Chapter~2 fills this gap.
+
+\subsection{G4 --- Digital Twin Approaches Lack Bounded Non-Blocking Update Laws}
+
+Existing power system digital twins (Daniluk~2021, IEEE~PES DT task force~2022)
+use one of two approaches:
+\begin{itemize}[nosep]
+  \item \textbf{Offline batch estimation:} Run optimisation after the event,
+        update settings during the next maintenance window.  Latency: hours to days.
+        Protection cannot benefit from the estimate in real time.
+  \item \textbf{Online blocking estimation:} Run the estimator in the relay's
+        main compute loop.  If the estimator takes $>$1~ms, the relay misses its
+        trip decision window.  No published protection DT has formal non-blocking
+        guarantees.
+\end{itemize}
+
+Neither approach provides:
+(a) a formal proof that settings stay within safe bounds regardless of estimation
+quality, or (b) an asynchronous (non-blocking) design where the estimator runs
+in a background thread and the relay always has a valid (if possibly stale)
+parameter estimate.  Chapter~9 provides both.
+
+\subsection{G5 --- WAPC Designs Ignore IBR-Induced Coherency Breakdown}
+
+Classical WAPC coherency grouping (IEEE~1110, WECC stability criteria) clusters
+generators by \emph{power angle synchronism}: machines whose rotor angles swing
+together in response to a disturbance form one coherent group.  This grouping
+determines which relays are coordinated together.
+
+IBRs have no rotor angle.  Their ``coherency'' is defined by the PLL tracking
+bandwidth and the reactive current injection priority: two IBRs at opposite ends
+of a feeder may respond to the same voltage dip in diametrically opposite ways
+(one injects reactive, the other active), creating an \emph{anti-coherent} pair.
+
+Published WAPC designs (Apostolopoulos~2020, Sun~2022) apply SG coherency
+algorithms to IBR-dominated networks, producing incorrect relay groups.  The SAMBP
+WAPC (Ch~7) uses the EKF-estimated $\kibr$ as a coherency proxy, grouping relays
+by their IBR penetration level rather than by power angle synchronism.
+
+\subsection{G6 --- Adversarial ML Attacks on Protection Relays Unmitigated}
+
+The adversarial ML literature (Goodfellow~2015, Madry~2018) demonstrates that
+small crafted perturbations can cause neural network classifiers to misclassify
+with high confidence.  In protection, this means:
+\begin{itemize}[nosep]
+  \item A $\leq 5\%$ perturbation in a CT secondary current can cause an
+        unconstrained NN to classify a genuine fault as normal operation (miss trip).
+  \item A $\leq 3\%$ perturbation can cause classification of load current as
+        a fault (false trip).
+\end{itemize}
+
+The protection literature has not published a mitigation for this attack class.
+The SAMBP response (Ch~6 and Ch~8) is two-pronged:
+(a) the PINN loss function embeds KVL/KCL constraints, so any perturbation that
+causes misclassification must also violate the power flow equations --- raising
+the minimum attack energy; and (b) HMAC-SHA256 on GOOSE prevents the attacker
+from injecting false measurements via the communication network.
+
+%% ── 3. The Six Objectives: Verification Criteria ────────────────────────────
+\section{The Six Objectives: Measurable Success Criteria}
+
+\begin{keybox}{How Each Objective Is Verified}
+The TSA will ask: \emph{how do you know you have achieved each objective?}
+
+\begin{center}
+\small
+\begin{tabular}{@{}lp{4.5cm}p{5cm}@{}}
+\toprule
+\textbf{Obj.} & \textbf{Statement} & \textbf{Success Criterion (quantified)} \\
+\midrule
+O1 & Unified SAMBP LM framework
+   & Convergence $R^2 > 0.999$ in $<$20 iterations for all models;
+     Theorem~2.1 convergence proof \\[4pt]
+O2 & Self-adaptive protection modules for 87L, SyncOC, 87T, 21, microgrid
+   & TPR = 1.000; FPR = 0.000; avg.\ trip time $\leq 80$~ms across all elements \\[4pt]
+O3 & Non-blocking EKF digital twin
+   & $\hat{\kibr}$ RMSE $\leq 0.024$~pu; EKF background thread latency $\leq 2$~ms;
+     relay decision not blocked \\[4pt]
+O4 & Physics-informed ML for fault classification
+   & Classification accuracy $>$95\% under $\varepsilon = 5\%$ CT perturbation;
+     KVL/KCL residual $< 10^{-4}$~pu \\[4pt]
+O5 & Wide-area coordinator with IBR coherency
+   & Fault localisation accuracy 100\%; N-1 verified; settings dispatch $<$100~ms \\[4pt]
+O6 & Cybersecurity layer
+   & Spoofing success $< 0.001\%$; GOOSE latency overhead $< 1$~ms;
+     risk reduction $>$50\% per IEC~62351 matrix \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{keybox}
+
+%% ── 4. Prior Art: Three Competing Approaches ─────────────────────────────────
+\section{Prior Art Analysis: Three Competing Approaches and Their Limits}
+
+\begin{archbox}{How SAMBP Differs from Existing Approaches}
+
+\paragraph{Approach A --- Legacy Relay Retuning (Hooshyar~2019, Sadeghi~2021):}
+\textit{Premise:} Compute new fixed settings that are ``better'' for an IBR-heavy
+network; apply them during commissioning or scheduled maintenance.\\
+\textit{Limitation:} The setting is still fixed.  As IBR fleet composition
+changes between maintenance cycles (seasonal wind variation, solar outages,
+new capacity additions), the setting becomes stale.  At $\kibr=0.1$ vs.\
+$\kibr=0.9$, the optimal bias slope differs by $4\times$; no single fixed
+setting covers both.\\
+\textit{SAMBP difference:} Real-time LM estimation tracks $\kibr$ continuously;
+settings update every fault cycle.
+
+\paragraph{Approach B --- Communication-Assisted Schemes (Gers~2011, Zhang~2020):}
+\textit{Premise:} Use optical-fibre 87L (full differential) or POTT to
+eliminate the need for fault current magnitude thresholds.\\
+\textit{Limitation:} These schemes \emph{still have} a bias slope $\km$.
+At $\kibr < 0.2$, the fixed $\km = 0.30$ causes a missed trip even with
+full communication (as demonstrated in Ch~3 TR-08 results).  Communication
+latency under cyberattack or fibre cut disables the scheme entirely.\\
+\textit{SAMBP difference:} Adaptive $\km^*(\kibr)$ works at all $\kibr$
+values; Stage-2 gate handles latency gracefully.
+
+\paragraph{Approach C --- Pure Machine Learning (Jamali~2020, Liao~2022):}
+\textit{Premise:} Train a deep neural network on simulation data covering
+all fault types and IBR penetration levels; deploy as the relay decision function.\\
+\textit{Limitation:} (a) Produces physics-impossible outputs (e.g., classifying
+a fault where KVL is violated by the prediction); (b) generalisation to
+out-of-distribution IBR types (e.g., DFIG crowbar activation) is poor;
+(c) adversarial perturbation vulnerability is unaddressed in every published
+protection ML paper.\\
+\textit{SAMBP difference:} PINN loss embeds KVL/KCL; the LM model is physics-first;
+adversarial hardening via HMAC + physics constraints.
+\end{archbox}
+
+%% ── 4b. Thesis Table 1.1 --- Verbatim ───────────────────────────────────────
+\section{Thesis Table 1.1: Summary of Original Contributions (Authoritative)}
+
+\begin{resultbox}{Table 1.1 from the Thesis (Chapter and Result Numbers Are Final)}
+\begin{center}
+\small
+\begin{tabular}{@{}clp{8.5cm}c@{}}
+\toprule
+\textbf{ID} & \textbf{Ch} & \textbf{Contribution} & \textbf{Status} \\
+\midrule
+C1 & 3
+  & Physics-constrained adaptive line differential (87L) protection with
+    IBR-aware threshold $k_m^*(\kibr)$, achieving TPR\,=\,1.000 and zero
+    false trips across the full IBR penetration range
+  & [P] \\[4pt]
+C2 & 4
+  & Levenberg--Marquardt inverse-estimation framework for synchronous
+    generator over-current protection, with bounded adaptive update law
+    and four-component confidence gating ($R^2 > 0.999$)
+  & [P] \\[4pt]
+C3 & 6
+  & Non-blocking EKF digital twin for real-time joint estimation of IBR
+    penetration ratio $\kibr$, line impedance, and IBR admittance from
+    IED phasor measurements (RMSE\,$\leq$\,0.024~pu)
+  & [P] \\[4pt]
+C4 & 7
+  & Wide-area protection coordinator with PMU-based fault localisation,
+    N-1 security verification, and automatic CTI-graded relay settings
+    dispatch via IEC~61850 GOOSE
+  & [P] \\
+\bottomrule
+\end{tabular}
+\end{center}
+{\small [P] = validated with full numerical simulation results.}
+
+\medskip
+\textbf{Correct chapter mapping for all cross-references:}
+Ch~2 = Mathematical Foundations (LM framework) $\cdot$
+Ch~3 = 87L Line Differential (C1) $\cdot$
+Ch~4 = SyncOC Generator OC (C2) $\cdot$
+Ch~5 = Adaptive Distance Protection $\cdot$
+Ch~6 = EKF Digital Twin (C3) $\cdot$
+Ch~7 = WAPC (C4) $\cdot$
+Ch~8 = Cybersecurity
+\end{resultbox}
+
+%% ── 5. Novelty Claims: The Three Firsts ──────────────────────────────────────
+\section{Novelty Claims: What SAMBP Does That No Prior Work Has Done}
+
+\begin{resultbox}{Three Novelty Claims}
+The thesis positions SAMBP as the \textbf{first work} to do all three of:
+
+\begin{enumerate}[nosep]
+  \item \textbf{Treat adaptive protection as a unified inverse estimation problem}
+        with explicit model identification across all element types (87L, OC, 87T,
+        distance).  Prior work treats each element in isolation with different
+        estimation methods.  The SAMBP LM framework provides one solver,
+        one confidence gate ($\gamma \geq \gammath$), and one convergence proof
+        (Theorem~2.1) for all elements.
+
+  \item \textbf{Integrate local relay adaptation, digital-twin state estimation,
+        and centralised coordination} into a single closed-loop self-adaptive system.
+        Prior works on adaptive protection, digital twins, and WAPC are published
+        independently with no shared interface specification.  SAMBP defines the
+        three-tier architecture (Tier~1 EKF oracle $\to$ Tier~2 protection
+        modules $\to$ Tier~3 WAPC) with formal data contracts between tiers.
+
+  \item \textbf{Provide formal confidence-gating and bounded update laws} that
+        guarantee relay \emph{safety} under estimation uncertainty.  Existing
+        adaptive relay papers show performance improvement without proving that a
+        wrong estimate cannot push settings to an unsafe value.  The bounded update
+        (Proposition~2.1) and Stage-2 gate provide this guarantee.
+\end{enumerate}
+\end{resultbox}
+
+%% ── 6. Gap Mapping to Thesis Chapters ────────────────────────────────────────
+\section{Gap and Objective Mapping to Thesis Structure}
+
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{@{}llllX@{}}
+\toprule
+\textbf{Gap} & \textbf{Obj.} & \textbf{Ch} & \textbf{Contribution} & \textbf{Key Result} \\
+\midrule
+G1, G3 & O1 & 2   & Unified LM inverse-estimation framework & Theorem~2.1; $R^2 > 0.999$; $\leq 20$ iter \\
+G1, G2 & O2 & 3--5 & Self-adaptive protection modules (87L C3, SyncOC C4, Dist C5) & TPR\,=\,1.000; FPR\,=\,0.000 \\
+G4     & O3 & 6   & Non-blocking EKF digital twin (C3)      & RMSE\,$\leq$\,0.024~pu; 2~ms thread latency \\
+G6     & O4 & 6   & Physics-informed NN (PINN) classifier   & $>95\%$ accuracy at $\varepsilon=5\%$ \\
+G5     & O5 & 7   & WAPC with IBR-aware coherency (C4)      & 100\% localisation; 54.9\% risk reduction \\
+G6     & O6 & 8   & Cybersecurity: HMAC + adversarial PINN  & Spoofing $<0.001\%$; overhead 0.72~ms \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+%% ── 7. Cross-Thesis Connections ──────────────────────────────────────────────
+\section{Cross-Thesis Connections}
+
+Every subsequent slide in the TSA presentation fills in one row of the table
+above.  The logical flow is:
+\begin{itemize}[nosep]
+  \item \textbf{Slide~5} (Ch~2 LM framework) $\leftarrow$ closes G3 and G4.
+  \item \textbf{Slide~6} (Ch~3 IBR characterisation) $\leftarrow$ quantifies G1
+        and G2 with the failure map table.
+  \item \textbf{Slides~7,~8} (Ch~3, C1: 87L) $\leftarrow$ delivers O2 for 87L.
+  \item \textbf{Slide~9} (Ch~4, C2: SyncOC) $\leftarrow$ delivers O2 for OC.
+  \item \textbf{Slide~11} (Ch~5: Distance) $\leftarrow$ delivers O2 for distance.
+  \item \textbf{Slide~4} (Three-Tier Architecture) $\leftarrow$ shows O1--O6 integrated.
+\end{itemize}
+
+Slide~3 (this study note) is the \textbf{gateway} slide: the TSA should have it
+clear in mind when evaluating every technical slide that follows.  If a committee
+member challenges the novelty of any result, the answer traces back to one of the
+six gaps stated here.
+
+%% ── 8. Key Reference Points ──────────────────────────────────────────────────
+\section{Key Reference Points for Literature Defence}
+
+\begin{formulabox}{Standards and Papers to Name-Drop}
+\begin{center}
+\small
+\begin{tabular}{@{}lp{9cm}@{}}
+\toprule
+\textbf{Reference} & \textbf{What It Says and How SAMBP Differs} \\
+\midrule
+IEC 60255-151       & Defines fixed-curve OC protection; no provision for real-time pickup adaptation \\
+IEEE C37.112        & Standardises IDMT relay characteristics; no IBR model \\
+Hooshyar (2019)     & IBR feeder OC retuning; offline process; no LM estimator \\
+Sadeghi (2021)      & Distance relay reach correction for IBR; element-specific table; no unified framework \\
+Adamiak (2018)      & Adaptive 87L for HVDC; DC-source specific; not GFL/GFM \\
+Goodfellow (2015)   & Adversarial examples in ML; SAMBP applies this to protection relays and mitigates it \\
+Jamali (2020)       & DNN fault classifier for IBR networks; no physics constraints; adversarial not addressed \\
+IEEE PES DT TF (2022) & Digital twin survey; no bounded update law; no non-blocking guarantee \\
+Taul (2020)         & GFM protection-control coupling analysis; no relay algorithm proposed \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{formulabox}
+
+%% ── 9. Speaker Script ────────────────────────────────────────────────────────
+\section{Timed Speaker Script (3 Minutes)}
+
+\begin{speakbox}
+\textbf{[0:00--0:30] Setting the Scene}\\
+``Slide~3 identifies the six specific gaps that this thesis fills.  I grouped them
+into three clusters.  The first two are standards and modelling gaps: no relay
+standard in IEC~60255 or IEEE~C37 accounts for real-time IBR admittance, and the
+protection-control coupling unique to grid-forming IBRs has not been addressed in
+any relay design.  These two gaps mean that even if a protection engineer wanted
+to build an adaptive relay today, there are no published methods to follow.''
+
+\medskip
+\textbf{[0:30--1:10] Algorithmic and DT Gaps}\\
+``The next two are algorithmic gaps.  There is no unified inverse-estimation
+framework: the OC literature has one method, the 87L literature has a different
+method, and distance has a third.  None of them share a common solver, confidence
+gate, or convergence proof.  The SAMBP Chapter~2 provides that unified framework.
+The digital twin gap is more specific: every published protection digital twin
+either runs offline or runs blocking in the relay's main thread.  Neither has a
+formal proof that settings stay within safe bounds during a bad estimate.  My
+bounded update law and Stage-2 gate fill this gap.''
+
+\medskip
+\textbf{[1:10--1:50] System and Security Gaps}\\
+``The last two are system-level gaps.  Wide-area protection coordinators today
+group relays by power-angle coherency --- a concept that only applies to synchronous
+generators.  IBRs have no rotor angle.  My WAPC groups relays by IBR penetration
+ratio instead, using the EKF estimate as the coherency proxy.  And the adversarial
+ML gap: it has been shown in computer vision that a 5\% perturbation in the input
+can fool a neural network.  For a protection relay, that means a 5\% injected CT
+error causes a misclassification.  No protection ML paper has addressed this.
+My PINN loss function and HMAC countermeasure address it.''
+
+\medskip
+\textbf{[1:50--2:30] The Six Objectives}\\
+``The six research objectives on the right close the six gaps one-to-one.  The
+unified SAMBP framework closes G1 and G3.  Self-adaptive modules close G1 and G2
+across all five protection element types.  The non-blocking EKF digital twin closes
+G4.  Physics-informed ML closes G6's classifier aspect.  The wide-area coordinator
+closes G5.  And the cybersecurity layer closes G6's communication aspect.  Each
+objective has a quantified success criterion: TPR~=~1.000, FPR~=~0.000, RMSE
+$\leq$~0.024~pu, spoofing below 0.001\%.''
+
+\medskip
+\textbf{[2:30--3:00] Novelty Position}\\
+``I want to be explicit about what is new.  This is the first work to treat
+adaptive protection as a single unified inverse estimation problem across all
+relay types.  The first to integrate local adaptation, digital twin, and
+centralised coordination into one closed-loop system.  And the first to provide
+formal bounded-update and confidence-gate guarantees that prove safety under
+estimation uncertainty.  Prior adaptive relay work improves performance; this
+thesis guarantees it.''
+\end{speakbox}
+
+%% ── 10. Anticipated Q&A ──────────────────────────────────────────────────────
+\section{Anticipated Q\&A --- Five Likely Committee Questions}
+
+\begin{keybox}{Q1: How do you know no relay standard accounts for real-time $\kibr$? What about IEC 61968 or IEC 62351?}
+\textbf{Answer:}  IEC~61968 is a CIM (Common Information Model) standard for utility
+data exchange --- it defines data schemas, not relay algorithms.  IEC~62351 is the
+cybersecurity series for IEC~61850 communications --- it also does not define relay
+algorithms.  The relay algorithm standards are IEC~60255-151 (overcurrent), IEC~60255-121
+(distance), and IEEE~C37.112 (inverse time); none of these define a mechanism for
+real-time relay threshold computation from an online $\kibr$ estimate.  I have reviewed
+all three standards in Chapter~1's literature review.  The closest is IEC~60255-121
+Annex~B, which allows for ``special characteristics'' by mutual agreement between
+manufacturer and user --- this is essentially a blank cheque that acknowledges the
+standard is insufficient, which is exactly the gap.
+\end{keybox}
+
+\begin{keybox}{Q2: What specifically is ``IBR-induced coherency breakdown'' in G5?}
+\textbf{Answer:}  Classical coherency in power systems means that during a disturbance,
+a group of synchronous generators swing together in power angle --- their rotor speeds
+stay nearly identical, so they form one ``coherent group'' for protection coordination.
+When you replace SGs with IBRs, coherency breaks down in two ways: (a) IBRs have no
+rotor --- they have no inertia and no swing equation; (b) IBRs actively inject current
+in a direction commanded by the LVRT control law, not by physics.  Two IBRs at
+opposite ends of a feeder can inject reactive current in \emph{opposite} directions
+simultaneously, creating an anti-coherent pair.  The WAPC must know which relays are
+protecting IBR-dominated lines to apply different coordination criteria.  The SAMBP
+WAPC uses $\hat{\kibr}$ from the EKF as a coherency proxy: relays with similar $\hat{\kibr}$
+values are grouped together for CTI coordination.
+\end{keybox}
+
+\begin{keybox}{Q3: ``Protection-control coupling of GFM IBRs unstudied'' seems strong. Are there no papers on this?}
+\textbf{Answer:}  The analysis of GFM protection challenges exists in the power
+electronics literature (Taul~2020, Lasseter~2020).  What is \emph{unstudied} is a
+relay algorithm that explicitly accounts for the coupling.  Taul~2020 shows that
+changing the virtual impedance $Z_v$ to increase fault current for relay visibility
+degrades the GFM's voltage regulation stability --- but proposes no relay solution.
+The SAMBP microgrid module (Ch~8) is the first relay algorithm that leaves $Z_v$
+untouched and adapts the relay settings instead, operating entirely within the GFM's
+existing control constraints.  So the gap is precisely stated: the algorithm has not
+been published, even though the problem has been identified.
+\end{keybox}
+
+\begin{keybox}{Q4: You have 6 gaps and 6 objectives but the thesis has 4 principal contributions (C1--C4). How do these reconcile?}
+\textbf{Answer:}  The six objectives on the slide are \emph{granular}; the four
+principal contributions (C1--C4) are \emph{consolidated} for thesis chapter organisation:
+From Table~1.1 of the thesis: C1 (Ch~3) is the adaptive 87L line differential achieving
+TPR\,=\,1.000; C2 (Ch~4) is the LM inverse-estimation framework for SyncOC with
+$R^2>0.999$; C3 (Ch~6) is the non-blocking EKF digital twin with RMSE\,$\leq$\,0.024~pu;
+C4 (Ch~7) is the WAPC with PMU fault localisation and CTI-graded settings dispatch.
+All four are validated~[P].  The six-objective structure on the slide unpacks the
+four chapters into finer deliverables (e.g., O4~=~PINN and O6~=~cybersecurity are both
+inside Ch~6/Ch~8 respectively), making the novelty mapping explicit for the committee.
+\end{keybox}
+
+\begin{keybox}{Q5: Are there commercial products (ABB, Siemens, GE) that already do adaptive protection? How is your work different?}
+\textbf{Answer:}  Yes --- ABB REL~670, Siemens SIPROTEC~7SA87, and GE Multilin~D90
+all claim ``adaptive'' protection.  Their adaptation mechanism is \emph{setting groups}:
+the relay engineer pre-configures 2--8 groups of fixed settings, each for a different
+expected network condition, and an external trigger (SCADA topology message or digital
+input) switches between groups.  This is \emph{not} real-time inverse estimation: the
+groups are computed offline, and the relay does not identify any parameter from its
+own CT measurements.  It is essentially ``manual look-up table'' adaptation.  SAMBP
+is fundamentally different: the relay computes its own setting from a real-time
+physical model fit.  The analogy: commercial ``adaptive'' relays are like a photographer
+choosing between pre-set exposure modes (portrait, sport, night); SAMBP is like a
+camera that measures the actual scene lighting and computes the correct exposure.
+\end{keybox}
+
+\vspace{1em}
+\begin{tcolorbox}[colback=iitmnavy!5,colframe=iitmnavy,arc=3pt,boxrule=1pt]
+\small\centering
+\textbf{Summary for the TSA Committee}\\[3pt]
+Six identified gaps (two standards, two algorithmic, two system-level) map to six
+research objectives, each with a quantified success criterion.  SAMBP's novelty
+rests on three claims: unified inverse-estimation across all relay types, closed-loop
+integration of adaptation and coordination, and formal safety guarantees via bounded
+updates and confidence gating.  Every technical slide that follows delivers one of
+these six objectives.
+\end{tcolorbox}
+
+\end{document}

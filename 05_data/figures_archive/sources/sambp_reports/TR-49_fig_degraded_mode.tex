@@ -1,0 +1,54 @@
+% fig_degraded_mode.tex
+% TR-49: Degraded-mode fallback accuracy (Study D)
+
+\begin{tikzpicture}
+\begin{axis}[
+  name         = degax,
+  width        = 0.84\textwidth,
+  height       = 6.5cm,
+  xbar,
+  bar width    = 11pt,
+  xlabel       = {ML fallback accuracy [\%]},
+  xlabel style = {font=\small},
+  ytick        = {1,2,3,4,5},
+  yticklabels  = {CT missing\\(imputed),
+                  CT+VT $2\times$,
+                  VT $2\times$,
+                  CT $2\times$,
+                  All OK},
+  yticklabel style = {font=\small, align=right},
+  xmin=60, xmax=100,
+  xtick        = {60,65,70,75,80,85,90,95,100},
+  xticklabel style = {font=\scriptsize},
+  tick style   = {draw=none},
+  axis line style = {gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  nodes near coords,
+  nodes near coords align = {horizontal},
+  every node near coord/.append style = {font=\small, xshift=4pt},
+]
+
+\addplot[fill=sambpblue!70, draw=sambpblue]
+  coordinates {
+    (77.8, 1)
+    (82.4, 2)
+    (80.4, 3)
+    (83.6, 4)
+    (85.4, 5)
+  };
+
+%% Relay baseline reference
+\draw[red!60!black, thick, dashed]
+  (axis cs:100.0, 0.4) -- (axis cs:100.0, 5.6);
+\node[red!60!black, font=\small, rotate=90, anchor=south]
+  at (axis cs:100, 3) {Relay 100\%};
+
+%% Acceptable threshold annotation
+\draw[green!50!black, thick, dashed]
+  (axis cs:80.0, 0.4) -- (axis cs:80.0, 5.6);
+\node[green!50!black, font=\tiny, rotate=90, anchor=south]
+  at (axis cs:80, 0.5) {Serviceable threshold};
+
+\end{axis}
+\end{tikzpicture}

@@ -1,0 +1,107 @@
+% =============================================================================
+% SAMBP: System Integration & Communication Architecture
+% File: system_integration_diagram.tex
+% Description: Block diagram of SAMBP system integration with IEC 61850
+% =============================================================================
+
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes,shapes.geometric,arrows,arrows.meta,calc,positioning,fit,decorations.pathmorphing}
+
+\begin{document}
+
+\begin{tikzpicture}[
+    node distance=1.5cm,
+    font=\small,
+    >=latex,
+]
+
+\definecolor{protectionCol}{RGB}{100, 200, 255}
+\definecolor{commCol}{RGB}{255, 200, 100}
+\definecolor{controlCol}{RGB}{150, 255, 150}
+
+\tikzset{
+    protection_box/.style = {rectangle, minimum width=2.5cm, minimum height=0.8cm,
+                             text centered, text width=2.3cm, draw=black, thick, fill=protectionCol!40},
+    comm_box/.style = {rectangle, rounded corners, minimum width=2.5cm, minimum height=0.8cm,
+                       text centered, text width=2.3cm, draw=black, thick, fill=commCol!40},
+    control_box/.style = {rectangle, minimum width=2.5cm, minimum height=0.8cm,
+                          text centered, text width=2.3cm, draw=black, thick, fill=controlCol!40},
+    arrow/.style = {thick, -{Stealth[length=2.5mm, width=2mm]}},
+    label/.style = {font=\scriptsize, inner sep=2pt}
+}
+
+% Title
+\node at (7.5, 11) {\Large \textbf{SAMBP System Integration Architecture with IEC 61850}};
+
+% =========== FIELD SENSORS ===========
+\node at (1, 10) {\textbf{Field Sensors}};
+
+\node[protection_box] (ct_p) at (0.3, 8.5) {Primary\\CT};
+\node[protection_box] (ct_s) at (1.7, 8.5) {Secondary\\CT};
+\node[protection_box] (pt) at (3.1, 8.5) {Voltage\\Sensors};
+
+% =========== LOCAL PROTECTION UNITS ===========
+\node at (7.5, 9.5) {\textbf{Protection Functions (Local)}};
+
+\node[protection_box] (pf_87t) at (5, 8.2) {87T\\Transformer};
+\node[protection_box] (pf_87l) at (7.5, 8.2) {87L\\Line};
+\node[protection_box] (pf_87b) at (10, 8.2) {87B\\Bus};
+
+% Inputs to protection functions
+\draw[arrow] (ct_p) -- (pf_87t);
+\draw[arrow] (ct_s) -- (pf_87l);
+\draw[arrow] (pt) -- (pf_87b);
+
+% =========== COMMON INFERENCE ENGINE ===========
+\node[rectangle, rounded corners, minimum width=10cm, minimum height=1.2cm,
+      text centered, text width=9.8cm, draw=black, thick, fill=yellow!15] (cie) at (7.5, 6.5) {
+    \textbf{Common Inference Engine (CIE)} \\
+    {\small Levenberg-Marquardt Solver + Confidence Gating + Decision Fusion}
+};
+
+% Inputs to CIE
+\draw[arrow] (pf_87t) -- (cie);
+\draw[arrow] (pf_87l) -- (cie);
+\draw[arrow] (pf_87b) -- (cie);
+
+% =========== COMMUNICATION LAYER ===========
+\node at (2.5, 5.5) {\textbf{Communication}};
+
+\node[comm_box] (goose1) at (1, 4.5) {GOOSE\\IED1};
+\node[comm_box] (goose2) at (4, 4.5) {GOOSE\\IED2};
+
+\node[rectangle, minimum width=8cm, minimum height=0.8cm, text centered,
+      text width=7.8cm, draw=black, thick, fill=commCol!20] (lan) at (7.5, 3.5) {
+    Ethernet LAN / IEC 61850 GOOSE Messages (<0.5\,ms latency)
+};
+
+% =========== REMOTE COORDINATION ===========
+\node at (12.5, 5.5) {\textbf{Remote Coordination}};
+
+\node[comm_box] (remote_relay) at (12.5, 4.5) {Remote\\Relay};
+
+% Connections
+\draw[arrow] (cie) -- ++(0,-0.8) -- (goose1);
+\draw[arrow] (cie) -- ++(0,-0.8) -- (goose2);
+\draw[arrow] (goose1) -- (lan);
+\draw[arrow] (goose2) -- (lan);
+\draw[arrow] (lan) -- (remote_relay);
+
+% =========== DECISION & CONTROL ===========
+\node at (7.5, 1.5) {\textbf{Decision & Output}};
+
+\node[control_box] (decision) at (5, 0.5) {Decision\\Logic};
+\node[control_box] (breaker_trip) at (10, 0.5) {Breaker\\Trip Signal};
+
+\draw[arrow] (cie) -- (decision);
+\draw[arrow] (remote_relay) -- decision;
+\draw[arrow] (decision) -- (breaker_trip);
+
+% Fallback indication
+\draw[thick, dashed, red] (goose1) -- (lan) -- (goose2);
+\node[label, right] at (5.5, 3.2) {\small Fallback if communication lost};
+
+\end{tikzpicture}
+
+\end{document}

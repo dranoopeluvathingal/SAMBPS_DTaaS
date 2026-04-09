@@ -1,0 +1,396 @@
+%% slide15_study_note.tex
+%% Detailed Study Note — Slide 15: Ch 11 Wide-Area Protection Coordinator (WAPC)
+%% TSA Meeting Preparation | Anoop V Eluvathingal | IIT Madras | 2026
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,tabularx,array,longtable}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{parskip}
+\newcommand{\kibr}{k_\mathrm{ibr}}
+\newcommand{\WAPC}{\textsc{wapc}}
+
+\definecolor{iitmnavy}{RGB}{15,40,80}
+\definecolor{iitmgold}{RGB}{180,140,0}
+\definecolor{lightblue}{RGB}{220,235,250}
+\definecolor{lightyellow}{RGB}{255,252,220}
+\definecolor{lightred}{RGB}{255,235,235}
+\definecolor{lightgreen}{RGB}{230,255,230}
+\definecolor{lightpurple}{RGB}{240,230,255}
+
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{keybox}[1]{colback=lightblue,colframe=iitmnavy,
+  fonttitle=\bfseries\color{white},title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{formulabox}[1]{colback=lightyellow,colframe=iitmgold,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{resultbox}[1]{colback=lightgreen,colframe=green!50!black,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{warnbox}[1]{colback=lightred,colframe=red!60!black,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{archbox}[1]{colback=lightpurple,colframe=iitmnavy!60,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{speakbox}{colback=orange!8,colframe=orange!70!black,
+  fonttitle=\bfseries,title={What to Say at the TSA Meeting},arc=3pt,
+  boxrule=1pt,breakable}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{iitmnavy}\small\textbf{TSA Meeting Study Note}}
+\fancyhead[R]{\color{iitmnavy}\small Slide 15 --- Wide-Area Protection Coordinator}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\small\color{gray}Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ 2026}
+\renewcommand{\headrulewidth}{1.5pt}
+\renewcommand{\headrule}{\color{iitmnavy}\hrule width\headwidth height\headrulewidth}
+
+\titleformat{\section}{\large\bfseries\color{iitmnavy}}{}{0em}{}[\color{iitmnavy}\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{iitmnavy!80}}{}{0em}{}
+
+\hypersetup{colorlinks=true,linkcolor=iitmnavy,urlcolor=iitmnavy}
+
+\begin{document}
+
+%% ── Title Block ──────────────────────────────────────────────────────────────
+\begin{tcolorbox}[colback=iitmnavy,coltext=white,arc=4pt,boxrule=0pt]
+\begin{center}
+  {\Large\bfseries TSA Meeting --- Slide 15 Study Note}\\[4pt]
+  {\large Ch~11: Wide-Area Protection Coordinator (\WAPC{})}\\[6pt]
+  {\normalsize Contribution C4 $\cdot$ Chapter 7 $\cdot$ SAMBP Framework}\\[2pt]
+  {\small Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ PhD Thesis 2026}
+\end{center}
+\end{tcolorbox}
+
+\vspace{6pt}
+
+%% ── 1. Slide Overview ────────────────────────────────────────────────────────
+\section{Slide Overview and Narrative}
+
+\begin{keybox}{What This Slide Shows}
+Slide~15 presents the \textbf{Wide-Area Protection Coordinator (WAPC)}, the system-level integrator of Contribution~C4. The slide makes two arguments in parallel columns:
+
+\textbf{Left column (Architecture):} How the WAPC works — a centralised server aggregating IED GOOSE reports and PMU synchrophasor data across the network, maintaining a live topology graph $\mathcal{G}(V,E)$ and an IBR coherency matrix $\mathbf{C}(\kibr)$ that replaces classical electromechanical swing-group analysis.
+
+\textbf{Right column (Results):} What the WAPC achieves compared to decentralised relaying. Fault localisation jumps from 71.2\% to 94.5\%. Unnecessary trips drop from 18.4\% to 4.1\% ($-78\%$ relative). Load preserved rises from 63.1\% to 87.6\%. Backup response time halves from 420~ms to 210~ms.
+
+The coordination decision is an Integer Linear Programme (ILP) that finds the minimum-cost breaker opening set $\mathcal{F}^*$ that isolates the fault while retaining load.
+\end{keybox}
+
+\subsection{Slide Key Results}
+
+\begin{center}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Metric} & \textbf{Decentralised} & \textbf{WAPC} & \textbf{Gain} \\
+\midrule
+Fault localisation        & 71.2\%  & 94.5\%  & $+23.3$~pp \\
+Unnecessary trips         & 18.4\%  & 4.1\%   & $-78\%$ relative \\
+Load preserved            & 63.1\%  & 87.6\%  & $+24.5$~pp \\
+Backup response time (ms) & 420     & 210     & $-50\%$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%% ── 2. Engineering Challenge ─────────────────────────────────────────────────
+\section{Engineering Challenge: Why Decentralised Relaying Fails for IBR Networks}
+
+\begin{warnbox}{The Core Problem}
+Each relay in a decentralised scheme makes its trip decision using only local current and voltage measurements. For IBR-dominated networks this creates three systematic failures:
+
+\begin{enumerate}[nosep]
+  \item \textbf{Fault localisation error:} An IBR feeding a fault from both ends of a line causes adjacent relays to see current dips simultaneously. A relay at bus 1 (which connects three lines) cannot distinguish a fault on R01 from a fault on R02 or R05 using local measurements alone. Decentralised accuracy collapses to 71.2\% because of this adjacency confusion.
+
+  \item \textbf{Unnecessary trips (N-1 insecurity):} Without system-wide topology knowledge, a relay cannot verify that tripping its line leaves the network connected. A relay protecting the sole grid infeed line (R01 in the SAMBP test network) would trip for any local fault, causing a system-wide blackout rather than selective isolation. Decentralised schemes cannot perform the N-1 security check.
+
+  \item \textbf{IBR coherency mismatch:} Classical relay coordination assumes synchronous machine swing groups to determine which relays should be graded together. IBRs form software-defined coherency groups based on $\kibr$ rather than mechanical inertia. Decentralised relays have no mechanism to account for this.
+\end{enumerate}
+\end{warnbox}
+
+%% ── 3. WAPC Architecture ─────────────────────────────────────────────────────
+\section{WAPC Architecture (TR-50)}
+
+\begin{archbox}{Four-Step Decision Protocol}
+The WAPC executes four sequential steps on each fault event (latency: 9.0~ms total):
+
+\begin{enumerate}[nosep]
+  \item \textbf{Aggregation (2.0~ms):} Collect IED GOOSE trip reports and PMU synchrophasor frames (250~Hz, 4~ms latency) from all 11 relays and 6 PMU buses.
+
+  \item \textbf{Localisation (0.5~ms):} Voltage-dip triangulation on the topology graph identifies the faulted line and estimates fault position $\hat{\alpha} = \Delta V_a / (\Delta V_a + \Delta V_b)$.
+
+  \item \textbf{N-1 Security Check (0.2~ms):} Breadth-first search (BFS) on the relay-zone graph after removing the candidate relay's line. If the remaining graph is connected: direct WAPC trip. If disconnected: escalate to operator advisory.
+
+  \item \textbf{Trip/Escalate (2.0~ms):} Issue GOOSE trip command (N-1 secure) or raise operator advisory with pre-authorised DTT path (N-1 insecure, e.g.\ R01 grid infeed).
+\end{enumerate}
+
+The PINN ML advisory (TR-49) is incorporated at Step~3 as a soft diagnostic flag (0.3~ms overhead). If the PINN zone classification is inconsistent with the PMU-localised line, a discrepancy flag is logged before the deterministic N-1 decision is issued. The PINN advisory never delays the primary trip.
+\end{archbox}
+
+\subsection{10-Bus Test Network}
+
+The WAPC is validated on a 10-bus SAMBP test network (TR-50 Figure~1):
+\begin{itemize}[nosep]
+  \item \textbf{10 buses}: bus~0 (grid infeed), bus~5 (GFM IBR), buses 1--9 (loads and interconnects)
+  \item \textbf{11 lines / 11 relays}: R01--R11; each line carries one relay
+  \item \textbf{6 PMU placements}: at the generation and key load buses (250~Hz)
+  \item \textbf{15 relay adjacency pairs}, mean degree 2.73, max degree 4 (bus~1: R01, R02, R05)
+  \item \textbf{R01}: sole grid infeed; N-1 insecure — requires operator confirmation or DTT
+\end{itemize}
+
+\subsection{IBR Coherency Matrix $\mathbf{C}(\kibr)$}
+
+In classical protection, swing-group analysis groups relays that share a common coherent machine. For IBR networks, this concept is replaced by the IBR coherency matrix $\mathbf{C}(\kibr)$: each element $C_{ij}$ quantifies the degree of electrical coupling between relay zones $i$ and $j$ as a function of the IBR penetration ratio. The WAPC uses $\mathbf{C}$ to:
+\begin{itemize}[nosep]
+  \item Identify which relays should be graded together for a given $\kibr$ value
+  \item Determine the correct backup relay set when a primary relay fails to operate
+  \item Update coherency groups automatically when the CUSUM alarm triggers fleet-change detection
+\end{itemize}
+
+%% ── 4. Coordination Algorithm ────────────────────────────────────────────────
+\section{Coordination Algorithm: Minimum-Cost ILP}
+
+\begin{formulabox}{Fault Isolation as an Integer Linear Programme}
+\[
+  \mathcal{F}^* \;=\; \arg\min_{\mathcal{F}} \sum_{k \in \mathcal{F}} c_k
+  \quad \text{subject to: fault isolated, load retained}
+\]
+
+\medskip
+\begin{tabular}{@{}ll@{}}
+$\mathcal{F}$   & Set of breaker (relay) trip decisions under consideration \\
+$c_k$           & Cost of tripping relay $k$ (load shed + switching cost) \\
+$\mathcal{F}^*$ & Minimum-cost breaker set that isolates the fault while retaining load \\
+\end{tabular}
+
+\medskip
+\textbf{Constraints:}
+\begin{enumerate}[nosep]
+  \item \textit{Fault isolation:} All current paths to the faulted segment must be interrupted.
+  \item \textit{Load retention:} Every load bus must remain connected to at least one generation source after tripping.
+  \item \textit{N-1 security:} The post-trip network must tolerate one additional outage without collapse.
+\end{enumerate}
+
+\textbf{Solution method:} The ILP is solved on the updated topology $\mathcal{G}(V,E)$ using the BFS N-1 check as the feasibility oracle. For the 10-bus network, the ILP has at most $2^{11} = 2048$ candidate sets; the BFS check evaluates each in $\mathcal{O}(V+E)$ time. Total ILP solve time: $< 0.2$~ms.
+\end{formulabox}
+
+\subsection{Why ILP and Not a Greedy Algorithm?}
+
+A greedy algorithm (trip the relay closest to the fault first) fails in ring/mesh networks because it may trip a relay that leaves a load island. The ILP explicitly enumerates feasible sets and selects the minimum-cost one — identical to the unit commitment problem in power system operations. For the 11-relay network the ILP is solved exactly; larger networks would require branch-and-bound or Lagrangian relaxation.
+
+%% ── 5. Results Explanation ───────────────────────────────────────────────────
+\section{How to Read the Results Table}
+
+\begin{resultbox}{WAPC vs Decentralised: Metric-by-Metric Explanation}
+\textbf{Fault localisation (71.2\% $\to$ 94.5\%):}
+Decentralised localisation uses only local current magnitude; it fails when two adjacent relay zones see similar fault-induced dips (bus~1 adjacency). The WAPC uses voltage-dip triangulation across all 6 PMU buses simultaneously — the correct line maximises the sum of endpoint voltage dips. The 94.5\% figure corresponds to IEC Class~P1 PMU noise ($\sigma_V = 0.01$~pu). The 5.5\% residual misclassification occurs only at highly connected buses (R01/R02/R05 all share bus~1).
+
+\medskip
+\textbf{Unnecessary trips (18.4\% $\to$ 4.1\%, $-78\%$ relative):}
+Decentralised relays cannot perform the N-1 security check, so they trip on any local overcurrent even if tripping would create an island. The WAPC's BFS N-1 check correctly identifies 10/11 relays as N-1 secure (direct trip) and holds R01 for operator confirmation. The $-78\%$ reduction reflects the elimination of insecure trip decisions.
+
+\medskip
+\textbf{Load preserved (63.1\% $\to$ 87.6\%):}
+The ILP minimum-cost objective explicitly favours solutions that retain load. Decentralised relays trip based on local protection logic alone — they have no objective function for load preservation. The 24.5~pp improvement corresponds to the ILP selecting the smaller breaker opening set that isolates the fault without de-energising adjacent feeders.
+
+\medskip
+\textbf{Backup response time (420~ms $\to$ 210~ms):}
+Decentralised backup operation requires the backup relay to time out while waiting to see if the primary has tripped (CTI = 200~ms minimum). The WAPC issues a coordinated GOOSE trip command directly to the backup relay within 9~ms of primary failure detection — eliminating the entire CTI waiting period. The 210~ms residual is dominated by the time from fault inception to WAPC decision, not by grading time.
+\end{resultbox}
+
+%% ── 6. Latency Budget ────────────────────────────────────────────────────────
+\section{Latency Budget: WAPC vs Distributed}
+
+\begin{center}
+\begin{tabular}{@{}lrrl@{}}
+\toprule
+\textbf{Step} & \textbf{Distributed (ms)} & \textbf{WAPC (ms)} & \textbf{Note} \\
+\midrule
+IED local decision             & 2.0 & ---         & Not in WAPC path \\
+GOOSE (IED $\to$ WAPC / trip)  & 2.0 & 2.0 + 2.0   & Two hops for WAPC \\
+PMU data collection (250~Hz)   & --- & 4.0         & Dominant WAPC overhead \\
+Fault localisation             & --- & 0.5         & Voltage-dip triangulation \\
+N-1 BFS check                  & --- & 0.2         & Graph connectivity \\
+PINN ML advisory               & --- & 0.3         & Soft flag only \\
+\midrule
+\textbf{Total}                 & \textbf{4.0} & \textbf{9.0} & \\
+\% of 50~ms trip budget        & 8\%         & 18\%         & Both compliant \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The 5.0~ms WAPC overhead is entirely from the PMU 250~Hz report latency (4.0~ms). The compute steps (localisation + N-1 + ML) add only 1.0~ms in aggregate. At 1~kHz PMU rate the WAPC total would reduce to 6.0~ms (12\% of budget).
+
+\textbf{Key safety property:} The WAPC is \textit{non-blocking}. The distributed relay issues its trip at 4.0~ms regardless of WAPC action. The WAPC advisory arrives at 9.0~ms — 5~ms after the primary trip has already been sent. WAPC is an advisory/confirmation layer, not a gating layer.
+
+%% ── 7. Automatic Settings Engine (TR-51) ─────────────────────────────────────
+\section{Automatic Protection Settings Engine (TR-51)}
+
+The WAPC coordinates with the automatic settings engine that recomputes TMS values when CUSUM detects a fleet change. This completes the closed-loop adaptation cycle:
+
+\begin{center}
+\begin{tabular}{@{}clll@{}}
+\toprule
+\textbf{Step} & \textbf{Action} & \textbf{Trigger} & \textbf{Latency} \\
+\midrule
+1 & CUSUM alarm fires & $\kibr$ drift $> 0.05$~pu & $\approx 21$~min field time \\
+2 & WAPC confirms via $\Delta I_\mathrm{fault}$ at PMU buses & CUSUM alert & $< 1$~s \\
+3 & Settings engine recomputes TMS for 6/11 relays & WAPC confirm & $< 1$~ms \\
+4 & WAPC issues IEC~61850 MMS setting-group activation & New TMS ready & $< 10$~ms \\
+5 & New settings active before next fault event & GOOSE applied & Immediate \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{CTI compliance:} The settings engine achieves 0 CTI violations on all 10 coordination pairs ($\mathrm{CTI} \geq 200$~ms guaranteed). TMS ladder: 0.050 (extremity relays R09/R10) to 0.281 (grid infeed R01). Robustness: 100\% CTI pass rate at $\pm 10\%$ line impedance uncertainty ($N = 500$ trials, minimum CTI = 0.211~s, 5.5\% above threshold).
+
+%% ── 8. Best Supporting Figure ────────────────────────────────────────────────
+\section{Best Supporting Figure for This Slide}
+
+\begin{resultbox}{RECOMMENDED: TR-50/2026 Figure 1 -- 10-Bus WAPC Communication Architecture}
+
+\textbf{What it shows:} The 10-bus SAMBP test network with all relays (R01--R11), generation buses (bus~0 grid infeed, bus~5 GFM IBR), load buses, and PMU placements (orange P boxes). Blue dashed arrows show IED/PMU data flowing to the centralised WAPC server. A red annotation flags R01 as ``N-1 insecure (islanding risk)''. The figure simultaneously conveys the physical network, the communication topology, and the N-1 security classification.
+
+\textbf{Why it is the best figure:} The slide's three architecture bullets (central WAPC server, topology graph, IBR coherency matrix) are all visible in this single figure:
+\begin{enumerate}[nosep]
+  \item The centralised WAPC server box receiving all IED/PMU feeds
+  \item The 10-bus topology graph $\mathcal{G}(V, E)$ with its relay-zone adjacency structure
+  \item The IBR source bus (bus~5, GFM IBR) whose $\kibr$ drives the coherency matrix update
+\end{enumerate}
+A committee member can immediately see the motivation for centralised coordination: bus~1 is shared by three relays (R01, R02, R05) — the adjacency confusion that reduces decentralised localisation to 71.2\%.
+
+\textbf{Source:} TR-50/2026, page~1, Figure~1. In \texttt{PDF\_COLLECTION/01\_SAMBP\_Reports/TR-50\_sambp\_report.pdf}.
+\end{resultbox}
+
+\textbf{Secondary figures (use if time permits):}
+\begin{itemize}[nosep]
+  \item \textbf{TR-50 Figure 3} (latency breakdown stacked bar): Use to explain the 9.0~ms WAPC path vs 4.0~ms distributed — visually shows PMU dominates overhead.
+  \item \textbf{TR-51 Figure 1} (IEC inverse-time curves R09$\to$R01): Use to show the CTI-graded settings ladder for the automatic coordination engine.
+  \item \textbf{TR-53 Figure 3} (regression test pass rates): Use to answer ``how was this validated?'' — all 10 categories exceed 90\% threshold.
+\end{itemize}
+
+%% ── 9. Cross-Thesis Connections ──────────────────────────────────────────────
+\section{Cross-Thesis Connections}
+
+\begin{center}
+\begin{tabular}{@{}p{4cm}p{10.5cm}@{}}
+\toprule
+\textbf{Connection} & \textbf{Explanation} \\
+\midrule
+\textbf{EKF Digital Twin} \newline (Slide 13, C3) &
+The WAPC reads $\hat{\kibr}$ from the EKF DT library to build $\mathbf{C}(\kibr)$. Without the EKF estimate, the coherency matrix defaults to $\kibr = 0$ (pure synchronous machine assumption), which would reproduce the 71.2\% decentralised accuracy. \\
+\addlinespace
+\textbf{PINN Classifier} \newline (Slide 14, C3) &
+The PINN ML advisory (TR-49) is incorporated at WAPC Step~3 as a soft check. Disagreement between PINN zone and PMU-localised zone is flagged as a diagnostic. The PINN does not gate the trip decision; it adds 0.3~ms and zero false-trip risk. \\
+\addlinespace
+\textbf{CUSUM Online Learning} \newline (Chapter 6, C3) &
+CUSUM triggers the automatic settings engine (TR-51). The WAPC is the communication backbone that delivers the new TMS values to IEDs via IEC~61850 MMS GOOSE within 10~ms of settings computation. \\
+\addlinespace
+\textbf{Microgrid Islanding} \newline (Slide 12, C2) &
+The WAPC N-1 security check is the system-level equivalent of the local ROCOF-supervised islanding detector. R01 escalation is the WAPC's equivalent of ``intentional islanding'' — but for the full network rather than a single microgrid. \\
+\addlinespace
+\textbf{Cybersecurity (TR-52)} &
+All GOOSE messages in the WAPC layer (trip commands, settings activations, ML advisories) are protected by HMAC-SHA256. The 0.36~ms overhead per message is already included in the 9.0~ms WAPC latency budget. Risk score reduces 51$\to$23 (54.9\%). \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%% ── 10. Equations to Know ────────────────────────────────────────────────────
+\section{Equations to Know for the TSA Meeting}
+
+\begin{formulabox}{Minimum-Cost Fault Isolation (ILP)}
+\[
+  \mathcal{F}^* = \arg\min_{\mathcal{F}} \sum_{k \in \mathcal{F}} c_k
+  \quad \text{s.t.}\;
+  \begin{cases}
+    \text{fault isolated (all paths cut)} \\
+    \text{load retained (network connected)} \\
+    \text{N-1 security (BFS feasibility)}
+  \end{cases}
+\]
+Say: ``This is the same structure as an economic dispatch problem, but for breaker decisions rather than generator dispatch. The ILP finds the smallest breaker opening set that isolates the fault without creating load islands.''
+\end{formulabox}
+
+\begin{formulabox}{Voltage-Dip Fault Location Estimator}
+\[
+  \hat{\alpha} = \frac{\Delta V_a}{\Delta V_a + \Delta V_b},
+  \quad \Delta V_j = \max\!\bigl(0,\, 1 - V_j^\mathrm{PMU}\bigr)
+\]
+Say: ``The fault is estimated to be a fraction $\hat{\alpha}$ of the way from bus $a$ to bus $b$. The bus with the larger voltage dip is closer to the fault. This gives the correct line 94.5\% of the time; the exact position has $\pm 24\%$ error but protection only needs the line, not the metre.''
+\end{formulabox}
+
+\begin{formulabox}{CTI Grading Constraint (TR-51)}
+\[
+  t_\mathrm{backup} - t_\mathrm{primary} \;\geq\; \mathrm{CTI} = 200\;\text{ms}
+  \quad \Longrightarrow \quad
+  \mathrm{TMS}_\mathrm{backup} > \mathrm{TMS}_\mathrm{primary}
+\]
+Say: ``Every backup relay must operate 200~ms after its primary. The settings engine grades TMS from 0.050 at the network extremities to 0.281 at the grid infeed — a 5.6$\times$ ladder with zero violations.''
+\end{formulabox}
+
+\begin{formulabox}{WAPC Latency vs Trip Budget}
+\[
+  t_\mathrm{WAPC} = 9.0\;\text{ms} = 18\%\;\text{ of 50~ms budget}
+\]
+Say: ``The entire WAPC overhead is 9~ms — less than a fifth of the relay trip budget. And 4~ms of that is just waiting for the PMU 250~Hz frame. The algorithm itself takes under 1~ms.''
+\end{formulabox}
+
+%% ── 11. Speaker Script ───────────────────────────────────────────────────────
+\section{Speaker Script}
+
+\begin{speakbox}
+\textbf{Opening (15 seconds):}
+``Chapter~11 asks: can we solve the coordination problem at the system level, not the relay level? The Wide-Area Protection Coordinator is a centralised server that receives trip candidates from all relays, runs a real-time N-1 security check, and solves a minimum-cost fault isolation ILP on the live topology graph.''
+
+\medskip
+\textbf{Architecture (20 seconds):}
+``The key innovation over classical wide-area protection is the IBR coherency matrix $\mathbf{C}(\kibr)$. Classical wide-area schemes group relays by machine swing groups — electromechanical properties. In an IBR network, coherency is determined by software-defined current contributions, which change as the fleet composition changes. The WAPC reads the EKF digital twin's $\hat{\kibr}$ estimate and updates the coherency grouping in real time.''
+
+\medskip
+\textbf{Results (25 seconds):}
+``The results show what central coordination buys you. Fault localisation rises from 71\% to 94.5\% — because six PMU buses can triangulate voltage dips that a single relay cannot resolve. Unnecessary trips drop by 78\% — because the N-1 check catches every case where tripping would island a load. Backup response halves from 420 to 210~ms — because the WAPC issues a direct trip command rather than waiting for the CTI timer. And load preservation rises from 63\% to 88\% — because the ILP explicitly optimises for it.''
+
+\medskip
+\textbf{Latency (15 seconds):}
+``The WAPC adds 5~ms over distributed relaying — 9~ms total versus 4~ms. The entire overhead is the PMU 250~Hz report latency. The computation takes under 1~ms. At 18\% of the 50~ms trip budget, this is entirely acceptable. And the distributed relay still trips at 4~ms regardless — the WAPC is an advisory layer, not a gate.''
+
+\medskip
+\textbf{Closing (10 seconds):}
+``This completes Contribution~C4: the WAPC integrates fault localisation, N-1 security, PINN advisory, automatic settings dispatch, and GOOSE-secured communications into a single closed-loop system — the final layer of the SAMBP framework.''
+\end{speakbox}
+
+%% ── 12. Anticipated Q\&A ─────────────────────────────────────────────────────
+\section{Anticipated Committee Questions and Answers}
+
+\begin{keybox}{Q1: 94.5\% fault localisation sounds good -- what happens in the 5.5\% failure cases?}
+\textbf{Answer:} All 5.5\% of misclassifications occur at bus~1, which is shared by three relay zones (R01, R02, R05). In these cases the WAPC localises to the wrong line but within the correct bus neighbourhood — so the trip decision targets an adjacent relay, not a remote one. The practical consequence is a slightly wider isolation zone (one extra line tripped), not a system-wide failure. The N-1 check still runs on the misidentified line, so the network remains connected even in these cases. TR-50 Study~B shows the degradation is graceful: accuracy drops to 77.5\% at $4\times$ PMU noise, still well above the 70\% decentralised baseline.
+\end{keybox}
+
+\begin{keybox}{Q2: The N-1 security check flags R01 for operator confirmation. How long does that take in practice?}
+\textbf{Answer:} In the current WAPC implementation, the R01 escalation triggers an operator advisory on the HMI. Manual confirmation adds 30--120~s in a typical control room setting. However, the thesis identifies a pre-authorised direct transfer trip (DTT) path to the grid-side breaker as the engineering solution for the thesis deployment — this would reduce R01 isolation to the same 9~ms WAPC latency. The manual confirmation path is retained in the TR-50 validation because DTT requires a bilateral utility agreement that is outside the scope of the PhD work.
+\end{keybox}
+
+\begin{keybox}{Q3: How does the ILP scale to larger networks with hundreds of relays?}
+\textbf{Answer:} The 10-bus / 11-relay network in TR-50 is a proof-of-concept. For larger networks, the ILP becomes NP-hard in the worst case, but three practical mitigations exist: (1) the fault localisation step reduces the active candidate set to a small neighbourhood (typically 3--5 relays around the faulted bus), making the ILP tractable; (2) the N-1 BFS check prunes most infeasible candidates before the ILP solver; (3) branch-and-bound methods solve the ILP in polynomial average time for sparse transmission networks. The WAPC architecture is scalable; the 10-bus validation establishes the methodology and benchmarks the latency budget.
+\end{keybox}
+
+\begin{keybox}{Q4: How is the IBR coherency matrix $\mathbf{C}(\kibr)$ computed? Is it validated?}
+\textbf{Answer:} $\mathbf{C}(\kibr)$ is derived analytically from the network admittance matrix and the IBR current injection model (TR-35). Each element $C_{ij}$ quantifies the ratio of fault-induced current contribution from zone $j$ to zone $i$ as a function of $\kibr$. Validation is indirect: the 94.5\% localisation accuracy and 4.1\% unnecessary trip rate both depend on correct coherency grouping. The TR-53 HIL regression suite (95/100 scenarios pass) provides the system-level validation; the two fleet-change failures in TR-53 are attributable to CUSUM latency, not to coherency matrix errors.
+\end{keybox}
+
+\begin{keybox}{Q5: The WAPC adds 5ms latency. Could a faster implementation (e.g.\ 1kHz PMU) make this competitive with local relaying?}
+\textbf{Answer:} Yes. TR-50 Study~D shows that upgrading from 250~Hz to 1~kHz PMU reduces the WAPC total to 6~ms (12\% of budget) with no algorithm changes. The bottleneck is entirely the PMU report period. However, the thesis does not advocate replacing local relaying with WAPC — the two are complementary. TR-50 Study~E shows zero scenarios wrong by both systems, confirming that WAPC and distributed relaying should always operate in parallel. The WAPC is a supplementary decision layer, not a replacement.
+\end{keybox}
+
+\vfill
+\begin{tcolorbox}[colback=iitmnavy!8,colframe=iitmnavy,arc=3pt,boxrule=0.8pt]
+\small
+\textbf{Source documents:} TR-50/2026 (WAPC architecture, fault localisation, N-1 check, latency), TR-51/2026 (automatic settings engine, CTI grading), TR-52/2026 (cybersecurity, HMAC-SHA256), TR-53/2026 (HIL validation, regression suite). \\
+\textbf{Thesis location:} Chapter~7, Contribution~C4, Wide-Area Protection Coordinator. \\
+\textbf{Best figure:} TR-50/2026, Figure~1 (10-bus WAPC communication architecture showing relays, PMUs, WAPC server, and N-1 insecure annotation).
+\end{tcolorbox}
+
+\end{document}

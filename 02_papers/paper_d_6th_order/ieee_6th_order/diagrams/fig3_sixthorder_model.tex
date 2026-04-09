@@ -1,0 +1,100 @@
+% ============================================================
+%  Figure 3 — Sixth-order Park dq truth model block diagram
+% ============================================================
+\begin{tikzpicture}[
+  every node/.style={font=\tiny},
+  emf/.style  ={draw, thick, fill=blue!10, rounded corners=2pt,
+                minimum width=2.8cm, minimum height=0.52cm,
+                align=center},
+  swing/.style={draw, thick, fill=yellow!18, rounded corners=2pt,
+                minimum width=2.8cm, minimum height=0.52cm,
+                align=center},
+  ctrl/.style ={draw, thick, fill=purple!10, rounded corners=2pt,
+                minimum width=2.8cm, minimum height=0.52cm,
+                align=center},
+  iface/.style={draw, thick, fill=gray!12, rounded corners=2pt,
+                minimum width=3.0cm, minimum height=0.52cm,
+                align=center},
+  park/.style ={draw, thick, fill=green!12, rounded corners=2pt,
+                minimum width=3.0cm, minimum height=0.52cm,
+                align=center},
+  arr/.style  ={->, thick, >=Latex},
+  node distance=0.38cm
+]
+
+%% --- Column headers ------------------------------------------
+\node[font=\scriptsize\bfseries, blue!70] (hdr_emf) at (0, 0)
+     {Electromagnetic EMFs};
+\node[font=\scriptsize\bfseries, yellow!50!black, right=1.4cm of hdr_emf] (hdr_sw)
+     {Rotor Dynamics};
+\node[font=\scriptsize\bfseries, purple!70, right=1.4cm of hdr_sw] (hdr_ctrl)
+     {Controllers};
+
+%% --- EMF column (left) ---------------------------------------
+\node[emf, below=0.3 of hdr_emf] (Eqp)
+     {$\dot{E}'_q = \tfrac{1}{T'_{d0}}(E_{fd}-E'_q+(X_d-X'_d)i_d)$};
+\node[emf, below=of Eqp] (Edp)
+     {$\dot{E}'_d = \tfrac{1}{T'_{q0}}(-E'_d-(X_q-X'_q)i_q)$};
+\node[emf, below=of Edp] (Eqpp)
+     {$\dot{E}''_q = \tfrac{1}{T''_{d0}}(E'_q-E''_q-(X'_d-X''_d)i_d)$};
+\node[emf, below=of Eqpp] (Edpp)
+     {$\dot{E}''_d = \tfrac{1}{T''_{q0}}(E'_d-E''_d+(X'_q-X''_q)i_q)$};
+
+%% --- Rotor column (middle) -----------------------------------
+\node[swing, below=0.3 of hdr_sw] (delta)
+     {$\dot\delta = \omega - \omega_s$};
+\node[swing, below=of delta] (omega)
+     {$\dot\omega = \frac{\omega_s}{2H}[T_m - T_e - D(\omega{-}\omega_s)/\omega_s]$};
+\node[iface, below=of omega] (Te)
+     {$T_e = E''_d i_d + E''_q i_q$};
+
+%% --- Controller column (right) -------------------------------
+\node[ctrl, below=0.3 of hdr_ctrl] (avr)
+     {$\dot{E}_{fd} = \tfrac{1}{\tau_a}[K_a(V_{ref}{-}V_t{-}V_{pss}){-}E_{fd}]$};
+\node[ctrl, below=of avr] (pss)
+     {$\dot{V}_{pss} = \tfrac{1}{\tau_2}[K_{pss}\tfrac{\tau_1}{\tau_w}\Delta\omega - V_{pss}]$};
+\node[ctrl, below=of pss] (gov)
+     {$\dot{T}_m = \tfrac{1}{\tau_{ch}}[P_{ref} + (\omega_s{-}\omega)/(R_d\omega_s) - T_m]$};
+
+%% --- Bottom row: stator interface and Park transform ---------
+\node[iface, below=0.8 of Edpp]  (stator)
+     {Stator: $\mathbf{v}_{dq} = R_s\mathbf{i}_{dq} + \mathbf{e}_{dq}$\\ solve $i_d, i_q$};
+\node[park,  right=0.5cm of stator] (parkinv)
+     {Inv. Park: $\mathbf{i}_{abc} = T^{-1}_{\mathrm{Park}}(\delta)\,\mathbf{i}_{dq0}$};
+\node[draw, thick, fill=orange!12, rounded corners=2pt,
+      minimum width=1.8cm, minimum height=0.52cm, align=center,
+      right=0.5cm of parkinv] (output)
+     {$i_a(t)$\\relay input};
+
+%% --- Key arrows ----------------------------------------------
+% E'' → stator
+\draw[arr, blue!50] (Eqpp.south) |- (stator.north west);
+\draw[arr, blue!50] (Edpp.south) |- ([yshift=3pt]stator.north west);
+% stator → Park
+\draw[arr] (stator.east) -- (parkinv.west);
+\draw[arr] (parkinv.east) -- (output.west);
+% δ → Park
+\draw[arr, yellow!50!black] (delta.east) -| ([xshift=0.3cm]parkinv.south)
+     node[near start, above, font=\tiny] {$\delta(t)$};
+% T_e → ω
+\draw[arr, gray!60] (Te.north) -- (omega.south);
+% E_fd → E'_q
+\draw[arr, purple!50] (avr.west) -- ++(-0.3,0) |-
+     node[near start, above, font=\tiny, purple!70] {$E_{fd}$}
+     (Eqp.east);
+% T_m → ω
+\draw[arr, purple!50] (gov.west) -- ++(-0.3,0) |-
+     node[near start, below, font=\tiny, purple!70] {$T_m$}
+     (omega.east);
+% ω → PSS
+\draw[arr, yellow!50!black] (omega.east) -- ++( 0.3,0) |-
+     node[near start, font=\tiny, yellow!50!black] {$\Delta\omega$}
+     (pss.west);
+% PSS → AVR
+\draw[arr, purple!50] (pss.north) -- (avr.south);
+% stator i_d,i_q back to Te
+\draw[arr, gray!40, dashed] (stator.west) -- ++(-0.3,0) |-
+     node[near start, left, font=\tiny, gray!50] {$i_d,i_q$}
+     (Te.west);
+
+\end{tikzpicture}

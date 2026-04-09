@@ -1,0 +1,106 @@
+% fig_quad_comparison.tex
+% TR-34: Comparison table — Mho vs Quad for key fault scenarios
+%
+% Visual table using TikZ nodes in a grid layout
+% Rows: fault scenario
+% Columns: Mho Z1 | Quad Z1 | Mho Z2 | Quad Z2 | 87L
+%
+% Colour coding:
+%   Green fill + TRIP   : relay operates
+%   Red fill   + FAIL   : relay does not operate
+%   Gray fill  + ---    : N/A
+
+\begin{tikzpicture}[
+  every node/.style = {font=\scriptsize},
+  hdr/.style  = {draw=gray!60, fill=sambpblue!85, text=white,
+                 inner sep=4pt, minimum width=2.0cm, minimum height=0.7cm,
+                 align=center, font=\scriptsize\bfseries},
+  rowhdr/.style = {draw=gray!50, fill=gray!15, inner sep=4pt,
+                   minimum width=4.0cm, minimum height=0.7cm,
+                   align=left, font=\scriptsize},
+  yes/.style  = {draw=green!60!black, fill=green!15, inner sep=3pt,
+                 minimum width=2.0cm, minimum height=0.7cm,
+                 align=center, font=\scriptsize\bfseries, text=green!40!black},
+  no/.style   = {draw=red!60!black, fill=red!12, inner sep=3pt,
+                 minimum width=2.0cm, minimum height=0.7cm,
+                 align=center, font=\scriptsize, text=red!50!black},
+  na/.style   = {draw=gray!40, fill=gray!8, inner sep=3pt,
+                 minimum width=2.0cm, minimum height=0.7cm,
+                 align=center, font=\scriptsize, text=gray!60},
+]
+
+%% ── Column header positions ───────────────────────────────────────────────────
+% row header at x=0, then columns at x = 2.2, 4.4, 6.6, 8.8, 11.0
+\def\cA{0}    % row label
+\def\cB{4.2}  % Mho Z1
+\def\cC{6.3}  % Quad Z1
+\def\cD{8.4}  % Mho Z2
+\def\cE{10.5} % Quad Z2
+\def\cF{12.6} % 87L
+
+%% ── Header row ───────────────────────────────────────────────────────────────
+\node[rowhdr, fill=sambpblue!85, text=white, minimum width=4.0cm]
+  at (\cA+2.0, 4.2) {Fault scenario};
+\node[hdr] at (\cB, 4.2) {Mho\\Zone~1};
+\node[hdr] at (\cC, 4.2) {Quad\\Zone~1};
+\node[hdr] at (\cD, 4.2) {Mho\\Zone~2};
+\node[hdr] at (\cE, 4.2) {Quad\\Zone~2};
+\node[hdr] at (\cF, 4.2) {87L};
+
+%% ── Row 1: Metallic 3PH, k_ibr=0.15, alpha=0.50 ─────────────────────────────
+\node[rowhdr] at (\cA+2.0, 3.4) {3PH metallic, $k=0.15$, $\alpha=0.50$};
+\node[yes] at (\cB, 3.4) {TRIP};
+\node[yes] at (\cC, 3.4) {TRIP};
+\node[yes] at (\cD, 3.4) {TRIP};
+\node[yes] at (\cE, 3.4) {TRIP};
+\node[yes] at (\cF, 3.4) {TRIP};
+
+%% ── Row 2: Metallic 3PH, k_ibr=0.15, alpha=0.85 (Region B) ──────────────────
+\node[rowhdr] at (\cA+2.0, 2.6) {3PH metallic, $k=0.15$, $\alpha=0.85$};
+\node[no]  at (\cB, 2.6) {FAIL\\(mem)};
+\node[no]  at (\cC, 2.6) {FAIL\\(mem)};
+\node[no]  at (\cD, 2.6) {FAIL\\(mem)};
+\node[no]  at (\cE, 2.6) {FAIL\\(mem)};
+\node[yes] at (\cF, 2.6) {TRIP};
+
+%% ── Row 3: 3PH metallic + POTT, k_ibr=0.15, alpha=0.85 ──────────────────────
+\node[rowhdr] at (\cA+2.0, 1.8) {3PH metallic + POTT, $k=0.15$, $\alpha=0.85$};
+\node[na]  at (\cB, 1.8) {---};
+\node[na]  at (\cC, 1.8) {---};
+\node[yes] at (\cD, 1.8) {TRIP\\32\,ms};
+\node[yes] at (\cE, 1.8) {TRIP\\32\,ms};
+\node[yes] at (\cF, 1.8) {TRIP};
+
+%% ── Row 4: Arc fault R=0.008, k=0.50, alpha=0.50 ─────────────────────────────
+\node[rowhdr] at (\cA+2.0, 1.0) {Arc $R_\mathrm{arc}$=0.008, $k=0.50$, $\alpha=0.50$};
+\node[no]  at (\cB, 1.0) {MISS\\($R_m$=0.024)};
+\node[yes] at (\cC, 1.0) {TRIP};
+\node[yes] at (\cD, 1.0) {TRIP};
+\node[yes] at (\cE, 1.0) {TRIP};
+\node[yes] at (\cF, 1.0) {TRIP};
+
+%% ── Row 5: Arc fault R=0.008, k=0.15, alpha=0.50 ─────────────────────────────
+\node[rowhdr] at (\cA+2.0, 0.2) {Arc $R_\mathrm{arc}$=0.008, $k=0.15$, $\alpha=0.50$};
+\node[no]  at (\cB, 0.2) {MISS};
+\node[no]  at (\cC, 0.2) {MISS\\($R_m$=0.061)};
+\node[no]  at (\cD, 0.2) {MISS};
+\node[no]  at (\cE, 0.2) {MISS};
+\node[yes] at (\cF, 0.2) {TRIP};
+
+%% ── Row 6: SLG metallic, k=0.15, alpha=0.50 ─────────────────────────────────
+\node[rowhdr] at (\cA+2.0, -0.6) {SLG metallic, $k=0.15$, $\alpha=0.50$};
+\node[yes] at (\cB, -0.6) {TRIP\\(67N)};
+\node[yes] at (\cC, -0.6) {TRIP\\(67N)};
+\node[yes] at (\cD, -0.6) {TRIP};
+\node[yes] at (\cE, -0.6) {TRIP};
+\node[yes] at (\cF, -0.6) {TRIP};
+
+%% ── Caption ──────────────────────────────────────────────────────────────────
+\node[draw=gray!40, fill=gray!5, rounded corners=2pt,
+      font=\tiny, inner sep=3pt, align=left]
+  at (6.3, -1.4)
+  {FAIL (mem): Zone~2 timer $>$ $T_\mathrm{mem}$ — fixed by POTT (TR-33).
+   MISS: $R_m >$ reach — Quad with wider $R_\mathrm{fwd}$ needed or 87L.
+   Row~2 has no distance fix without POTT; Row~5 requires 87L for all $k_\mathrm{ibr}<0.50$.};
+
+\end{tikzpicture}

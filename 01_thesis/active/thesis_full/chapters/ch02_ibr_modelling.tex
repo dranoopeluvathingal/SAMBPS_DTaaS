@@ -1,0 +1,453 @@
+%% ch02_ibr_modelling.tex
+%% Chapter 2: IBR Modelling and System Analysis
+%% ============================================================
+\chapter{Inverter-Based Resource Modelling for Protection Analysis}
+\label{ch:modelling}
+
+\section{Introduction}
+\label{sec:ch2_intro}
+
+An accurate mathematical model of the IBR is the prerequisite for designing
+protection algorithms that respect the physical constraints imposed by power
+electronic interfaces. This chapter develops the models used throughout the
+thesis, organised from the inner current loop (microseconds) to the outer
+grid interaction (milliseconds to cycles). Three levels of abstraction are
+introduced:
+\begin{itemize}
+\item the \emph{switching-average} model used in time-domain simulation,
+\item the \emph{sequence-network} phasor model used in relay algorithm derivation, and
+\item the \emph{reduced closed-loop} model used in digital-twin state estimation.
+\end{itemize}
+
+\section{Synchronous Generator Reference Model}
+\label{sec:ch2_sg_model}
+
+For comparison, the synchronous generator (SG) sub-transient fault model
+provides the performance baseline. The Thevenin equivalent at the generator
+terminals for a three-phase fault at time $t=0^+$ is:
+
+\begin{equation}
+  I_\mathrm{sc}^\mathrm{SG}(t) = \frac{E_0}{Z''_d}\,e^{-t/T''_d}
+  + \left(\frac{1}{Z'_d} - \frac{1}{Z''_d}\right)E_0\,e^{-t/T'_d}
+  + \left(\frac{1}{Z_d} - \frac{1}{Z'_d}\right)E_0
+  \label{eq:ch2_sg_fault}
+\end{equation}
+where $Z''_d$, $Z'_d$, $Z_d$ are sub-transient, transient, and synchronous
+direct-axis reactances; $T''_d$ and $T'_d$ are the corresponding time
+constants; and $E_0$ is the pre-fault internal EMF. For a typical large SG,
+the initial peak fault current is 6--10~pu and decays over hundreds of
+milliseconds. This large, passive, decaying fault current is the canonical
+input for which legacy relay algorithms were calibrated.
+
+\subsection{Sequence Network of the Synchronous Generator}
+
+Under unbalanced faults, the SG is characterised by three Thevenin
+sequence impedances $Z_1^\mathrm{SG}$, $Z_2^\mathrm{SG}$, $Z_0^\mathrm{SG}$
+with $Z_1 \neq Z_2 \neq Z_0$ in general. The positive-sequence voltage
+source $E_1 = E_0$ drives the sequence network; the negative- and
+zero-sequence networks are passive. The grounding impedance $Z_n$ appears
+in the zero-sequence network as $3Z_n$.
+
+\section{Grid-Following Inverter Model}
+\label{sec:ch2_gfl}
+
+A Grid-Following (GFL) inverter is a current-controlled voltage-source
+converter that synchronises to the grid voltage through a Phase-Locked Loop
+(PLL) and injects a regulated current in the stationary $abc$ frame or the
+rotating $dq$ frame. Figure~\ref{fig:ch2_gfl_structure} shows the block
+diagram.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/ch2_gfl_structure.tex}
+  \caption{Grid-following inverter control structure. The outer power
+           loop sets $i_d^\ast$ (active) and $i_q^\ast$ (reactive). The
+           inner current loop (PI+decoupling) generates the modulation
+           reference $v^\ast_{dq}$. The PLL locks to the PCC voltage.}
+  \label{fig:ch2_gfl_structure}
+\end{figure}
+
+\subsection{Inner Current Loop Dynamics}
+
+In the rotating $dq$ reference frame (angle $\theta_\mathrm{PLL}$ from the PLL),
+the converter filter inductor equations are:
+\begin{align}
+  L_f \frac{d\id}{dt} &= -R_f \id + \omega_0 L_f \iq + v_d - e_d
+  \label{eq:ch2_gfl_id} \\
+  L_f \frac{d\iq}{dt} &= -R_f \iq - \omega_0 L_f \id + v_q - e_q
+  \label{eq:ch2_gfl_iq}
+\end{align}
+where $L_f$, $R_f$ are the filter inductance and resistance; $v_{dq}$ is the
+converter output voltage in $dq$ coordinates; $e_{dq}$ is the PCC voltage;
+and $\omega_0 = 2\pi f_0$ is the nominal angular frequency.
+
+The PI current controller with feedforward decoupling is:
+\begin{align}
+  v_d^\ast &= K_p(i_d^\ast - \id) + K_i \int(i_d^\ast - \id)\,dt
+             + e_d - \omega_0 L_f \iq
+  \label{eq:ch2_vd_ref} \\
+  v_q^\ast &= K_p(i_q^\ast - \iq) + K_i \int(i_q^\ast - \iq)\,dt
+             + e_q + \omega_0 L_f \id
+  \label{eq:ch2_vq_ref}
+\end{align}
+The closed-loop transfer function for the current loop is:
+\begin{equation}
+  G_\mathrm{cl}(s) = \frac{K_p s + K_i}{L_f s^2 + (R_f + K_p)s + K_i}
+  \label{eq:ch2_gfl_tf}
+\end{equation}
+Setting the closed-loop bandwidth $\omega_\mathrm{bw}$ and damping ratio
+$\zeta$ gives the controller gains:
+\begin{equation}
+  K_p = 2\zeta\omega_\mathrm{bw} L_f - R_f, \qquad
+  K_i = \omega_\mathrm{bw}^2 L_f
+  \label{eq:ch2_gains}
+\end{equation}
+Typical values: $\omega_\mathrm{bw} = 2\pi \times 500$~rad/s (bandwidth
+$\approx$ 500~Hz), $\zeta = 0.7$, giving a current step response settling
+time of $\approx 2$~ms.
+
+\subsection{Current Limiter}
+
+The protection of the IGBT switches requires limiting $|i_{dq}|$ to the
+rated current $I_\mathrm{rated}$. The priority-based limiter is:
+\begin{align}
+  i_d^\ast &\leftarrow \mathrm{clip}\!\left(i_d^\ast,\,
+             -\sqrt{I_\mathrm{lim}^2 - (i_q^\ast)^2},\,
+             +\sqrt{I_\mathrm{lim}^2 - (i_q^\ast)^2}\right)
+  \label{eq:ch2_ilim}
+\end{align}
+where $I_\mathrm{lim} \in [1.1, 1.5]\,I_\mathrm{rated}$ is the hardware
+thermal limit. Reactive current $i_q^\ast$ is given priority under
+IEEE~1547-2018 to support voltage recovery during faults. This limiter
+activates within 2--5~ms of fault inception, after which the fault current
+magnitude is constant at $I_\mathrm{lim}$.
+
+\subsection{Phase-Locked Loop}
+
+The synchronous-reference-frame PLL (SRF-PLL) tracks the PCC voltage
+angle $\theta$:
+\begin{equation}
+  \dot{\theta}_\mathrm{PLL} = \omega_0 + K_{p,\mathrm{pll}}\,e_q
+    + K_{i,\mathrm{pll}}\int e_q\,dt
+  \label{eq:ch2_pll}
+\end{equation}
+where $e_q = |e|\sin(\theta_e - \theta_\mathrm{PLL}) \approx
+|e|(\theta_e - \theta_\mathrm{PLL})$ for small angle error. The PLL
+bandwidth is typically $\omega_\mathrm{bw,pll} = 2\pi \times 20$~Hz
+(50~ms settling), which is much slower than the current loop. During a
+fault, the voltage dip drives a transient PLL error that temporarily
+shifts the injected current phase angle by up to 30--45°, further
+complicating sequence-based relay algorithms.
+
+\subsection{GFL Fault Current: Phasor Model}
+
+For protection analysis at fundamental frequency (one-cycle window,
+20~ms post-fault), the GFL fault current is modelled as a controlled
+current source:
+\begin{equation}
+  \phasor{I}_\mathrm{GFL} = I_\mathrm{lim} \angle(\theta_\mathrm{PLL} + \phi_\mathrm{cmd})
+  \label{eq:ch2_gfl_phasor}
+\end{equation}
+where $\phi_\mathrm{cmd}$ is the commanded power factor angle (0° for unity PF,
+90° leading for full reactive support). The key protection-relevant parameter is:
+\begin{equation}
+  \kibr \triangleq \frac{|\phasor{I}_\mathrm{GFL}|}{I_\mathrm{rated}}
+  \in [0, I_\mathrm{lim}/I_\mathrm{rated}]
+  \label{eq:ch2_kibr_def}
+\end{equation}
+which ranges from 0 (converter off) to $I_\mathrm{lim}/I_\mathrm{rated}$
+(maximum fault contribution). Under IEEE~2800 mandatory ride-through,
+$\kibr$ is always positive during a fault, but its exact value depends on
+firmware settings.
+
+\subsection{Sequence Characteristics of GFL under Unbalanced Faults}
+
+Under a single-line-to-ground (SLG) fault, the GFL responds to the
+unbalanced terminal voltage $e_{abc}$ through the PLL, which tracks the
+positive-sequence voltage. The negative-sequence component of the terminal
+voltage does not appear in $\theta_\mathrm{PLL}$ because the PLL uses
+$e_q = \mathbf{T}_{dq}(\theta_\mathrm{PLL}) \cdot e_{abc}$ and the
+negative-sequence rotates at $-2\omega_0$ in the $dq$ frame. Consequently:
+
+\begin{equation}
+  \phasor{I}_2^\mathrm{GFL} = \begin{cases}
+    0 & \text{(negative-sequence suppressed by control)} \\
+    I_\mathrm{lim}^{(2)}\angle\phi_2 & \text{(IEEE 2800 negative-sequence injection enabled)}
+  \end{cases}
+  \label{eq:ch2_gfl_negseq}
+\end{equation}
+Similarly, the zero-sequence current $\phasor{I}_0^\mathrm{GFL} = 0$ unless
+a grounding transformer is present, because the converter output is a
+three-wire system. This has critical implications for the 87LN negative-sequence
+differential element (Section~\ref{sec:ch4_87ln}) and ground distance
+relay (Section~\ref{sec:ch5_ground_distance}).
+
+\section{Grid-Forming Inverter Model}
+\label{sec:ch2_gfm}
+
+A Grid-Forming (GFM) inverter is a voltage-controlled current source that
+generates its own frequency reference, rather than locking to a grid voltage.
+The primary GFM architectures relevant to this thesis are:
+
+\begin{enumerate}
+\item \textbf{Droop Control:} $\omega = \omega_0 - m_p(P - P^\ast)$,
+      $|V| = |V_0| - m_q(Q - Q^\ast)$.
+\item \textbf{Virtual Synchronous Generator (VSG)/Machine (VSM):}
+      Emulates the swing equation of an SG.
+\item \textbf{Matching Control:} DC-bus dynamics matched to rotor angle dynamics.
+\end{enumerate}
+
+\subsection{Virtual Synchronous Machine Model}
+
+The VSM GFM emulates the second-order swing equation:
+\begin{equation}
+  M\ddot{\theta} + D\dot{\theta} = P^\ast - P_e, \qquad
+  P_e = \frac{3}{2}(v_d i_d + v_q i_q)
+  \label{eq:ch2_vsm_swing}
+\end{equation}
+where $M = 2H/\omega_0$ is the virtual inertia constant and $D$ is virtual
+damping. The virtual impedance $Z_v = R_v + \jj\omega_0 L_v$ is added in
+series to emulate the sub-transient reactance:
+\begin{equation}
+  v^\ast_{dq} = e_{dq} + Z_v i_{dq}
+  \label{eq:ch2_vsm_vi}
+\end{equation}
+During a fault, the VSM behaves analogously to an SG with sub-transient
+reactance $X''_d \approx \omega_0 L_v$. The fault current magnitude is:
+\begin{equation}
+  I_\mathrm{sc}^\mathrm{GFM} = \frac{|V_0|}{|Z_v|} \approx \frac{|V_0|}{\omega_0 L_v}
+  \label{eq:ch2_gfm_isc}
+\end{equation}
+Because $L_v$ is a software parameter, the GFM operator can choose $L_v$
+to obtain any desired $I_\mathrm{sc}^\mathrm{GFM}$. Typical values give
+$I_\mathrm{sc}^\mathrm{GFM} \in [1.5, 2.5]\,I_\mathrm{rated}$,
+substantially higher than the GFL limit of $[1.1, 1.5]\,I_\mathrm{rated}$.
+
+\begin{table}[htbp]
+\caption{Fault current characteristics: SG versus GFL versus GFM}
+\label{tab:ch2_fault_comparison}
+\begin{tabularx}{\textwidth}{@{}lp{3cm}p{3cm}p{3cm}X@{}}
+\toprule
+Parameter & SG & GFL & GFM (VSM) & Relay impact \\
+\midrule
+Fault current magnitude (pu) & 6--10 & 1.1--1.5 & 1.5--2.5
+  & OC pickup; 87L bias slope \\
+Fault current decay & Exponential ($T''_d \approx 30$~ms) & Controlled constant
+  & Controlled constant
+  & TDCS detection; 87L stability \\
+Negative-sequence injection & $\propto V_2$ (physical) & Suppressed or by code
+  & Suppressed or by code
+  & 87LN; 67Q elements \\
+Zero-sequence injection & $\propto V_0$ (physical) & Zero (3-wire)
+  & Zero (3-wire)
+  & 87LN0; 21G elements \\
+Phase angle control & Fixed (rotor angle) & Commanded $\pm 90°$
+  & Virtual rotor angle
+  & Directional element \\
+Response time & 5--50~ms (electromechanical) & 2--5~ms (current loop)
+  & 5--20~ms (VSM inertia)
+  & TDCS time window \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Sixth-Order Park \texorpdfstring{$dq$}{dq} Truth Model}
+\label{sec:ch2_park6}
+
+For high-fidelity digital twin validation (Chapter~\ref{ch:digital_twin}),
+a 6th-order closed-loop Park $dq$ model is employed. The state vector is:
+\begin{equation}
+  \mathbf{x} = [i_d,\; i_q,\; \xi_d,\; \xi_q,\; \theta_\mathrm{PLL},\; \xi_\mathrm{PLL}]^\top
+  \label{eq:ch2_park6_state}
+\end{equation}
+where $\xi_{d,q}$ are the current controller integral states and
+$\xi_\mathrm{PLL}$ is the PLL integrator state. The state equations are:
+
+\begin{align}
+  \dot{i}_d &= \frac{1}{L_f}\bigl[-R_f i_d + \omega_\mathrm{PLL} L_f i_q
+    + K_p(i_d^\ast - i_d) + K_i \xi_d + e_d - \omega_\mathrm{PLL} L_f i_q\bigr]
+  \nonumber \\
+  &= \frac{1}{L_f}\bigl[(K_p - R_f)(i_d^\ast - i_d) + K_i \xi_d\bigr]
+  \label{eq:ch2_park6_id} \\
+  \dot{i}_q &= \frac{1}{L_f}\bigl[(K_p - R_f)(i_q^\ast - i_q) + K_i \xi_q\bigr]
+  \label{eq:ch2_park6_iq} \\
+  \dot{\xi}_d &= i_d^\ast - i_d, \qquad
+  \dot{\xi}_q = i_q^\ast - i_q
+  \label{eq:ch2_park6_xi} \\
+  \dot{\theta}_\mathrm{PLL} &= \omega_0 + K_{p,\mathrm{pll}} e_q
+    + K_{i,\mathrm{pll}} \xi_\mathrm{PLL}
+  \label{eq:ch2_park6_theta} \\
+  \dot{\xi}_\mathrm{PLL} &= e_q = |e_{abc}|\sin(\theta_e - \theta_\mathrm{PLL})
+  \label{eq:ch2_park6_xipll}
+\end{align}
+
+This model has been validated against full switching-model simulations in
+\citep{SAMBP_TR45}, showing voltage and current waveform agreement within
+0.5\% RMS for $t \in [0, 150]$~ms post-fault. The reduced model deviates
+for $t > 150$~ms when AVR dynamics in GFM inverters become significant.
+
+\section{Sequence Network Model for Protection Analysis}
+\label{sec:ch2_sequence}
+
+For the derivation of relay algorithms (Chapters~\ref{ch:line_diff}--\ref{ch:centralised}),
+the IBR is modelled as a sequence-domain controlled current source.
+The positive-, negative-, and zero-sequence components of the injected
+current are:
+\begin{align}
+  \phasor{I}_1^\mathrm{IBR} &= I_1 \angle \phi_1
+    \quad\text{(controlled; limited to $I_\mathrm{lim}$)}
+  \label{eq:ch2_seq_pos} \\
+  \phasor{I}_2^\mathrm{IBR} &= k_2 \phasor{I}_1^\mathrm{IBR}
+    \quad k_2 \in \{0, 0.5\}
+  \label{eq:ch2_seq_neg} \\
+  \phasor{I}_0^\mathrm{IBR} &= 0
+    \quad\text{(three-wire converter)}
+  \label{eq:ch2_seq_zer}
+\end{align}
+where $k_2 = 0$ when negative-sequence suppression is enabled (IEEE~1547
+default) and $k_2 = 0.5$ when negative-sequence support is enabled per
+IEEE~2800. The controlled-source model allows closed-form derivation of
+relay operating quantities, which would not be possible with the full
+6th-order nonlinear model.
+
+\section{Network and Fault Model}
+\label{sec:ch2_network}
+
+\subsection{Line Model}
+
+The protected line is modelled as a lumped $\pi$-section with positive- and
+zero-sequence parameters:
+\begin{equation}
+  Z_L = R_L + \jj\omega_0 L_L, \qquad
+  Z_{L,0} = R_{L,0} + \jj\omega_0 L_{L,0}
+  \label{eq:ch2_line_z}
+\end{equation}
+with $R_{L,0} = 3R_L$ and $L_{L,0} \approx 3L_L$ for typical distribution cables.
+
+\subsection{Fault Model}
+
+A fault at per-unit location $\alpha \in [0, 1]$ from the relay end (end~A)
+with resistance $R_F$ is modelled as a shunt impedance $Z_F = R_F$ at the
+fault point. The boundary conditions for a three-phase (3P) fault are:
+\begin{equation}
+  V_F = R_F\, I_F, \qquad V_F = V_A - \alpha Z_L I_A
+  \label{eq:ch2_3p_fault}
+\end{equation}
+For a single-line-to-ground (SLG) fault on phase~A:
+\begin{equation}
+  I_{F,a} = I_{F,0} + I_{F,1} + I_{F,2}, \quad
+  I_{F,b} = I_{F,c} = 0, \quad
+  V_{F,a} = R_F I_{F,a}
+  \label{eq:ch2_slg_fault}
+\end{equation}
+and the sequence currents are equal: $I_{F,0} = I_{F,1} = I_{F,2}$.
+
+\subsection{System Study Model (SAMBP 10-Bus)}
+
+The primary test network used throughout the thesis is the SAMBP 10-bus
+medium-voltage system shown in Figure~\ref{fig:ch2_study_network}.
+Key parameters are given in Table~\ref{tab:ch2_network_params}.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/ch2_study_network.tex}
+  \caption{SAMBP 10-bus study network. Bus~0 is the grid infeed (slack).
+           Buses 1--9 have local IBR generation and load.
+           Relays R01--R10 protect the 10 line segments.
+           PMUs at buses 0, 4, 7 provide synchrophasor data to the WAPC.}
+  \label{fig:ch2_study_network}
+\end{figure}
+
+\begin{table}[htbp]
+\caption{SAMBP 10-bus network parameters (all values in pu, 100~MVA, 33~kV base)}
+\label{tab:ch2_network_params}
+\small
+\begin{tabularx}{\textwidth}{@{}lXXXXX@{}}
+\toprule
+Line & From & To & $R$ (pu) & $X$ (pu) & IBR (pu) \\
+\midrule
+L01 & 0 & 1 & 0.010 & 0.080 & 0.0 (grid infeed) \\
+L02 & 0 & 2 & 0.012 & 0.090 & 0.0 \\
+L03 & 1 & 3 & 0.015 & 0.100 & 0.5 (Bus~3) \\
+L04 & 2 & 4 & 0.014 & 0.095 & 0.8 (Bus~4) \\
+L05 & 3 & 5 & 0.018 & 0.110 & 0.4 (Bus~5) \\
+L06 & 4 & 6 & 0.016 & 0.105 & 0.6 (Bus~6) \\
+L07 & 5 & 7 & 0.020 & 0.120 & 1.0 (Bus~7, IBR only) \\
+L08 & 6 & 8 & 0.017 & 0.108 & 0.9 (Bus~8) \\
+L09 & 7 & 9 & 0.022 & 0.130 & 1.0 (Bus~9, IBR only) \\
+L10 & 8 & 9 & 0.019 & 0.115 & — (tie line) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{IBR Current Ratio \texorpdfstring{$\kibr$}{k\_ibr}: Definition and Operating Range}
+\label{sec:ch2_kibr}
+
+The scalar $\kibr$ is the single most important parameter linking IBR
+physics to relay algorithm behaviour throughout this thesis. It is defined as:
+
+\begin{thesisdef}{IBR Current Ratio $\kibr$}
+The IBR current ratio $\kibr$ is the ratio of the per-unit fault current
+injected by all IBRs on one side of a protected zone to the rated current
+of that zone:
+\begin{equation}
+  \kibr = \frac{\sum_{i \in \mathcal{I}} I_i^\mathrm{IBR}}{I_\mathrm{rated}}
+  \label{eq:ch2_kibr_formal}
+\end{equation}
+where $\mathcal{I}$ is the set of IBR units contributing to the fault current
+at the relay terminal of interest.
+\end{thesisdef}
+
+Based on the current limiter analysis in Section~\ref{sec:ch2_gfl},
+the operating range of $\kibr$ for a typical fleet is:
+
+\begin{equation}
+  \kibr \in [0.03,\; 0.55] \quad \text{(GFL fleet, operational)}
+  \label{eq:ch2_kibr_range}
+\end{equation}
+The lower bound (0.03) represents a single inverter at minimum curtailed
+output; the upper bound (0.55) represents all inverters at their 1.1~pu
+limit with a nominal 0.5~pu installed capacity fraction.
+For GFM inverters, the range extends to $[0.15, 0.85]$ due to the higher
+virtual impedance fault current.
+
+Table~\ref{tab:ch2_kibr_scenarios} classifies the operating scenarios used
+as test cases in subsequent chapters.
+
+\begin{table}[htbp]
+\caption{$\kibr$ operating scenarios used in SAMBP simulation studies}
+\label{tab:ch2_kibr_scenarios}
+\begin{tabularx}{\textwidth}{@{}lXXl@{}}
+\toprule
+Scenario & $\kibr$ range & Description & Chapters \\
+\midrule
+S1 (Weak GFL) & 0.03--0.15 & Low-generation curtailment & 4, 5, 8 \\
+S2 (Nominal GFL) & 0.15--0.40 & Normal operating range & All \\
+S3 (Strong GFL) & 0.40--0.55 & Maximum GFL fault ride-through & 4, 5, 8 \\
+S4 (GFM) & 0.15--0.85 & Grid-forming virtual impedance & 6, 7 \\
+S5 (Mixed) & Variable & Fleet composition change & 7, 8, 9 \\
+S6 (SG + IBR) & Mixed & Synchronous generator in parallel & 3, 5 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Summary}
+\label{sec:ch2_summary}
+
+This chapter has established the mathematical models that underpin the
+thesis. Key modelling decisions are:
+
+\begin{enumerate}
+\item The GFL inner current loop is modelled as a first-order controlled
+      current source with 2--5~ms response time and hard magnitude limit
+      $I_\mathrm{lim} \in [1.1, 1.5]$~pu.
+\item The GFM is modelled as a voltage source behind virtual impedance
+      $Z_v = R_v + \jj\omega_0 L_v$, giving fault currents of 1.5--2.5~pu.
+\item For relay algorithm derivation, sequence-domain controlled-source
+      models are used with $\phasor{I}_2 \in \{0, 0.5\phasor{I}_1\}$ and
+      $\phasor{I}_0 = 0$ for three-wire converters.
+\item The 6th-order Park $dq$ model provides a high-fidelity reference
+      for digital-twin validation up to 150~ms post-fault.
+\item The scalar $\kibr \in [0.03, 0.85]$ (fleet-dependent) is the key
+      parameter linking IBR operating state to relay algorithm behaviour.
+\end{enumerate}

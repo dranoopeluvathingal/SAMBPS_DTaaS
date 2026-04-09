@@ -1,0 +1,62 @@
+% ============================================================
+%  Figure 2 — Stage-1 reduced inverse estimator flowchart
+% ============================================================
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  proc/.style ={draw, thick, fill=blue!8, rounded corners=2pt,
+                minimum width=3.8cm, minimum height=0.55cm,
+                align=center},
+  dec/.style  ={draw, thick, fill=orange!12, diamond, aspect=3.2,
+                minimum width=3.8cm, align=center},
+  term/.style ={draw, thick, fill=green!12, rounded corners=4pt,
+                minimum width=3.8cm, minimum height=0.55cm,
+                align=center},
+  warn/.style ={draw, thick, fill=red!10, rounded corners=2pt,
+                minimum width=2.8cm, minimum height=0.55cm,
+                align=center},
+  arr/.style  ={->, thick, >=Latex},
+  node distance=0.50cm
+]
+
+\node[term]  (start)  {Fault event; window $[t_0,\,t_0{+}L]$};
+
+\node[proc, below=of start] (extract)
+     {Extract window: $i_a(t_n)$, $n \in \mathcal{W}_L$};
+
+\node[proc, below=of extract] (pass1)
+     {Pass-1 LM fit\\
+      $\hat{\bm\theta}^{(1)} \leftarrow
+       \arg\min_{\bm\theta}\norm{i_a - i_a^{(1)}(\bm\theta)}^2$\\
+      (seed: pre-fault $I_{ss,0}$)};
+
+\node[proc, below=of pass1] (pass2)
+     {Pass-2 refinement\\
+      $\hat{\bm\theta}^{(2)} \leftarrow
+       \mathrm{LM}\!\left(\hat{\bm\theta}^{(1)}\right)$};
+
+\node[proc, below=of pass2] (conf)
+     {Confidence: $\gamma = w_r s_r + w_c s_c + w_b s_b + w_p s_p$};
+
+\node[dec, below=0.6 of conf] (gate) {$\gamma \geq \gamma_{th}$?};
+
+\node[warn, right=1.2 of gate] (hold)
+     {Hold prior settings\\no adaptation};
+\draw[arr] (gate) -- node[above,font=\tiny]{No} (hold);
+
+\node[proc, below=0.6 of gate] (map)
+     {Adaptive mapping:\\
+      $I_p^* = \alpha_I\hat{I}_{ss}$,\quad
+      $TMS^* = \mathrm{clip}(\alpha_{TMS}\hat\tau_{ac})$};
+
+\node[term, below=of map] (deploy)
+     {Bounded update; deploy $I_p^*$, $TMS^*$};
+
+\draw[arr] (start) -- (extract);
+\draw[arr] (extract) -- (pass1);
+\draw[arr] (pass1) -- (pass2);
+\draw[arr] (pass2) -- (conf);
+\draw[arr] (conf) -- (gate);
+\draw[arr] (gate) -- node[left,font=\tiny]{Yes} (map);
+\draw[arr] (map) -- (deploy);
+
+\end{tikzpicture}

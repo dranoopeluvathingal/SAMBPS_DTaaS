@@ -1,0 +1,152 @@
+%% ============================================================
+%% SAMBP PhD Thesis — Master File
+%% Author : Anoop V Eluvathingal, IIT Madras
+%% Class  : iitmdissertation (compile from /root/phd_thesis/)
+%% Run    : pdflatex → bibtex → pdflatex → pdflatex
+%% ============================================================
+\documentclass[phd, zdraft, smplmath]{iitmdissertation}
+
+%% ── Additional packages ─────────────────────────────────────
+\usepackage{multirow}
+\usepackage{amsmath, bm}
+\usepackage{mathtools}
+\usepackage{amssymb}
+\usepackage{graphicx}
+
+%% TikZ + pgfplots
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{%
+  shapes, shapes.geometric, shapes.symbols,
+  arrows, arrows.meta,
+  calc, positioning, fit,
+  decorations.pathmorphing,
+  decorations.pathreplacing,
+  decorations.markings,
+  patterns, matrix, shadows,
+  mindmap, trees,
+}
+
+%% Algorithms
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\algrenewcommand\algorithmicrequire{\textbf{Input:}}
+\algrenewcommand\algorithmicensure{\textbf{Output:}}
+
+%% Coloured boxes for results / definitions
+\usepackage[framemethod=tikz]{mdframed}
+
+%% Tables
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{tabularx}
+
+%% SI units
+\usepackage{siunitx}
+\sisetup{per-mode=symbol, detect-all}
+
+%% Misc
+\usepackage{xcolor}
+\usepackage{setspace}
+\usepackage{standalone}
+
+
+%% ── Load extended thesis TikZ styles ────────────────────────
+\input{thesis_full/thesis_tikz_styles.tex}
+
+%% ── Extend graphics path to cover thesis_full/figures/ ──────
+\AtBeginDocument{\graphicspath{{images/}{thesis_full/figures/}}}
+
+%% ── Dissertation metadata ───────────────────────────────────
+\dissertationDepartment      {Department of Electrical Engineering}
+\dissertationAuthorName      {Anoop V Eluvathingal}
+\dissertationDateOfBirth     {22 October 1988}
+\dissertationTitle           {Self-Adaptive Multi-Bus Protection for
+                              Inverter-Based Resource Dominated Power Networks}
+\dissertationMonth           {June}
+\dissertationYear            {2026}
+\dissertationCertificateDate {June 2026}
+\dissertationGuides          {Prof.\ K. Shanti Swarup}
+
+%% ── Glossary / acronyms (reads 1-frontmatter/front-glossary-abbreviations) ──
+\setupGlossaryAbbreviationsDefinitions
+
+%% ── Notation (reads 1-frontmatter/front-notation) ───────────
+%% Called inside \printNotation; no action needed here
+
+%% ── Maths macros (not in thesis_tikz_styles.tex) ───────────
+\newcommand{\kibr}{k_{\mathrm{ibr}}}
+\newcommand{\Idiff}{I_{\mathrm{diff}}}
+\newcommand{\Ibias}{I_{\mathrm{bias}}}
+\newcommand{\Zline}{Z_{\mathrm{line}}}
+\newcommand{\ms}{\,\mathrm{ms}}
+\newcommand{\us}{\,\mu\mathrm{s}}
+\newcommand{\TMS}{\mathrm{TMS}}
+\newcommand{\CTI}{\mathrm{CTI}}
+%% (phasor, jj, pu, seqpos/neg/zer already defined in thesis_tikz_styles.tex)
+\newcommand{\Zapp}{Z_{\mathrm{app}}}
+
+%% Result-placeholder box (yellow)
+\mdfdefinestyle{resultbox}{%
+  backgroundcolor  = yellow!12,
+  linecolor        = orange!70!black,
+  linewidth        = 1.4pt,
+  roundcorner      = 4pt,
+  innertopmargin   = 6pt,
+  innerbottommargin= 6pt,
+}
+\newcommand{\resultbox}[1]{%
+  \begin{mdframed}[style=resultbox]
+    \textbf{[RESULT PLACEHOLDER]}\quad #1
+  \end{mdframed}%
+}
+
+%% keyeq and thesisdef environments already defined in thesis_tikz_styles.tex
+
+%% ============================================================
+\begin{document}
+
+%% ── Pre-matter (cover, certificate, quote, publications) ────
+\prematter
+  \input{0-prematter/pre-quote}
+  \input{0-prematter/pre-dedication}
+  \printCertificate
+  \input{0-prematter/pre-list-of-publications}
+
+%% ── Front matter (acknowledgements, abstract, TOC, glossary) ─
+\begin{FrontMatter}
+  \printGlossaryAndAbbreviations
+  \printNotation
+\end{FrontMatter}
+
+%% ── Main matter ─────────────────────────────────────────────
+\begin{MainMatter}
+
+  \input{thesis_full/chapters/ch01_introduction}
+  \input{thesis_full/chapters/ch02_ibr_modelling}
+  \input{thesis_full/chapters/ch03_protection_challenges}
+  \input{thesis_full/chapters/ch04_line_differential}
+  \input{thesis_full/chapters/ch05_distance_protection}
+  \input{thesis_full/chapters/ch06_microgrid_protection}
+  \input{thesis_full/chapters/ch07_digital_twin}
+  \input{thesis_full/chapters/ch08_ml_protection}
+  \input{thesis_full/chapters/ch09_centralised_protection}
+  \input{thesis_full/chapters/ch10_conclusions}
+
+  %% ── Appendices ──────────────────────────────────────────
+  \appendix
+  \input{thesis_full/appendices/appA_proofs}
+  \input{thesis_full/appendices/appB_system_data}
+  \input{thesis_full/appendices/appC_algorithms}
+
+\end{MainMatter}
+
+%% ── Back matter (references, CV) ────────────────────────────
+\begin{BackMatter}
+  \printBibliographyReferences{thesis_full/thesis.bib}
+\end{BackMatter}
+
+\end{document}

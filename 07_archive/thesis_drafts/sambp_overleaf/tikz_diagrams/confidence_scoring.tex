@@ -1,0 +1,80 @@
+\documentclass{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning,calc}
+\input{../tikz_master_styles}
+
+\begin{document}
+
+%----------------------------------------------------------------------
+% Confidence Scoring and Gating Framework
+%----------------------------------------------------------------------
+
+\begin{tikzpicture}[scale=1.0, every node/.style={font=\small}]
+
+% Define styles
+\tikzstyle{subscore}=[rectangle, draw=sambp_blue, fill=sambp_blue!10, thick,
+                      minimum width=2.2cm, minimum height=0.85cm, text centered]
+\tikzstyle{weight}=[circle, draw=sambp_orange, fill=sambp_orange!20, thick,
+                    minimum width=0.8cm, inner sep=0.05cm, text centered, 
+                    font=\footnotesize\bfseries]
+\tikzstyle{sumnode}=[circle, draw=sambp_dark_gray, fill=sambp_gray!20, thick,
+                     minimum width=1.2cm, inner sep=0.1cm, text centered, 
+                     font=\small\bfseries]
+\tikzstyle{gate}=[diamond, draw=sambp_red, fill=sambp_red!15, thick,
+                  minimum width=2.1cm, minimum height=1.2cm, text centered,
+                  font=\small\bfseries]
+\tikzstyle{arrow}=[->, thick, sambp_black]
+
+% Sub-scores
+\node[subscore] (sr) at (0, 0) {Residual\\Score $s_r$};
+\node[subscore] (sc) at (0, -2) {Condition\\Number $s_c$};
+\node[subscore] (sb) at (0, -4) {Bounds-Hit\\Score $s_b$};
+\node[subscore] (sp) at (0, -6) {Plausibility\\Score $s_p$};
+
+% Weights
+\node[weight] (wr) at (1.8, 0) {$w_r$\\0.35};
+\node[weight] (wc) at (1.8, -2) {$w_c$\\0.30};
+\node[weight] (wb) at (1.8, -4) {$w_b$\\0.20};
+\node[weight] (wp) at (1.8, -6) {$w_p$\\0.15};
+
+% Arrows from scores to weights
+\draw[arrow] (sr) -- (wr);
+\draw[arrow] (sc) -- (wc);
+\draw[arrow] (sb) -- (wb);
+\draw[arrow] (sp) -- (wp);
+
+% Sum node
+\node[sumnode] (sum) at (4.0, -3) {$\sum$\\$\gamma$};
+
+% Arrows to sum
+\draw[arrow] (wr) -- (sum);
+\draw[arrow] (wc) -- (sum);
+\draw[arrow] (wb) -- (sum);
+\draw[arrow] (wp) -- (sum);
+
+% Gate decision
+\node[gate] (gate) at (6.5, -3) {$\gamma \geq$\\$\gamma_{th}$?\\$(0.70)$};
+
+% Arrow to gate
+\draw[arrow] (sum) -- (gate);
+
+% Output decisions
+\node[rectangle, draw=sambp_green, fill=sambp_green!15, thick, 
+       minimum width=1.8cm, minimum height=0.7cm, text centered] (yes) at (9, -1.5) 
+       {\textbf{Adapt}\\Settings};
+
+\node[rectangle, draw=sambp_red, fill=sambp_red!15, thick,
+       minimum width=1.8cm, minimum height=0.7cm, text centered] (no) at (9, -4.5)
+       {\textbf{Retain}\\Settings};
+
+\draw[arrow, sambp_green] (gate.east) -- (yes.west) node[midway, above] {Yes};
+\draw[arrow, sambp_red] (gate.east) -- (no.west) node[midway, below] {No};
+
+% Formula box
+\draw[thick, sambp_dark_gray] (0, 0.8) rectangle (4.5, 1.6);
+\node[text centered, font=\small] at (2.25, 1.2) 
+      {$\displaystyle \gamma = w_r s_r + w_c s_c + w_b s_b + w_p s_p$};
+
+\end{tikzpicture}
+
+\end{document}

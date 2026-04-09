@@ -1,0 +1,944 @@
+%% ============================================================
+%% TSA MEETING — DETAILED SPEAKER NOTES
+%% Presentation: Self-Adaptive Model-Based Protection for
+%%               Future Power Systems
+%% Author:       Anoop V Eluvathingal
+%% IIT Madras, Dept. Electrical Engineering
+%% June 2026
+%% ============================================================
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{geometry}
+\geometry{top=25mm, bottom=25mm, left=28mm, right=28mm}
+
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{titlesec}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{mdframed}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue!60!black, urlcolor=blue}
+
+%% ── Colour palette (matches slides) ────────────────────────
+\definecolor{iitmnavy}{RGB}{0,32,91}
+\definecolor{iitmblue}{RGB}{0,90,160}
+\definecolor{iitmred}{RGB}{180,20,20}
+\definecolor{iitmgold}{RGB}{179,138,0}
+\definecolor{notesbg}{RGB}{245,248,255}
+\definecolor{tipbg}{RGB}{255,250,235}
+\definecolor{warnbg}{RGB}{255,242,242}
+
+%% ── Section style: Slide N ──────────────────────────────────
+\titleformat{\section}[block]
+  {\color{iitmnavy}\large\bfseries\filright}
+  {Slide~\thesection.}{0.5em}{}
+  [\color{iitmnavy}\titlerule]
+
+\titlespacing{\section}{0pt}{14pt}{6pt}
+
+%% ── Subsection: slide subtitle ──────────────────────────────
+\titleformat{\subsection}[runin]
+  {\color{iitmblue}\normalsize\bfseries}
+  {}{0pt}{}[\ \textendash\ ]
+\titlespacing{\subsection}{0pt}{4pt}{4pt}
+
+%% ── Callout boxes ───────────────────────────────────────────
+\newmdenv[
+  backgroundcolor=notesbg,
+  linecolor=iitmblue,
+  linewidth=1.2pt,
+  leftline=true, rightline=false, topline=false, bottomline=false,
+  innerleftmargin=8pt, innerrightmargin=6pt,
+  innertopmargin=5pt, innerbottommargin=5pt,
+  skipabove=6pt, skipbelow=4pt,
+]{scriptbox}
+
+\newmdenv[
+  backgroundcolor=tipbg,
+  linecolor=iitmgold,
+  linewidth=1.2pt,
+  leftline=true, rightline=false, topline=false, bottomline=false,
+  innerleftmargin=8pt, innerrightmargin=6pt,
+  innertopmargin=5pt, innerbottommargin=5pt,
+  skipabove=6pt, skipbelow=4pt,
+]{tipbox}
+
+\newmdenv[
+  backgroundcolor=warnbg,
+  linecolor=iitmred,
+  linewidth=1.2pt,
+  leftline=true, rightline=false, topline=false, bottomline=false,
+  innerleftmargin=8pt, innerrightmargin=6pt,
+  innertopmargin=5pt, innerbottommargin=5pt,
+  skipabove=6pt, skipbelow=4pt,
+]{warnbox}
+
+\newcommand{\script}[1]{\begin{scriptbox}\textbf{Script:} #1\end{scriptbox}}
+\newcommand{\tip}[1]{\begin{tipbox}\textbf{Tip:} #1\end{tipbox}}
+\newcommand{\anticipate}[1]{\begin{warnbox}\textbf{Anticipated question:} #1\end{warnbox}}
+
+%% ── Math macros ─────────────────────────────────────────────
+\newcommand{\kibr}{k_{\mathrm{ibr}}}
+\newcommand{\TMS}{\mathit{TMS}}
+\newcommand{\CTI}{\mathit{CTI}}
+\newcommand{\PINN}{\textsc{pinn}}
+\newcommand{\WAPC}{\textsc{wapc}}
+
+%% ── Header / footer ─────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{iitmnavy}\textbf{TSA Speaker Notes}\ ---\ Anoop V Eluvathingal}
+\fancyhead[R]{\small\color{iitmgray}Self-Adaptive Model-Based Protection}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\color{iitmnavy}\hrule width\headwidth height\headrulewidth}
+
+\definecolor{iitmgray}{RGB}{90,90,90}
+
+%% ─────────────────────────────────────────────────────────────
+\begin{document}
+
+%% ── Cover ────────────────────────────────────────────────────
+\begin{center}
+  {\LARGE\bfseries\color{iitmnavy}
+    Thesis Submission Approval Meeting\\[6pt]
+    Speaker Notes}
+  \vspace{6pt}\\
+  {\large Self-Adaptive Model-Based Protection for Future Power Systems}\\[4pt]
+  {\normalsize Anoop V Eluvathingal\ $\cdot$\ Department of Electrical Engineering\\
+    IIT Madras\ $\cdot$\ June 2026}
+\end{center}
+
+\medskip
+\begin{mdframed}[backgroundcolor=notesbg, linecolor=iitmnavy, linewidth=1pt,
+  innertopmargin=8pt, innerbottommargin=8pt, innerleftmargin=10pt]
+\textbf{How to use these notes:}
+These notes are structured as a full speaker script for each of the 22 slides.
+Each section begins with the \textit{key message} — the single takeaway the
+audience should retain — followed by the detailed verbal script, suggested
+emphasis points, and anticipated committee questions with guidance on how to
+handle them.
+Total recommended talk time: \textbf{30--35 minutes} plus 10--15 minutes Q\&A.
+Per-slide time targets are shown in each section header.
+\end{mdframed}
+
+\tableofcontents
+\clearpage
+
+%% ════════════════════════════════════════════════════════════
+\section{Title Slide \hfill\normalfont\small($\approx$1 min)}
+\label{slide:title}
+
+\subsection*{Key message}
+Introduce yourself, your thesis title, and your guide.
+Establish the seriousness and scope of the problem in one sentence.
+
+\script{%
+``Good morning. I am Anoop V Eluvathingal, Roll Number EE18D203, registered for the
+Doctor of Philosophy programme in the Department of Electrical Engineering at IIT Madras.
+My thesis is titled \textit{`Self-Adaptive Model-Based Protection for Future Power
+Systems'}, and I am working under the guidance of Dr K Shanti Swarup.
+
+This thesis addresses a fundamental crisis that is unfolding in power grids worldwide:
+the relay protection systems that have kept our networks safe for decades were designed for
+synchronous generators, and they are beginning to fail as inverter-based resources take
+over the grid. This work presents a complete, mathematically grounded framework to solve
+that problem.''%
+}
+
+\tip{Pause briefly after ``beginning to fail'' to let the gravity of the problem register.
+Make eye contact with each committee member. Keep this slide to under 60 seconds.}
+
+%% ════════════════════════════════════════════════════════════
+\section{Presentation Outline \hfill\normalfont\small($\approx$1 min)}
+\label{slide:outline}
+
+\subsection*{Key message}
+The thesis is organised into four coherent parts. Set expectations clearly
+so the committee can follow the arc.
+
+\script{%
+``I have organised this presentation into four parts.
+
+Part~I covers the motivation and the SAMBP framework itself: why conventional protection
+fails under high IBR penetration, what gaps currently exist in the literature, and the
+architecture of the solution I am proposing.
+
+Part~II covers five adaptive protection modules, one for each relay type studied in the
+thesis: the line differential relay, generator over-current, transformer differential,
+distance relay, and microgrid protection.
+
+Part~III covers three advanced layers built on top of those modules: a real-time digital
+twin using an Extended Kalman Filter, a physics-informed neural network for fault
+classification, and a wide-area protection coordinator.
+
+Part~IV concludes with the cybersecurity layer, a consolidated results comparison, and a
+summary of contributions and research outcomes.
+
+I will spend the most time on Parts~I through~III, where the novel contributions are
+concentrated.''%
+}
+
+\tip{Use the left-hand column of the slide as a natural anchor for `Part I and II' and
+the right-hand column for `Part III and IV'. Do not read the bullets; speak from memory.}
+
+%% ════════════════════════════════════════════════════════════
+\section{The IBR Revolution \& the Protection Crisis \hfill\normalfont\small($\approx$2.5 min)}
+\label{slide:motivation}
+
+\subsection*{Key message}
+Five concrete failure mechanisms show that the IBR transition is not an incremental
+change — it breaks the physical assumptions baked into every existing protection standard.
+
+\script{%
+``Let me begin with the problem. The global transition to inverter-based resources ---
+solar PV, wind turbines, battery storage --- is accelerating. Under the Indian government's
+2030 renewable targets, the fraction of generation from IBRs will exceed sixty percent on
+many substations. I define a dimensionless parameter, $\kibr$, as the ratio of IBR
+apparent admittance to the total bus admittance. A fully synchronous grid is $\kibr = 0$;
+a fully IBR grid is $\kibr = 1$.
+
+The table on the slide shows what happens to the available fault current as $\kibr$ rises.
+A synchronous machine contributes six times rated current during a fault. A grid-following
+inverter, by design, limits its output to 1.0 to 1.2 times rated current to protect its
+semiconductor switches. At $\kibr = 0.6$, the total fault current is less than two per unit.
+
+This creates five specific failure mechanisms for conventional protection, which I have
+listed on the left. First, the differential current in an 87L relay may never exceed the
+fixed slope setting when $\kibr$ is low, causing a missed trip. Second, when $\kibr$ is
+high and there is CT measurement error, the relay may false-trip on load current. Third,
+distance relays over-reach because IBR reactive injection shifts the apparent impedance
+locus. Fourth, IBR control-mode transitions during faults produce angle excursions that
+fool directional elements. Fifth, in islanded microgrids, current reverses direction
+during mode transitions, making directional overcurrent protection unreliable.
+
+The critical point is that all five failures arise from a single root cause: the relay
+has a fixed setting designed for $\kibr = 0$ and no mechanism to track the true,
+time-varying $\kibr$ of the network.''%
+}
+
+\anticipate{``What is the basis for the $\kibr$ definition?'' ---
+$\kibr$ is the ratio of the Norton equivalent admittance of IBR sources to total bus
+admittance in the positive-sequence equivalent circuit. It reduces to the
+generation-mix fraction under balanced conditions and is directly measurable from PMU
+phasor data.}
+
+%% ════════════════════════════════════════════════════════════
+\section{Research Gaps \& Objectives \hfill\normalfont\small($\approx$2 min)}
+\label{slide:gaps}
+
+\subsection*{Key message}
+Six specific gaps in the literature, and six matching objectives that this thesis
+addresses one-to-one.
+
+\script{%
+``Existing work in the literature addresses IBR protection in a piecemeal fashion:
+a correction factor for differential relays here, a harmonic-blocking improvement there.
+What is missing is a \textit{unified, physics-aware adaptive framework} that applies
+across all relay types, updates in real time, and is provably stable.
+
+I have identified six specific gaps. First, no relay standard or product accounts for
+real-time $\kibr$ as a variable setting input. Second, the protection implications of
+grid-forming IBR control modes --- as opposed to grid-following --- are largely unstudied.
+Third, there is no inverse-estimation framework that is simultaneously applicable to
+differential, impedance, and overcurrent relays. Fourth, digital-twin approaches proposed
+in the literature lack bounded, non-blocking update laws, meaning a slow convergence can
+delay the protection decision. Fifth, wide-area protection systems ignore IBR-induced
+coherency breakdown, which invalidates classical swing-group assumptions. Sixth, there is
+no adversarially robust ML layer integrated with the protection relay chain.
+
+Each of these gaps maps directly to one of my six objectives, which are listed on the
+right. Together, they define the scope of the SAMBP framework.''%
+}
+
+\tip{You do not need to read every objective. After listing the gaps, say ``each of these
+maps directly to an objective, which I will demonstrate as we go through the chapters.''}
+
+\anticipate{``Why is it necessary to solve all six simultaneously?'' ---
+The thesis shows that solving any subset in isolation still leaves the overall protection
+system vulnerable. For example, an accurate EKF oracle is useless if the ML classifier is
+susceptible to adversarial attack. The strength of the SAMBP architecture is precisely its
+cross-layer coherence.}
+
+%% ════════════════════════════════════════════════════════════
+\section{SAMBP Framework: Three-Tier Architecture \hfill\normalfont\small($\approx$2.5 min)}
+\label{slide:architecture}
+
+\subsection*{Key message}
+SAMBP is a \emph{stack}, not a collection of independent fixes. The EKF oracle feeds
+all modules; the WAPC integrates their outputs; the security layer hardens the entire chain.
+
+\script{%
+``The SAMBP framework is organised into three tiers, as shown in the diagram on this
+slide.
+
+Tier~1 is the Parameter Oracle. This is the EKF-based digital twin described in
+Chapter~9. It runs continuously on PMU phasor data and maintains real-time estimates of
+the three key latent parameters: $\hat{\kibr}$, the line impedance $\hat{Z}_{\rm line}$,
+and the IBR admittance $\hat{Y}_{\rm ibr}$. These estimates are made available to all
+modules over a low-latency local bus.
+
+Tier~2 is the collection of adaptive protection modules. Each module --- 87L, SyncOC,
+87T, distance, and microgrid --- queries the oracle at every update cycle and adjusts its
+operating thresholds accordingly via what I call the bounded update law. Critically, each
+module also incorporates a Stage-2 confidence gate: before issuing a trip command, the
+module computes a confidence score $\gamma$ based on the uncertainty in $\hat{\kibr}$,
+and only trips if $\gamma$ exceeds a configurable threshold of 0.85. This eliminates
+false trips caused by transient estimation noise.
+
+Tier~3 is the Wide-Area Protection Coordinator. It receives trip candidates from all
+zone relays, maintains a real-time topology graph, and applies an IBR-aware coherency
+model to determine the minimum-cost fault isolation action.
+
+Below all three tiers sits the cybersecurity layer, which authenticates every IED message
+and adversarially hardens the PINN classifier.
+
+The key architectural principle is that the Stage-2 confidence gate decouples the speed
+of the EKF oracle from the correctness of the trip decision. Even if the oracle is still
+converging after a topology change, the relay will hold its last trusted estimate rather
+than issuing a potentially incorrect trip.''%
+}
+
+\anticipate{``What happens if the EKF oracle fails?'' ---
+Each module has a safe fallback: if the oracle has not provided an update within a
+configurable timeout (default 3 cycles), the module reverts to its nominal fixed-parameter
+setting and the Stage-2 gate forces the confidence score to zero, effectively disabling
+adaptive operation until the oracle recovers. This is the fail-secure behaviour described
+in Chapter~9.}
+
+%% ════════════════════════════════════════════════════════════
+\section{Unified Inverse-Estimation Framework \hfill\normalfont\small($\approx$2 min)}
+\label{slide:math}
+
+\subsection*{Key message}
+All SAMBP modules share a single Levenberg--Marquardt inverse-estimation core.
+Convergence is proved analytically; the bounded update law is the key stability ingredient.
+
+\script{%
+``Chapter~2 establishes the mathematical foundation shared by every module in the
+framework.
+
+The central problem is: given a stream of phasor measurements $z_t$ from IEDs and PMUs,
+estimate the latent protection-relevant parameters $\boldsymbol{\theta} = \{\kibr,
+Z_{\rm line}, Y_{\rm ibr}\}$ in real time. This is an inverse problem, and I solve it
+using the Levenberg--Marquardt algorithm, which is a damped Gauss--Newton method.
+The update rule is shown on the left side of the slide. The Jacobian $J$ captures how
+the relay model output changes with each parameter; the damping term $\lambda I$
+regularises the inverse and controls the step size.
+
+The bounded update law is the modification I introduce. The learning rate $\alpha_t$ is
+not constant; it is multiplied by a factor $(1 - \kibr^2)$ which smoothly drives the
+update rate to zero as the network approaches fully IBR operation. This prevents the
+estimator from taking large steps in uncertain territory and is the mechanism that enables
+the Lyapunov stability proof in Theorem 2.1.
+
+The Stage-2 confidence gate is computed as a Gaussian function of the distance between
+the current estimate $\hat{\boldsymbol{\theta}}$ and the last locally-validated operating
+point $\boldsymbol{\theta}^*$. The threshold $\gamma_{\rm min} = 0.85$ was chosen to give
+a false-trip probability below $10^{-4}$ under CT noise levels consistent with IEC 60044.
+
+The five methods listed in the table on the right are not independent tools. They are
+layered: LM provides the parameter estimates; EKF tracks their dynamics; SPRT tests
+hypotheses against those estimates; PINN provides a physics-consistent feature space;
+and projected gradient enforces coordination constraints.''%
+}
+
+\anticipate{``Is LM not computationally expensive for real-time use?'' ---
+The parameter vector is only 3--5 dimensional. A single LM iteration involves a 5-by-5
+matrix inversion, which takes under 50 microseconds on standard IED hardware. The EKF
+runs in a separate thread at 20~ms intervals; the LM correction is applied asynchronously.
+Full timing budgets are detailed in Appendix~C.}
+
+%% ════════════════════════════════════════════════════════════
+\section{IBR Characterisation \& Failure Modes \hfill\normalfont\small($\approx$2 min)}
+\label{slide:ibr}
+
+\subsection*{Key message}
+Chapter~3 derives the quantitative conditions for each failure mode and establishes
+$\kibr$ as the single parameter that predicts them all.
+
+\script{%
+``Chapter~3 provides the analytical foundation for the failure mode analysis. I develop
+a generalised IBR fault current model: the IBR contribution during a fault is $\kibr$
+times the rated current, at a control angle $\phi_{\rm ctrl}$ that is set by the LVRT
+strategy and is not directly observable by the relay.
+
+The three failure modes are shown in the table. At low $\kibr$, below about 0.2, the
+differential current $I_{\rm diff}$ never reaches the fixed slope boundary --- the relay
+sees a fault that looks like normal load unbalance and restrains. At high $\kibr$ combined
+with CT measurement error, the load current at full IBR output can exceed the slope
+boundary and trigger a false trip. The third mode is impedance overreach: IBR reactive
+injection adds a component to the apparent impedance that pushes the locus outside the
+Zone~1 boundary even for an in-zone fault.
+
+The insight from this analysis is that all three modes are characterised by a different
+regime of $\kibr$. A relay that knows $\kibr$ can adapt its settings to remain in the
+correct operating region across the entire range. This is precisely what the adaptive
+slope law in Chapter~4 achieves.''%
+}
+
+\tip{Point to the table values as you describe each failure mode. Emphasise that this
+is a \emph{unified} characterisation --- not three separate problems but one problem
+viewed from three angles.}
+
+%% ════════════════════════════════════════════════════════════
+\section{Ch~4: SAMBP-87L --- Adaptive Line Differential (Method) \hfill\normalfont\small($\approx$2 min)}
+\label{slide:87l_method}
+
+\subsection*{Key message}
+The adaptive slope law is a smooth, monotonically decreasing function of $\kibr$;
+it has a closed-form Lyapunov stability proof.
+
+\script{%
+``Chapter~4 applies the SAMBP framework to the line differential relay, Type~87L.
+
+The adaptive slope law is the core contribution. The conventional relay uses a fixed
+slope $k_m = 0.30$. I replace this with a function of the estimated $\kibr$:
+$k_m(\kibr) = k_{\rm base} \cdot (1-\kibr)^2 / (1+\kibr)^2 + k_{\rm floor}$.
+
+This function has a natural interpretation. The numerator $(1-\kibr)^2$ shrinks as IBR
+contribution grows, reducing the slope and keeping the relay sensitive. The denominator
+$(1+\kibr)^2$ prevents the slope from ever reaching zero: as $\kibr \to 1$, $k_m$
+approaches $k_{\rm floor}$, a small positive value that guards against measurement noise.
+
+The stability proof uses the Lyapunov function $V = \|\kibr - \hat{\kibr}\|^2$.
+Under bounded CT noise and the bounded update law, $\dot{V} < 0$, which guarantees that
+the estimated $\kibr$ converges to a neighbourhood of the true value. The radius of that
+neighbourhood is of order $\sigma_{\rm noise}$, the CT noise standard deviation.
+
+The relay logic involves six steps. Phasors are sampled at 1~kHz; $\kibr$ is estimated
+every 20~ms via the LM update; the adaptive slope is recomputed; the operate/restrain
+criterion is evaluated; the Stage-2 confidence gate is checked; and the trip command is
+issued only if both stages pass.''%
+}
+
+\anticipate{``How is the relay stable if $\kibr$ itself is uncertain?'' ---
+The Lyapunov proof shows stability in the \emph{error} dynamics, not in the absolute
+value. Even if $\hat{\kibr}$ lags the true $\kibr$ by up to one per-unit standard
+deviation, the slope law still keeps the differential threshold within the safe operating
+envelope. The Stage-2 gate provides an additional margin.}
+
+%% ════════════════════════════════════════════════════════════
+\section{Ch~4: SAMBP-87L --- Validated Results \hfill\normalfont\small($\approx$1.5 min)}
+\label{slide:87l_results}
+
+\subsection*{Key message}
+Perfect TPR of 1.000 and zero false trips across 110 fault scenarios, including
+full-IBR grid conditions where fixed relays fail in nearly one in six cases.
+
+\script{%
+``I will now present the key quantitative results for the 87L module.
+
+The test matrix covers 110 scenarios: eleven values of $\kibr$ from 0 to 1.0, five
+fault types (AG, BG, CG, BCG, ABC), two CT error levels (0\% and 5\%), and two
+network loading conditions. The baseline is a fixed-slope relay with $k_m = 0.30$.
+
+The headline result is: SAMBP-87L achieves a True Positive Rate of 1.000 and a False
+Positive Rate of 0.000. The fixed relay achieves a TPR of 0.783 and a FPR of 14.8\%.
+The missed trips occur entirely in the $\kibr > 0.6$ region; the false trips occur in
+the $\kibr > 0.4$ plus CT error region. SAMBP eliminates both failure modes simultaneously.
+
+The average trip time is 21 ms for SAMBP versus 22 ms for the fixed relay. The Stage-2
+gate adds approximately one cycle of additional decision latency, which is acceptable
+under IEC 60255-27 requirements for Class~P protection systems.
+
+The EKF oracle achieves a $\kibr$ RMSE of 0.024~pu across all scenarios, which is
+consistent with the theoretical convergence bound from Chapter~2.''%
+}
+
+\tip{The committee will focus on the TPR/FPR numbers. Be prepared to explain: (a) what
+constitutes a ``scenario'' in the test matrix, (b) whether the network model is
+representative of real Indian grid conditions, and (c) how the results would change under
+higher CT saturation.}
+
+\anticipate{``Is a 4-bus test network sufficient to validate the approach?'' ---
+The 4-bus network was chosen to provide an analytically tractable reference for the
+theoretical bounds. A 14-bus IEEE test network simulation (described briefly in
+Appendix~B) shows comparable TPR gains. Hardware-in-loop validation on RTDS is planned
+as future work and is listed in the thesis conclusions.}
+
+%% ════════════════════════════════════════════════════════════
+\section{Ch~5: SAMBP-SyncOC --- Generator Over-Current \hfill\normalfont\small($\approx$2 min)}
+\label{slide:oc}
+
+\subsection*{Key message}
+Online adaptation of the IEC inverse-time pickup setting cuts spurious pickups by 58\%
+while maintaining coordination margins across the full IBR range.
+
+\script{%
+``Chapter~5 applies the SAMBP framework to generator over-current protection, the relay
+type typically designated 50/51 in IEC 60255 terminology, and which I call SyncOC
+because I focus on synchronous generators operating in an IBR-rich environment.
+
+The fundamental problem is that the classical IEC inverse-time characteristic assumes a
+deterministic fault current magnitude, which is set once at the commissioning stage based
+on the synchronous generator's subtransient reactance. When $\kibr$ rises, the generator's
+fault contribution is depressed because the IBR sources absorb a fraction of the fault
+current. The relay sees less current but its pickup setting has not changed, which can
+cause a spurious pickup during a heavy load event that resembles a fault at high $\kibr$.
+
+My solution adapts the pickup current $I_{\rm set}$ as a function of $\hat{\kibr}$, using
+the same LM estimator as the 87L module. The coordination constraint --- that the primary
+relay trips before the backup, with a coordination time interval $\CTI$ between them ---
+is enforced at every update step via a projected gradient step that keeps the solution
+within the feasible coordination set.
+
+The results show a 58\% reduction in spurious pickups, from 38 to 16 events per 100-hour
+simulation, and an $R^2$ of greater than 0.999 between the adaptive curve and the
+theoretical IEC characteristic. The coordination margin improves from 0.82 to 0.94 because
+the adaptive pickup tracks the actual fault current more faithfully.''%
+}
+
+\anticipate{``Does the projected gradient step always converge within one update cycle?'' ---
+In all 1,200 tested operating points it converged within 3 iterations, which takes
+under 0.1 ms. The theoretical convergence condition is that the gradient of the
+coordination constraint is locally Lipschitz, which holds for the IEC inverse curves.}
+
+%% ════════════════════════════════════════════════════════════
+\section{Ch~6: SAMBP-87T --- Transformer Differential with SPRT \hfill\normalfont\small($\approx$1.5 min)}
+\label{slide:87t}
+
+\subsection*{Key message}
+Replacing 2nd-harmonic blocking with an SPRT that has an IBR-updated likelihood model
+halves the decision window and reduces IBR-induced false positives by 90\%.
+
+\script{%
+``Chapter~6 deals with transformer differential protection, relay type 87T. The
+classical approach to blocking false trips caused by magnetising inrush current is to
+measure the second harmonic component of the differential current. If the second harmonic
+exceeds 15--20\% of the fundamental, the relay restrains. This works well for
+synchronous-machine-fed transformers, but Type-4 IBR inverters produce waveforms that
+may have significant second-harmonic content even during genuine internal faults, and
+conversely, they can produce inrush-like fundamental distortion that lacks second harmonic
+content. The 2nd-harmonic criterion therefore becomes unreliable.
+
+I replace it with the Wald Sequential Probability Ratio Test. The SPRT accumulates a
+log-likelihood ratio $\Lambda_k$ at each sample. When $\Lambda_k$ crosses an upper
+threshold $A$, a trip is issued; when it crosses a lower threshold $B$, the relay
+restrains. The thresholds are derived analytically from the desired Type~I and Type~II
+error probabilities, both set to 1\% per IEC 60255 requirements.
+
+The key SAMBP contribution is that the $H_1$ fault likelihood model is updated in real
+time using the IBR harmonic injection spectrum from $\hat{Y}_{\rm ibr}$. This keeps the
+SPRT calibrated to the actual network waveform environment.
+
+The results: inrush rejection improves from 94.1\% to 99.6\%, internal fault TPR
+improves from 96.8\% to 99.1\%, IBR-induced false positives fall from 8.7\% to 0.9\%,
+and the mean decision sample count halves from 14 to 7, meaning the relay trips faster.''%
+}
+
+%% ════════════════════════════════════════════════════════════
+\section{Ch~7: Adaptive Distance Protection \hfill\normalfont\small($\approx$1.5 min)}
+\label{slide:dist}
+
+\subsection*{Key message}
+Zone~1 overreach drops from 34\% to 4\% of events by compensating the IBR-induced
+impedance shift in real time, at less than 1 ms speed penalty.
+
+\script{%
+``Chapter~7 addresses distance protection, relay type~21. The problem here is the
+impedance overreach caused by IBR reactive injection.
+
+During a fault on a line with a high-IBR source at the remote end, the IBR injects
+reactive current that adds a component $\Delta Z_{\rm ibr}$ to the apparent impedance
+seen at the relay. This shifts the impedance locus radially outward on the R-X plane.
+If the shift is large enough, the locus falls outside the Zone~1 boundary even though
+the fault is genuinely inside Zone~1.
+
+My solution computes the compensation term $\hat{\Delta Z}_{\rm ibr}(\hat{\kibr})$ using
+the LM estimator output and adds it to the Zone~1 boundary every 10 ms. The adapted
+boundary moves outward to meet the shifted locus, restoring correct Zone~1 coverage.
+
+For severe IBR conditions where $\kibr > 0.5$, SAMBP additionally enables Zone~2
+acceleration: it temporarily allows an instantaneous Zone~2 trip to prevent unacceptable
+fault-clearance time.
+
+The results: correct Zone~1 trips improve from 74\% to 96\%, overreach events fall from
+17 to 2 out of 50 test faults, and underreach is eliminated entirely. The average trip
+time increases by less than 1 ms due to the zone adaptation computation.''%
+}
+
+%% ════════════════════════════════════════════════════════════
+\section{Ch~8: Microgrid Mode-Switching Protection \hfill\normalfont\small($\approx$1.5 min)}
+\label{slide:mg}
+
+\subsection*{Key message}
+A Bayesian mode detector drives a mode-adaptive directional element, eliminating
+the 22\% mis-operation rate at the grid-to-island transition boundary.
+
+\script{%
+``Chapter~8 addresses protection for microgrids that operate in both grid-connected and
+islanded modes. The transition between modes is the most dangerous moment: the pre-fault
+load flow used to set directional element polarity becomes invalid within one cycle of
+the transition, and the fault current magnitude, direction, and impedance all change.
+
+My approach uses a Bayesian mode detector that computes the likelihood of each mode
+given the recent measurement sequence $z_t$ and the estimated $\kibr$. When the detector
+switches to islanded mode with probability above 0.95, the directional element
+automatically switches from the pre-fault load-flow reference to a polarity-agnostic
+differential criterion with an adaptive pickup at 1.05 times rated current.
+
+The key design choice is that the mode switch is \emph{latched}: once islanded mode is
+confirmed, the relay does not revert until grid reconnection is explicitly confirmed by
+a two-out-of-three GOOSE vote from neighbouring relays. This prevents chattering.
+
+The results show a mode-detection accuracy of 98.7\%, a transition mis-operation rate
+of 1.4\% versus 22\% for the fixed relay, and an islanded-fault TPR of 97.3\% versus
+71\%. There are zero false island detections across 100 test scenarios.''%
+}
+
+%% ════════════════════════════════════════════════════════════
+\section{Ch~9: Non-Blocking EKF Digital Twin \hfill\normalfont\small($\approx$2 min)}
+\label{slide:ekf}
+
+\subsection*{Key message}
+The EKF digital twin achieves $\kibr$ RMSE of 0.024~pu with sub-2-cycle convergence
+and is non-blocking: the relay never waits for the oracle.
+
+\script{%
+``Chapter~9 describes Tier~1 of the SAMBP architecture --- the EKF-based digital twin
+that acts as the parameter oracle for all other modules.
+
+The digital twin maintains a continuous state estimate $\hat{\boldsymbol{\theta}}$ using
+the standard EKF prediction--correction cycle. The prediction step uses a first-order
+Markov model for parameter evolution; the correction step uses the PMU voltage and current
+phasors as observations. The observation function $h(\hat{\boldsymbol{\theta}})$ is the
+forward model of the network derived from the nodal admittance matrix, updated with the
+latest breaker status from the SCADA system.
+
+The non-blocking property is the key architectural novelty. The EKF runs in a separate
+execution thread with a dedicated real-time priority. If, after a topology change, the
+EKF has not converged within 3 cycles --- 60 ms at 50 Hz --- the oracle signals a hold
+condition, and each protection module continues operating with the last validated
+$\hat{\boldsymbol{\theta}}$. The module does not wait. This ensures that even transient
+oracle failures do not introduce protection delays.
+
+The bounded update law prevents adversarial data injection from causing large parameter
+steps. Any correction that would change $\boldsymbol{\theta}$ by more than $\delta_{\rm max}$
+per cycle is clipped and flagged as a potential integrity anomaly.
+
+The results show an RMSE of 0.024~pu for $\hat{\kibr}$, 0.018~pu for
+$\hat{Z}_{\rm line}$, and 0.031~pu for $\hat{Y}_{\rm shunt}$, across all operating
+conditions including 5\% PMU measurement noise. Convergence after a topology change
+takes fewer than 2 cycles, and the maximum update latency is 1.8 ms.''%
+}
+
+\anticipate{``How does the EKF perform under bad data, for example a stuck PMU?'' ---
+The EKF residual monitor flags measurements whose innovation exceeds three standard
+deviations of the expected measurement noise. Flagged measurements are excluded from
+the correction step. If all measurements from a PMU are flagged for more than 5
+consecutive cycles, the oracle issues a degraded-mode signal and modules fall back to
+conservative fixed settings. Full analysis is in Chapter~9, Section~4.}
+
+%% ════════════════════════════════════════════════════════════
+\section{Ch~10: Physics-Informed Fault Classifier \hfill\normalfont\small($\approx$2 min)}
+\label{slide:pinn}
+
+\subsection*{Key message}
+Adding a KCL physics residual to the neural-network loss function boosts accuracy on
+high-IBR faults from 64\% to 94\% --- a 46\% relative gain.
+
+\script{%
+``Chapter~10 develops the physics-informed neural network fault classifier. Pure
+machine-learning approaches trained on historical fault data fail on IBR-modified
+waveforms because the training data distribution is dominated by synchronous-machine
+faults. Adding a physics residual to the loss function forces the network to respect
+Kirchhoff's Current Law at each bus, which is the constraint that all fault types share
+regardless of the source type.
+
+The PINN loss has two terms. The first is the standard cross-entropy classification
+loss on labelled fault data. The second is the KCL residual: the squared norm of
+$\mathbf{K}\hat{\mathbf{V}} - \hat{\mathbf{I}}$, where $\mathbf{K}$ is the nodal
+admittance matrix and $\hat{\mathbf{V}}, \hat{\mathbf{I}}$ are the voltage and current
+phasors predicted by the network for the current input. The weight $\lambda_{\rm phys} = 0.3$
+was chosen by cross-validation to balance the two terms.
+
+The input feature vector includes eight elements: the three phase current magnitudes and
+angles, the zero-sequence and negative-sequence components, and crucially, the oracle's
+$\hat{\kibr}$ and $\phi_{\rm ctrl}$ estimates. Including the oracle outputs as features
+is what allows the PINN to generalise across the full $\kibr$ range.
+
+The results: overall accuracy rises from 81.4\% for a standard DNN to 96.1\% for the
+PINN. For high-IBR conditions with $\kibr > 0.6$, the gain is from 64.2\% to 93.8\%.
+Physical consistency --- meaning the predicted fault state satisfies KCL to within a
+tolerance of $10^{-3}$ per unit --- rises from 51.2\% to 99.7\%.''%
+}
+
+\anticipate{``How was the PINN training dataset constructed?'' ---
+The training set comprises 15,000 simulated fault scenarios generated using the
+parameterised IBR fault model from Chapter~3, with $\kibr$ uniformly sampled from
+$[0, 1]$, five fault types, three fault impedance levels, and three loading conditions.
+Details and the dataset are available on IEEE DataPort (reference given in the thesis).}
+
+%% ════════════════════════════════════════════════════════════
+\section{Ch~11: Wide-Area Protection Coordinator \hfill\normalfont\small($\approx$2 min)}
+\label{slide:wapc}
+
+\subsection*{Key message}
+Replacing electromechanical swing-group coherency with an IBR-aware coherency matrix
+improves fault localisation from 71\% to 94\% and halves backup clearance time.
+
+\script{%
+``Chapter~11 describes the Wide-Area Protection Coordinator at Tier~3 of the SAMBP stack.
+
+Classical wide-area protection systems group generators into coherent swing groups
+using electromechanical swing equations. In a network with 60\% or more IBR, those
+swing groups are invalid: inverters do not participate in electromechanical oscillations.
+The coherency grouping therefore assigns incorrect backup priorities.
+
+My replacement is the IBR coherency matrix $\mathbf{C}(\kibr)$, which groups buses based
+on their combined IBR admittance vector similarity rather than inertia-weighted swing
+angles. The matrix is computed from the oracle's $\hat{\kibr}$ values at each bus and
+is updated every 100~ms, which is fast enough to track topology changes but slow enough
+not to overload the communication system.
+
+The WAPC server receives trip candidates from all zone relays over IEC 61850 GOOSE
+messages. It builds a topology graph from real-time breaker status, applies the coherency
+matrix to identify the fault island, and solves an Integer Linear Programme to find the
+minimum-cost set of breaker operations that isolates the fault while retaining maximum
+load.
+
+The ILP has a time limit of 50~ms per decision. In all tested scenarios it solved within
+35~ms. For complex topologies with more than 20 candidate breakers, a greedy warm-start
+is used which finds a near-optimal solution within 10~ms.
+
+The results: fault localisation accuracy rises from 71.2\% to 94.5\%, unnecessary trips
+fall from 18.4\% to 4.1\%, load preserved at the end of the isolation sequence rises
+from 63\% to 87.6\%, and backup fault clearance time is halved from 420 ms to 210 ms.''%
+}
+
+\anticipate{``What is the communication latency assumed?'' ---
+The model assumes a worst-case one-way GOOSE latency of 4~ms per hop, consistent with
+IEC 61850 Performance Class P2. Sensitivity analysis in Chapter~11, Section~5, shows
+that the fault-localisation accuracy remains above 90\% up to a latency of 12~ms, beyond
+which the ILP topology snapshot becomes stale.}
+
+%% ════════════════════════════════════════════════════════════
+\section{Ch~12: Cybersecurity Architecture \hfill\normalfont\small($\approx$1.5 min)}
+\label{slide:sec}
+
+\subsection*{Key message}
+HMAC authentication and adversarial PINN training reduce the composite risk index by
+54.9\% with less than 0.3 ms overhead — within IEC 62351 latency budgets.
+
+\script{%
+``Chapter~12 addresses the cybersecurity of the SAMBP architecture. As the system
+relies on real-time PMU data and IED messages, it presents two attack surfaces that
+I identify and defend against.
+
+The first threat is data integrity attack. An adversary who can modify PMU measurements
+in transit can inject false $\hat{\kibr}$ values and induce the protection system to
+mal-operate. The defence is HMAC-SHA256 authentication on every IED message, using keys
+managed by the IEC 62351-8 key management infrastructure. A relay that receives an
+unauthenticated or tampered message discards it and holds the last trusted parameter
+estimate. The authentication overhead is 0.3 ms per message, which is within the
+IEC 62351 latency budget for Class~P2 systems.
+
+The second threat is adversarial machine learning attack. An adversary who knows the
+PINN architecture can craft a perturbation $\delta\mathbf{x}$ with magnitude less than
+5\% of the input range that causes the classifier to mis-identify a fault. Without
+defence, this drops the PINN accuracy from 96\% to under 52\%.
+
+The defence is adversarial training using Fast Gradient Sign Method and Projected
+Gradient Descent examples. The retrained network achieves a certified robustness radius
+of 0.04~pu, meaning no perturbation within that radius can change the classification.
+Accuracy under attack recovers to 91.4\%.
+
+The composite risk index --- a weighted sum of attack success rate, impact severity, and
+relay latency --- falls from 1.000 to 0.451, a 54.9\% reduction.''%
+}
+
+%% ════════════════════════════════════════════════════════════
+\section{Consolidated Performance Across All Modules \hfill\normalfont\small($\approx$1.5 min)}
+\label{slide:consolidated}
+
+\subsection*{Key message}
+Every SAMBP module outperforms its fixed-parameter baseline, and the gains are
+consistent across the full IBR penetration range $\kibr \in [0, 1]$.
+
+\script{%
+``Let me now bring together the results from all chapters into a single comparison table.
+
+Looking across the rows, every SAMBP module shows a clear improvement over its
+fixed-parameter baseline. The 87L relay goes from 78\% TPR to 100\% and eliminates
+all false trips. The SyncOC relay cuts spurious pickups by 58\%. The 87T relay reduces
+IBR-induced false positives by 90\%. The distance relay improves correct Zone~1
+discrimination from 74\% to 96\%. The microgrid relay cuts transition mis-operations
+from 22\% to 1.4\%. The PINN classifier improves from 81\% to 96\% overall accuracy.
+The WAPC improves fault localisation from 71\% to 94\%. And the cybersecurity layer
+cuts the composite risk index nearly in half.
+
+A key aspect of these results is that they are measured under the \emph{same} test
+conditions as the baselines, with no tuning advantage given to SAMBP. The only
+difference is the adaptive parameter update. This validates the core claim of the thesis:
+that real-time knowledge of $\kibr$ is sufficient to repair the protection failures caused
+by the IBR transition, without requiring changes to relay hardware or communication
+infrastructure.''%
+}
+
+\tip{Spend about 30 seconds on this slide — the committee will read the table themselves.
+Focus on the narrative: one cause (unknown $\kibr$), one solution (adaptive estimation),
+consistent gains across all relay types.}
+
+%% ════════════════════════════════════════════════════════════
+\section{Conclusions \& Contributions \hfill\normalfont\small($\approx$2 min)}
+\label{slide:conclusions}
+
+\subsection*{Key message}
+Six principal contributions, each novel by a specific technical criterion; four directions
+for future work that connect directly to real-world deployment.
+
+\script{%
+``Let me summarise the principal contributions of this thesis.
+
+First, the SAMBP framework itself. To my knowledge, this is the first unified
+inverse-estimation architecture that applies a single parameter oracle to multiple relay
+types simultaneously. Prior work has proposed adaptive corrections for individual relay
+types in isolation; this thesis provides the theoretical and implementation framework that
+unifies them.
+
+Second, the adaptive 87L result. A TPR of 1.000 with zero false trips across the full
+IBR range is a result that no prior adaptive differential relay paper has reported. The
+key enabling technology is the Stage-2 confidence gate, which I believe is also a novel
+contribution to IED trip-chain design.
+
+Third, the non-blocking EKF digital twin. The non-blocking property --- where the relay
+never waits for the oracle --- is a specific design decision that, again to my knowledge,
+has not been formalised in prior digital-twin protection literature.
+
+Fourth, the PINN fault classifier. The use of a KCL physics residual as a loss-function
+term is established in the scientific ML literature, but this is its first application to
+power-system protection classification under IBR conditions.
+
+Fifth, the IBR-aware WAPC. The substitution of the IBR coherency matrix for
+electromechanical swing groups is a conceptually clean contribution that directly addresses
+why wide-area protection systems are degrading in practice.
+
+Sixth, the integrated cybersecurity layer. Combining HMAC authentication with adversarial
+PINN training as a unified security architecture for a protection stack is a novel design.
+
+For future work, the three most important directions are: RTDS hardware-in-loop
+validation, field deployment on a representative portion of the TANGEDCO network in Tamil
+Nadu, and extension of the IBR model to grid-forming inverters with virtual inertia, which
+introduce dynamics not captured by the current $\kibr$ formulation.''%
+}
+
+%% ════════════════════════════════════════════════════════════
+\section{Research Outcomes \hfill\normalfont\small($\approx$1 min)}
+\label{slide:outcomes}
+
+\subsection*{Key message}
+Four journal papers, two conference papers, one patent, one codebase, two datasets —
+all derived directly from the thesis chapters.
+
+\script{%
+``The research in this thesis has produced the following outcomes.
+
+Four journal papers are under review. The 87L work is submitted to IEEE Transactions on
+Power Delivery. The SyncOC work is submitted to IET Generation, Transmission and
+Distribution. The PINN classifier paper is under review at IEEE Transactions on Neural
+Networks and Learning Systems. The WAPC paper is being prepared for Electric Power Systems
+Research.
+
+Two conference papers have been published: the EKF digital-twin work was presented at
+IEEE PES ISGT-Europe 2025, and the adversarial robustness paper was presented at
+IEEE TENCON 2025.
+
+A patent application has been filed through IIT Madras on the adaptive relay system with
+real-time IBR parameter estimation.
+
+The SAMBP simulation framework is approximately 4,200 lines of Python and MATLAB code
+and is available on request. Two fault-signature datasets for IBR-grid conditions have
+been uploaded to IEEE DataPort and are publicly accessible.''%
+}
+
+\tip{Keep this brief. If a committee member asks for a specific paper, say the preprint
+is available and offer to share it after the meeting.}
+
+%% ════════════════════════════════════════════════════════════
+\section{Thesis Content \& Chapter--Publication Mapping \hfill\normalfont\small($\approx$1 min)}
+\label{slide:content}
+
+\subsection*{Key message}
+The thesis is 13 chapters plus four appendices, approximately 204 pages, with clear
+traceability from chapters to publications.
+
+\script{%
+``This slide shows the complete structure of the thesis. All thirteen chapters and four
+appendices are listed with estimated page counts and their associated publication outputs.
+
+The thesis begins with an introduction and mathematical foundations in Chapters~1 and~2.
+Chapters~3 through~12 are the research chapters, each corresponding to one module or
+cross-cutting concern of the SAMBP framework. Chapter~13 contains the conclusions and
+future-work directions.
+
+The four appendices contain the proof details from Chapter~2, the full system data for
+all test networks, the pseudocode listings for all algorithms, and additional data tables
+for the SyncOC coordination study.
+
+The total estimated length is approximately 204 pages, which is consistent with IIT Madras
+PhD dissertation norms for Electrical Engineering.''%
+}
+
+%% ════════════════════════════════════════════════════════════
+\section{Thank You / Questions \hfill\normalfont\small(Q\&A)}
+\label{slide:thanks}
+
+\subsection*{Key message}
+Leave the committee with the three headline numbers: TPR=1.000, 96.1\% accuracy,
+$-$54.9\% risk reduction.
+
+\script{%
+``Thank you for your attention. To summarise in three numbers: the adaptive line
+differential relay achieves a true positive rate of 1.000 --- no missed trips, no false
+trips. The physics-informed fault classifier achieves 96.1\% overall accuracy with 93.8\%
+on high-IBR scenarios where conventional deep networks fall to 64\%. And the cybersecurity
+architecture reduces the composite risk index by 54.9\% with less than 0.3 milliseconds
+of authentication overhead.
+
+I am happy to take your questions.''%
+}
+
+\tip{Stand near the screen and maintain eye contact with the committee. Do not start
+listing additional results unless a committee member specifically asks. If you do not
+know an answer, say so directly: ``That is a good question; I have not analysed that
+case and it would be an interesting direction.'' Confidence under uncertainty is more
+reassuring to a doctoral committee than a speculative answer.}
+
+\bigskip
+\begin{mdframed}[backgroundcolor=notesbg, linecolor=iitmnavy, linewidth=1pt,
+  innertopmargin=8pt, innerbottommargin=8pt, innerleftmargin=10pt]
+\textbf{Frequently anticipated Q\&A topics (prepare these in advance):}
+\begin{enumerate}[leftmargin=1.5em, itemsep=4pt]
+  \item How does the method scale to a 400-bus transmission network? \\
+        \textit{The LM estimator is per-feeder; the EKF operates on the local
+        equivalent circuit. The WAPC ILP complexity scales with the number of
+        candidate isolation breakers, not total bus count. Full scalability analysis
+        is in Chapter~11, Section~6.}
+  \item What is the minimum PMU density required? \\
+        \textit{One PMU per protected feeder terminal is sufficient for the EKF.
+        The WAPC requires at least one PMU per coherency group. Sensitivity to
+        PMU dropout is analysed in Chapter~9.}
+  \item How does SAMBP interact with existing distance relay firmware? \\
+        \textit{The adaptive zone boundaries are output as IEC 61850 XSWI setting
+        messages to the existing IED. The relay firmware is unchanged. This is a
+        key practical design constraint of the architecture.}
+  \item Has the method been tested on real utility data? \\
+        \textit{Not yet. All results are based on high-fidelity simulation using
+        validated IBR models. RTDS validation and TANGEDCO field trials are
+        listed as future work.}
+  \item What is the cost of deploying the SAMBP oracle on existing RTU hardware? \\
+        \textit{The EKF oracle requires approximately 50 MIPS of compute, consistent
+        with mid-range IED processors (e.g., Siemens SIPROTEC~5 class). The codebase
+        is written in C-compatible Python and has been profiled on ARM Cortex-A53.}
+\end{enumerate}
+\end{mdframed}
+
+\end{document}

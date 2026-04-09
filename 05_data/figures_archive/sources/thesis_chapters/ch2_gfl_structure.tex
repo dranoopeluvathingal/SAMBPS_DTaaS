@@ -1,0 +1,79 @@
+% ch2_gfl_structure.tex — GFL inverter block diagram
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  blk/.style={block, minimum width=2.2cm, minimum height=0.65cm},
+  sm/.style={smallblock},
+]
+
+%% DC bus
+\node[blk, fill=yellow!20, draw=thesisyellow] (DC) at (-5, 0) {DC Source\\(PV/Battery)};
+
+%% VSC
+\node[draw=black, thick, fill=gray!10, minimum width=1.2cm, minimum height=1.8cm,
+      align=center] (VSC) at (-2.8, 0) {VSC\\(IGBT)};
+
+%% Filter
+\node[draw=black, thick, fill=white, minimum width=1.0cm, minimum height=0.6cm,
+      align=center] (LCL) at (-1.0, 0) {$L_f, R_f$};
+
+%% PCC
+\node[busnode] (PCC) at (1.0, 0) {};
+\node[above=0.1cm of PCC, font=\tiny] {PCC};
+
+%% Grid
+\node[blk, fill=gray!10] (GRID) at (3.0, 0) {Grid\\$Z_\mathrm{grid}$};
+
+%% Connections
+\draw[arr] (DC.east) -- (VSC.west);
+\draw[arr] (VSC.east) -- (LCL.west);
+\draw[arr] (LCL.east) -- (PCC.west);
+\draw[arr] (PCC.east) -- (GRID.west);
+
+%% CT measurement
+\node[circle, draw=black, thick, fill=white, minimum size=0.4cm,
+      inner sep=0pt, font=\tiny] (CT) at (0.0, 0) {CT};
+\draw[arr] (CT.south) -- ++(0, -0.8) -| ($(CT.south)+(0,-0.8)+(-4.5,0)$)
+  node[below, font=\tiny] {$i_{abc}$};
+
+%% VT measurement
+\node[circle, draw=black, thick, fill=white, minimum size=0.4cm,
+      inner sep=0pt, font=\tiny] (VT) at (1.0, -0.6) {VT};
+\draw[arr] (VT.east) -- ++(0.5,0) |- ++(2.0, -1.5)
+  node[right, font=\tiny] {$e_{abc}$};
+
+%% Inner current control block
+\node[blk, draw=thesisgreen, fill=lightgreen] (ICC)
+  at (-3.5, -2.5) {Inner Current\\Control (PI)};
+
+%% Park transform
+\node[sm, draw=thesisgray] (PARK) at (-1.0, -2.5) {abc$\to dq$\\($\theta_\mathrm{PLL}$)};
+
+%% PLL block
+\node[blk, draw=thesisorange, fill=lightorange] (PLL)
+  at (2.5, -2.5) {SRF-PLL};
+
+%% Outer power control
+\node[blk, draw=thesisblue, fill=lightblue] (OPL)
+  at (-3.5, -4.2) {Outer Power\\Loop ($P^\ast, Q^\ast$)};
+
+%% Current limiter
+\node[sm, draw=thesisred, fill=red!10] (ILIM)
+  at (-1.0, -4.2) {Current\\Limiter ($I_\mathrm{lim}$)};
+
+%% Arrows for control path
+\draw[dataarrow] (PARK.west) -- node[above, font=\tiny]{$i_{dq}$} (ICC.east);
+\draw[dataarrow] (VT.south) -- ++(0,-1.0) -- ++(1.5,0)
+  -- (PLL.west) node[midway, below, font=\tiny]{};
+\draw[dataarrow] (PLL.west) -- node[below, font=\tiny]{$\theta_\mathrm{PLL}$}
+  ++(-1.2, 0) |- (PARK.south);
+\draw[dataarrow] (ICC.south) -- node[right, font=\tiny]{$v_{dq}^\ast$}
+  ++(0,-0.5) -| (OPL.north);
+\draw[dataarrow] (OPL.east) -- node[above, font=\tiny]{$i_{dq}^\ast$}
+  (ILIM.west);
+\draw[dataarrow] (ILIM.west) -- ++(-0.5,0) |- (ICC.east);
+
+%% Labels
+\node[font=\tiny, thesisblue] at (-3.5, -5.0) {Ref: Eq.~(2.7)};
+\node[font=\tiny, thesisorange] at (2.5, -3.3) {Ref: Eq.~(2.11)};
+
+\end{tikzpicture}

@@ -1,0 +1,61 @@
+% ch1_sambp_architecture.tex -- SAMBP three-tier architecture
+\begin{tikzpicture}[
+  every node/.style={font=\small},
+  tier/.style={draw=thesisblue, thick, fill=thesisblue!10,
+               rounded corners=4pt, minimum width=8.5cm,
+               minimum height=0.80cm, align=center},
+  module/.style={draw=thesisblue!70, fill=thesisblue!5,
+                 rounded corners=3pt, minimum width=2.4cm,
+                 minimum height=0.65cm, align=center, font=\scriptsize},
+  arrow/.style={-latex, thick, gray!70!black},
+]
+
+% Tier 1
+\node[tier] (T1) at (0,0)
+  {\textbf{Tier 1 --- Local Relay Physics} (Chapters 4--8)};
+\node[module] (modL)  at (-3.5,-1.2) {87L Adaptive\\Differential};
+\node[module] (modT)  at (-1.2,-1.2) {87T Transformer\\Differential};
+\node[module] (modOC) at ( 1.2,-1.2) {Generator\\Overcurrent};
+\node[module] (modMG) at ( 3.5,-1.2) {Microgrid\\Mode-Switch};
+
+\draw[arrow] (T1.south -| modL)  -- (modL.north);
+\draw[arrow] (T1.south -| modT)  -- (modT.north);
+\draw[arrow] (T1.south -| modOC) -- (modOC.north);
+\draw[arrow] (T1.south -| modMG) -- (modMG.north);
+
+% Tier 2
+\node[tier, fill=thesisgreen!10, draw=thesisgreen] (T2) at (0,-2.8)
+  {\textbf{Tier 2 --- Digital Monitoring and Learning} (Chapters 9--10)};
+\node[module, draw=thesisgreen!70] (modDT)   at (-2.2,-4.0) {Digital Twin\\EKF};
+\node[module, draw=thesisgreen!70] (modPINN) at ( 2.2,-4.0) {PINN Classifier\\+ CUSUM};
+
+\draw[arrow] (T2.south -| modDT)   -- (modDT.north);
+\draw[arrow] (T2.south -| modPINN) -- (modPINN.north);
+
+% Tier 3
+\node[tier, fill=thesisorange!10, draw=thesisorange] (T3) at (0,-5.6)
+  {\textbf{Tier 3 --- Centralised Coordination and Security} (Chapters 11--12)};
+\node[module, draw=thesisorange!70] (modWAPC) at (-3.5,-6.8) {PMU Fault\\Localisation};
+\node[module, draw=thesisorange!70] (modSET)  at ( 0,  -6.8) {CTI Settings\\Engine};
+\node[module, draw=thesisorange!70] (modSEC)  at ( 3.5,-6.8) {GOOSE +\\Adversarial};
+
+\draw[arrow] (T3.south -| modWAPC) -- (modWAPC.north);
+\draw[arrow] (T3.south -| modSET)  -- (modSET.north);
+\draw[arrow] (T3.south -| modSEC)  -- (modSEC.north);
+
+% Inter-tier flows
+\draw[arrow, dashed] (T2.north) -- node[right, font=\scriptsize]
+  {$\hat{k}_\mathrm{ibr}$, $\hat{\alpha}$} (T1.south);
+\draw[arrow, dashed] (T3.north) -- node[right, font=\scriptsize]
+  {Settings, GOOSE} (T2.south);
+
+% IEC network
+\node[draw=gray, fill=gray!10, rounded corners=3pt,
+      font=\scriptsize, minimum width=8.5cm, minimum height=0.5cm,
+      align=center] (modLAN) at (0,-8.0)
+  {IEC~61850 GOOSE + IEEE C37.118 PMU Network};
+\draw[arrow, dashed] (modWAPC.south) -- (modWAPC.south |- modLAN.north);
+\draw[arrow, dashed] (modSET.south)  -- (modSET.south  |- modLAN.north);
+\draw[arrow, dashed] (modSEC.south)  -- (modSEC.south  |- modLAN.north);
+
+\end{tikzpicture}

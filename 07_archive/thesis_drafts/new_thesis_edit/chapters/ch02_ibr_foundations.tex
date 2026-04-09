@@ -1,0 +1,669 @@
+%% ch02_ibr_foundations.tex
+%% Chapter: IBR Characterisation and Theoretical Foundations
+%% Merged from: ch02_mathematical_foundations.tex, ch03_ibr_characterisation.tex
+%% ============================================================
+\chapter{IBR Characterisation and Theoretical Foundations}
+\label{ch:foundations}
+\label{ch:ibr_char}
+
+\section{Introduction}
+\label{sec:ch2_intro}
+
+Every adaptive protection algorithm in this thesis rests on a common
+mathematical structure: an \emph{inverse estimation problem}, in which
+a physical model of the protected device is fitted to real-time measurements,
+and the identified parameters are used to update relay thresholds. This
+chapter establishes the theoretical foundations of that structure:
+the general nonlinear least-squares formulation (\S\ref{sec:ch2_lsq}),
+the Levenberg--Marquardt algorithm used as the solver
+(\S\ref{sec:ch2_lm}), the composite confidence score that gates adaptation
+decisions (\S\ref{sec:ch2_confidence}), and the bounded update law that
+guarantees protection security (\S\ref{sec:ch2_update}).
+
+These foundations are drawn upon directly by the generator OC
+(Chapter~\ref{ch:generator_oc}) and transformer differential
+(Chapter~\ref{ch:transformer_diff}) algorithms, and are reflected in
+the EKF formulation of the digital twin (Chapter~\ref{ch:digital_twin}).
+
+\section{Inverse Estimation Formulation}
+\label{sec:ch2_lsq}
+
+\subsection{General Structure}
+
+Let $\mathbf{x}(t; \bm{\theta}) \in \mathbb{R}^n$ be the state vector
+of a protected device (fault current, voltage, or impedance trajectory)
+parameterised by an unknown vector $\bm{\theta} \in \mathbb{R}^p$.
+Let $\mathbf{y}_k \in \mathbb{R}^n$ be a sequence of $K$ noisy measurements
+at times $t_k$. The \emph{inverse estimation problem} is:
+
+\begin{equation}
+  \hat{\bm{\theta}} = \argmin_{\bm{\theta} \in \Theta}
+    \sum_{k=1}^{K} w_k \left\|\mathbf{y}_k - \mathbf{x}(t_k;\bm{\theta})\right\|^2
+  \label{eq:ch2_lsq}
+\end{equation}
+
+where $\Theta \subset \mathbb{R}^p$ is the feasible set defined by physical
+bounds, $w_k > 0$ are sample weights (typically $w_k = 1$ for uniform
+confidence within the measurement window), and $\|\cdot\|$ is the Euclidean
+norm.
+
+Writing $\mathbf{r}(\bm{\theta}) = \mathbf{y} - \mathbf{x}(\bm{\theta})$
+as the residual vector (stacking all $K$ time steps), the problem becomes:
+\begin{equation}
+  \hat{\bm{\theta}} = \argmin_{\bm{\theta} \in \Theta}
+    \frac{1}{2}\|\mathbf{r}(\bm{\theta})\|^2
+  \label{eq:ch2_rss}
+\end{equation}
+
+When $\mathbf{x}(t;\bm{\theta})$ is nonlinear in $\bm{\theta}$ (as is the
+case for all physical models in this thesis), Eq.~\eqref{eq:ch2_rss} is a
+\emph{bounded nonlinear least-squares} problem.
+
+\subsection{Jacobian and Sensitivity Analysis}
+
+The first-order necessary condition $\nabla_{\bm{\theta}}(\frac{1}{2}\|\mathbf{r}\|^2) = 0$
+gives the \emph{normal equations}:
+\begin{equation}
+  J(\bm{\theta})^\top \mathbf{r}(\bm{\theta}) = \mathbf{0}
+  \label{eq:ch2_normal}
+\end{equation}
+where $J \in \mathbb{R}^{(nK) \times p}$ is the Jacobian:
+\begin{equation}
+  J_{ij} = \frac{\partial x_i}{\partial \theta_j}
+  \label{eq:ch2_jacobian}
+\end{equation}
+
+The condition number $\kappa(J)$ measures the sensitivity of the solution
+to measurement noise. When columns of $J$ are nearly linearly dependent
+(ill-conditioning), small measurement perturbations cause large parameter
+errors. Column-normalising $J$ before evaluating $\kappa$ removes
+dimension effects:
+\begin{equation}
+  \kappa_n(J) = \kappa\left(\mathrm{diag}(\|J_{\cdot,1}\|,\ldots,\|J_{\cdot,p}\|)^{-1} J\right)
+  \label{eq:ch2_kappan}
+\end{equation}
+
+\section{The Levenberg--Marquardt Algorithm}
+\label{sec:ch2_lm}
+
+\subsection{Derivation}
+
+The Levenberg--Marquardt (LM) algorithm~\citep{Levenberg1944,Marquardt1963}
+interpolates between steepest-descent (far from minimum) and
+Gauss--Newton (near minimum) by adding a trust-region regulariser:
+
+\begin{equation}
+  \bm{\delta}^{(i)} = -(J^\top J + \mu^{(i)} I)^{-1} J^\top \mathbf{r}
+  \label{eq:ch2_lm_step}
+\end{equation}
+
+\begin{equation}
+  \bm{\theta}^{(i+1)} = \Pi_\Theta\left(\bm{\theta}^{(i)} + \bm{\delta}^{(i)}\right)
+  \label{eq:ch2_lm_update}
+\end{equation}
+
+where $\Pi_\Theta(\cdot)$ projects onto the feasible set $\Theta$ (element-wise
+clipping to physical bounds), and $\mu^{(i)} > 0$ is the damping parameter.
+
+\subsection{Damping Parameter Adaptation}
+
+The damping parameter is adapted by the gain ratio:
+\begin{equation}
+  \rho^{(i)} = \frac{\|\mathbf{r}(\bm{\theta}^{(i)})\|^2
+                   - \|\mathbf{r}(\bm{\theta}^{(i+1)})\|^2}
+                    {L(\bm{\theta}^{(i)}) - L(\bm{\theta}^{(i+1)})}
+  \label{eq:ch2_gain_ratio}
+\end{equation}
+where $L(\bm{\theta})$ is the linearised model prediction:
+$L(\bm{\theta}^{(i)}) - L(\bm{\theta}^{(i+1)}) = \bm{\delta}^\top(2J^\top \mathbf{r} - J^\top J\bm{\delta})$.
+
+The update rule is:
+\begin{equation}
+  \mu^{(i+1)} = \begin{cases}
+    \mu^{(i)} / 3  & \text{if } \rho^{(i)} > 0.75 \text{ (good step: reduce damping)}\\
+    \mu^{(i)}      & \text{if } 0.25 \leq \rho^{(i)} \leq 0.75 \\
+    \mu^{(i)} \times 10 & \text{if } \rho^{(i)} < 0.25 \text{ (poor step: increase damping)}
+  \end{cases}
+  \label{eq:ch2_mu_adapt}
+\end{equation}
+
+\subsection{Two-Pass Strategy}
+
+For physical models where parameters separate into ``fast'' (identifiable
+early in the measurement window) and ``slow'' (identifiable only at the tail
+of the window) components, a two-pass approach improves convergence:
+
+\begin{enumerate}
+\item \textbf{Pass 1 (transient identification):} Fit the model over the
+      early window $[t_0, t_0 + T_1]$ with the slow parameters held fixed at
+      nominal values. Estimate the transient parameters $\bm{\theta}_\mathrm{fast}$.
+\item \textbf{Pass 2 (steady-state identification):} Fit over the full
+      window $[t_0, t_0 + T_2]$ with $\bm{\theta}_\mathrm{fast}$ fixed at
+      Pass~1 values. Estimate the slow parameters $\bm{\theta}_\mathrm{slow}$.
+\end{enumerate}
+
+This strategy reduces the effective Jacobian condition number by decoupling
+the transient and steady-state parameter subspaces, and is used in
+the SAMBP-SyncOC algorithm (Chapter~\ref{ch:generator_oc}).
+
+\begin{algorithm}[htbp]
+\caption{Levenberg--Marquardt Inverse Estimator}
+\label{alg:ch2_lm}
+\begin{algorithmic}[1]
+\Require Measurement window $\mathbf{y}$, model $\mathbf{x}(\cdot;\bm{\theta})$,
+         initial guess $\bm{\theta}^{(0)}$, bounds $\Theta$,
+         $\mu_0$, $\mu_\mathrm{max}$, $N_\mathrm{iter}$, $\varepsilon_r$
+\Ensure  $\hat{\bm{\theta}}$, residual $R^2$, Jacobian $J$
+\State $i \gets 0$,\; $\mu \gets \mu_0$
+\While{$i < N_\mathrm{iter}$ and $\|\mathbf{r}^{(i)}\| > \varepsilon_r$}
+  \State Compute $\mathbf{r}^{(i)} = \mathbf{y} - \mathbf{x}(\bm{\theta}^{(i)})$
+  \State Compute Jacobian $J^{(i)}$ via finite differences
+  \State Solve $(J^\top J + \mu I)\bm{\delta} = -J^\top \mathbf{r}^{(i)}$
+  \State $\bm{\theta}^{\mathrm{cand}} \gets \Pi_\Theta(\bm{\theta}^{(i)} + \bm{\delta})$
+  \State Compute gain ratio $\rho$ \Comment{Eq.~\eqref{eq:ch2_gain_ratio}}
+  \If{$\rho > 0$}
+    \State $\bm{\theta}^{(i+1)} \gets \bm{\theta}^{\mathrm{cand}}$
+  \Else
+    \State $\bm{\theta}^{(i+1)} \gets \bm{\theta}^{(i)}$ \Comment{reject step}
+  \EndIf
+  \State Update $\mu$ per Eq.~\eqref{eq:ch2_mu_adapt};\; $i \gets i+1$
+\EndWhile
+\State $\hat{\bm{\theta}} \gets \bm{\theta}^{(i)}$
+\State Compute $R^2 = 1 - \|\mathbf{r}^{(i)}\|^2 / \|\mathbf{y} - \bar{\mathbf{y}}\|^2$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Convergence Properties}
+
+Under standard regularity conditions~\citep{Nocedal2006}, the LM algorithm
+satisfies:
+\begin{equation}
+  \|\bm{\theta}^{(i+1)} - \hat{\bm{\theta}}\| \leq C \|\bm{\theta}^{(i)} - \hat{\bm{\theta}}\|^{1+q}
+  \label{eq:ch2_lm_convergence}
+\end{equation}
+with $q \in [1, 2)$ (superlinear convergence near the minimum, when $\mu \to 0$).
+For the protection application, convergence to $R^2 > 0.999$ within 15--20
+iterations has been demonstrated across all study cases (Chapter~\ref{ch:generator_oc}).
+
+\section{Composite Confidence Score}
+\label{sec:ch2_confidence}
+
+After solving the inverse estimation problem, it is essential to know
+\emph{how much to trust the result} before allowing it to update relay
+settings. A wrong estimate with high apparent $R^2$ can arise from
+overfitting, poor identifiability, or measurement noise. A four-component
+composite confidence score $\gamma \in [0,1]$ is defined as:
+
+\begin{equation}
+  \gamma = w_1 \gamma_R + w_2 \gamma_J + w_3 \gamma_B + w_4 \gamma_P
+  \label{eq:ch2_gamma}
+\end{equation}
+
+with $w_1 + w_2 + w_3 + w_4 = 1$ (default: $w = [0.35, 0.30, 0.20, 0.15]$).
+
+\paragraph{Component $\gamma_R$ --- Normalised Residual Quality.}
+\begin{equation}
+  \gamma_R = \frac{1}{1 + \alpha_R (1-R^2)}
+  \label{eq:ch2_gamma_r}
+\end{equation}
+where $\alpha_R = 100$ sharpens the score at $R^2 \approx 1$.
+$\gamma_R \to 1$ when $R^2 \to 1$ (near-perfect fit).
+
+\paragraph{Component $\gamma_J$ --- Jacobian Condition Number.}
+\begin{equation}
+  \gamma_J = \frac{1}{1 + \alpha_J \log_{10}(\kappa_n(J))}
+  \label{eq:ch2_gamma_j}
+\end{equation}
+with $\alpha_J = 0.1$. $\gamma_J \to 1$ when $\kappa_n(J) \to 1$
+(well-conditioned, identifiable problem); $\gamma_J \to 0$ as
+$\kappa_n(J) \to \infty$ (unidentifiable).
+
+\paragraph{Component $\gamma_B$ --- Bounds-Hit Fraction.}
+\begin{equation}
+  \gamma_B = 1 - \frac{N_\mathrm{bounds}}{p}
+  \label{eq:ch2_gamma_b}
+\end{equation}
+where $N_\mathrm{bounds}$ is the number of parameters that converged to
+a boundary of $\Theta$. Parameters hitting bounds indicate that the
+optimum is physically infeasible or the model is misidentified.
+
+\paragraph{Component $\gamma_P$ --- Physics Plausibility.}
+$\gamma_P \in \{0, 0.5, 1.0\}$ is a rule-based score on the
+physical plausibility of $\hat{\bm{\theta}}$. Each estimated parameter
+is checked against physics-based secondary bounds:
+\begin{equation}
+  \gamma_P = 1 - \frac{N_\mathrm{implausible}}{p}
+  \label{eq:ch2_gamma_p}
+\end{equation}
+where $N_\mathrm{implausible}$ is the number of parameters outside
+physically expected ranges (e.g., $\hat{X}_d'' > \hat{X}_d'$,
+$\hat{\tau}_{ac} < 0$).
+
+\paragraph{Adaptation Gate.}
+Adaptation of relay settings is authorised only when:
+\begin{equation}
+  \gamma \geq \gamma_\mathrm{th}
+  \label{eq:ch2_gate}
+\end{equation}
+with default $\gamma_\mathrm{th} = 0.70$.
+This threshold was chosen to balance responsiveness (adapt quickly to
+real changes) against security (reject spurious estimates).
+
+\section{Bounded Adaptive Update Law}
+\label{sec:ch2_update}
+
+\subsection{Motivation}
+
+If the inverse estimator produces an erroneous $\hat{\bm{\theta}}$ that
+passes the confidence gate (false positive), the relay settings must not
+move to an unsafe operating point. The bounded update law imposes three
+levels of safety:
+
+\begin{enumerate}
+\item \textbf{Rate limiting:} Settings change at most $\delta_\mathrm{max}$ per
+      update cycle, preventing step changes.
+\item \textbf{Hard bounds:} Settings are clamped to $[\theta_\mathrm{min},
+      \theta_\mathrm{max}]$ from commissioning specifications.
+\item \textbf{Security floor:} Settings may never drop below the minimum
+      value required to detect the worst-case bolted fault with a 20\%
+      margin.
+\end{enumerate}
+
+\subsection{Update Equation}
+
+Let $\xi_k$ be the $k$-th relay setting (e.g., pickup $I_p$ or
+time-multiplier $\TMS$), and $\hat{\xi}_k(\hat{\bm{\theta}})$ the
+value recommended by the identified model. The bounded update is:
+
+\begin{equation}
+  \xi_k^{(n+1)} = \mathrm{clip}\!\left(
+    \xi_k^{(n)} + \delta_\mathrm{max}\,
+    \mathrm{sgn}(\hat{\xi}_k - \xi_k^{(n)})
+    \cdot \min\left(1,\,
+      \frac{|\hat{\xi}_k - \xi_k^{(n)}|}{\delta_\mathrm{max}}
+    \right),\;
+    \xi_\mathrm{min},\; \xi_\mathrm{max}
+  \right)
+  \label{eq:ch2_update}
+\end{equation}
+
+For the IEC Very-Inverse relay:
+\begin{align}
+  I_p^{(n+1)} &= \mathrm{clip}\!\left(I_p^{(n)} + \Delta I_p,\,
+    1.05 I_\mathrm{load}^{\max},\, 0.80 I_\mathrm{fault}^{\min}\right)
+  \label{eq:ch2_ip_update} \\
+  \TMS^{(n+1)} &= \mathrm{clip}\!\left(\TMS^{(n)} + \Delta \TMS,\,
+    \TMS_\mathrm{min},\, \TMS_\mathrm{max}\right)
+  \label{eq:ch2_tms_update}
+\end{align}
+
+\subsection{Security Proof}
+
+\begin{proposition}[Bounded update preserves trip security]
+\label{prop:ch2_security}
+If $\xi_k^{(0)}$ is in $[\xi_\mathrm{min}, \xi_\mathrm{max}]$ and all
+$\hat{\xi}_k$ are in $\mathbb{R}$, then for all $n \geq 0$:
+$\xi_k^{(n)} \in [\xi_\mathrm{min}, \xi_\mathrm{max}]$.
+\end{proposition}
+
+\begin{proof}
+The update Eq.~\eqref{eq:ch2_update} applies $\mathrm{clip}(\cdot,
+\xi_\mathrm{min}, \xi_\mathrm{max})$ at every step. Since $\mathrm{clip}$
+is idempotent and bounds-preserving, the invariant holds by induction.
+\end{proof}
+
+\section{Applicability Map}
+\label{sec:ch2_map}
+
+Table~\ref{tab:ch2_applicability} summarises how the inverse estimation
+framework specialises to each protection element in this thesis.
+The mathematical structure (Eq.~\eqref{eq:ch2_lsq}--\eqref{eq:ch2_update})
+is identical; only the physical model $\mathbf{x}(t;\bm{\theta})$ and
+the parameter vector $\bm{\theta}$ change.
+
+\begin{table}[htbp]
+\caption{Inverse estimation framework specialisation by protection element}
+\label{tab:ch2_applicability}
+\small
+\begin{tabularx}{\textwidth}{@{}lp{2.5cm}p{3.5cm}p{2.5cm}p{2cm}@{}}
+\toprule
+Element & Model & Parameters $\bm{\theta}$ & Adapted setting & Status \\
+\midrule
+87L line diff & IBR differential current & $k_\mathrm{ibr}$, $\phi_B$ & Bias slope $k_m^*$ & [P] \\
+Gen. OC (SG) & 3-component fault current & $\{I_{ss},I_{sub},\tau_{ac},\tau_{dc},\phi_a\}$ & $I_p$, $\TMS$ & [P] \\
+Gen. OC (DFIG) & Piecewise crowbar model & $\{I_{0+},\tau_r,I_{crowd}\}$ & $I_p$ \\
+87T transformer & Inrush vs.\ fault model & $\{i_2/i_1,\phi_\mathrm{hm}\}$ & SPRT threshold \\
+EKF digital twin & IBR Thevenin model & $\kibr$, $\Zline$, $\alpha$ & 87L bias $k_m^*$ & [P] \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Relationship to Kalman Filtering}
+\label{sec:ch2_ekf_relation}
+
+The EKF used in the digital twin (Chapter~\ref{ch:digital_twin}) is
+formally a \emph{recursive} solution to the inverse estimation problem
+with Gaussian process and measurement noise. Writing the state model as:
+\begin{align}
+  \mathbf{x}_k &= f(\mathbf{x}_{k-1}) + \mathbf{w}_k, \quad
+    \mathbf{w}_k \sim \mathcal{N}(\mathbf{0}, Q) \\
+  \mathbf{y}_k &= h(\mathbf{x}_k) + \mathbf{v}_k, \quad
+    \mathbf{v}_k \sim \mathcal{N}(\mathbf{0}, R)
+\end{align}
+the EKF update step minimises the same objective as
+Eq.~\eqref{eq:ch2_lsq} over a sliding window, with the prediction
+step providing the Tikhonov regularisation that plays the role of the
+LM damping term $\mu$. This formal connection means the confidence
+score framework of \S\ref{sec:ch2_confidence} applies directly to
+evaluate the quality of EKF state estimates.
+
+
+
+%% ── Part 2: IBR Fault Current Characterisation and Protection Challenges ──────────────────────────────────
+
+\section{Introduction}
+\label{sec:ch3_intro}
+
+An accurate mathematical model of each generation source is the prerequisite
+for designing protection algorithms that respect physical constraints imposed
+by power electronic interfaces. This chapter develops the models used throughout
+the thesis, quantifies how IBR fault signatures degrade legacy relay performance,
+and motivates the adaptive solutions proposed in Chapters~\ref{ch:line_diff}--\ref{ch:centralised}.
+
+Four source types are treated:
+\begin{enumerate}
+\item \textbf{Synchronous Generator (SG):} The classical three-component
+      subtransient fault current with DC offset (Section~\ref{sec:ch3_sg}).
+\item \textbf{Grid-Following Inverter (GFL):} Current-controlled VSC with
+      fast current limiter (Section~\ref{sec:ch3_gfl}).
+\item \textbf{Grid-Forming Inverter (GFM):} Voltage-controlled VSC emulating
+      synchronous machine inertia (Section~\ref{sec:ch3_gfm}).
+\item \textbf{DFIG Type-3 and PMSG Type-4 Wind:} Models planned for future
+      extension of the SAMBP framework (Section~\ref{sec:ch3_dfig}).
+\end{enumerate}
+
+\section{Synchronous Generator Fault Current Model}
+\label{sec:ch3_sg}
+
+\subsection{Three-Component Fault Current}
+
+The Thevenin equivalent at the SG terminals for a three-phase fault at $t=0^+$ is:
+
+\begin{equation}
+  i_a^\mathrm{SG}(t) =
+    \frac{\sqrt{2} E_0}{X_d''} e^{-t/T_d''}
+    + \left(\frac{1}{X_d'} - \frac{1}{X_d''}\right)\sqrt{2} E_0\, e^{-t/T_d'}
+    + \left(\frac{1}{X_d} - \frac{1}{X_d'}\right)\sqrt{2} E_0
+    + I_\mathrm{DC}\,e^{-t/T_a}
+  \label{eq:ch3_sg_fault}
+\end{equation}
+
+where $X_d''$, $X_d'$, $X_d$ are sub-transient, transient, and synchronous
+direct-axis reactances; $T_d''$, $T_d'$ are the corresponding time constants;
+$T_a = X''_d / (\omega_0 R_a)$ is the DC offset time constant; and
+$I_\mathrm{DC} = \sqrt{2} E_0 / X_d'' \cdot \cos(\phi_0)$ depends on the
+pre-fault power angle $\phi_0$. For a typical large SG, the initial peak
+fault current is 6--10~pu, decaying over hundreds of milliseconds.
+
+The \textbf{reduced-order model} used in Chapter~\ref{ch:generator_oc}
+for the inverse estimation problem collapses Eq.~\eqref{eq:ch3_sg_fault}
+to six identifiable parameters:
+\begin{equation}
+  i_a(t) = I_{ss} + I_{sub}\,e^{-(t-t_0)/\tau_{ac}}\cos(\omega_0 t + \phi_a)
+           + I_{DC}(t_0)\,e^{-(t-t_0)/\tau_{dc}}
+  \label{eq:ch3_sg_reduced}
+\end{equation}
+where $\bm{\theta} = \{t_0, I_{ss}, I_{sub}, \tau_{ac}, \tau_{dc}, \phi_a\}$
+and the DC amplitude $I_{DC}(t_0) = -I_{sub}\cos\phi_a - I_{ss}$
+is fixed by the continuity condition at $t = t_0^+$, eliminating one
+free parameter from the otherwise seven-parameter formulation.
+
+\subsection{Sequence Characteristics}
+
+Under unbalanced faults, the SG exhibits $Z_1 \neq Z_2 \neq Z_0$:
+\begin{equation}
+  Z_1^\mathrm{SG} = \jj X_d'', \quad
+  Z_2^\mathrm{SG} = \jj \frac{X_d'' + X_q''}{2}, \quad
+  Z_0^\mathrm{SG} = \jj X_0 + 3Z_n
+  \label{eq:ch3_sg_seq_z}
+\end{equation}
+The non-zero $Z_2$ and $Z_0$ drive negative-sequence and zero-sequence
+currents during SLG faults, which are the physical basis for the 87LN
+and 87LN0 elements of Chapter~\ref{ch:line_diff}.
+
+\section{Grid-Following Inverter Model}
+\label{sec:ch3_gfl}
+
+\subsection{Inner Current Loop Dynamics}
+
+In the rotating $dq$ reference frame, the converter filter equations are:
+\begin{align}
+  L_f \frac{d\id}{dt} &= -R_f \id + \omega_0 L_f \iq + v_d - e_d \\
+  L_f \frac{d\iq}{dt} &= -R_f \iq - \omega_0 L_f \id + v_q - e_q
+\end{align}
+
+The closed-loop bandwidth $\omega_\mathrm{bw} \approx 2\pi \times 500$~rad/s
+gives a current step response settling time of $\approx 2$~ms.
+
+\subsection{Current Limiter and Fault Current}
+
+The IGBT thermal protection clips $|i_{dq}| \leq I_\mathrm{lim}$:
+\begin{equation}
+  \phasor{I}_\mathrm{GFL} = I_\mathrm{lim}\angle(\theta_\mathrm{PLL} + \phi_\mathrm{cmd}),
+  \quad I_\mathrm{lim} \in [1.1, 1.5]\,I_\mathrm{rated}
+\end{equation}
+
+The \emph{IBR current ratio} is the key protection parameter used throughout
+this thesis:
+\begin{equation}
+  \kibr \triangleq \frac{|\phasor{I}_\mathrm{GFL}|}{I_\mathrm{rated}}
+  \in [0.03, 0.55]
+  \label{eq:ch3_kibr_def}
+\end{equation}
+
+\subsection{Sequence Characteristics of GFL}
+
+Under IEEE~2800 negative-sequence suppression (default):
+\begin{equation}
+  \phasor{I}_2^\mathrm{GFL} = 0, \qquad
+  \phasor{I}_0^\mathrm{GFL} = 0 \quad \text{(3-wire converter)}
+  \label{eq:ch3_gfl_seq}
+\end{equation}
+
+This has critical implications: the 87LN element (negative-sequence
+differential) does \emph{not} depend on the IBR fault current contribution,
+making it IBR-resilient by design (Chapter~\ref{ch:line_diff}).
+
+\section{Grid-Forming Inverter Model}
+\label{sec:ch3_gfm}
+
+\subsection{Virtual Synchronous Machine (VSM)}
+
+The GFM emulates the swing equation:
+\begin{equation}
+  M\ddot{\theta} + D\dot{\theta} = P^\ast - P_e
+\end{equation}
+with virtual impedance $Z_v = R_v + \jj\omega_0 L_v$ giving fault current:
+\begin{equation}
+  I_\mathrm{sc}^\mathrm{GFM} = \frac{|V_0|}{|Z_v|} \approx \frac{|V_0|}{\omega_0 L_v}
+  \in [1.5, 2.5]\,I_\mathrm{rated}
+\end{equation}
+
+GFM fault current is higher than GFL but lower than SG. The VSM model
+is validated against 6th-order Park $dq$ simulations for $t \leq 150$~ms.
+For $t > 150$~ms, AVR dynamics become significant and the reduced model
+diverges by up to 5\%.
+
+\begin{table}[htbp]
+\caption{Fault current characteristics: SG vs.\ GFL vs.\ GFM}
+\label{tab:ch3_fault_comparison}
+\begin{tabularx}{\textwidth}{@{}lp{3cm}p{3cm}p{3cm}X@{}}
+\toprule
+Parameter & SG & GFL & GFM (VSM) & Relay impact \\
+\midrule
+Magnitude (pu) & 6--10 & 1.1--1.5 & 1.5--2.5
+  & OC pickup; 87L bias slope \\
+Decay & Exponential ($T_d'' \!\approx\! 30$~ms) & Controlled constant
+  & Controlled constant
+  & TDCS detection window \\
+$I_2$ injection & $\propto V_2$ (physical) & Zero (suppressed)
+  & Zero (suppressed)
+  & 87LN resilience to IBR \\
+$I_0$ injection & $\propto V_0$ (grounding) & Zero (3-wire)
+  & Zero (3-wire)
+  & 87LN0; 21G elements \\
+Phase angle & Fixed (rotor) & Commanded $\pm 90$
+  & Virtual rotor
+  & Directional element \\
+Response time & 5--50~ms & 2--5~ms & 5--20~ms
+  & TDCS time window \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{DFIG Type-3 and PMSG Type-4 Models (Extended Framework)}
+\label{sec:ch3_dfig}
+
+The DFIG and PMSG wind generators represent the dominant wind turbine
+technologies globally, yet their fault current models are substantially
+more complex than the GFL/GFM VSC models. This section presents the
+theoretical models that will underpin the DFIG generator OC extension
+
+\subsection{DFIG Type-3 Fault Current: Crowbar-Switched Piecewise Model}
+
+The DFIG Type-3 wind turbine has a partially-rated rotor-side converter
+(RSC) that injects current through the wound rotor. During a voltage dip,
+the DC bus overvoltage protection activates the \emph{crowbar}---a
+resistive shorting of the rotor circuit---within 2--5~ms. The fault
+current exhibits two distinct phases:
+
+\textbf{Phase I (pre-crowbar, $0 < t < t_{cb}$):}
+\begin{equation}
+  i_s(t) = I_{s0}\,e^{-t/T_s'}\cos(\omega_0 t + \phi_0)
+          + I_{r,\mathrm{RSC}}\,e^{-t/T_r}
+  \label{eq:ch3_dfig_phase1}
+\end{equation}
+where $T_s' = L_s'/R_s$ and the RSC current $I_{r,\mathrm{RSC}}$ is
+limited by the converter current controller.
+
+\textbf{Phase II (post-crowbar, $t \geq t_{cb}$):}
+\begin{equation}
+  i_s(t) = I_{s,cb}\,e^{-(t-t_{cb})/T_{s,cb}}\cos(\omega_0 t + \phi_{cb})
+          + I_{s,dc}\,e^{-(t-t_{cb})/T_{dc}}
+  \label{eq:ch3_dfig_phase2}
+\end{equation}
+with $T_{s,cb} = L_s / (R_s + R_{cb})$ where $R_{cb}$ is the crowbar
+resistance. The crowbar activation introduces a step discontinuity at
+$t = t_{cb}$ that is not captured by the SG reduced-order model.
+
+The \textbf{DFIG inverse estimation problem} parameterised as:
+\begin{equation}
+  \bm{\theta}_\mathrm{DFIG} = \{t_0, t_{cb}, I_{s0}, I_{r,\mathrm{RSC}},
+    T_s', T_r, I_{s,cb}, T_{s,cb}\}
+  \label{eq:ch3_dfig_params}
+\end{equation}
+is an 8-parameter two-phase LM problem with the phase transition time
+$t_{cb}$ as an additional free parameter. The two-pass LM strategy of
+Chapter~\ref{ch:foundations} generalises directly: Pass~1 identifies
+$\{I_{s0}, T_s', T_r\}$ over Phase~I, and Pass~2 identifies
+$\{I_{s,cb}, T_{s,cb}\}$ over Phase~II with $t_{cb}$ from Pass~1.
+
+
+\subsection{PMSG Type-4 Model}
+
+The PMSG Type-4 connects to the grid through a full-converter back-to-back
+VSC. The grid-side converter (GSC) is functionally identical to the GFL
+model (Section~\ref{sec:ch3_gfl}): the fault current is
+$|\phasor{I}_\mathrm{PMSG}| = I_\mathrm{lim}^{GSC} \in [1.1, 1.5]$~pu.
+The protection implications are therefore identical to GFL, and no new
+relay algorithm development is required for PMSG protection beyond the
+framework of Chapter~\ref{ch:line_diff}.
+
+\section{Protection Challenges Quantified}
+\label{sec:ch3_challenges}
+
+\subsection{Overcurrent Relay: Pickup Failure at Low $\kibr$}
+
+The minimum detectable fault current with a standard ITOC relay is
+$I_\mathrm{pickup} = k_s I_\mathrm{load,max}$ with $k_s = 1.3$.
+For a pure-IBR feeder at maximum load ($I_\mathrm{load} \approx I_\mathrm{rated}$)
+and minimum fault ($I_\mathrm{fault}^\mathrm{min} = 1.1\,I_\mathrm{rated}$):
+
+\begin{equation}
+  I_\mathrm{pickup} = 1.3\,I_\mathrm{rated} > I_\mathrm{fault}^\mathrm{min} = 1.1\,I_\mathrm{rated}
+\end{equation}
+
+The ITOC relay is \textbf{incapable of detecting faults} on IBR-only feeders
+under maximum load. The adaptive OC framework of Chapter~\ref{ch:generator_oc}
+addresses this for generator protection by tracking the generator model
+rather than using a fixed pickup.
+
+\subsection{87L Differential Relay: Bias Slope Conflict}
+
+The classical 87L relay operates on:
+$I_\mathrm{diff} > k_m I_\mathrm{bias} + I_0$.
+For an internal fault with IBR at end~B:
+\begin{equation}
+  I_\mathrm{diff} = \sqrt{I_A^2 + I_B^2 + 2 I_A I_B \cos(\phi_A - \phi_B)}
+\end{equation}
+When $\kibr$ is low, $I_B \ll I_A$, so $I_\mathrm{diff} \approx I_A$ and the
+relay is sensitive. When $\kibr$ is high (IBR at rated during ride-through)
+but the phase angle $\phi_A - \phi_B \approx 90$ (reactive support mode),
+$I_\mathrm{diff}$ drops to $\sqrt{I_A^2 + I_B^2}$, potentially below
+$k_m I_\mathrm{bias} = k_m (I_A + I_B)/2$. The adaptive threshold of
+Chapter~\ref{ch:line_diff} resolves this conflict.
+
+\subsection{Distance Relay: Reach Limitation from IBR Reactive Injection}
+
+The apparent impedance seen by a distance relay at end~A with IBR at end~B:
+\begin{equation}
+  \Zapp = \alpha \Zline + \frac{I_A + I_B}{I_A}\, Z_F
+  \label{eq:ch3_zapp}
+\end{equation}
+
+The IBR injects reactive current $I_B = I_\mathrm{lim}\angle 90$,
+shifting $\Zapp$ in the reactive direction on the R-X plane. For a
+purely resistive fault ($Z_F = R_F$), the shift is:
+\begin{equation}
+  \Delta Z^\mathrm{react} = \frac{I_B^\mathrm{react}}{I_A}\, R_F
+  \label{eq:ch3_reach_shift}
+\end{equation}
+This causes the relay to see $|\Zapp| > |\alpha \Zline|$ and underreach
+(miss the fault). The quadrilateral correction of
+Chapter~\ref{ch:distance} subtracts this shift using the DT estimate of $\kibr$.
+
+\subsection{Transformer Differential: Inrush Mis-Discrimination at Low IBR}
+
+The classical 87T relay uses second-harmonic blocking to restrain during
+transformer energisation inrush. The threshold is set at:
+$I_{2f}/I_{1f} > 0.15$ (15\% second harmonic ratio).
+When IBRs supply the energisation current, the high-frequency harmonics
+generated by the switching converters can suppress the inrush signature
+below the 15\% threshold, causing the 87T to \emph{operate} (false trip)
+during energisation. Conversely, internal turn-to-turn faults may generate
+a small harmonic content that incorrectly blocks the 87T.
+The SPRT solution of Chapter~\ref{ch:transformer_diff} replaces the fixed
+harmonic threshold with a sequential likelihood ratio test that adapts to
+the observed harmonic envelope.
+
+\subsection{Summary of Failure Modes}
+
+\begin{table}[htbp]
+\caption{Legacy relay failure modes in IBR-dominated networks}
+\label{tab:ch3_failures}
+\small
+\begin{tabularx}{\textwidth}{@{}lp{3cm}p{3.5cm}X@{}}
+\toprule
+Failure Mode & Element & Root Cause & SAMBP Solution \\
+\midrule
+F1 & ITOC pickup failure & $I_\mathrm{fault} < I_\mathrm{pickup}$ & Adaptive OC (Ch.~\ref{ch:generator_oc}) \\
+F2 & 87L bias conflict & Fixed $k_m$, variable $\kibr$ & Adaptive 87L (Ch.~\ref{ch:line_diff}) \\
+F3 & 87L SLG miss & IBR suppresses $I_2$ & 87LN + 87LN0 (Ch.~\ref{ch:line_diff}) \\
+F4 & 87T inrush mis-discrim. & IBR distorts harmonic ratio & SPRT 87T (Ch.~\ref{ch:transformer_diff}) \\
+F5 & Distance underreach & IBR reactive injection & Quadrilateral 21 (Ch.~\ref{ch:distance}) \\
+F6 & Islanding blind spot & Mode-switch timing & Microgrid prot.\ (Ch.~\ref{ch:microgrid}) \\
+F7 & PINN physics violation & No constraint in loss & PINN + KVL/KCL (Ch.~\ref{ch:ml}) \\
+F8 & No closed-loop adaptation & Manual settings process & WAPC protocol (Ch.~\ref{ch:centralised}) \\
+\bottomrule
+\end{tabularx}
+\end{table}

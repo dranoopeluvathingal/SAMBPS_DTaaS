@@ -1,0 +1,55 @@
+% fig_feature_zone_correlation.tex
+% TR-47: Mean feature value per protection class (Study C)
+
+\begin{tikzpicture}
+\begin{axis}[
+  name         = czax,
+  width        = 0.82\textwidth,
+  height       = 6.5cm,
+  ybar,
+  bar width    = 7pt,
+  ylabel       = {Mean feature value [pu]},
+  ylabel style = {font=\small},
+  xtick        = {1,2,3,4},
+  xticklabels  = {$k_\mathrm{ibr}$, $\alpha$, $Z_m$, $k_\mathrm{margin}$},
+  xticklabel style = {font=\small},
+  xmin=0.4, xmax=4.6,
+  ymin=0, ymax=1.20,
+  ytick        = {0,0.2,0.4,0.6,0.8,1.0},
+  yticklabel style = {font=\scriptsize},
+  tick style   = {draw=none},
+  axis line style = {gray!50},
+  grid         = major,
+  grid style   = {gray!10, dashed},
+  legend style = {at={(0.99,0.99)}, anchor=north east,
+                  font=\scriptsize, draw=gray!50,
+                  legend columns=4},
+  legend cell align = left,
+]
+
+%% MISS class
+\addplot[fill=red!50, draw=red!70!black]
+  coordinates {(1,0.046) (2,0.503) (3,0.599) (4,0.000)};
+\addlegendentry{MISS}
+
+%% 87L class
+\addplot[fill=orange!60, draw=orange!80!black]
+  coordinates {(1,0.253) (2,0.648) (3,0.212) (4,0.439)};
+\addlegendentry{87L}
+
+%% Z1 class
+\addplot[fill=blue!50, draw=blue!70!black]
+  coordinates {(1,0.345) (2,0.403) (3,0.087) (4,0.649)};
+\addlegendentry{Z1}
+
+%% EXT class
+\addplot[fill=gray!40, draw=gray!60]
+  coordinates {(1,0.285) (2,1.051) (3,0.336) (4,0.512)};
+\addlegendentry{EXT}
+
+%% EXT alpha annotation (exceeds y axis)
+\node[gray!60, font=\tiny, rotate=90, anchor=south]
+  at (axis cs:4.21, 1.0) {EXT $\alpha$=1.051};
+
+\end{axis}
+\end{tikzpicture}

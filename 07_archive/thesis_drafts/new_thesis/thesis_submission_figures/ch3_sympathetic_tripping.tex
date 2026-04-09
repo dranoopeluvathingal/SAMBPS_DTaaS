@@ -1,0 +1,55 @@
+% ch3_sympathetic_tripping.tex
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+]
+%% Common bus
+\node[busnode, minimum size=0.7cm] (BUS) at (0,0) {Bus};
+\node[above=0.1cm of BUS, font=\tiny\bfseries] {Common};
+
+%% Grid infeed
+\node[block, fill=gray!10, minimum width=2cm] (GRID) at (-3.5,0) {Grid\\Infeed};
+\draw[arr, thesisblue] (GRID.east) -- node[above, font=\tiny]{$I_\mathrm{grid}$}
+  (BUS.west);
+
+%% Feeder 1 (faulted)
+\node[block, fill=red!10, draw=thesisred] (F1) at (0,-2.8) {Feeder 1\\(Faulted)};
+\node[relaybox, font=\tiny] (R1) at (0,-1.7) {R01};
+\draw[arr, thesisred] (BUS.south) -- (R1.north);
+\draw[arr, thesisred] (R1.south) -- (F1.north);
+
+%% Fault symbol
+\node[draw=thesisred, fill=red!5, star, star points=6,
+      minimum size=0.5cm, font=\tiny] (FLT) at (0,-3.8) {};
+\node[below=0.1cm of FLT, font=\tiny, thesisred] {Fault};
+\draw[arr, thesisred] (F1.south) -- (FLT.north);
+
+%% IBR at Feeder 1
+\node[ibrbox] (IBR1) at (1.8,-3.0) {IBR};
+\draw[arr, thesisgreen] (IBR1.west) -- node[above, font=\tiny]{$I_\mathrm{IBR,1}$}
+  (F1.east);
+
+%% Feeder 2 (healthy, sympathetic trip)
+\node[block, fill=orange!10, draw=thesisorange] (F2) at (3.5,-2.8)
+  {Feeder 2\\(Healthy)};
+\node[relaybox, font=\tiny, draw=thesisorange] (R2) at (3.5,-1.7) {R02};
+\draw[arr] (BUS.east) -- node[above, font=\tiny]{$I_\mathrm{IBR,2}$} (R2.north);
+\draw[arr] (R2.south) -- (F2.north);
+
+%% IBR at Feeder 2 feeding back through bus
+\node[ibrbox] (IBR2) at (5.3,-3.0) {IBR};
+\draw[arr, thesisgreen] (IBR2.west) --
+  node[above, font=\tiny]{$I_\mathrm{IBR,2}$} (F2.east);
+
+%% Sympathetic current path annotation
+\draw[->, thesisorange, very thick, dashed]
+  (IBR2.north) -- ++(0, 1.5) -- ++(-4.2, 0) -- ++(0,-0.5)
+  node[midway, above, font=\tiny, thesisorange]
+  {Sympathetic current path via common bus};
+
+%% R02 pickup annotation
+\node[draw=thesisorange, rounded corners=2pt, fill=orange!5,
+      font=\tiny, align=center] at (5.5,-1.2)
+  {R02 picks up\\$I_\mathrm{IBR,2} > I_\mathrm{pu,2}$\\False trip!};
+\draw[->, thesisorange, dashed] (5.5,-1.5) -- (R2.east);
+
+\end{tikzpicture}

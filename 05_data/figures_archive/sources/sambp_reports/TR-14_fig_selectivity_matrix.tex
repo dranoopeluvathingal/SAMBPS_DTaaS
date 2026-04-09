@@ -1,0 +1,60 @@
+% fig_selectivity_matrix.tex
+% Compact selectivity matrix: 5 topologies $\times$ 5 fault locations
+% Columns: Z1, Z2, CK, BB1_trip, BB2_trip, BC_trip, Selective
+% Data from run_busbar_transfer_study.py outputs/tr14_selectivity.csv (3ph only)
+\begin{tikzpicture}
+\matrix[
+  matrix of nodes,
+  nodes in empty cells,
+  row sep=-\pgflinewidth,
+  column sep=-\pgflinewidth,
+  nodes={draw, minimum width=22pt, minimum height=14pt, inner sep=1pt,
+         font=\scriptsize, anchor=center},
+  column 1/.style={minimum width=56pt, align=left, nodes={draw=none}},
+  column 2/.style={minimum width=34pt, align=left, nodes={draw=none}},
+] (mat) at (0,0) {
+% Topology  |Fault          |Z1 |Z2 |CK |BB1|BB2|BC |Sel|
+  {Topology}& {Fault loc}  & {Z1} & {Z2} & {CK} & {BB1} & {BB2} & {BC} & {Sel} \\
+  % ---- T1_NORM ----
+  {T1}      & {BB1/3ph}    & {T} & {$\cdot$} & {T} & {T} & {$\cdot$} & {$\cdot$} & {\checkmark} \\
+  {T1}      & {BB2/3ph}    & {$\cdot$} & {T} & {T} & {$\cdot$} & {T} & {$\cdot$} & {\checkmark} \\
+  {T1}      & {BC/3ph}     & {$\cdot$} & {$\cdot$} & {T} & {$\cdot$} & {$\cdot$} & {T} & {\checkmark} \\
+  {T1}      & {LINE/3ph}   & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {\checkmark} \\
+  {T1}      & {LOAD/3ph}   & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {\checkmark} \\
+  % ---- T2_TIP ----
+  {T2}      & {BB1/3ph}    & {T} & {$\cdot$} & {T} & {T} & {$\cdot$} & {$\cdot$} & {\checkmark} \\
+  {T2}      & {BB2/3ph}    & {$\cdot$} & {T} & {T} & {$\cdot$} & {T} & {$\cdot$} & {\checkmark} \\
+  {T2}      & {BC/3ph}     & {$\cdot$} & {$\cdot$} & {T} & {$\cdot$} & {$\cdot$} & {T} & {\checkmark} \\
+  {T2}      & {LINE/3ph}   & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {\checkmark} \\
+  {T2}      & {LOAD/3ph}   & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {\checkmark} \\
+  % ---- T3_POST ----
+  {T3}      & {BB1/3ph}    & {T} & {$\cdot$} & {T} & {T} & {$\cdot$} & {$\cdot$} & {\checkmark} \\
+  {T3}      & {BB2/3ph}    & {$\cdot$} & {T} & {T} & {$\cdot$} & {T} & {$\cdot$} & {\checkmark} \\
+  {T3}      & {BC/3ph}     & {$\cdot$} & {$\cdot$} & {T} & {$\cdot$} & {$\cdot$} & {T} & {\checkmark} \\
+  {T3}      & {LINE/3ph}   & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {\checkmark} \\
+  {T3}      & {LOAD/3ph}   & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {\checkmark} \\
+  % ---- T4_SPLIT ----
+  {T4}      & {BB1/3ph}    & {T} & {$\cdot$} & {T} & {T} & {$\cdot$} & {$\cdot$} & {\checkmark} \\
+  {T4}      & {BB2/3ph}    & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {\checkmark} \\
+  {T4}      & {BC/3ph}     & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {\checkmark} \\
+  {T4}      & {LINE/3ph}   & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {\checkmark} \\
+  {T4}      & {LOAD/3ph}   & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {$\cdot$} & {\checkmark} \\
+};
+
+% Colour the header row
+\foreach \col in {1,...,9} {
+  \fill[gray!25] (mat-1-\col.north west) rectangle (mat-1-\col.south east);
+}
+
+% Colour separator rows between topologies
+\foreach \row in {7,12,17} {
+  \draw[gray!40, line width=0.8pt]
+    (mat-\row-1.north west) -- (mat-\row-9.north east);
+}
+
+% Total count annotation
+\node[font=\scriptsize\bfseries, text=green!50!black]
+  at ($(mat-21-9.south east)+(0,-0.35)$)
+  {40/40 selective (100\%)};
+
+\end{tikzpicture}

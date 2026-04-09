@@ -1,0 +1,126 @@
+\documentclass[tikz, border=8pt]{standalone}
+%% ── Packages ─────────────────────────────────────────────────────────────────
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{amsmath, amssymb, bm}
+\usepackage[dvipsnames,svgnames,x11names]{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{pgfplotstable}
+\usepackage{pifont}
+\usepackage{colortbl}
+\usepgfplotslibrary{groupplots}
+\usepgfplotslibrary{colorbrewer, statistics}
+\usetikzlibrary{%
+  shapes, shapes.geometric, shapes.symbols, shapes.misc,
+  arrows, arrows.meta,
+  calc, positioning, fit,
+  decorations.pathmorphing, decorations.pathreplacing,
+  decorations.markings, patterns, matrix, shadows, backgrounds,
+  mindmap, trees,
+}
+
+%% ── Colour palette (thesis + sambp) ─────────────────────────────────────────
+\definecolor{thesisblue}   {RGB}{  0, 70,140}
+\definecolor{thesisred}    {RGB}{180, 30, 30}
+\definecolor{thesisgreen}  {RGB}{ 20,120, 60}
+\definecolor{thesisorange} {RGB}{200, 90,  0}
+\definecolor{thesisgray}   {RGB}{100,100,110}
+\definecolor{thesisteal}   {RGB}{  0,130,130}
+\definecolor{thesispurple} {RGB}{100,  0,150}
+\definecolor{thesisyellow} {RGB}{220,180,  0}
+\definecolor{lightblue}    {RGB}{220,235,255}
+\definecolor{lightgreen}   {RGB}{220,245,225}
+\definecolor{lightorange}  {RGB}{255,240,220}
+\definecolor{lightgray}    {RGB}{240,240,242}
+\colorlet{sambpblue}      {thesisblue}
+%% dvipsnames aliases and extra custom colors
+\providecolor{sambp_dark_gray}{RGB}{80,80,90}
+\providecolor{neutralColor}   {RGB}{180,180,185}
+\providecolor{highConfColor}  {RGB}{20,120,60}
+\providecolor{lowConfColor}   {RGB}{180,30,30}
+\providecolor{decisionColor}  {RGB}{200,90,0}
+\colorlet{sambpblue}  {thesisblue}
+\colorlet{sambpgreen} {thesisgreen}
+\colorlet{sambpred}   {thesisred}
+\colorlet{okgreen}    {thesisgreen}
+
+%% ── TikZ node styles ─────────────────────────────────────────────────────────
+\tikzset{
+  block/.style     = {rectangle, draw=thesisblue, thick, fill=lightblue,
+                       rounded corners=3pt, minimum width=2.8cm,
+                       minimum height=0.85cm, align=center, font=\small},
+  smallblock/.style= {rectangle, draw=thesisblue, thick, fill=lightblue,
+                       rounded corners=2pt, minimum width=2.0cm,
+                       minimum height=0.65cm, align=center, font=\scriptsize},
+  compute/.style   = {rectangle, draw=thesisgreen, thick, fill=lightgreen,
+                       rounded corners=3pt, minimum width=2.8cm,
+                       minimum height=0.85cm, align=center, font=\small},
+  alert/.style     = {rectangle, draw=thesisred, thick, fill=red!6,
+                       rounded corners=3pt, minimum width=2.8cm,
+                       minimum height=0.85cm, align=center, font=\small},
+  sensor/.style    = {rectangle, draw=thesisorange, thick, fill=lightorange,
+                       rounded corners=3pt, minimum width=2.2cm,
+                       minimum height=0.70cm, align=center, font=\scriptsize},
+  decision/.style  = {diamond, draw=thesisblue, thick, fill=lightblue!60,
+                       aspect=1.8, minimum width=3.0cm, minimum height=1.0cm,
+                       align=center, font=\scriptsize},
+  relaybox/.style  = {rectangle, draw=thesisred, thick, fill=red!5,
+                       rounded corners=2pt, minimum width=1.8cm,
+                       minimum height=0.65cm, align=center, font=\scriptsize},
+  pmunode/.style   = {circle, draw=thesisorange, thick, fill=lightorange,
+                       minimum size=0.7cm, align=center, font=\tiny},
+  busnode/.style   = {circle, draw=black, thick, fill=gray!15,
+                       minimum size=0.55cm, inner sep=0pt, font=\scriptsize},
+  ibrbox/.style    = {rectangle, draw=thesisgreen, thick, fill=lightgreen!70,
+                       rounded corners=2pt, minimum width=1.6cm,
+                       minimum height=0.60cm, align=center, font=\scriptsize},
+  annotbox/.style  = {rectangle, draw=thesisgray!70, thin, fill=white,
+                       rounded corners=2pt, align=left, font=\scriptsize,
+                       inner sep=3pt},
+  arr/.style       = {-{Stealth[length=2.5mm,width=1.8mm]}, thick},
+  arrrev/.style    = {{Stealth[length=2.5mm,width=1.8mm]}-, thick},
+  arrdbl/.style    = {{Stealth[length=2.5mm,width=1.8mm]}-{Stealth[length=2.5mm,width=1.8mm]}, thick},
+  arrblue/.style   = {arr, thesisblue},
+  arrdash/.style   = {arr, dashed, thesisgray},
+  datalink/.style  = {-{Stealth[length=2.5mm,width=1.8mm]}, thesisgray!80, dashed, thick},
+  dataarrow/.style = {-{Stealth[length=2mm,width=1.5mm]}, thesisgray, thin},
+  busbar/.style    = {draw=black, very thick, line cap=round},
+  sumjunct/.style  = {circle, draw=black, thick, fill=white,
+                       minimum size=0.55cm, inner sep=0pt, font=\small},
+}
+
+%% ── pgfplots global ──────────────────────────────────────────────────────────
+\pgfplotsset{
+  thesis style/.style={
+    width=0.72\textwidth, height=7.0cm,
+    grid=both, grid style={gray!15, very thin},
+    tick style={draw=none},
+    axis line style={thesisgray},
+    label style={font=\small},
+    tick label style={font=\scriptsize},
+    legend style={font=\scriptsize, draw=gray!40, fill=white, rounded corners=2pt},
+    every axis plot/.append style={thick},
+  },
+  thesis bar/.style={
+    thesis style, ybar, bar width=8pt,
+    xtick align=center, enlarge x limits=0.12,
+  },
+}
+
+%% ── Math macros ──────────────────────────────────────────────────────────────
+\newcommand{\kibr}{k_{\mathrm{ibr}}}
+\newcommand{\phasor}[1]{\underline{#1}}
+\newcommand{\Idiff}{I_{\mathrm{diff}}}
+\newcommand{\Ibias}{I_{\mathrm{bias}}}
+\newcommand{\Zline}{Z_{\mathrm{line}}}
+\newcommand{\Zapp}{Z_{\mathrm{app}}}
+\newcommand{\jj}{\mathrm{j}}
+\newcommand{\vect}[1]{\bm{#1}}
+\newcommand{\est}[1]{\hat{#1}}
+
+%% ── Figure content (filled by compile script) ────────────────────────────────
+\begin{document}
+\input{FIGURE_FILE_PLACEHOLDER}
+\end{document}

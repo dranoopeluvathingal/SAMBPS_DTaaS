@@ -1,0 +1,65 @@
+% ============================================================
+%  Figure 1 — Paper concept: three-layer framework
+%  Layer 1: Sixth-Order Truth Model
+%  Layer 2: Reduced Inverse Estimator
+%  Layer 3: Relay Decision / Confidence Gate
+% ============================================================
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  proc/.style={draw, thick, rounded corners=3pt,
+               minimum width=4.8cm, minimum height=0.90cm,
+               align=center},
+  arr/.style={->, thick, >=Latex},
+  node distance=1.4cm
+]
+
+%% --- Layers ---------------------------------------------------
+\node[proc, fill=green!12]  (truth)
+     {\textbf{Sixth-Order Truth Model} \\
+      9-state ODE: Park $dq$ + AVR + PSS + Gov};
+
+\node[proc, fill=blue!10, below=of truth]  (estim)
+     {\textbf{Reduced Inverse Estimator} \\
+      6-param model, two-pass LM, $\hat{\bm\theta}$};
+
+\node[proc, fill=orange!12, below=of estim] (relay)
+     {\textbf{Relay Decision} \\
+      $I_p^*$, $TMS^*$, confidence gate $\gamma$};
+
+%% --- Left: truth waveform arrow ------------------------------
+\draw[arr, blue!70]
+  ([xshift=-1.2cm]truth.south) --
+  node[left, font=\tiny, blue!70]
+  {$i_{abc}^{(6\text{th})}(t)$ --- truth waveform}
+  ([xshift=-1.2cm]estim.north);
+
+%% --- Right: parameter arrow ----------------------------------
+\draw[arr, orange!80!black]
+  ([xshift=1.2cm]estim.south) --
+  node[right, font=\tiny, orange!80!black]
+  {$\hat{\bm\theta}$, $\gamma$}
+  ([xshift=1.2cm]relay.north);
+
+%% --- Middle: benchmark comparison bracket --------------------
+\draw[<->, thick, purple!70]
+  ([xshift=0.1cm]truth.south east) --
+  ([xshift=0.1cm]estim.north east)
+  node[midway, right=4pt, align=left, font=\tiny, purple!70]
+  {benchmark\\$\varepsilon_{\mathrm{RMS}},\;\kappa_n,\;\gamma$};
+
+%% --- Validity boundary annotation ---------------------------
+\draw[->, thick, red!70!black, dashed]
+  ([xshift=1.8cm]estim.east) --
+  node[right, font=\tiny, red!70!black, align=left]
+  {\textbf{validity}\\[-0.5ex]\textbf{boundary}\\[-0.5ex]$L^\ast \approx 150$\,ms}
+  ++(1.2, 0);
+
+%% --- Vertical arrow labels on left side of nodes ------------
+\node[font=\tiny, gray!50, left=4pt] at (truth.west)
+     {\textit{forward}};
+\node[font=\tiny, gray!50, left=4pt] at (estim.west)
+     {\textit{inverse}};
+\node[font=\tiny, gray!50, left=4pt] at (relay.west)
+     {\textit{decision}};
+
+\end{tikzpicture}

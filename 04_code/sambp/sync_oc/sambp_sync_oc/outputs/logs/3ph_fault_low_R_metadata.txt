@@ -1,0 +1,48 @@
+# sambp_sync_oc — Case Metadata
+# Written: 2026-04-08 19:32:03 UTC
+============================================================
+
+case:
+    case_name                    : 3ph_fault_low_R
+    fault_type                   : 3PH
+    fault_R_pu                   : 0.01
+    fault_time                   : 0.1
+theta_hat:
+    t0                           : 0.090725592
+    I_ss                         : 0.06692427
+    I_sub                        : 15
+    tau_ac                       : 0.005
+    tau_dc                       : 0.5
+    phi_a                        : 0.33991771
+  confidence                   : 0.32288269
+  condition_number             : 252.98054
+fit_metrics:
+    rmse_a                       : 0.42463146
+    nrmse_a                      : 0.088534447
+    peak_error_a                 : 1.0139301
+    r2_a                         : 0.33651534
+    rmse_b                       : 16.518666
+    nrmse_b                      : 3.3581687
+    peak_error_b                 : 17.407193
+    r2_b                         : -301.4539
+    rmse_c                       : 16.543809
+    nrmse_c                      : 1.7320725
+    peak_error_c                 : 17.910802
+    r2_c                         : -177.77095
+    rmse_combined                : 13.499929
+    r2_combined                  : -4.301032
+    rmse_phaseA                  : 0.42463146
+    r2_phaseA                    : 0.33651534
+protection:
+    fixed_trip_time              : 0.1038
+    adaptive_trip_time           : 0.1038
+    trip_time_delta              : 0
+    fixed_tripped                : True
+    adaptive_tripped             : True
+    speed_improvement            : False
+    security_maintained          : True
+    pickup_count_fixed           : 20000
+    pickup_count_adaptive        : 20000
+adaptive_settings:
+    pickup_pu                    : 1.2
+    tms                          : 0.05

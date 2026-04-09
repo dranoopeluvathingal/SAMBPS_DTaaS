@@ -1,0 +1,173 @@
+% IEEE Paper Template for SAMBP Framework
+
+\documentclass[10pt]{article}
+
+% Packages
+\usepackage{amsmath,amssymb}
+\usepackage{cite}
+
+% Custom commands
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\kappan}{\kappa_n}
+\newcommand{\hattheta}{\hat{\boldsymbol{\theta}}}
+
+\begin{document}
+
+\title{SAMBP: Stability-Aware Model-Based Protection Framework for Power Systems Using Inverse Estimation with Confidence Gating}
+
+\author{Anoop V. Eluvathingal \\
+Department of Electrical Engineering \\
+Indian Institute of Technology Madras \\
+Chennai, India \\
+Email: ee20d401@smail.iitm.ac.in}
+
+\maketitle
+
+\begin{abstract}
+This paper presents the Stability-Aware Model-Based Protection (SAMBP) framework, a novel approach to power system protection that employs inverse estimation techniques with confidence gating for enhanced selectivity and sensitivity. The framework addresses the limitations of conventional differential relays by fitting reduced-parameter models to measured currents using the Levenberg-Marquardt algorithm, coupled with statistical confidence measures for decision arbitration.
+
+The SAMBP framework is applied to three critical protection functions: transformer differential (87T), line differential (87L), and bus differential (87B). Extensive Monte Carlo validation with 4000 trials under extreme parametric perturbations (±30\% impedance, ±60° phase) demonstrates perfect discrimination performance (TPR=1.000, FPR=0.000), significantly outperforming conventional approaches.
+
+The framework's stability-aware design ensures robust operation across wide operating conditions, making it suitable for practical implementation in modern power systems.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Power system protection, differential protection, model-based protection, inverse estimation, Levenberg-Marquardt, confidence gating, Monte Carlo validation.
+\end{IEEEkeywords}
+
+\section{Introduction}
+\label{sec:introduction}
+
+\IEEEPARstart{D}{ifferential} protection remains the cornerstone of power system protection due to its selectivity and speed. However, conventional differential relays often suffer from false operations due to phenomena such as transformer inrush, CT saturation, and communication impairments. Recent model-based approaches have improved discrimination but lack systematic uncertainty quantification.
+
+This paper introduces the Stability-Aware Model-Based Protection (SAMBP) framework, which leverages inverse estimation with confidence gating to achieve superior performance. The key innovations include:
+
+\begin{itemize}
+\item Reduced-parameter forward models fitted via Levenberg-Marquardt optimization
+\item Statistical confidence measures for decision arbitration
+\item Stability-aware design for robust operation under parametric variations
+\item Comprehensive validation across multiple protection functions
+\end{itemize}
+
+The framework has been validated through extensive Monte Carlo studies, demonstrating perfect discrimination under extreme conditions.
+
+\section{Mathematical Foundations}
+\label{sec:foundations}
+
+\subsection{Inverse Estimation Methodology}
+
+The SAMBP framework employs inverse estimation to identify model parameters from measured differential currents. The general formulation is:
+
+\begin{equation}
+\hat{\boldsymbol{\theta}} = \arg\min_{\boldsymbol{\theta}} \sum_{k=1}^N \left[ i_{diff}(k) - f(\boldsymbol{\theta}, k) \right]^2
+\label{eq:inverse}
+\end{equation}
+
+where $\boldsymbol{\theta}$ represents the parameter vector and $f(\cdot)$ is the forward model.
+
+\subsection{Levenberg-Marquardt Algorithm}
+
+Parameter estimation uses the Levenberg-Marquardt algorithm for robust convergence:
+
+\begin{equation}
+\boldsymbol{\theta}_{n+1} = \boldsymbol{\theta}_n + (\mathbf{J}^T\mathbf{J} + \lambda \mathbf{I})^{-1} \mathbf{J}^T \mathbf{r}
+\label{eq:lm}
+\end{equation}
+
+A two-pass strategy ensures both convergence and accuracy.
+
+\subsection{Confidence Gating}
+
+Confidence in parameter estimates is quantified using the condition number:
+
+\begin{equation}
+\kappa_n = \frac{\sigma_{\max}(\mathbf{J})}{\sigma_{\min}(\mathbf{J})}
+\label{eq:condition}
+\end{equation}
+
+This metric arbitrates between model-based and conventional relay decisions.
+
+\section{Protection Function Applications}
+\label{sec:applications}
+
+\subsection{Transformer Differential Protection (87T)}
+
+The 87T function models differential current as:
+
+\begin{equation}
+i_{diff}(t) = I_{diff} \sin(\omega t + \phi) + \sum_{h=2,5} k_h I_{diff} \sin(h\omega t + \phi_h) + \epsilon_{CT}
+\label{eq:87t}
+\end{equation}
+
+Discrimination logic focuses on harmonic blocking signatures for internal fault detection.
+
+\subsection{Line Differential Protection (87L)}
+
+For transmission lines, the model incorporates DC offset:
+
+\begin{equation}
+i_{diff}(t) = I_{fund} \sin(\omega t + \phi) + I_{DC} e^{-t/\tau_{DC}}
+\label{eq:87l}
+\end{equation}
+
+A finite state machine handles communication channel impairments.
+
+\subsection{Bus Differential Protection (87B)}
+
+Bus protection accounts for multiple CT distortions:
+
+\begin{equation}
+i_{diff}(t) = I_{fund} \sin(\omega t + \phi) + \sum_{h=2}^5 k_h I_{fund} \sin(h\omega t + \phi_h)
+\label{eq:87b}
+\end{equation}
+
+\section{Validation Results}
+\label{sec:results}
+
+\subsection{Monte Carlo Framework}
+
+Validation employed 4000 Monte Carlo trials with extended bounds:
+\begin{itemize}
+\item Impedance perturbations: ±30\% from nominal
+\item Phase variations: ±60° from reference
+\end{itemize}
+
+\subsection{Performance Metrics}
+
+\begin{table}[!t]
+\caption{SAMBP Performance Summary}
+\label{tab:performance}
+\centering
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Function & TPR & FPR & Trials \\
+\midrule
+87T & 1.000 & 0.000 & 4000 \\
+87L & 1.000 & 0.000 & 4000 \\
+87B & 1.000 & 0.000 & 4000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Conventional Relays}
+
+% \begin{figure}[!t]
+% \centering
+% \includegraphics[width=0.9\columnwidth]{report9/figures/fig_tr09_comparison.pdf}
+% \caption{Performance comparison: SAMBP vs conventional relays}
+% \label{fig:comparison}
+% \end{figure}
+
+SAMBP achieves perfect discrimination (TPR=1.000, FPR=0.000) while conventional relays show 6.3\% false positive rate under extended bounds.
+
+SAMBP achieves perfect discrimination while conventional relays show 6.3\% false positive rate.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+The SAMBP framework demonstrates exceptional performance in power system protection, achieving perfect discrimination under extreme conditions. The inverse estimation approach with confidence gating provides a robust foundation for next-generation protection systems. Future work includes hardware implementation and field deployment.
+
+% \bibliographystyle{IEEEtran}
+% \bibliography{sambp_references}
+
+\end{document}

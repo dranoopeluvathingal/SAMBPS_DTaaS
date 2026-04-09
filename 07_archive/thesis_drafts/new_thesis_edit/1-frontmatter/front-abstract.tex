@@ -1,0 +1,82 @@
+\chapter{Abstract}
+
+\begin{tabular}{@{} >{\bfseries}p{0.22\textwidth} p{0.75\textwidth} @{}}
+\MakeUppercase{Keywords} &
+Adaptive Protection, Inverter-Based Resources, Inverse Estimation,
+Levenberg--Marquardt, Differential Protection, Overcurrent Protection,
+Distance Protection, Microgrid Islanding, Digital Twin, Extended Kalman Filter,
+Physics-Informed Neural Network, Wide-Area Protection Coordination, IEC~61850.
+\end{tabular}
+\par
+
+\begin{doublespacing}
+
+The global power grid is undergoing a fundamental structural transformation:
+synchronous machines---whose high-inertia fault signatures underpinned a century
+of deterministic relay design---are being displaced at accelerating pace by
+Inverter-Based Resources (IBRs). Grid-Following (GFL) and Grid-Forming (GFM)
+converters are software-controlled current sources whose fault currents are
+limited to 1.1--2.0~pu by fast sub-cycle current limiters, and whose sequence
+contributions are determined by firmware rather than physical machine reactance.
+This paradigm shift systematically invalidates the foundational assumptions of
+legacy overcurrent (ANSI~51/67), distance (ANSI~21), and differential (ANSI~87)
+relay algorithms, creating a protection crisis across distribution and
+sub-transmission networks.
+
+This thesis proposes the \textbf{Self-Adaptive Model-Based Protection (SAMBP)}
+architecture to address this crisis. The framework treats adaptive protection
+as an \emph{inverse estimation problem}: each protection element maintains an
+explicit physical model of its protected device and identifies current model
+parameters from real-time measurements using the Levenberg--Marquardt algorithm.
+Adaptation decisions are gated by a four-component confidence score and bounded
+by a provably safe update law that preserves trip security under estimation
+uncertainty. The framework is organised across four original contributions,
+each validated with full numerical simulation results.
+
+\textbf{Contribution~C1} (Chapter~\ref{ch:differential}) develops the
+adaptive differential protection suite. The physics-constrained adaptive 87L
+line differential relay modulates the bias slope $k_m^*(\kibr)$ in real time,
+achieving TPR\,=\,1.000 and zero false trips across
+$k_\mathrm{ibr} \in [0.03, 0.85]$~pu. The adaptive transformer differential
+scheme replaces ad-hoc second-harmonic blocking with a Wald sequential
+probability ratio test, providing formal false-trip and miss-rate guarantees
+($\alpha = \beta = 0.001$).
+
+\textbf{Contribution~C2} (Chapters~\ref{ch:oc_distance}--\ref{ch:microgrid})
+develops adaptive overcurrent and distance protection. The SAMBP-SyncOC
+framework applies Levenberg--Marquardt inverse estimation to synchronous
+generator overcurrent protection, achieving $R^2 > 0.999$ and reducing
+spurious relay pickups by 60\% with no security degradation. The
+IBR-corrected quadrilateral distance characteristic achieves
+$P_\mathrm{detect} = 99.3\%$ and $P_\mathrm{secure} = 99.97\%$. For
+inverter-based microgrids, a ROCOF-supervised islanding detector achieves
+NDZ\,$< 1\%$ and 114~ms isolation time, compliant with IEEE~1547-2018, with
+GOOSE-triggered adaptive setting-group switching completing within 5~ms.
+
+\textbf{Contribution~C3} (Chapter~\ref{ch:monitoring_ml}) delivers a
+non-blocking Extended Kalman Filter digital twin that jointly estimates IBR
+penetration ratio, line impedance, and fault location from IED phasor
+measurements (RMSE\,$\leq 0.024$~pu, bounded by the Cramér--Rao Lower Bound),
+without ever delaying a primary trip decision. An integrated physics-informed
+neural network fault classifier embeds KVL/KCL constraints directly in the
+training loss, achieving 96.1\% five-class accuracy with zero
+physics-constraint violations, and adapts to fleet composition drift via
+CUSUM-triggered online learning with $< 2$~pp catastrophic forgetting.
+
+\textbf{Contribution~C4} (Chapter~\ref{ch:coordination_security}) integrates
+all local algorithms into a Wide-Area Protection Coordinator (WAPC) that
+provides PMU-based fault localisation (94.5\% correct-line identification),
+automatic CTI-graded relay settings dispatch (100\% CTI-compliant in $< 3$~s),
+and a closed-loop CUSUM$\to$settings$\to$GOOSE adaptive protocol completing
+the full adaptation cycle in approximately 31~minutes. The cybersecurity
+architecture augments GOOSE channels with HMAC-SHA256 authentication,
+reducing attack risk by 54.9\% at 0.72~ms latency overhead, and establishes
+the formal adversarial robustness framework for CT-injection attacks on the
+PINN classifier.
+
+The SAMBP framework is the first published architecture to integrate
+model-based relay adaptation, digital-twin state estimation, physics-informed
+classification, and closed-loop wide-area coordination across all protection
+elements with provable safety guarantees.
+
+\end{doublespacing}

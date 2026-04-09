@@ -1,0 +1,410 @@
+%% slide16_study_note.tex
+%% Detailed Study Note — Slide 16: Ch 12 Cybersecurity Architecture
+%% TSA Meeting Preparation | Anoop V Eluvathingal | IIT Madras | 2026
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{booktabs,tabularx,array,longtable}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{parskip}
+\newcommand{\kibr}{k_\mathrm{ibr}}
+\newcommand{\thetahat}{\hat{\theta}}
+
+\definecolor{iitmnavy}{RGB}{15,40,80}
+\definecolor{iitmgold}{RGB}{180,140,0}
+\definecolor{lightblue}{RGB}{220,235,250}
+\definecolor{lightyellow}{RGB}{255,252,220}
+\definecolor{lightred}{RGB}{255,235,235}
+\definecolor{lightgreen}{RGB}{230,255,230}
+\definecolor{lightpurple}{RGB}{240,230,255}
+\definecolor{lightorange}{RGB}{255,243,225}
+
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{keybox}[1]{colback=lightblue,colframe=iitmnavy,
+  fonttitle=\bfseries\color{white},title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{formulabox}[1]{colback=lightyellow,colframe=iitmgold,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{resultbox}[1]{colback=lightgreen,colframe=green!50!black,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{warnbox}[1]{colback=lightred,colframe=red!60!black,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{archbox}[1]{colback=lightpurple,colframe=iitmnavy!60,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{threatbox}[1]{colback=lightorange,colframe=orange!70!black,
+  fonttitle=\bfseries,title=#1,arc=3pt,boxrule=1pt,breakable}
+\newtcolorbox{speakbox}{colback=orange!8,colframe=orange!70!black,
+  fonttitle=\bfseries,title={What to Say at the TSA Meeting},arc=3pt,
+  boxrule=1pt,breakable}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{iitmnavy}\small\textbf{TSA Meeting Study Note}}
+\fancyhead[R]{\color{iitmnavy}\small Slide 16 --- Cybersecurity Architecture}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\small\color{gray}Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ 2026}
+\renewcommand{\headrulewidth}{1.5pt}
+\renewcommand{\headrule}{\color{iitmnavy}\hrule width\headwidth height\headrulewidth}
+
+\titleformat{\section}{\large\bfseries\color{iitmnavy}}{}{0em}{}[\color{iitmnavy}\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{iitmnavy!80}}{}{0em}{}
+
+\hypersetup{colorlinks=true,linkcolor=iitmnavy,urlcolor=iitmnavy}
+
+\begin{document}
+
+%% ── Title Block ──────────────────────────────────────────────────────────────
+\begin{tcolorbox}[colback=iitmnavy,coltext=white,arc=4pt,boxrule=0pt]
+\begin{center}
+  {\Large\bfseries TSA Meeting --- Slide 16 Study Note}\\[4pt]
+  {\large Ch~12: Cybersecurity Architecture}\\[6pt]
+  {\normalsize Contribution C4 $\cdot$ Chapter 7 $\cdot$ SAMBP Framework}\\[2pt]
+  {\small Anoop V Eluvathingal $\cdot$ IIT Madras $\cdot$ PhD Thesis 2026}
+\end{center}
+\end{tcolorbox}
+
+\vspace{6pt}
+
+%% ── 1. Slide Overview ────────────────────────────────────────────────────────
+\section{Slide Overview and Narrative}
+
+\begin{keybox}{What This Slide Shows}
+Slide~16 presents the \textbf{cybersecurity architecture} of the SAMBP framework — the final component of Contribution~C4. The shift from fixed relay settings to real-time adaptive protection introduces a new attack surface: any communication or computation link that carries data the SAMBP system relies on becomes a potential vector for adversarially induced mis-operation.
+
+The slide addresses two orthogonal threat vectors:
+
+\textbf{Threat~1 (Data Integrity):} A network adversary injects false PMU measurements to manipulate the EKF's estimate $\hat{\kibr}$ and force the relay to mal-operate (false trip or missed trip). Defence: HMAC-SHA256 authentication on every IED message — any unauthenticated data is discarded, and the relay holds the last trusted parameter estimate $\hat{\bm{\theta}}$.
+
+\textbf{Threat~2 (Adversarial ML):} A crafted perturbation $\bm{\delta x}$ is injected into the CT secondary current to fool the PINN fault classifier. Even a perturbation of $\varepsilon < 5\%$ causes 40\% accuracy drop in an undefended network. Defence: adversarial training with FGSM and PGD synthetic attack examples, achieving certified radius $r_\mathrm{cert} = 0.04$~pu.
+
+\textbf{Combined result:} HMAC + adversarial training reduces the composite risk index from 1.000 to 0.451 ($-54.9\%$) with only 0.3~ms authentication overhead.
+\end{keybox}
+
+\subsection{Slide Key Metrics}
+
+\begin{center}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Metric} & \textbf{No Defence} & \textbf{SAMBP-Sec} & \textbf{Change} \\
+\midrule
+Attack success rate   & 67.4\%  & 12.5\%  & $-81.4\%$ relative \\
+Risk index            & 1.000   & 0.451   & $-54.9\%$ \\
+HMAC overhead (ms)    & ---     & 0.3     & --- \\
+Adv.\ PINN accuracy  & 51.8\%  & 91.4\%  & $+39.6$~pp \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%% ── 2. Threat 1: Data Integrity Attack ───────────────────────────────────────
+\section{Threat 1: Data Integrity Attack on PMU Measurements}
+
+\begin{threatbox}{Attack Model: PMU Injection to Manipulate k-hat-ibr}
+\textbf{Attack vector:} The adversary intercepts the IED-to-WAPC communication channel and injects synthetic PMU voltage/current frames with a crafted value of $\kibr$. The EKF digital twin, receiving this false measurement, updates $\hat{\kibr}$ to the attacker-chosen value.
+
+\textbf{Consequences of false $\hat{\kibr}$:}
+\begin{enumerate}[nosep]
+  \item PINN receives wrong $\kibr$ input $\to$ fault class predicted incorrectly
+  \item WAPC coherency matrix $\mathbf{C}(\kibr)$ uses wrong IBR ratio $\to$ wrong backup relay group
+  \item CUSUM receives a false drift signal $\to$ premature settings re-dispatch
+  \item EKF confidence gate may be bypassed if the injected value is within plausible range
+\end{enumerate}
+
+\textbf{Attack success condition:} Without authentication, any host on the substation LAN can inject a syntactically valid GOOSE/PMU frame. At 1000 packets/s, $P(\text{false trip}) = 0.348$ per fault event (TR-52 Study~B) --- 7$\times$ above the 5\% acceptable threshold.
+\end{threatbox}
+
+\subsection{Defence: HMAC-SHA256 Authentication}
+
+\begin{archbox}{HMAC-SHA256 Tag on Every IED Message}
+Each GOOSE/PMU frame is augmented with a 32-byte authentication tag:
+\[
+  \mathrm{tag}_t = \mathrm{HMAC}_k\!\bigl(\mathrm{DataSet}_t \;\|\; t_\mathrm{UTC} \;\|\; \mathrm{SqNum}\bigr)
+\]
+where $k$ is a 256-bit shared key established at commissioning, $t_\mathrm{UTC}$ is the IEEE~1588 PTP microsecond timestamp, and $\mathrm{SqNum}$ is the GOOSE sequence number.
+
+\textbf{What this prevents:}
+\begin{itemize}[nosep]
+  \item \textbf{Spoofing}: An adversary without $k$ cannot forge a valid tag. $P(\text{false trip}) \to 0$ regardless of attacker rate.
+  \item \textbf{Replay}: The timestamp uniqueness condition $|t_\mathrm{UTC} - t_\mathrm{now}| \leq 5$~ms rejects captured-and-replayed messages.
+\end{itemize}
+
+\textbf{Relay behaviour on authentication failure:} When a GOOSE message fails the HMAC check, the relay discards it silently and holds the last trusted parameter estimate $\hat{\bm{\theta}}$ (the EKF's most recent valid state). The bounded update law then limits any subsequent valid update to $\|\hat{\bm{\theta}}_{k+1} - \hat{\bm{\theta}}_k\| \leq \delta_\mathrm{max}$, preventing a step-change attack even if a single authenticated frame is compromised.
+
+\textbf{Overhead:} $t_\mathrm{HMAC} = t_\mathrm{sign} + t_\mathrm{verify} = 0.18 + 0.18 = 0.36$~ms (Cortex-A72). Reported as $\approx 0.3$~ms on the slide (one-way signing only); either way, $< 1\%$ of the 50~ms trip budget.
+\end{archbox}
+
+\subsection{GOOSE Attack Results (TR-52)}
+
+\begin{center}
+\begin{tabular}{@{}lrrl@{}}
+\toprule
+\textbf{Attack scenario} & \textbf{P(false trip)} & \textbf{With HMAC} & \textbf{Note} \\
+\midrule
+No attack                    & 0.000 & 0.000 & Baseline \\
+Low-rate spoofing (10 pkt/s) & 0.003 & 0.000 & Below 5\% threshold \\
+High-rate spoofing (1000 pkt/s) & 0.348 & 0.000 & 7$\times$ threshold before HMAC \\
+Replay attack                & $>0$  & 0.000 & SqNum + timestamp window \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%% ── 3. Threat 2: Adversarial ML Attack ───────────────────────────────────────
+\section{Threat 2: Adversarial ML Attack on the PINN Classifier}
+
+\begin{threatbox}{Attack Model: CT-Injection to Fool the PINN}
+\textbf{Attack vector:} The adversary physically accesses the CT secondary circuit (or compromises the digital relay front-end) and injects a small crafted perturbation $\bm{\delta}$ into the current measurement:
+\[
+  \tilde{\mathbf{x}} = \mathbf{x} + \bm{\delta}, \quad \|\bm{\delta}\|_\infty \leq \varepsilon
+\]
+The perturbation is imperceptible in magnitude ($\varepsilon < 5\%$ of rated current) but optimally designed to push the PINN's input across a decision boundary, causing misclassification.
+
+\textbf{Attack goal:} Either cause the relay to \textit{miss a genuine fault} (security failure: $\varepsilon$-ball pushes output from ``fault'' to ``no fault'') or cause a \textit{false trip} during normal operation (reliability failure).
+
+\textbf{Severity:} Without adversarial training, a $\varepsilon = 5\%$ perturbation degrades PINN accuracy from 96.1\% to 51.8\% --- a 44.3~pp drop. The network is highly sensitive to adversarial examples because its decision boundaries are not certified.
+\end{threatbox}
+
+\subsection{Why the PINN Has Inherent Adversarial Robustness}
+
+The physics constraint in the PINN loss function provides a natural robustness mechanism:
+
+\begin{formulabox}{Adversarial Margin Bound (Chapter 7 Theory)}
+\[
+  m_\mathrm{adv}(\mathbf{x}) = \min_{j \neq y^*} \min_{\|\bm{\delta}\|_\infty \leq \varepsilon}
+    \bigl[f_{y^*}(\mathbf{x}+\bm{\delta}) - f_j(\mathbf{x}+\bm{\delta})\bigr]
+\]
+\[
+  m_\mathrm{adv}(\mathbf{x}) \;\geq\; \frac{\lambda_\mathrm{phys}}{L_\mathrm{phys}}\, g(\mathbf{x}, \varepsilon)
+\]
+where $g(\mathbf{x}, \varepsilon)$ is the KCL constraint violation induced by the perturbation, and $L_\mathrm{phys}$ is the Lipschitz constant of the physics residual.
+
+\textbf{Interpretation:} Any perturbation $\bm{\delta}$ that moves the input across a decision boundary must simultaneously violate the KCL constraint. The PINN's training loss strongly penalises KCL violations (weight $\lambda_\mathrm{phys} = 0.3$), so the gradient of the loss with respect to $\bm{\delta}$ is dominated by the physics penalty rather than the class boundary gradient. This makes adversarial attacks harder to compute and less effective.
+\end{formulabox}
+
+\subsection{Defence: Adversarial Training with FGSM and PGD}
+
+\begin{archbox}{FGSM + PGD Adversarial Training Protocol}
+\textbf{FGSM (Fast Gradient Sign Method)} generates a single-step worst-case perturbation:
+\[
+  \bm{\delta}_\mathrm{FGSM} = \varepsilon \cdot \mathrm{sign}\!\bigl(\nabla_{\mathbf{x}} \mathcal{L}(\mathbf{x}, y)\bigr)
+\]
+
+\textbf{PGD (Projected Gradient Descent)} iterates FGSM and projects back to the $\varepsilon$-ball:
+\[
+  \mathbf{x}^{(t+1)} = \Pi_{\varepsilon}\!\bigl[\mathbf{x}^{(t)} + \eta\,\mathrm{sign}(\nabla_{\mathbf{x}} \mathcal{L})\bigr]
+\]
+where $\Pi_{\varepsilon}[\cdot]$ is the projection onto the $\ell^\infty$ ball of radius $\varepsilon$.
+
+\textbf{Training procedure:} At each batch, 50\% of training samples are replaced with their FGSM/PGD adversarial versions. The PINN loss includes both clean and adversarial terms, forcing the network to learn decision boundaries that are robust to $\varepsilon$-perturbations.
+
+\textbf{Certified radius:} After adversarial training, the network achieves $r_\mathrm{cert} = 0.04$~pu --- all perturbations $\|\bm{\delta}\|_\infty \leq 0.04$~pu are correctly classified. This corresponds to 4\% of rated CT secondary current, covering the threat model ($\varepsilon < 5\%$) with a 20\% safety margin.
+\end{archbox}
+
+\subsection{Adversarial PINN Accuracy}
+
+\begin{center}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Model} & \textbf{Clean accuracy} & \textbf{Under $\varepsilon=5\%$ attack} & \textbf{Change} \\
+\midrule
+Baseline PINN (no defence) & 96.1\% & 51.8\% & $-44.3$~pp \\
+SAMBP-Sec (adversarial training) & 94.8\% & 91.4\% & $-3.4$~pp \\
+\midrule
+\textbf{Defence benefit} & & $+39.6$~pp & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Note on clean accuracy trade-off:} Adversarial training reduces clean accuracy by $\approx 1.3$~pp (96.1\%$\to$94.8\%). This is the standard robustness--accuracy trade-off: the model sacrifices marginal clean performance for certified adversarial resistance. The 94.8\% clean accuracy still meets the 93\% HIL pass threshold (TR-53 criterion H1).
+
+%% ── 4. Risk Quantification ───────────────────────────────────────────────────
+\section{Composite Risk Quantification (TR-52)}
+
+\begin{resultbox}{5x5 Risk Matrix: 54.9\% Reduction}
+The composite risk index is computed from a $5\times5$ likelihood--impact matrix:
+\[
+  \mathrm{Risk}_\mathrm{total} = \sum_a L_a \cdot I_a
+\]
+
+\begin{center}
+\begin{tabular}{@{}lrrrrl@{}}
+\toprule
+\textbf{Attack} & \textbf{L (before)} & \textbf{I} & \textbf{Risk (before)} & \textbf{Risk (after)} & \textbf{Residual} \\
+\midrule
+GOOSE spoofing    & 4 & 5 & 20 &  5 & LOW \\
+GOOSE replay      & 3 & 4 & 12 &  4 & LOW \\
+GOOSE flooding    & 3 & 3 &  9 &  9 & MEDIUM \\
+Man-in-the-middle & 2 & 5 & 10 &  5 & LOW \\
+\midrule
+\textbf{Total}    &   &   & \textbf{51} & \textbf{23} & \textbf{54.9\% reduction} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Risk index normalisation:} Risk index = current risk / initial risk = $23/51 = 0.451$. The slide uses normalised units (1.000 = unmitigated; 0.451 = after HMAC + SqNum + rate-limit + adversarial training).
+
+\textbf{Residual MEDIUM risk (flooding):} GOOSE flooding is a Layer-2 DoS attack that cannot be addressed by message-level authentication. Mitigation requires switch-level rate limiting ($\leq 500$~pkt/s per port) and VLAN isolation. This is identified as a future implementation item (TR-55 gap G5).
+\end{resultbox}
+
+%% ── 5. Four-Layer Defence-in-Depth ───────────────────────────────────────────
+\section{Four-Layer Defence-in-Depth Framework}
+
+The slide presents two countermeasures (HMAC + adversarial training). Chapter~7 elaborates a four-layer architecture for the most sophisticated threat: a coordinated multi-vector attack targeting the entire CUSUM$\to$settings$\to$GOOSE adaptation loop.
+
+\begin{center}
+\begin{tabular}{@{}clp{6cm}p{4cm}@{}}
+\toprule
+\textbf{Layer} & \textbf{Mechanism} & \textbf{What it blocks} & \textbf{Residual risk} \\
+\midrule
+1 & HMAC-SHA256 on GOOSE & Forged trip/settings commands & Key compromise \\
+2 & EKF confidence gate ($\gamma \geq 0.70$) & False $\kibr$ injection via CT manipulation & Small-step injections \\
+3 & Bounded update law ($\|\Delta\hat{\bm{\theta}}\| \leq \delta_\mathrm{max}$) & Step-change settings manipulation & Sustained slow injection \\
+4 & CUSUM trajectory alarm & Settings changing faster than fleet physics allow & Multi-month patient attack \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Key insight:} No single layer is unbreakable. The defence-in-depth structure requires an adversary to simultaneously compromise all four layers — a significantly harder attack than any single-vector exploit. Layer~3 (bounded update law) is the same mechanism that provides EKF adaptation safety in normal operation (Chapter~6), so the cybersecurity benefit comes at zero additional complexity cost.
+
+%% ── 6. Best Supporting Figure ────────────────────────────────────────────────
+\section{Best Supporting Figure for This Slide}
+
+\begin{resultbox}{RECOMMENDED: TR-52/2026 Figure 3 -- Risk Matrix Before and After Countermeasures}
+
+\textbf{What it shows:} A $5\times5$ risk matrix (likelihood $\times$ impact) with large circles showing attack positions before HMAC and small circles after HMAC + SqNum + rate-limit. Spoofing, replay, and MitM shift from the extreme/high zone (likelihood 4, impact 5) to the low zone (likelihood 1). GOOSE flooding remains at medium because HMAC does not address DoS. The visual shift from large circles in the top-right to small circles in the bottom-left tells the entire risk reduction story at a glance.
+
+\textbf{Why it is the best figure:}
+\begin{enumerate}[nosep]
+  \item It quantifies the 54.9\% risk reduction visually without requiring number tables
+  \item It shows the residual MEDIUM risk (flooding) honestly --- the committee will respect that
+  \item The before/after overlay format makes the improvement immediately legible
+  \item It covers all four attack vectors simultaneously, matching the slide's two-threat narrative
+\end{enumerate}
+
+\textbf{Source:} TR-52/2026, page~4, Figure~3. In \texttt{PDF\_COLLECTION/01\_SAMBP\_Reports/TR-52\_sambp\_report.pdf}.
+\end{resultbox}
+
+\textbf{Secondary figures (use if time permits):}
+\begin{itemize}[nosep]
+  \item \textbf{TR-52 Figure 1} (P(false trip) vs attacker rate): Use to explain Threat~1 — the unprotected curve reaches 0.348 at 1000~pkt/s; HMAC flatlines at zero. Stark visual.
+  \item \textbf{TR-52 Figure 2} (GOOSE latency breakdown with/without HMAC): Use to prove the 0.3~ms overhead claim is real and measured, not estimated.
+\end{itemize}
+
+%% ── 7. Cross-Thesis Connections ──────────────────────────────────────────────
+\section{Cross-Thesis Connections}
+
+\begin{center}
+\begin{tabular}{@{}p{4cm}p{10.5cm}@{}}
+\toprule
+\textbf{Connection} & \textbf{Explanation} \\
+\midrule
+\textbf{EKF Digital Twin} \newline (Slide 13, C3) &
+Threat~1 (data integrity) targets the EKF input channel. The HMAC defence is the communication-layer complement to the EKF confidence gate. If HMAC fails (key compromise), the confidence gate ($\gamma \geq 0.70$) provides a second line of defence by detecting anomalous Jacobian conditioning caused by injected measurements. \\
+\addlinespace
+\textbf{PINN Classifier} \newline (Slide 14, C3) &
+Threat~2 (adversarial ML) targets the PINN inference step. The physics constraint in the PINN loss provides inherent robustness (adversarial margin bound). Adversarial training augments this with certified $r_\mathrm{cert} = 0.04$~pu. The physics veto (TR-49) catches any residual misclassifications at the output layer. \\
+\addlinespace
+\textbf{WAPC (Slide 15, C4)} &
+HMAC protects all GOOSE messages in the WAPC layer: trip commands, settings-group activations, and ML advisories. The 0.36~ms HMAC overhead is already included in the 9.0~ms WAPC latency budget. \\
+\addlinespace
+\textbf{Bounded Update Law} \newline (Chapter 6, C3) &
+Layer~3 of the defence-in-depth is the same bounded update law used for safe EKF adaptation. The cybersecurity benefit is a side effect of the adaptation safety design --- no additional implementation cost. \\
+\addlinespace
+\textbf{CUSUM Drift Detector} \newline (Chapter 6, C3) &
+Layer~4 (CUSUM trajectory alarm) monitors the settings trajectory for anomalous rate-of-change. This reuses the CUSUM engine already deployed for fleet composition drift detection (TR-48), again at zero additional complexity cost. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%% ── 8. Equations to Know ─────────────────────────────────────────────────────
+\section{Equations to Know for the TSA Meeting}
+
+\begin{formulabox}{HMAC-SHA256 Authentication Tag}
+\[
+  \mathrm{tag}_t = \mathrm{HMAC}_k\!\bigl(\mathrm{DataSet}_t \;\|\; t_\mathrm{UTC} \;\|\; \mathrm{SqNum}\bigr)
+\]
+Say: ``Every IED message carries a 32-byte cryptographic fingerprint computed from the payload, the UTC timestamp, and the sequence number. If any of those three change --- the payload is forged, the timestamp is stale, or the SqNum is replayed --- the tag is invalid and the relay discards the message.''
+\end{formulabox}
+
+\begin{formulabox}{CT-Injection Attack Model}
+\[
+  \tilde{\mathbf{x}} = \mathbf{x} + \bm{\delta}, \quad \|\bm{\delta}\|_\infty \leq \varepsilon
+\]
+Say: ``The attacker injects a small crafted perturbation bounded by $\varepsilon$ in $\ell^\infty$ norm. For $\varepsilon = 5\%$ of rated current, the undefended PINN misclassifies 48\% of samples. The adversarial training defends against any such perturbation up to the certified radius of 0.04~pu.''
+\end{formulabox}
+
+\begin{formulabox}{FGSM Adversarial Example Generation}
+\[
+  \bm{\delta}_\mathrm{FGSM} = \varepsilon \cdot \mathrm{sign}\!\bigl(\nabla_{\mathbf{x}}\,\mathcal{L}(\mathbf{x}, y)\bigr)
+\]
+Say: ``FGSM moves the input in the direction that maximises the loss in a single step. During adversarial training, the network sees these worst-case inputs and learns to classify them correctly. PGD iterates this step multiple times for a stronger attack used to stress-test the robustness.''
+\end{formulabox}
+
+\begin{formulabox}{Risk Index Reduction}
+\[
+  \mathrm{Risk\; index} = \frac{\mathrm{Risk}_\mathrm{after}}{\mathrm{Risk}_\mathrm{before}}
+  = \frac{23}{51} = 0.451 \quad \Longrightarrow \quad -54.9\%
+\]
+Say: ``The composite risk score drops from 51 to 23. The three precision attacks --- spoofing, replay, man-in-the-middle --- all drop from the high zone to the low zone. Flooding remains at medium because it is a Layer-2 DoS problem that authentication cannot fix.''
+\end{formulabox}
+
+%% ── 9. Speaker Script ────────────────────────────────────────────────────────
+\section{Speaker Script}
+
+\begin{speakbox}
+\textbf{Opening (15 seconds):}
+``Adaptive protection introduces a new attack surface: any data channel that feeds the adaptation system is a target. Chapter~12 addresses two orthogonal threats --- one against the communication layer and one against the machine learning layer.''
+
+\medskip
+\textbf{Threat 1 (20 seconds):}
+``Threat~1 is data integrity: an adversary injecting false PMU measurements to manipulate our IBR penetration estimate, causing the PINN to receive wrong inputs and the relay to mal-operate. Without authentication, at 1000 spoofed packets per second, the probability of a false trip is 35\% per fault event --- seven times above the acceptable threshold. HMAC-SHA256 on every IED message reduces this to zero. When authentication fails, the relay discards the message and holds its last trusted parameter estimate, which the bounded update law then protects from being overridden by the next packet.''
+
+\medskip
+\textbf{Threat 2 (20 seconds):}
+``Threat~2 is adversarial ML: a crafted perturbation in the CT secondary current that is physically imperceptible --- less than 5\% of rated current --- but optimally designed to push the PINN input across a decision boundary. Without defence, this causes a 40\% accuracy drop. Two observations: first, the physics constraint in the PINN loss provides inherent robustness, because any perturbation that causes misclassification must simultaneously violate KCL; second, adversarial training with FGSM and PGD examples certifies robustness to perturbations up to 0.04~pu. Under attack, accuracy recovers from 51.8\% to 91.4\%.''
+
+\medskip
+\textbf{Results (15 seconds):}
+``Combined, HMAC and adversarial training reduce the composite risk index by 54.9\% --- from 1.000 to 0.451 --- at a total authentication overhead of 0.3~ms. The residual medium risk is GOOSE flooding, which is a Layer-2 DoS attack that authentication cannot address and requires switch-level rate limiting.''
+
+\medskip
+\textbf{Closing (10 seconds):}
+``This completes Contribution~C4 and the SAMBP framework: from physics-constrained relay adaptation, through digital twin state estimation, physics-informed classification, wide-area coordination, and now cybersecurity --- every layer designed so that the overall system is more robust than the sum of its parts.''
+\end{speakbox}
+
+%% ── 10. Anticipated Q\&A ─────────────────────────────────────────────────────
+\section{Anticipated Committee Questions and Answers}
+
+\begin{keybox}{Q1: HMAC requires a shared symmetric key. How is key management handled?}
+\textbf{Answer:} The current implementation uses manually provisioned keys loaded at commissioning (TR-54 checklist item~9: ``HMAC key: loaded, test MAC passes''). This is the standard practice for IEC~62351-8 initial deployment. Key rotation is identified as the principal residual risk: a compromised key enables undetected spoofing until the next rotation. The thesis proposes annual rotation (reducing compound exposure to $\leq 0.1\%$/year), with PKI-based automatic rotation identified as a high-priority future implementation item (TR-55). The IEC~62351-8 standard provides the specification; the SAMBP implementation is compliant with its baseline requirements.
+\end{keybox}
+
+\begin{keybox}{Q2: The certified radius is 0.04 pu. What does ``certified'' mean exactly?}
+\textbf{Answer:} ``Certified'' means that for \textit{every} input $\mathbf{x}$ in the test set and \textit{every} perturbation $\bm{\delta}$ with $\|\bm{\delta}\|_\infty \leq 0.04$~pu, the PINN outputs the correct class label. This is a worst-case guarantee, not an average-case one. It is derived from the adversarial training protocol: if the PGD adversarial examples (which are near-worst-case perturbations) are all correctly classified, the model is certified up to the PGD step size. The 0.04~pu threshold was set to match the threat model ($\varepsilon < 5\%$ of rated current at 0.8~pu base = 0.04~pu), ensuring the certification covers the full attacker capability.
+\end{keybox}
+
+\begin{keybox}{Q3: The adversarial training reduces clean accuracy from 96.1\% to 94.8\%. Is that acceptable?}
+\textbf{Answer:} Yes, for two reasons. First, 94.8\% still exceeds the HIL validation pass threshold of 93\% (TR-53 criterion H1). Second, the accuracy reduction is a one-time cost at training time, while the adversarial robustness benefit is permanent at deployment time. In a protection context, the relevant trade-off is not 1.3~pp clean accuracy vs robustness, but rather 1.3~pp clean accuracy vs 44~pp accuracy under attack. Given that an adversary can choose to attack during any fault event, the expected operational accuracy without adversarial training is significantly below 96.1\%.
+\end{keybox}
+
+\begin{keybox}{Q4: Does the GOOSE flooding attack represent a real threat to substation protection?}
+\textbf{Answer:} Yes, but it requires physical LAN access or a compromised managed switch, making it harder to mount than the software-only spoofing/replay attacks. The recommended mitigation (per-port GOOSE multicast rate limit $\leq 500$~pkt/s, storm-control threshold at 10\% of port bandwidth, VLAN isolation) is standard practice in IEC~61850 substations and can be configured on most managed switches without additional hardware. The thesis validates HMAC countermeasures (which are novel contributions) but does not implement the switch-level controls, as they are outside the relay algorithm scope. This is acknowledged as gap G5 in TR-55.
+\end{keybox}
+
+\begin{keybox}{Q5: How does the cybersecurity architecture interact with the real-time adaptation protocol?}
+\textbf{Answer:} The four-layer defence is designed to be non-blocking at every layer. Layer~1 (HMAC) operates at the message level with 0.3~ms overhead --- below the relay decision time. Layer~2 (confidence gate) is evaluated at each EKF update cycle (every 4~ms) but only blocks adaptation, never the primary trip. Layer~3 (bounded update law) limits adaptation step size but does not halt EKF estimation. Layer~4 (CUSUM trajectory alarm) monitors the settings trajectory asynchronously and only halts settings re-dispatch, not relay operation. At no point does the cybersecurity layer interpose in the primary trip decision path --- this is the fundamental non-blocking design principle inherited from the digital twin architecture.
+\end{keybox}
+
+\vfill
+\begin{tcolorbox}[colback=iitmnavy!8,colframe=iitmnavy,arc=3pt,boxrule=0.8pt]
+\small
+\textbf{Source documents:} TR-52/2026 (GOOSE cybersecurity, HMAC-SHA256, risk matrix), Chapter~7 / ch07\_coordination\_security.tex (adversarial PINN robustness, four-layer defence), TR-53/2026 (HIL validation pass/fail criteria), TR-55/2026 (gap analysis, future work). \\
+\textbf{Thesis location:} Chapter~7 (Part~2: Cybersecurity), Contribution~C4. \\
+\textbf{Best figure:} TR-52/2026, Figure~3 (5$\times$5 risk matrix before/after HMAC + SqNum + rate-limit).
+\end{tcolorbox}
+
+\end{document}

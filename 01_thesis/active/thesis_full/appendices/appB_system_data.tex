@@ -1,0 +1,116 @@
+%% appB_system_data.tex  ─ Appendix B: System Parameters
+\chapter{SAMBP System Parameters}
+\label{app:data}
+
+\section{SAMBP 10-Bus Network}
+\label{app:10bus}
+
+\begin{table}[htbp]
+\caption{Bus data (100~MVA, 33~kV base)}
+\label{tab:app_bus}
+\begin{tabularx}{\textwidth}{@{}lXXXX@{}}
+\toprule
+Bus & Type & $V$ (pu) & $\theta$ (deg) & IBR capacity (MVA) \\
+\midrule
+0 & Slack  & 1.000 & 0.0 & 0 (grid infeed) \\
+1 & PQ     & 0.990 & --  & 0 \\
+2 & PQ     & 0.988 & --  & 0 \\
+3 & PV/IBR & 0.995 & --  & 5.0 (GFL) \\
+4 & PV/IBR & 0.993 & --  & 8.0 (GFL/GFM) \\
+5 & PV/IBR & 0.991 & --  & 4.0 (GFL) \\
+6 & PV/IBR & 0.992 & --  & 6.0 (GFL) \\
+7 & PV/IBR & 0.989 & --  & 10.0 (GFM only) \\
+8 & PV/IBR & 0.990 & --  & 9.0 (GFM) \\
+9 & PV/IBR & 0.988 & --  & 10.0 (GFM only) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\caption{IBR inverter parameters (per unit, rated MVA base)}
+\label{tab:app_ibr}
+\begin{tabularx}{\textwidth}{@{}lXXXXX@{}}
+\toprule
+Parameter & Symbol & GFL & GFM (VSM) & Unit & Source \\
+\midrule
+Filter inductance & $L_f$ & 0.15 & 0.15 & pu & Design \\
+Filter resistance & $R_f$ & 0.005 & 0.005 & pu & Design \\
+Current loop BW & $\omega_\mathrm{bw}$ & $2\pi\times500$ & $2\pi\times500$ & rad/s & Design \\
+Current limit & $I_\mathrm{lim}$ & 1.10 & 2.00 & pu & IEEE 2800 \\
+PLL BW & $\omega_\mathrm{bw,pll}$ & $2\pi\times20$ & N/A & rad/s & Design \\
+Virtual inertia & $M$ & N/A & 0.10 & s$^2$/rad & Design \\
+Virtual damping & $D$ & N/A & 50 & pu & Design \\
+Virtual impedance & $L_v$ & N/A & 0.10 & pu & Design \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Relay Settings}
+\label{app:relay_settings}
+
+\begin{table}[htbp]
+\caption{SAMBP 87L relay settings}
+\label{tab:app_87l}
+\begin{tabularx}{\textwidth}{@{}lXXl@{}}
+\toprule
+Parameter & Value & Basis & Section \\
+\midrule
+Minimum pickup $I_0$ & 0.10~pu & Charging current & \ref{sec:ch4_settings} \\
+CT error $\epsilon_\mathrm{CT}$ & 1.0\% & Class 1P IEC & \ref{sec:ch4_stability} \\
+Slope algorithm & Eq.~\eqref{eq:ch4_km_formula} & Adaptive & \ref{sec:ch4_adaptive} \\
+Harmonic block $h_\mathrm{block}$ & 0.15 & 5\% below inrush & \ref{sec:ch4_harmonic} \\
+Neg-seq slope $k_{m,2}$ & 1.50 & $< \rho_2 = 2$ & \ref{sec:ch4_87ln} \\
+Neg-seq pickup $I_{0,2}$ & 0.05~pu & System unbalance & \ref{sec:ch4_87ln} \\
+TDCS threshold & $3\sigma$ & Pre-fault training & \ref{sec:ch4_tdcs} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{EKF Tuning Parameters}
+\label{app:ekf}
+
+\begin{table}[htbp]
+\caption{EKF tuning parameters}
+\label{tab:app_ekf}
+\begin{tabularx}{\textwidth}{@{}lXXl@{}}
+\toprule
+Parameter & Symbol & Value & Description \\
+\midrule
+Process noise: $\kibr$ & $\sigma_{k_\mathrm{ibr}}$ & 0.001 & pu/cycle \\
+Process noise: $\Zline$ & $\sigma_{Z_L}$ & $2\times10^{-4}$ & pu/cycle \\
+Process noise: $\alpha$ & $\sigma_\alpha$ & 0.005 & pu/cycle \\
+Measurement noise: ratio & $\sigma_y$ & 0.005 & pu \\
+Measurement noise: angle & $\sigma_\phi$ & $2°$ & degrees \\
+Initial covariance & $\mathbf{P}_0$ & $\mathrm{diag}[0.1^2, 0.01^2, 0.5^2]$ & pu$^2$ \\
+Update rate & $f_\mathrm{EKF}$ & 50~Hz & (1 power cycle) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{PINN Hyperparameters}
+\label{app:pinn}
+
+\begin{table}[htbp]
+\caption{PINN training hyperparameters}
+\label{tab:app_pinn}
+\begin{tabularx}{\textwidth}{@{}lXl@{}}
+\toprule
+Parameter & Value & Description \\
+\midrule
+Architecture & $[12, 128, 64, 32, 5+3]$ & Input, hidden, output layers \\
+Activation & ReLU & Hidden layers \\
+Output activation & Softmax + Linear & Classification + physics outputs \\
+Optimiser & Adam & $\eta = 10^{-3}$, $\beta_{1,2} = (0.9, 0.999)$ \\
+Batch size & 256 & Training batch \\
+Epochs & 200 & With early stopping (patience 20) \\
+Constraint weights & $\lambda_1=10, \lambda_2=5, \lambda_3=2$ & Physics loss weights \\
+Training samples & 70{,}000 & From 100{,}000 total \\
+Validation samples & 15{,}000 & Early stopping \\
+Test samples & 15{,}000 & Final evaluation \\
+Online learning rate & $10^{-4}$ & Post-deployment \\
+Forgetting factor & $\lambda = 0.99$ & EWC weight decay \\
+CUSUM $\delta$ & 0.5 & Reference value \\
+CUSUM $\theta$ & 5.0 & Alarm threshold \\
+\bottomrule
+\end{tabularx}
+\end{table}

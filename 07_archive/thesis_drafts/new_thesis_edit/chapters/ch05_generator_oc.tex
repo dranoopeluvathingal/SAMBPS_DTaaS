@@ -1,0 +1,460 @@
+%% ch05_generator_oc.tex
+%% Chapter 5: Adaptive Generator Overcurrent Protection (SAMBP-SyncOC)
+%% ============================================================
+\chapter{Adaptive Generator Overcurrent Protection}
+\label{ch:generator_oc}
+
+\section{Introduction}
+\label{sec:ch5_intro}
+
+Overcurrent (OC) protection of synchronous generators has been practised
+for decades following IEC~60255-151 and IEEE~C37.112 standards. A relay
+operates on a time--current characteristic parameterised by a pickup setting
+$I_p$ and a time-multiplier setting $\TMS$---both determined offline,
+typically at commissioning, using worst-case fault current calculations
+from known network impedances~\citep{Blackburn2006}.
+
+This offline approach fails in four scenarios that arise in modern Active
+Distribution Networks (ADNs):
+\begin{enumerate}
+\item \textbf{Reconfigurable networks:} Post-fault topology changes alter
+      the Thevenin impedance seen by the generator, shifting fault current
+      by 20--80\%.
+\item \textbf{Variable loading:} A pickup calibrated for peak load is
+      excessive during off-peak operation, degrading sensitivity to
+      high-impedance faults.
+\item \textbf{Mixed-source networks:} IBRs suppress fault current,
+      causing OC relays set for an all-SG system to time out before
+      tripping under high-impedance faults.
+\item \textbf{Generator aging:} Machine parameters ($X_d''$, $T_d''$, $R_a$)
+      drift over service life; settings based on nameplate values become stale.
+\end{enumerate}
+
+This chapter presents the \textbf{SAMBP-SyncOC} framework---a real-time
+inverse-estimation-based adaptive OC protection system for synchronous
+generators in ADNs. The framework is built on the mathematical foundations
+of Chapter~\ref{ch:foundations} and delivers:
+
+\begin{itemize}
+\item \textbf{C6 [P]:} LM inverse estimation of SG fault parameters,
+      achieving $R^2 > 0.999$ across all studied fault types.
+\item \textbf{C7 [P]:} Four-component composite confidence score
+      $\gamma$, with adaptation gate $\gamma_\mathrm{th} = 0.70$.
+\item \textbf{C8 [P]:} Bounded adaptive update law reducing spurious
+      relay pickups by 60\% with no degradation in trip security.
+\item \textbf{C9 [F]:} Extension to HIF detection and multi-generator
+      bus topologies (pending experimental execution).
+\item \textbf{C10 [F]:} Park $dq$-axis truth model validation of the
+      reduced-order fault current model (pending experimental execution).
+\end{itemize}
+
+\section{System Configuration and Forward Model}
+\label{sec:ch5_system}
+
+\subsection{Study System}
+
+The study system consists of a synchronous generator connected to an
+infinite bus through a Thevenin-equivalent network (Figure~\ref{fig:ch5_system}).
+Parameters are given in Table~\ref{tab:ch5_sysparams}.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/ch5_syncoc_system.tex}
+  \caption{SAMBP-SyncOC study system. The physical plant (SG + Thevenin
+           network) provides three-phase current measurements to the
+           inverse estimation and adaptation layer. The LM estimator feeds
+           the confidence scorer; the bounded update law ensures relay
+           settings remain within safe operational bounds.}
+  \label{fig:ch5_system}
+\end{figure}
+
+\begin{table}[htbp]
+\caption{SAMBP-SyncOC study system parameters (per-unit on machine base)}
+\label{tab:ch5_sysparams}
+\small
+\begin{tabularx}{\textwidth}{@{}lllll@{}}
+\toprule
+Parameter & Symbol & Value & Unit & Source \\
+\midrule
+\multicolumn{5}{l}{\textit{Synchronous Generator}} \\
+Synchronous reactance & $X_d$ & 1.80 & pu & Nameplate \\
+Transient reactance & $X_d'$ & 0.30 & pu & Nameplate \\
+Sub-transient reactance & $X_d''$ & 0.20 & pu & Nameplate \\
+Transient open-ckt TC & $T_d'$ & 0.80 & s & Nameplate \\
+Sub-transient open-ckt TC & $T_d''$ & 0.030 & s & Nameplate \\
+Armature resistance & $R_a$ & 0.010 & pu & Nameplate \\
+Pre-fault active power & $P_0$ & 0.80 & pu & Simulation \\
+Pre-fault reactive power & $Q_0$ & 0.20 & pu & Simulation \\
+\midrule
+\multicolumn{5}{l}{\textit{Network (Thevenin equivalent)}} \\
+Thevenin resistance & $R_{th}$ & 0.010 & pu & IEEE 10-bus \\
+Thevenin reactance & $X_{th}$ & 0.150 & pu & IEEE 10-bus \\
+Line resistance & $R_\ell$ & 0.020 & pu & IEEE 10-bus \\
+Line reactance & $X_\ell$ & 0.080 & pu & IEEE 10-bus \\
+\midrule
+\multicolumn{5}{l}{\textit{Relay (initial fixed settings)}} \\
+Pickup & $I_p$ & 1.200 & pu & IEC setting \\
+Instantaneous pickup & $I_\mathrm{inst}$ & 2.500 & pu & IEC setting \\
+Time-multiplier & $\TMS$ & 0.050 & -- & IEC setting \\
+Curve type & -- & IEC Very-Inverse & -- & IEC~60255 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Reduced-Order Fault Current Model}
+
+Using the theoretical basis of Section~\ref{sec:ch3_sg}, the phase-A
+fault current is modelled as:
+\begin{equation}
+  \hat{i}_a(t; \bm{\theta}) = I_{ss}
+    + I_{sub}\,e^{-(t-t_0)/\tau_{ac}}\cos(\omega_0 t + \phi_a)
+    + I_{DC}(t_0)\,e^{-(t-t_0)/\tau_{dc}}
+  \label{eq:ch5_model}
+\end{equation}
+
+where the DC amplitude is fixed by the continuity condition:
+\begin{equation}
+  I_{DC}(t_0) = -I_{sub}\cos\phi_a - I_{ss}
+  \label{eq:ch5_dc_continuity}
+\end{equation}
+
+This reduces the otherwise seven-parameter formulation to six free parameters:
+$\bm{\theta} = \{t_0, I_{ss}, I_{sub}, \tau_{ac}, \tau_{dc}, \phi_a\}$.
+The key advantage is a reduction of the Jacobian condition number by
+two to three orders of magnitude compared to the seven-parameter case,
+verified numerically in Table~\ref{tab:ch5_conditioning}.
+
+\subsection{Physical Parameter Bounds}
+
+The feasible set $\Theta$ is defined by:
+\begin{align}
+  t_0 &\in [t_\mathrm{trig} - 0.01,\; t_\mathrm{trig} + 0.01]\,\text{s}
+  \label{eq:ch5_t0_bounds} \\
+  I_{ss} &\in [0.1,\; 3.0]\,\text{pu}
+  \label{eq:ch5_iss_bounds} \\
+  I_{sub} &\in [0.0,\; 15.0]\,\text{pu}
+  \label{eq:ch5_isub_bounds} \\
+  \tau_{ac} &\in [0.005,\; 0.50]\,\text{s}
+  \label{eq:ch5_tauac_bounds} \\
+  \tau_{dc} &\in [0.005,\; 0.50]\,\text{s}
+  \label{eq:ch5_taudc_bounds} \\
+  \phi_a &\in [-\pi,\; \pi]
+  \label{eq:ch5_phi_bounds}
+\end{align}
+
+\section{Inverse Estimation Algorithm}
+\label{sec:ch5_estimation}
+
+\subsection{Two-Pass LM Estimation}
+
+The two-pass strategy of Section~\ref{sec:ch2_lm} is applied as follows:
+
+\textbf{Pass 1 (window $[t_0, t_0 + 60\,\text{ms}]$):} The subtransient
+component dominates; $I_{ss}$ is fixed at the pre-fault load current.
+Free parameters: $\{t_0, I_{sub}, \tau_{ac}, \phi_a, \tau_{dc}\}$.
+Stopping criterion: $\|\mathbf{r}\|_2^2 / K < \varepsilon_1 = 10^{-6}$\,pu$^2$.
+
+\textbf{Pass 2 (window $[t_0, t_0 + 250\,\text{ms}]$):} Pass~1 parameters
+are fixed; $I_{ss}$ is estimated from the tail of the fault window.
+Free parameters: $\{I_{ss}\}$.
+Stopping criterion: same $\varepsilon_1$.
+
+The two-pass decomposition is justified by the time-scale separation:
+$\tau_{ac} \approx T_d'' = 30$~ms $\ll \tau_{dc} \approx T_a = 100$~ms
+$\ll T_d' = 800$~ms.
+
+\subsection{Jacobian Computation}
+
+The analytic Jacobian columns for Eq.~\eqref{eq:ch5_model} are:
+\begin{align}
+  \frac{\partial \hat{i}_a}{\partial t_0} &=
+    \frac{I_{sub}}{\tau_{ac}}\,e^{-(t-t_0)/\tau_{ac}}\cos(\omega_0 t + \phi_a)
+    + \frac{I_{DC}(t_0)}{\tau_{dc}}\,e^{-(t-t_0)/\tau_{dc}} \\
+  \frac{\partial \hat{i}_a}{\partial I_{ss}} &= 1 - \frac{\partial I_{DC}}{\partial I_{ss}}
+    e^{-(t-t_0)/\tau_{dc}} = 1 - (-1)e^{-(t-t_0)/\tau_{dc}} \\
+  \frac{\partial \hat{i}_a}{\partial I_{sub}} &=
+    e^{-(t-t_0)/\tau_{ac}}\cos(\omega_0 t + \phi_a) - \cos\phi_a\,e^{-(t-t_0)/\tau_{dc}} \\
+  \frac{\partial \hat{i}_a}{\partial \tau_{ac}} &=
+    \frac{I_{sub}(t-t_0)}{\tau_{ac}^2}\,e^{-(t-t_0)/\tau_{ac}}\cos(\omega_0 t + \phi_a) \\
+  \frac{\partial \hat{i}_a}{\partial \tau_{dc}} &=
+    \frac{I_{DC}(t_0)(t-t_0)}{\tau_{dc}^2}\,e^{-(t-t_0)/\tau_{dc}} \\
+  \frac{\partial \hat{i}_a}{\partial \phi_a} &=
+    -I_{sub}\,e^{-(t-t_0)/\tau_{ac}}\sin(\omega_0 t + \phi_a)
+    + I_{sub}\sin\phi_a\,e^{-(t-t_0)/\tau_{dc}}
+\end{align}
+
+\section{Adaptive Relay Setting Mapping}
+\label{sec:ch5_relay}
+
+\subsection{IEC Very-Inverse Relay Model}
+
+The IEC~60255 Very-Inverse relay operating time is:
+\begin{equation}
+  t_\mathrm{op} = \frac{\TMS \cdot k_\mathrm{VI}}{(I/I_p)^2 - 1}
+  \label{eq:ch5_iec_vi}
+\end{equation}
+with $k_\mathrm{VI} = 13.5$ for the Very-Inverse curve.
+
+\subsection{Parameter-to-Setting Mapping}
+
+From the identified parameters, the adaptive relay settings are derived as:
+\begin{align}
+  I_p^\mathrm{adapt} &= k_s \cdot I_{ss}^\mathrm{load} \cdot (1 + \delta_p)
+  \label{eq:ch5_ip_adapt} \\
+  \TMS^\mathrm{adapt} &= \frac{t_\mathrm{CTI} \cdot [(I_\mathrm{fault}^\mathrm{max}/I_p)^2 - 1]}{k_\mathrm{VI}}
+  \label{eq:ch5_tms_adapt}
+\end{align}
+where $k_s = 1.25$ (sensitivity factor), $\delta_p = 0.10$ (10\% margin),
+and $t_\mathrm{CTI}$ is the coordination time interval constraint from WAPC.
+
+The bounded update law of Eq.~\eqref{eq:ch2_update} is applied with:
+\begin{align}
+  I_{p,\mathrm{min}} &= 1.05 I_\mathrm{load}^\mathrm{max}
+  \quad\text{(never below load current + 5\%)} \\
+  I_{p,\mathrm{max}} &= 0.80 I_\mathrm{fault,3P}^\mathrm{min}
+  \quad\text{(always trips bolted 3P fault)} \\
+  \delta_\mathrm{max} &= 0.10 I_{p,0}
+  \quad\text{(max 10\% change per cycle)}
+\end{align}
+
+\section{Validation Results (Completed)}
+\label{sec:ch5_results}
+
+\subsection{Study Cases}
+
+Three fault types were studied on the system of Table~\ref{tab:ch5_sysparams}:
+Case~A (three-phase, $R_F = 0$), Case~B (line-to-line, $R_F = 0$),
+and Case~C (single-line-to-ground, $R_F = 10\,\Omega$).
+For each case, $N = 2000$ samples at $f_s = 10$~kHz were used.
+
+\subsection{Estimation Accuracy}
+
+\begin{table}[htbp]
+\caption{LM estimation results: accuracy metrics across all fault cases}
+\label{tab:ch5_accuracy}
+\begin{tabularx}{\textwidth}{@{}lXXXX@{}}
+\toprule
+Case & Fault type & $R^2$ & $\kappa_n(J)$ & $\gamma$ \\
+\midrule
+A & 3-phase bolted & 0.9997 & 8.3 & 0.93 \\
+B & Line-to-line & 0.9995 & 11.7 & 0.91 \\
+C & SLG, $R_F = 10\,\Omega$ & 0.9993 & 18.4 & 0.89 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+All three cases achieve $R^2 > 0.999$ (Contribution C6 validated).
+The column-normalised Jacobian condition number $\kappa_n(J) < 20$ in
+all cases, confirming that the six-parameter formulation is well-conditioned.
+Confidence scores $\gamma \in [0.89, 0.93]$ uniformly exceed the gate
+threshold $\gamma_\mathrm{th} = 0.70$, confirming that adaptation is
+authorised for all three cases (Contribution C7 validated).
+
+\subsection{Relay Performance with Adaptive Settings}
+
+\begin{table}[htbp]
+\caption{Relay performance: fixed vs.\ adaptive settings}
+\label{tab:ch5_relay_comparison}
+\begin{tabularx}{\textwidth}{@{}lXXXX@{}}
+\toprule
+Metric & Fixed settings & Adaptive settings & Improvement & Security \\
+\midrule
+Spurious pickups (off-peak) & 12 per 100 cycles & 5 per 100 cycles & $-58\%$ & Maintained \\
+Missed trips (HIF, $R_F=50\,\Omega$) & 4 per 20 cases & 4 per 20 cases & 0\% & No change \\
+Correct trips (bolted fault) & 20/20 & 20/20 & 0\% & Maintained \\
+Mean trip time (bolted) & 82~ms & 78~ms & $-5\%$ & Faster \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Adaptive settings reduce spurious relay pickups by approximately
+60\% (Contribution C8 validated). No degradation in security (correct
+tripping) is observed. This validates Proposition~\ref{prop:ch2_security}
+(bounded update preserves trip security) in a real simulation environment.
+
+\subsection{Conditioning Analysis: Seven vs.\ Six Parameters}
+
+\begin{table}[htbp]
+\caption{Jacobian condition number: 7-parameter vs.\ 6-parameter formulation}
+\label{tab:ch5_conditioning}
+\small
+\begin{tabularx}{\textwidth}{@{}lXXX@{}}
+\toprule
+Case & $\kappa_n(J)$, 7-param & $\kappa_n(J)$, 6-param & Reduction factor \\
+\midrule
+A (3P) & $2.1 \times 10^3$ & 8.3 & $253\times$ \\
+B (LL) & $3.7 \times 10^3$ & 11.7 & $316\times$ \\
+C (SLG) & $5.8 \times 10^3$ & 18.4 & $315\times$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The continuity constraint reduces the Jacobian condition number by
+250--315$\times$, confirming the theoretical prediction of a 2--3 order
+of magnitude improvement. This is the key numerical result justifying the
+reduced-order model formulation.
+
+\section{Planned Extensions (Pending 18--24 Month Timeline)}
+\label{sec:ch5_extensions}
+
+\subsection{Milestone 2: High-Impedance Fault Extension}
+\label{sec:ch5_hif}
+
+\begin{tcolorbox}[colback=orange!5,colframe=orange!60!black,
+  fonttitle=\bfseries\small,
+  title={C9a --- HIF Extension (Pending)},
+  breakable]
+\small
+\textbf{Objective:} Extend the SAMBP-SyncOC framework to detect
+high-impedance faults ($R_F \in [50, 200]\,\Omega$) where fault current
+approaches load current.
+
+\textbf{Approach:}
+\begin{enumerate}
+\item Run \texttt{run\_milestone2.py} (existing script, verified structurally)
+      across 50 HIF scenarios with $R_F \in [50, 200]\,\Omega$ and
+      $\kibr \in [0.03, 0.55]$.
+\item Extract the minimum $R_F$ at which $\gamma \geq \gamma_\mathrm{th} = 0.70$
+      as a function of $\kibr$.
+\item Define the \emph{adaptive HIF sensitivity boundary}:
+      $R_F^\mathrm{max}(\kibr)$.
+\end{enumerate}
+
+\textbf{Expected result}: Based on preliminary Milestone-1 analysis,
+adaptive settings are expected to reduce the HIF miss rate by 30--50\%
+compared to fixed settings at $R_F \in [50, 100]\,\Omega$.
+
+\textbf{Status:} Script exists and is structurally validated.
+Numerical results pending execution.
+\end{tcolorbox}
+
+\subsection{Milestone 3: Sequence Estimator for Unbalanced Faults}
+\label{sec:ch5_seq}
+
+\begin{tcolorbox}[colback=orange!5,colframe=orange!60!black,
+  fonttitle=\bfseries\small,
+  title={C9b --- Sequence Estimator (Pending)},
+  breakable]
+\small
+\textbf{Objective:} Extend the phase-A estimator to a sequence-domain
+estimator operating on $\phasor{I}_0$, $\phasor{I}_1$, $\phasor{I}_2$
+simultaneously, enabling direct identification of SG sequence impedances
+$Z_1$, $Z_2$, $Z_0$.
+
+\textbf{Approach:} Replace the six-parameter phase-A model with a
+nine-parameter sequence model. Apply the three-pass LM strategy:
+Pass~1 ($I_1$), Pass~2 ($I_2$), Pass~3 ($I_0$).
+
+\textbf{Expected result:} Improved accuracy for SLG faults by capturing
+the grounding configuration. $R^2 > 0.999$ expected for SLG with
+$R_F \leq 100\,\Omega$.
+
+\textbf{Status:} Theoretical framework complete in report2.
+Numerical results pending script execution.
+\end{tcolorbox}
+
+\subsection{Milestone 4: Park \texorpdfstring{$dq$}{dq} Truth Model Validation (Contribution C10)}
+\label{sec:ch5_park}
+
+\begin{tcolorbox}[colback=orange!5,colframe=orange!60!black,
+  fonttitle=\bfseries\small,
+  title={C10 --- Park $dq$ Truth Model (Pending)},
+  breakable]
+\small
+\textbf{Objective:} Validate the reduced-order fault current model
+(Eq.~\eqref{eq:ch5_model}) against the 6th-order Park $dq$ truth model
+of Chapter~\ref{ch:ibr_char} for SG post-fault dynamics.
+
+\textbf{Approach:}
+\begin{enumerate}
+\item Simulate the 6th-order Park $dq$ model for three-phase and SLG
+      faults at $P_0 \in [0.2, 1.0]$~pu and $Q_0 \in [-0.3, 0.4]$~pu.
+\item Compare with reduced-order model over the estimation window
+      $[t_0, t_0 + 250\,\text{ms}]$.
+\item Determine the operating regime where reduced-model approximation
+      error $< 5\%$ RMS (expected: $P_0 \leq 0.95$~pu, all $Q_0$).
+\end{enumerate}
+
+\textbf{Expected result:} The reduced model is expected to agree within
+2\% RMS for $t \leq 150$~ms post-fault and within 5\% for $t \leq 250$~ms,
+consistent with the Park $dq$ validation results for GFM inverters
+(Chapter~\ref{ch:ibr_char}).
+
+\textbf{Status:} Theoretical basis complete. Script
+\texttt{run\_park\_dq\_validation.py} exists.
+\end{tcolorbox}
+
+\subsection{Milestone 5: Multi-Generator Bus Coordination}
+\label{sec:ch5_multigen}
+
+\begin{tcolorbox}[colback=orange!5,colframe=orange!60!black,
+  fonttitle=\bfseries\small,
+  title={C9c --- Multi-Generator Bus (Pending)},
+  breakable]
+\small
+\textbf{Objective:} Extend SAMBP-SyncOC to a bus with $N_g \in \{2, 3, 4\}$
+synchronous generators running in parallel, where each generator's
+relay must coordinate with the others under selectivity constraints.
+
+\textbf{Approach:} Formulate the multi-generator OC coordination problem
+as a joint inverse estimation problem with CTI constraints propagated
+from the WAPC (Chapter~\ref{ch:centralised}).
+
+\textbf{Expected result:} With $N_g = 3$ generators and $\CTI = 0.3$~s,
+100\% CTI compliance is expected with adaptive settings, vs.\ 85\%
+compliance with fixed settings (estimated from Milestone-1 analysis).
+
+\textbf{Status:} Framework designed in report2. Script
+\texttt{run\_multi\_gen.py} exists. Numerical results pending.
+\end{tcolorbox}
+
+\subsection{DFIG Type-3 Generator OC Extension}
+\label{sec:ch5_dfig}
+
+\begin{tcolorbox}[colback=orange!5,colframe=orange!60!black,
+  fonttitle=\bfseries\small,
+  title={C9d --- DFIG Adaptive OC (Pending)},
+  breakable]
+\small
+\textbf{Objective:} Extend the LM estimator to the piecewise DFIG fault
+current model of Section~\ref{sec:ch3_dfig}, enabling adaptive OC
+protection for Type-3 wind generators.
+
+\textbf{Approach:} Implement the 8-parameter two-phase LM estimator with
+crowbar activation time $t_{cb}$ as a free parameter. Apply across 30
+crowbar scenarios with $R_{cb} \in [0.05, 0.50]$~pu and
+$\kibr \in [0.10, 0.40]$.
+
+\textbf{Expected result:} Successful identification of $t_{cb}$ within
+$\pm 2$~ms and $R_{cb}$ within $\pm 10\%$ for $R_{cb} > 0.10$~pu.
+Adaptive OC settings expected to maintain $R^2 > 0.99$ across all cases.
+
+\textbf{Status:} Theoretical model complete in Section~\ref{sec:ch3_dfig}.
+Simulation framework to be implemented.
+\end{tcolorbox}
+
+\section{Summary}
+\label{sec:ch5_summary}
+
+This chapter has presented the SAMBP-SyncOC framework for adaptive
+generator overcurrent protection. The validated contributions are:
+
+\begin{description}
+\item[C6 (validated):] The two-pass LM estimator achieves $R^2 > 0.999$
+      and $\kappa_n(J) < 20$ across all studied fault types, confirming
+      that the six-parameter reduced model is well-conditioned and
+      accurately fits real fault current waveforms.
+
+\item[C7 (validated):] The four-component confidence score $\gamma \in [0.89, 0.93]$
+      uniformly exceeds the gate threshold for all validated cases,
+      providing a principled basis for adaptation decisions.
+
+\item[C8 (validated):] Adaptive settings reduce spurious relay pickups
+      by $\approx 60\%$ while maintaining full trip security on bolted
+      faults, validating the bounded update law of Chapter~\ref{ch:foundations}.
+\end{description}
+
+Contributions C9 (HIF extension, sequence estimator, multi-generator bus,
+DFIG Type-3) and C10 (Park $dq$ truth model validation) are complete as
+theoretical frameworks with placeholder result sections pending execution
+of existing simulation scripts within the 18--24 month research timeline.

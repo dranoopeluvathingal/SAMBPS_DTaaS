@@ -1,0 +1,31 @@
+% ch4_adaptive_slope.tex --- Adaptive slope k_m*(k_ibr) vs k_ibr
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  width  = 0.72\textwidth,
+  height = 6.0cm,
+  xlabel = {IBR current ratio $\kibr$ (pu)},
+  ylabel = {Bias slope $k_m$},
+  xmin=0, xmax=0.6, ymin=0, ymax=0.65,
+  xtick={0,0.1,0.2,0.3,0.4,0.5,0.6},
+  ytick={0,0.1,0.2,0.3,0.4,0.5,0.6},
+  legend pos=north east,
+]
+
+%% Fixed slope reference
+\addplot[dashed, thick, thesisgray, domain=0:0.6, samples=2]
+  {0.30};
+\addlegendentry{Classical fixed slope};
+
+%% Adaptive slope from Eq. (4.14)
+\addplot[thick, thesisblue, domain=0.001:0.59, samples=60]
+  {0.5*(1-x)^2/(1+x)^2 + 0.05};
+\addlegendentry{Adaptive slope $k_m^\ast(\kibr)$};
+
+%% Stability bound (lower limit)
+\addplot[dotted, thesisgreen, thick, domain=0:0.6, samples=2]
+  {0.05};
+\addlegendentry{Stability bound};
+
+\end{axis}
+\end{tikzpicture}

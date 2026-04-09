@@ -1,0 +1,76 @@
+% ============================================================
+%  Figure 6 — Window hierarchy / event segmentation
+%  Timeline from t0 to 550 ms showing nested windows W1..W6
+% ============================================================
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  >=Latex
+]
+% Scale: 1cm = 50ms  => 550ms = 11cm
+
+%% --- Background validity zones (drawn first) -----------------
+\fill[green!12]  (0,-0.5) rectangle (3.0, 0.5);   % 0..150ms
+\fill[red!8]     (3.0,-0.5) rectangle (11.0, 0.5); % 150..550ms
+
+%% --- Zone labels ---------------------------------------------
+\node[font=\tiny, green!60!black, align=center] at (1.5, 0.22)
+     {Relay-valid zone\\(reduced model accurate)};
+\node[font=\tiny, red!70!black, align=center] at (7.0, 0.22)
+     {Caution / invalid zone\\(AVR/Gov dynamics diverge)};
+
+%% --- Timeline axis -------------------------------------------
+\draw[ultra thick, ->] (-0.2, 0) -- (11.5, 0)
+     node[right, font=\scriptsize] {time};
+
+%% --- Fault inception marker ----------------------------------
+\draw[thick, black] (0, -0.5) -- (0, 0.5);
+\node[below, font=\tiny] at (0, -0.5) {$t_0$};
+\node[above, font=\tiny] at (0, 0.5)  {fault};
+
+%% --- Window brackets (above timeline, different heights) -----
+% W1 = 20ms = 0.4cm, height level 1
+\draw[thick, red!70!black] (0, 0.65) -- (0.4, 0.65);
+\node[above, font=\tiny, red!70!black] at (0.2, 0.65) {$W_1=20$\,ms};
+
+% W2 = 40ms = 0.8cm, height level 2
+\draw[thick, orange!80!black] (0, 0.95) -- (0.8, 0.95);
+\node[above, font=\tiny, orange!80!black] at (0.4, 0.95) {$W_2=40$\,ms};
+
+% W3 = 80ms = 1.6cm, height level 3
+\draw[thick, yellow!70!black] (0, 1.25) -- (1.6, 1.25);
+\node[above, font=\tiny, yellow!70!black] at (0.8, 1.25) {$W_3=80$\,ms};
+
+% W4 = 150ms = 3.0cm, height level 4
+\draw[thick, green!60!black] (0, 1.55) -- (3.0, 1.55);
+\node[above, font=\tiny, green!60!black] at (1.5, 1.55) {$W_4=150$\,ms};
+
+% W5 = 300ms = 6.0cm, height level 5
+\draw[thick, blue!70] (0, 1.85) -- (6.0, 1.85);
+\node[above, font=\tiny, blue!70] at (3.0, 1.85) {$W_5=300$\,ms};
+
+% W6 = 500ms = 10.0cm, height level 6
+\draw[thick, purple!70] (0, 2.15) -- (10.0, 2.15);
+\node[above, font=\tiny, purple!70] at (5.0, 2.15) {$W_6=500$\,ms};
+
+%% --- Small end-ticks on brackets ----------------------------
+\foreach \x/\col in {0.4/red!70!black, 0.8/orange!80!black,
+                      1.6/yellow!70!black}{
+  \draw[\col, thick] (\x, 0.60) -- (\x, 0.70);
+}
+\draw[green!60!black, thick] (3.0, 1.50) -- (3.0, 1.60);
+\draw[blue!70, thick]        (6.0, 1.80) -- (6.0, 1.90);
+\draw[purple!70, thick]      (10.0, 2.10) -- (10.0, 2.20);
+
+%% --- Validity boundary dashed line --------------------------
+\draw[thick, gray!60, dashed] (3.0, -0.55) -- (3.0, 2.35);
+\node[above, font=\tiny, gray!60, align=center] at (3.0, 2.35)
+     {$L^\ast{\approx}150$\,ms\\validity boundary};
+
+%% --- Tick marks on timeline ---------------------------------
+\foreach \x/\lbl in {0/0, 2/100, 4/200, 6/300, 8/400, 10/500}{
+  \draw (\x, -0.08) -- (\x, 0.08);
+  \node[below, font=\tiny] at (\x, -0.08) {\lbl};
+}
+\node[below, font=\tiny] at (5.5, -0.35) {(ms)};
+
+\end{tikzpicture}

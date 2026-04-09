@@ -1,0 +1,109 @@
+% fig_selectivity_matrix.tex
+% Heat-map grid: scenario × k_ibr selectivity for Baseline (87L) vs TR-22 (87L+87LN)
+% Rows: SLG, 3PH, Healthy (3 scenarios)
+% Cols: k_ibr = 0.08 … 0.20 (7 levels)
+% Colour: green=PASS, red=FAIL, yellow=recovered-by-87LN
+\begin{tikzpicture}[
+  cell/.style={minimum width=1.4cm, minimum height=0.8cm,
+               font=\scriptsize\bfseries, draw=white, line width=0.8pt},
+]
+
+% ---- Column headers (k_ibr values) -----------------------------------------
+\foreach \i/\k in {0/0.08, 1/0.09, 2/0.10, 3/0.11, 4/0.12, 5/0.15, 6/0.20} {
+  \node[font=\tiny, align=center] at (1.4*\i + 0.7, 4.2) {\k};
+}
+\node[font=\scriptsize\itshape] at (1.4*3+0.7, 4.7) {$k_{\rm ibr}$ [pu]};
+
+% ---- Row headers -----------------------------------------------------------
+\node[font=\scriptsize, align=right] at (-0.2, 3.3) {SLG};
+\node[font=\scriptsize, align=right] at (-0.2, 2.3) {3PH};
+\node[font=\scriptsize, align=right] at (-0.2, 1.3) {Healthy};
+
+% ---- Left panel label ------------------------------------------------------
+\node[font=\scriptsize\bfseries] at (1.4*3+0.7, 5.15) {Baseline (87L only)};
+
+% ---- Baseline grid ---------------------------------------------------------
+% SLG: FAIL at k<0.12, PASS at k>=0.15 (k=0.12 just misses → FAIL)
+% (From study: baseline SLG = 0.08:F, 0.09:F, 0.10:F, 0.11:F, 0.12:F, 0.15:P, 0.20:P)
+\foreach \i/\c/\t in {
+  0/red!35/FAIL, 1/red!35/FAIL, 2/red!35/FAIL, 3/red!35/FAIL,
+  4/red!35/FAIL, 5/green!35/PASS, 6/green!35/PASS
+} {
+  \node[cell, fill=\c] at (1.4*\i + 0.7, 3.3) {\t};
+}
+
+% 3PH: FAIL at k<0.12, PASS at k>=0.12
+\foreach \i/\c/\t in {
+  0/red!35/FAIL, 1/red!35/FAIL, 2/red!35/FAIL, 3/red!35/FAIL,
+  4/green!35/PASS, 5/green!35/PASS, 6/green!35/PASS
+} {
+  \node[cell, fill=\c] at (1.4*\i + 0.7, 2.3) {\t};
+}
+
+% Healthy: PASS all
+\foreach \i in {0,...,6} {
+  \node[cell, fill=green!35] at (1.4*\i + 0.7, 1.3) {PASS};
+}
+
+% ---- Count label -----------------------------------------------------------
+\node[font=\scriptsize\bfseries, red!70!black] at (1.4*3+0.7, 0.55) {12/21};
+
+% ---- Divider ---------------------------------------------------------------
+\draw[gray!50, thick] (9.8+0.4, 0.4) -- (9.8+0.4, 5.3);
+
+% ---- Right panel label -----------------------------------------------------
+\node[font=\scriptsize\bfseries] at (9.8+0.4+1.4*3+0.7, 5.15)
+  {TR-22 (87L $+$ 87LN)};
+
+% x-offsets for right panel
+\def\xR{10.6}
+
+% ---- Column headers (right panel) ------------------------------------------
+\foreach \i/\k in {0/0.08, 1/0.09, 2/0.10, 3/0.11, 4/0.12, 5/0.15, 6/0.20} {
+  \node[font=\tiny] at (\xR + 1.4*\i + 0.7, 4.2) {\k};
+}
+
+% ---- Row headers (right) ---------------------------------------------------
+\node[font=\scriptsize, align=right] at (\xR - 0.2, 3.3) {SLG};
+\node[font=\scriptsize, align=right] at (\xR - 0.2, 2.3) {3PH};
+\node[font=\scriptsize, align=right] at (\xR - 0.2, 1.3) {Healthy};
+
+% ---- TR-22 grid ------------------------------------------------------------
+% SLG: all PASS (87LN recovers 5, 87L gets 2)
+% Yellow = recovered by 87LN, green = 87L also trips
+\foreach \i/\c/\t in {
+  0/yellow!60/RECOV, 1/yellow!60/RECOV, 2/yellow!60/RECOV,
+  3/yellow!60/RECOV, 4/yellow!60/RECOV,
+  5/green!35/PASS, 6/green!35/PASS
+} {
+  \node[cell, fill=\c] at (\xR + 1.4*\i + 0.7, 3.3) {\t};
+}
+
+% 3PH: FAIL at k<0.12 (IBR sym limit), PASS at k>=0.12
+\foreach \i/\c/\t in {
+  0/red!35/FAIL, 1/red!35/FAIL, 2/red!35/FAIL, 3/red!35/FAIL,
+  4/green!35/PASS, 5/green!35/PASS, 6/green!35/PASS
+} {
+  \node[cell, fill=\c] at (\xR + 1.4*\i + 0.7, 2.3) {\t};
+}
+
+% Healthy: PASS all
+\foreach \i in {0,...,6} {
+  \node[cell, fill=green!35] at (\xR + 1.4*\i + 0.7, 1.3) {PASS};
+}
+
+% ---- Count label -----------------------------------------------------------
+\node[font=\scriptsize\bfseries, okgreen!80!black] at (\xR + 1.4*3+0.7, 0.55) {17/21};
+
+% ---- Legend ----------------------------------------------------------------
+\node[fill=green!35, cell, minimum width=0.8cm, minimum height=0.4cm]
+  at (4.2, -0.25) {};
+\node[font=\tiny] at (5.2, -0.25) {PASS};
+\node[fill=red!35, cell, minimum width=0.8cm, minimum height=0.4cm]
+  at (6.5, -0.25) {};
+\node[font=\tiny] at (7.5, -0.25) {FAIL};
+\node[fill=yellow!60, cell, minimum width=0.8cm, minimum height=0.4cm]
+  at (8.8, -0.25) {};
+\node[font=\tiny, align=left] at (10.5, -0.25) {RECOV (87LN saves)};
+
+\end{tikzpicture}

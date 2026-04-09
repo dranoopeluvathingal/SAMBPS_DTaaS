@@ -1,0 +1,78 @@
+% fig_oc_setting_groups.tex
+% TR-40: Adaptive setting group selection — state machine
+%
+% Three states: GC (Group 1), Islanded (Group 2), Resync (Group 3)
+% Transitions via GOOSE signals from TR-39 islanding detection and Relay 25
+
+\begin{tikzpicture}[
+  every node/.style={font=\small},
+  state/.style={draw=sambpblue, thick, rounded corners=6pt,
+                fill=blue!8, minimum width=3.6cm, minimum height=2.2cm,
+                align=center, font=\small},
+  arrow/.style={-{Stealth[length=7pt]}, thick},
+  label/.style={font=\tiny, align=center},
+]
+
+%% ── States ────────────────────────────────────────────────────────────────
+\node[state] (GC) at (0,0) {
+  \textbf{Group 1}\\
+  Grid-Connected\\
+  \footnotesize $I_p=1.50$\,pu\\
+  \footnotesize TMS$=0.10$, SI\\
+  \footnotesize Z1/Z2 + 87L active
+};
+
+\node[state, fill=orange!8, draw=orange!70!black] (IS) at (7,0) {
+  \textbf{Group 2}\\
+  Islanded\\
+  \footnotesize $I_p=0.30$\,pu\\
+  \footnotesize TMS$=0.20$, SI\\
+  \footnotesize OC primary, 67 dir
+};
+
+\node[state, fill=green!8, draw=green!60!black] (RS) at (3.5,-4.5) {
+  \textbf{Group 3}\\
+  Resynchronising\\
+  \footnotesize $I_p=0.80$\,pu\\
+  \footnotesize TMS$=0.15$, SI\\
+  \footnotesize 25 + V/f monitoring
+};
+
+%% ── Transitions ───────────────────────────────────────────────────────────
+% GC → IS: islanding detected
+\draw[arrow, orange!70!black]
+  (GC.east) -- (IS.west)
+  node[midway, above, label] {Islanding detected\\(ROCOF/V/f GOOSE)\\$t=100$\,ms};
+
+% IS → RS: grid restored, 25 initiated
+\draw[arrow, green!60!black]
+  (IS.south) .. controls (7,-3.5) .. (RS.east)
+  node[midway, right=4pt, label] {Grid\\restored\\(PCC V OK)};
+
+% RS → GC: relay 25 closes
+\draw[arrow, blue!60!black]
+  (RS.west) .. controls (-0.5,-4.5) .. (GC.south)
+  node[midway, left=4pt, label] {Relay 25 closes\\($\Delta V$, $\Delta f$, $\Delta\theta$ OK)};
+
+% IS → GC (direct, emergency resync bypass)
+\draw[arrow, gray!50, dashed]
+  (IS.south west) .. controls (2,-2) .. (GC.south east)
+  node[midway, below, label, gray!70] {Emergency\\bypass};
+
+%% ── GOOSE trigger box ─────────────────────────────────────────────────────
+\node[draw=gray!50, fill=gray!5, rounded corners=3pt,
+      font=\tiny, inner sep=4pt, align=center]
+  at (3.5, 1.8)
+  {Setting group switch triggered by IEC 61850 GOOSE from:\\
+   TR-39 islanding relay $\rightarrow$ Group 1$\leftrightarrow$2 \quad
+   Relay 25 close signal $\rightarrow$ Group 2$\rightarrow$3$\rightarrow$1};
+
+%% ── Coordination parameters ───────────────────────────────────────────────
+\node[draw=blue!20, fill=blue!5, rounded corners=2pt,
+      font=\tiny, inner sep=3pt, align=center]
+  at (0, -3.0)
+  {Coordination margin at islanded fault level:\\
+   Primary (Group 2): 413\,ms \quad Backup: 771\,ms\\
+   Margin: 358\,ms $>$ 200\,ms requirement};
+
+\end{tikzpicture}

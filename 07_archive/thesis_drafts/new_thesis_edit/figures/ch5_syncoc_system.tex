@@ -1,0 +1,28 @@
+% ch5_syncoc_system.tex --- SAMBP-SyncOC system architecture stub
+\begin{tikzpicture}[
+  every node/.style={font=\small},
+  block/.style={draw=thesisblue, thick, fill=lightblue!30,
+                rounded corners=3pt, minimum width=3cm, minimum height=0.8cm,
+                text centered},
+  arrow/.style={-latex, thick, gray!60!black},
+]
+% Generator
+\node[block] (sg) at (0,0) {Synchronous Generator};
+% Network
+\node[block] (net) at (4,0) {Th\'evenin Network};
+% Relay
+\node[block] (relay) at (8,0) {OC Relay};
+% Estimator
+\node[block, fill=orange!20, draw=orange!60!black] (est) at (4,-2.5) {LM Estimator};
+% Confidence
+\node[block, fill=green!15, draw=green!60!black] (conf) at (8,-2.5) {Confidence Gate $\gamma$};
+% Connections
+\draw[arrow] (sg) -- (net);
+\draw[arrow] (net) -- (relay);
+\draw[arrow] (net) -- node[left] {$i_a(t)$} (est);
+\draw[arrow] (est) -- node[above] {$\hat{\bm{\theta}}$} (conf);
+\draw[arrow] (conf) -- node[right] {$I_p,\TMS$} (relay);
+% Labels
+\node[above=2pt of sg, font=\footnotesize] {Plant};
+\node[below=2pt of est, font=\footnotesize, align=center] {Inverse\\Estimation};
+\end{tikzpicture}
