@@ -1,0 +1,734 @@
+% =============================================================================
+%  main_paper_c.tex
+%  Journal Paper C — IEEE Transactions on Power Systems
+%
+%  Title: Self-Adaptive Model-Based Protection: A Unified Framework for
+%         Real-Time Inverse Estimation Across Overcurrent, Transformer,
+%         Line, and Busbar Differential Protection
+%
+%  Compile:
+%    pdflatex main_paper_c && bibtex main_paper_c &&
+%    pdflatex main_paper_c && pdflatex main_paper_c
+% =============================================================================
+
+\documentclass[journal,twoside,10pt]{IEEEtran}
+
+% ---- Essential packages -----------------------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{mathptmx}
+\usepackage{microtype}
+
+% ---- Mathematics ------------------------------------------------------------
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{amsthm}
+\usepackage{bm}
+\usepackage{siunitx}
+\sisetup{detect-all,per-mode=symbol,range-phrase=\,--\,}
+
+% ---- Figures and tables -----------------------------------------------------
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{rotating}
+
+% ---- References -------------------------------------------------------------
+\usepackage[colorlinks=false]{hyperref}
+\usepackage{xcolor}
+\bibliographystyle{IEEEtran}
+
+% ---- Algorithm --------------------------------------------------------------
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+
+% ---- Theorem environments ---------------------------------------------------
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+\newtheorem{corollary}{Corollary}
+
+% ---- Custom macros ----------------------------------------------------------
+\newcommand{\vect}[1]{\bm{#1}}
+\newcommand{\mat}[1]{\mathbf{#1}}
+\newcommand{\norm}[1]{\left\|#1\right\|}
+\newcommand{\pu}{\,\text{pu}}
+\newcommand{\mss}{\,\text{ms}}
+\newcommand{\sss}{\,\text{s}}
+\newcommand{\SAMBP}{\textsc{sambp}}
+
+% =============================================================================
+\begin{document}
+% =============================================================================
+
+\title{Self-Adaptive Model-Based Protection: A Unified Framework
+       for Real-Time Inverse Estimation Across Overcurrent,
+       Transformer, Line, and Busbar Differential Protection}
+
+\author{Anoop~V.~Eluvathingal,~\IEEEmembership{Student Member,~IEEE,}
+        and~K.~Shanti~Swarup,~\IEEEmembership{Senior Member,~IEEE}%
+\thanks{Manuscript received \today.
+        This work is part of the PhD research programme at the Department of
+        Electrical Engineering, Indian Institute of Technology Madras,
+        Chennai~600~036, India.}%
+\thanks{A.~V.~Eluvathingal and K.~S.~Swarup are with the Department of
+        Electrical Engineering, IIT Madras, Chennai~600~036, India
+        (e-mail: ee21d017@smail.iitm.ac.in; swarup@ee.iitm.ac.in).}}
+
+\markboth{IEEE Transactions on Power Systems,~Vol.~XX, No.~XX, XXXX~2026}%
+{Eluvathingal \& Swarup: SAMBP — Unified Inverse Estimation Framework}
+
+\maketitle
+
+% =============================================================================
+\begin{abstract}
+Protection relays across overcurrent (OC), transformer differential (87T),
+line current differential (87L), and busbar differential (87B) functions
+use fixed-commissioning settings that are blind to operating conditions,
+fault impedance, and network topology changes.
+This paper presents \textsc{sambp} (Self-Adaptive Model-Based Protection),
+a unified five-layer architecture applied uniformly across all four
+protection functions: a conventional baseline relay (Layer~1), a
+physics-constrained reduced-parameter zone model (Layer~2), a two-pass
+Levenberg--Marquardt estimator (Layer~3), a composite confidence gate
+(Layer~4), and a function-specific fallback or coordination layer (Layer~5).
+The key architectural invariant is a physics-parameter-reduction discipline
+— each zone model eliminates one collinear or collinear-via-physics parameter
+by derivation rather than fitting, reducing the Jacobian condition number
+from $\mathcal{O}(10^8)$ (unconstrained) to $\kappa_n < 30$ across all
+four functions.
+The Stage-2 model veto ($\kappa_n < \kappa_{thresh}$ AND $f_{int} <
+f_{thresh}$) provides a generalised mechanism for CT saturation rejection
+(87T, 87B) and channel anomaly rejection (87L) without function-specific
+hard-coding.
+Validated across 28 simulation scenarios (3 OC, 7~87T, 12~87L, 6~87B),
+the framework achieves correct classification in 26/28 cases; the 2
+exceptions are a known architectural boundary (CT open-circuit on 87B)
+and an expected no-trip case (channel-loss internal fault on 87L).
+Combined compute time is below 20\,ms for all four functions, meeting
+sub-cycle embedded relay requirements.
+\end{abstract}
+
+\begin{IEEEkeywords}
+adaptive protection, inverse parameter estimation, Levenberg--Marquardt,
+transformer differential, line differential, busbar differential,
+overcurrent relay, CT saturation, confidence gate, unified framework.
+\end{IEEEkeywords}
+
+% =============================================================================
+\section{Introduction}
+\label{sec:intro}
+% =============================================================================
+
+Power system protection relays are engineered for worst-case fault
+conditions at commissioning time.
+For overcurrent (OC) protection, settings are calculated from maximum
+bolted-fault current and remain fixed even as generation mix changes;
+for differential protection (87T, 87L, 87B), operating and restraint
+thresholds are similarly static~\cite{Blackburn2006,Anderson1999}.
+This fundamental rigidity creates three classes of systematic mis-coordination
+as active networks evolve:
+
+\begin{enumerate}
+  \item \textit{OC mis-calibration}: Fixed pickup settings exceed actual
+        fault current under high-impedance conditions, creating security
+        deficits for partial-fault scenarios~\cite{Brahma2004}.
+  \item \textit{CT saturation false tripping}: Conventional harmonic-blocking
+        (87T) and restrained-differential (87B) schemes can mal-operate
+        under heavy through-fault CT saturation when the conventional
+        threshold is exceeded before the blocking signature is
+        recognised~\cite{Kasztenny2003,Schweitzer2009}.
+  \item \textit{Channel anomaly} (87L): Synchronisation errors, propagation
+        skew, and communication channel degradation introduce spurious
+        differential current that can exceed relay thresholds during
+        healthy network conditions~\cite{Adamiak2006}.
+\end{enumerate}
+
+Existing adaptive approaches address these in isolation.
+Brahma and Girgis~\cite{Brahma2004} adapt OC relay settings for DG
+penetration but require topology enumeration rather than direct
+parameter estimation.
+Saleh \textit{et al.}~\cite{Saleh2017} optimise coordination for
+microgrid contingencies but assume static relay characteristics.
+Sachdev and Nagpal~\cite{Sachdev1988} applied recursive least-squares
+to relay measurements but without physics-derived parameter constraints,
+leaving Jacobian ill-conditioning unaddressed.
+No existing work applies a single estimation-based framework across all
+four protection functions with a formally characterised veto mechanism.
+
+Recent machine-learning approaches~\cite{Sheikhzadeh2022,Gao2023} demonstrate
+adaptive relay classification but require large labelled datasets, offer
+limited interpretability, and have no established certification path
+under IEC~60255 and IEEE~C37 standards.
+
+This paper makes four contributions:
+
+\begin{enumerate}
+  \item A \textbf{unified five-layer \textsc{sambp} architecture} applicable
+        across OC, 87T, 87L, and 87B protection with a common design
+        discipline and a shared LM estimator backend.
+  \item A \textbf{Physics-Reduction Proposition} (§\ref{sec:comparison}):
+        for any zone model with collinear or physics-derivable parameters,
+        replacing fitting with derivation reduces $\kappa_n$ by at least
+        one order of magnitude, enabling reliable LM convergence.
+  \item A \textbf{generalised Stage-2 model veto} that detects CT
+        saturation (87T, 87B) and channel anomaly (87L) as identifiability
+        conditions rather than signal-processing heuristics.
+  \item A \textbf{cross-function quantitative comparison}: parameter count,
+        $\kappa_n$ range, event classification accuracy, and compute cost
+        across all four functions (Table~\ref{tab:model_compare}).
+\end{enumerate}
+
+% =============================================================================
+\section{The SAMBP Five-Layer Architecture}
+\label{sec:arch}
+% =============================================================================
+
+Fig.~\ref{fig:arch} illustrates the five-layer \textsc{sambp} stack applied
+uniformly to all four protection functions.
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_architecture.pdf}
+  \caption{Five-layer \textsc{sambp} architecture applied across four
+           protection functions. Each column is one function; each row
+           is one layer. All four functions share the two-pass LM
+           estimator (L3) and the composite confidence gate (L4).
+           Layer-2 zone models and Layer-5 fallback/coordination
+           are function-specific.}
+  \label{fig:arch}
+\end{figure}
+
+\subsection{Layer 1 — Conventional Baseline}
+\label{sec:arch:l1}
+
+Each protection function is backed by a fully independent conventional
+relay that operates without any reference to the estimation layers.
+The conventional trip signal \texttt{conv\_trip} is a \emph{necessary
+condition} for any model-initiated trip: the model can only assert a trip
+when the conventional relay has already asserted, preventing model-only
+trips in low-current conditions where estimation uncertainty is high.
+The model veto (Layer 4) is the only path by which the model can
+\emph{suppress} a conventional trip.
+
+\subsection{Layer 2 — Reduced-Parameter Zone Model}
+\label{sec:arch:l2}
+
+Each function defines a zone model $\hat{i}(\theta, t)$ with a minimal
+parameter vector $\theta$ derived from the physics of the protected element.
+The key design discipline is the \emph{physics-reduction step}: one
+parameter that is either collinear with others or analytically determined
+by network constraints is \emph{derived} rather than fitted.
+Table~\ref{tab:model_compare} summarises the four zone models.
+
+\subsection{Layer 3 — Two-Pass LM Estimator}
+\label{sec:arch:l3}
+
+All four functions share the same two-pass estimation strategy:
+Pass~1 fits all parameters over a full post-fault window (100--200\,ms) to
+identify the global waveform shape;
+Pass~2 refines the fastest-changing parameters (decay constants, CT error)
+over a shorter tail window where those parameters are best conditioned.
+The SciPy \texttt{least\_squares} implementation~\cite{Virtanen2020}
+is used across all four functions with function-specific Jacobian
+computations.
+
+\subsection{Layer 4 — Composite Confidence Gate and Model Veto}
+\label{sec:arch:l4}
+
+The confidence score $\gamma = w_r s_r + w_c s_c + w_b s_b + w_p s_p$
+(detailed in~\cite{EluvathingalPaperA}) gates relay adaptation:
+$\gamma \geq \gamma_{\min} = 0.70$ is required to accept an adaptive trip.
+Beyond the forward gate, the Stage-2 model veto is activated when:
+\begin{equation}
+  \kappa_n < \kappa_{thresh} \;\text{ AND }\; f_{int} < f_{thresh},
+  \label{eq:veto}
+\end{equation}
+where $f_{int} \in [0,1]$ is the derived internal-fault probability and
+$\kappa_{thresh} = 30$.
+When~\eqref{eq:veto} holds, the model is both \emph{confident} ($\kappa_n$
+low) and \emph{certain the fault is not internal} ($f_{int}$ low), so the
+conventional trip is suppressed.
+The $f_{thresh}$ is function-specific: $0.60$ for 87T and 87B; $0.50$
+for 87L (tighter because channel-induced differential is weaker than
+CT saturation).
+
+\subsection{Layer 5 — Fallback and Coordination}
+\label{sec:arch:l5}
+
+Each function provides a fail-safe fallback when $\gamma < \gamma_{\min}$:
+OC uses the greedy cascade of fixed commissioning settings~\cite{EluvathingalPaperB};
+87T retains the conventional inrush/overexcitation blocking;
+87L activates single-end OC backup in Loss mode;
+87B retains the high-set instantaneous element.
+All fallbacks are independent of the estimation outcome.
+
+% =============================================================================
+\section{SyncOC Function (M1--M4)}
+\label{sec:syncoc}
+% =============================================================================
+
+The SAMBP-SyncOC framework is fully described in the companion
+papers~\cite{EluvathingalPaperA,EluvathingalPaperB}; we summarise the
+layer~2 and key results here for cross-function comparison.
+
+\subsection{Zone Model}
+\label{sec:syncoc:model}
+
+The six-parameter post-fault current model
+\begin{equation}
+  i_A = I_{ss} + I_{sub}e^{-(t-t_0)/\tau_{ac}}\cos(\omega t+\phi_a)
+        - I_{sub}\sin(\phi_a)\,e^{-(t-t_0)/\tau_{dc}}
+  \label{eq:syncoc_model}
+\end{equation}
+uses the physics constraint $I_{dc} = -I_{sub}\sin\phi_a$, eliminating
+the DC offset amplitude as a free parameter.
+Without this constraint, a 7-parameter model yields $\kappa_n \approx
+2\times10^8$; with it, $\kappa_n < 21$ for windows $\geq 67$\,ms.
+The Hilbert--Fortescue extension (M3)~\cite{EluvathingalPaperB} handles
+asymmetric faults via positive-sequence decomposition.
+
+\subsection{Key Results}
+
+Confidence scores $\gamma \in [0.89, 0.93]$ for 3PH faults;
+$\gamma = 0.914$ for SLG (pickup reduced $-8.3\%$);
+$\gamma = 0.587$ for LL (gate rejects, fixed settings retained).
+The N-generator cascade (M4)~\cite{EluvathingalPaperB} enforces
+selectivity for $N \in \{2,3,4\}$ in a single $\mathcal{O}(N)$ pass.
+
+% =============================================================================
+\section{Transformer Differential Function (87T)}
+\label{sec:t87}
+% =============================================================================
+
+\subsection{Zone Model}
+\label{sec:t87:model}
+
+The 87T zone model uses five parameters
+$\theta_T = [I_{diff,fund},\,\phi,\,k_2,\,k_5,\,\varepsilon_{CT}]$,
+where $I_{diff,fund}$ is the fundamental differential current,
+$k_2$, $k_5$ are the second- and fifth-harmonic ratios (inrush and
+overexcitation indicators), and $\varepsilon_{CT}$ captures CT error.
+The internal-fault probability $f_{int}$ is \emph{derived} as
+$f_{int} = 1 - \max(k_2/k_{2,thresh},\,k_5/k_{5,thresh})$,
+clipped to $[0,1]$.
+This derivation is essential: at $\phi \approx 0$ (near-unity power factor
+during transformer energisation), $f_{int}$ becomes collinear with
+$I_{diff,fund}$, making it unidentifiable as a fitted parameter.
+
+\subsection{Event Classification}
+\label{sec:t87:results}
+
+Fig.~\ref{fig:87T_char} shows the dual-slope differential characteristic
+with event classification overlaid.
+Table~\ref{tab:87T_events} summarises the 7 test events.
+The critical result is the external fault + CT saturation event:
+$\kappa_n = 4.95$, $f_{int} = 0.454 < 0.60$; the model veto
+correctly suppresses the conventional trip, avoiding a false operation
+that harmonic blocking alone would produce.
+All 7/7 events are correctly classified.
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/87T_characteristic.png}
+  \caption{87T differential characteristic with 7 test events overlaid.
+           Green: no-trip region (normal load, blocked inrush/overexcitation).
+           Blue: model-veto region (external fault + CT saturation).
+           Red: trip region (three internal fault events).
+           The dual-slope boundary ($I_{rst} = 1.0$, slopes 0.3/0.6\,pu)
+           is from IEC~60255-151~\cite{IEC60255-151}.}
+  \label{fig:87T_char}
+\end{figure}
+
+\begin{table}[!t]
+  \renewcommand{\arraystretch}{1.15}
+  \caption{87T event classification results (7/7 correct)}
+  \label{tab:87T_events}
+  \centering
+  \small
+  \begin{tabular}{lccccl}
+    \toprule
+    Event & $\kappa_n$ & $f_{int}$ & $\gamma$ & Result & Correct?\\
+    \midrule
+    Normal load      & 4.97 & 0.917 & 0.919 & no\_trip   & \checkmark \\
+    Inrush           & 5.16 & 0.239 & 0.024 & blocked    & \checkmark \\
+    Overexcitation   & 6.74 & 0.000 & 0.603 & blocked    & \checkmark \\
+    Ext.+CT sat.     & 4.95 & 0.454 & 0.170 & model\_veto& \checkmark \\
+    Int. A-G         & 4.83 & 0.865 & 0.323 & conv.~trip & \checkmark \\
+    Int. A-B         & 4.83 & 0.847 & 0.011 & conv.~trip & \checkmark \\
+    Int. 3PH         & 4.83 & 0.860 & 0.008 & conv.~trip & \checkmark \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% =============================================================================
+\section{Line Current Differential Function (87L)}
+\label{sec:l87}
+% =============================================================================
+
+\subsection{Zone Model and Channel Model}
+\label{sec:l87:model}
+
+The 87L zone model uses four parameters
+$\theta_L = [I_{fund},\,\phi_{fund},\,I_{DC},\,\tau_{DC}]$,
+where $I_{fund}$ is the fundamental differential current amplitude and
+$I_{DC}$, $\tau_{DC}$ describe the DC exponential offset.
+$f_{int}$ is derived as $\max(I_{fund}/I_{thresh},\,I_{DC}/I_{thresh})$,
+clipped to $[0,1]$.
+The DC exponential component is spectrally orthogonal to the sinusoidal
+fundamental — unlike adding a third sinusoid at the same frequency (which
+would be linearly dependent), $I_{DC}e^{-t/\tau_{DC}}$ contributes a
+distinct column to the Jacobian, making all four parameters identifiable.
+This is why a 4-parameter model is used rather than a 6-parameter one.
+
+The channel model introduces three degradation modes:
+\textit{Healthy} ($\varepsilon_{sync} = 0$, full 87L);
+\textit{Degraded} ($\varepsilon_{sync} > 0$, sync-error veto active);
+\textit{Loss} (heartbeat timeout, single-end OC backup).
+Channel alignment uses circular roll (not zero-padding) to avoid
+spurious differential at the buffer edge.
+
+\subsection{Results Across 12 Scenarios}
+\label{sec:l87:results}
+
+Fig.~\ref{fig:87L_fsm} shows the three-mode FSM and the 12-scenario
+classification matrix.
+All healthy- and degraded-channel scenarios (8/8) are correctly classified.
+For loss-channel scenarios, the single-end OC backup correctly trips on
+external and 3PH faults (2/2); for the loss-channel AG internal fault
+the system correctly applies no-trip by design (channel loss removes the
+differential information needed to distinguish internal from external) — this
+is the 1 expected-none case. Total: 11/12, with 1 expected-none.
+
+Key quantitative result: $\kappa_n = 2.45$ for all scenarios — the
+lowest in the SAMBP suite — reflecting the strong orthogonality between
+the DC and sinusoidal components in the 4-parameter model.
+
+The $\pi$-section charging compensation study (TR-13) reduces the mean
+charging residual from 1.43\,pu to $0.94 \times 10^{-3}$\,pu, enabling
+the minimum detectable fault level $\alpha_{50}$ to be reduced from 0.07
+to 0.05 per unit for AG faults.
+Voltage-based correction (TR-15) further reduces $\alpha_{50}$ to 0.03
+(AG) and 0.02 (3PH).
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_87L_fsm.pdf}
+  \caption{87L three-mode FSM (top) and 12-scenario classification
+           result matrix (bottom).
+           H = Healthy channel; D = Degraded; L = Loss.
+           Green check marks: correct classification;
+           grey: expected-none (no-trip by architecture design).}
+  \label{fig:87L_fsm}
+\end{figure}
+
+% =============================================================================
+\section{Busbar Differential Function (87B)}
+\label{sec:b87}
+% =============================================================================
+
+\subsection{Zone Model}
+\label{sec:b87:model}
+
+The 87B zone model uses only three parameters
+$\theta_B = [I_{diff},\,\phi,\,\varepsilon_{CT}]$.
+Unlike the transformer, a busbar has no magnetising branch, so inrush
+and overexcitation harmonics are absent; $k_2$ and $k_5$ are excluded
+from $\theta_B$ by physics.
+$f_{int} = \mathrm{clip}(1 - \varepsilon_{CT}/0.10,\;0,\;1)$: when
+CT error is large ($\varepsilon_{CT} \approx 0.10$), the differential
+is externally driven and $f_{int} \to 0$; when CT error is negligible,
+$f_{int} \to 1$.
+
+\subsection{Event Classification}
+\label{sec:b87:results}
+
+Fig.~\ref{fig:87B_char} shows the 87B characteristic with six test events.
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/87B_characteristic.png}
+  \caption{87B differential characteristic with 6 test events overlaid.
+           Normal load and external fault lie in the no-trip region
+           (conv\_trip = 0). External fault + CT saturation is intercepted
+           by the model veto. Internal AG and 3PH faults trip
+           conventionally. CT open-circuit is an architectural boundary
+           case (see §\ref{sec:b87:limit}).}
+  \label{fig:87B_char}
+\end{figure}
+
+Five of six events are correctly classified (Table~\ref{tab:87B_events}).
+The CT saturation veto fires correctly: $\kappa_n = 2.73 < 30$,
+$f_{int} = 0.00 < 0.60$.
+
+\begin{table}[!t]
+  \renewcommand{\arraystretch}{1.15}
+  \caption{87B event classification results (5/6 correct)}
+  \label{tab:87B_events}
+  \centering
+  \small
+  \begin{tabular}{lccccl}
+    \toprule
+    Event & $\kappa_n$ & $f_{int}$ & $\gamma$ & Result & Correct?\\
+    \midrule
+    Normal load      & 4.36 & 1.000 & 0.000 & no\_trip   & \checkmark \\
+    External fault   & 4.27 & 1.000 & 0.000 & no\_trip   & \checkmark \\
+    Ext.+CT sat.     & 2.73 & 0.000 & 0.024 & model\_veto& \checkmark \\
+    Internal A-G     & 4.27 & 1.000 & 0.137 & conv.~trip & \checkmark \\
+    Internal 3PH     & 4.27 & 1.000 & 0.137 & conv.~trip & \checkmark \\
+    CT open-circuit  & 4.36 & 1.000 & 0.845 & model~trip & $\times$\dag \\
+    \bottomrule
+    \multicolumn{6}{l}{\dag Known limitation: see §\ref{sec:b87:limit}.}
+  \end{tabular}
+\end{table}
+
+\subsection{CT Open-Circuit Limitation}
+\label{sec:b87:limit}
+
+When a CT open-circuits, the primary current $I_{CT} \to 0$ and
+$\varepsilon_{CT} \approx 0$.
+The model assigns $f_{int} = 1$, the veto does not fire, and the model
+issues a trip.
+This is a known architectural boundary: the three-parameter zone model
+cannot distinguish a CT open-circuit ($I_{diff}$ below threshold but
+$\varepsilon_{CT} = 0$) from a genuine high-impedance internal fault.
+A supplementary high-impedance (hi-Z) detection scheme is required for
+full immunity, consistent with practice~\cite{Schweitzer2009}.
+
+% =============================================================================
+\section{Cross-Function Comparison and Design Principles}
+\label{sec:comparison}
+% =============================================================================
+
+\subsection{Zone Model Comparison}
+\label{sec:comparison:models}
+
+Table~\ref{tab:model_compare} compares the four zone models.
+Fig.~\ref{fig:kappa} shows the $\kappa_n$ distribution across all 28
+simulation scenarios grouped by function.
+
+\begin{table*}[!t]
+  \renewcommand{\arraystretch}{1.25}
+  \caption{SAMBP zone model comparison across four protection functions}
+  \label{tab:model_compare}
+  \centering
+  \begin{tabular}{lccccl}
+    \toprule
+    Function & Parameters & Derived parameter & $\kappa_n$ range
+             & $\kappa_n$ (7/6/5-param unconstrained) & Rationale \\
+    \midrule
+    SyncOC (OC)   & 6 & $I_{dc} = -I_{sub}\sin\phi_a$ & $4.5$--$21$
+                  & $\approx 2\times10^8$ & DC offset from AC phase at fault instant \\
+    Transformer (87T) & 5 & $f_{int} = 1 - \max(k_2,k_5)$ & $4.8$--$6.7$
+                  & $\approx10^4$--$10^5$ & $f_{int}$ collinear with $I_{diff}$ at $\phi\approx0$ \\
+    Line diff. (87L)  & 4 & $f_{int} = \max(I_{fund},I_{DC})/I_{thresh}$ & $2.45$
+                  & $\approx10^3$--$10^4$ & 3 sinusoids at same frequency are rank-2 \\
+    Busbar (87B)      & 3 & $f_{int} = 1 - \varepsilon_{CT}/0.10$ & $2.7$--$4.4$
+                  & $\approx10^3$ & No transformer harmonics ($k_2,k_5$ absent) \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_kappa_comparison.pdf}
+  \caption{Column-normalised Jacobian condition number $\kappa_n$
+           for all 28 simulation scenarios grouped by protection function.
+           Red dashed line: $\kappa_{thresh} = 30$.
+           All constrained models remain well below threshold.
+           The unconstrained SyncOC 7-parameter model ($\kappa_n \approx
+           2\times10^8$, shown as annotation) demonstrates the necessity
+           of the physics-reduction step.}
+  \label{fig:kappa}
+\end{figure}
+
+\subsection{Physics-Reduction Proposition}
+\label{sec:comparison:prop}
+
+\begin{proposition}[Physics-parameter reduction]
+\label{prop:reduction}
+Let $\theta \in \mathbb{R}^p$ be the parameter vector of a zone model
+$\hat{i}(\theta,t)$, and let $\theta_k = g(\theta_{-k})$ be an exact
+relation derivable from network physics (where $\theta_{-k}$ denotes all
+parameters except $\theta_k$).
+Then the column-normalised Jacobian of the constrained model
+$\hat{i}(\theta_{-k},t)$ with $\theta_k$ substituted satisfies
+$\kappa_n(\mathbf{J}_{p-1}) \ll \kappa_n(\mathbf{J}_p)$.
+Empirically, the reduction exceeds one order of magnitude in all four
+SAMBP functions (Table~\ref{tab:model_compare}).
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+The unconstrained Jacobian $\mathbf{J}_p$ has columns
+$\partial\hat{i}/\partial\theta_j$.
+When $\theta_k = g(\theta_{-k})$, the column
+$\partial\hat{i}/\partial\theta_k$ becomes a linear combination of the
+remaining columns (by the chain rule applied to $g$), making
+$\mathbf{J}_p$ rank-deficient.
+The condition number of a rank-deficient matrix is infinite; numerical
+regularisation in LM produces $\kappa_n \gg 1$.
+Substituting the physics constraint removes this column, restoring
+the matrix to full column rank and eliminating the degenerate singular
+value.
+The magnitude of the reduction depends on the degree of collinearity;
+for near-collinear cases (DC offset and AC at $t \approx t_0$), the
+removal reduces $\kappa_n$ by six to eight orders of magnitude.
+$\square$
+\end{proof}
+
+\begin{corollary}
+For any protection zone model, an engineer should first check whether any
+parameter can be expressed as a function of the others via network physics
+(KVL/KCL, transformer turn-ratio, Fortescue identity).
+If so, that parameter must be derived, not fitted, to achieve a
+well-conditioned LM estimation.
+\end{corollary}
+
+\subsection{Stage-2 Model Veto — Cross-Function Characterisation}
+\label{sec:comparison:veto}
+
+Table~\ref{tab:veto_summary} summarises veto activation across all
+four functions.
+The veto fires in three of the 28 scenarios — one per 87T, 87L, 87B —
+and in each case the physical cause is either CT saturation or channel
+degradation.
+In no case does the veto suppress a genuine internal fault.
+
+\begin{table}[!t]
+  \renewcommand{\arraystretch}{1.15}
+  \caption{Model veto activations across all four functions}
+  \label{tab:veto_summary}
+  \centering
+  \small
+  \begin{tabular}{lcccc}
+    \toprule
+    Function & Veto fires? & $\kappa_n$ & $f_{int}$ & Physical cause \\
+    \midrule
+    SyncOC (OC) & No  & ---  & ---  & (no veto in OC path) \\
+    87T  & Yes & 4.95 & 0.45 & External fault + CT sat. \\
+    87L  & Yes & 2.45 & 0.00 & Degraded channel (healthy) \\
+    87B  & Yes & 2.73 & 0.00 & External fault + CT sat. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Computational Cost}
+\label{sec:comparison:compute}
+
+Table~\ref{tab:compute} confirms that all four functions satisfy the
+sub-cycle compute constraint.
+The 87B function has the lowest cost (3 parameters, 80 NFev)
+and the SyncOC function the highest (6 parameters, 200 NFev with
+multi-generator cascade), but all remain below 20\,ms.
+
+\begin{table}[!t]
+  \renewcommand{\arraystretch}{1.15}
+  \caption{Computational cost across all four functions}
+  \label{tab:compute}
+  \centering
+  \begin{tabular}{lccc}
+    \toprule
+    Function & Parameters & NFev (typical) & Wall time (ms) \\
+    \midrule
+    SyncOC (M1--M4) & 6 & $\leq 200$ & $\leq 18$ \\
+    87T             & 5 & $\leq 150$ & $\leq 12$ \\
+    87L             & 4 & $\leq 100$ & $\leq 8$  \\
+    87B             & 3 & $\leq 80$  & $\leq 6$  \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% =============================================================================
+\section{Discussion}
+\label{sec:disc}
+% =============================================================================
+
+\subsection{Known Limitations and Architectural Boundaries}
+\label{sec:disc:limits}
+
+Three failure modes are acknowledged as architectural boundaries:
+\begin{itemize}
+  \item \textit{SyncOC LL fault}: negative-sequence contamination inflates
+        the LM residual, causing gate rejection~\cite{EluvathingalPaperB}.
+        The framework falls back to fixed settings safely.
+  \item \textit{87B CT open-circuit}: $\varepsilon_{CT} = 0$ gives
+        $f_{int} = 1$; the veto cannot distinguish this from an internal
+        fault. Supplementary hi-Z detection is required.
+  \item \textit{87L channel-loss internal fault}: single-end OC cannot
+        definitively identify internal vs.\ external faults without
+        remote measurements. Expected no-trip is the safe failure mode.
+\end{itemize}
+None of these boundaries is a numerical deficiency; each has a physically
+principled explanation and a defined safe fallback.
+
+\subsection{Comparison with ML-Based Adaptive Protection}
+\label{sec:disc:ml}
+
+ML-based approaches~\cite{Sheikhzadeh2022,Gao2023} can achieve high
+classification accuracy but require large labelled fault datasets,
+offer limited physical interpretability, and have no established
+path to certification under IEC~60255 or IEEE~C37.112.
+The \textsc{sambp} framework is interpretable by design: every gate
+decision traces to a physically meaningful parameter ($\kappa_n$,
+$f_{int}$, $\gamma$), and the five-layer architecture preserves the
+conventional relay as a safety net.
+The trade-off is that \textsc{sambp} requires a physics-derivable
+zone model for each new protection function — a constraint that is
+straightforwardly satisfied for the four functions presented here.
+
+\subsection{Hardware-in-the-Loop Validation Roadmap}
+\label{sec:disc:hil}
+
+Fig.~\ref{fig:hil} shows the planned M5 HIL validation timeline.
+Software preparation (C port of the LM estimator,
+IEC~61850~\cite{IEC61850} sampled-value interface) is ongoing.
+RTDS hardware acquisition is planned for mid-2026~Q3;
+HIL experiments across all four functions are targeted for 2026~Q4.
+A revised Paper~C submission incorporating HIL results is planned
+for early 2027.
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_hil_roadmap.pdf}
+  \caption{SAMBP M5 HIL validation roadmap.
+           Green: complete. Blue: in progress.
+           Orange: planned (software). Red: hardware-dependent.
+           Today (April 2026) marker shown in red.}
+  \label{fig:hil}
+\end{figure}
+
+% =============================================================================
+\section{Conclusion}
+\label{sec:conc}
+% =============================================================================
+
+\begin{enumerate}
+  \item The \textsc{sambp} five-layer architecture unifies adaptive
+        protection across OC, 87T, 87L, and 87B functions under a
+        common design discipline, sharing the two-pass LM estimator
+        and composite confidence gate.
+  \item The Physics-Reduction Proposition (Proposition~\ref{prop:reduction})
+        establishes that deriving one collinear parameter from network
+        physics reduces $\kappa_n$ by at least one order of magnitude,
+        enabling reliable LM convergence; this is demonstrated empirically
+        across all four zone models ($\kappa_n < 30$ in all 28 scenarios).
+  \item The Stage-2 model veto~\eqref{eq:veto} generalises CT saturation
+        rejection (87T, 87B) and channel anomaly rejection (87L) as
+        a single identifiability condition, correctly firing in 3/28
+        scenarios without any false suppression of genuine internal faults.
+  \item Combined classification accuracy is 26/28 correct;
+        the 2 exceptions are a known architectural boundary (87B CT
+        open-circuit) and a designed no-trip case (87L channel-loss).
+  \item All four functions operate within 20\,ms on standard hardware.
+        HIL validation on an RTDS platform is planned for 2026~Q4.
+\end{enumerate}
+
+% =============================================================================
+\bibliography{references_c}
+% =============================================================================
+
+\end{document}
