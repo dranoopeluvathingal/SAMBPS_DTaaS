@@ -1,67 +1,189 @@
-% ch1_sambp_architecture.tex — SAMBP three-tier architecture
+% ch1_sambp_architecture.tex — SAMBP two-tier architecture
+% Style: horizontal timescale layout (cf. Figure 2 of Matevosyan et al. 2019)
+% Classical protection framework at bottom (grey); SAMBPS tiers above (coloured).
+%
+% Timescale axis (x-coordinates):
+%   x=0   1 ms
+%   x=2   AC cycle (20 ms @ 50 Hz)
+%   x=4.5 100 ms
+%   x=7   1 s
+%   x=10  10 s / minutes
+%   x=13  hours (right edge)
+%
 \begin{tikzpicture}[
   every node/.style={font=\small},
-  tier/.style={draw=thesisblue, thick, fill=lightblue!60,
-               rounded corners=4pt, minimum width=3.2cm,
-               minimum height=0.80cm, align=center},
-  module/.style={draw=thesisblue!70, fill=lightblue!30,
-                 rounded corners=3pt, minimum width=2.6cm,
-                 minimum height=0.60cm, align=center, font=\scriptsize},
-  arrow/.style={-{Stealth[length=2mm]}, thick, thesisblue},
-  dataarrow/.style={-{Stealth[length=2mm]}, dashed, thesisgray},
+  %% Coloured band boxes — thick border, light fill (reference style)
+  band/.style={draw, very thick, rounded corners=3pt, align=left,
+               inner sep=5pt, minimum height=2.4cm},
+  %% Sub-item line style inside a band (no border, just text)
+  sub/.style={font=\scriptsize, align=left, anchor=north west},
+  %% Classical framework boxes
+  clbox/.style={draw=thesisgray, thick, fill=lightgray,
+                rounded corners=3pt, align=center,
+                inner sep=4pt, minimum height=1.2cm},
+  %% Axis tick labels
+  tick/.style={font=\scriptsize, thesisgray, align=center},
 ]
 
-%% ── Tier 1 ───────────────��───────────────────────────────────
-\node[tier, fill=thesisblue!15] (T1) at (0,0) {\textbf{Tier 1}\\[-2pt]\scriptsize Local Relay Physics};
+%% ── Background panel ────────────────────────────────────────────────
+\fill[gray!6, rounded corners=5pt]
+  (-0.3, 5.6) rectangle (13.3, -4.0);
 
-\node[module] (87L)  at (-3.5,-1.5) {87L Adaptive\\Differential};
-\node[module] (21)   at (0,  -1.5) {21 Quadrilateral\\Distance};
-\node[module] (MG)   at ( 3.5,-1.5) {Microgrid\\Mode-Switch};
+%% ────────────────────────────────────────────────────────────────────
+%% HEADER
+%% ────────────────────────────────────────────────────────────────────
+\node[font=\normalsize\bfseries, anchor=west] at (-0.1, 5.25)
+  {SAMBPS Protection Framework};
+\node[font=\scriptsize, thesisgray, anchor=west] at (-0.1, 4.85)
+  {Adaptive relay scheme for inverter-rich distribution networks};
 
-\foreach \n in {87L, 21, MG}
-  \draw[arrow] (T1.south) -- (\n.north);
+%% ────────────────────────────────────────────────────────────────────
+%% TIER 1 — Local Relay Algorithms (blue, fast: sub-ms to ~200 ms)
+%% ────────────────────────────────────────────────────────────────────
+\node[band,
+      draw=thesisblue, fill=lightblue,
+      minimum width=8.6cm]
+  (T1box) at (3.1, 3.1) {};
 
-%% ── Tier 2 ──────────────────────────────────────────────��────
-\node[tier, fill=thesisgreen!20, draw=thesisgreen] (T2) at (0,-3.2)
-  {\textbf{Tier 2}\\[-2pt]\scriptsize Digital Monitoring \& Learning};
+%% Title bar inside T1
+\fill[thesisblue!25, rounded corners=2pt]
+  (T1box.north west) rectangle ++(8.6, -0.55);
+\node[font=\small\bfseries, thesisblue, anchor=north west]
+  at ([xshift=4pt, yshift=-3pt] T1box.north west)
+  {Tier~1 \textemdash{} Local Relay Algorithms \hfill\textit{\scriptsize Ch.~4--6}};
 
-\node[module, draw=thesisgreen!80] (DT)   at (-2.0,-4.7) {Digital Twin\\EKF};
-\node[module, draw=thesisgreen!80] (PINN) at ( 2.0,-4.7) {PINN Classifier\\+ Online SGD};
+%% Sub-items (three columns inside T1)
+\node[sub, thesisblue!80!black]
+  at ([xshift=5pt, yshift=-22pt] T1box.north west) {
+  \textbullet\ \textbf{87L Differential Suite} \textit{(Ch.~4)}\\[1pt]
+  \quad IBR-adaptive slope\\
+  \quad Current-differential\\
+  \quad Phase-segregated logic};
 
-\foreach \n in {DT, PINN}
-  \draw[arrow, thesisgreen] (T2.south) -- (\n.north);
+\node[sub, thesisblue!80!black]
+  at ([xshift=95pt, yshift=-22pt] T1box.north west) {
+  \textbullet\ \textbf{87T SPRT} \textit{(Ch.~5)}\\[1pt]
+  \quad Sequential prob.\ ratio\\
+  \quad Inrush discrimination\\
+  \quad Adaptive $k_m$ threshold};
 
-%% ── Tier 3 ───────────────────────────────────────────────────
-\node[tier, fill=thesisorange!15, draw=thesisorange] (T3) at (0,-6.5)
-  {\textbf{Tier 3}\\[-2pt]\scriptsize Centralised Coordination (WAPC)};
+\node[sub, thesisblue!80!black]
+  at ([xshift=195pt, yshift=-22pt] T1box.north west) {
+  \textbullet\ \textbf{Generator Suite} \textit{(Ch.~6)}\\[1pt]
+  \quad 40, 64G, 81 elements\\
+  \quad IBR mode-detection\\
+  \quad Confidence-gate veto};
 
-\node[module, draw=thesisorange!80] (WAPC) at (-3.5,-8.0) {PMU Fault\\Localisation};
-\node[module, draw=thesisorange!80] (SET)  at ( 0,  -8.0) {CTI Settings\\Engine};
-\node[module, draw=thesisorange!80] (SEC)  at ( 3.5,-8.0) {GOOSE\\Security};
+%% Chapter tag
+\node[font=\tiny\bfseries, thesisblue, anchor=north east]
+  at ([xshift=-3pt, yshift=-3pt] T1box.north east) {Ch.~4--6};
 
-\foreach \n in {WAPC, SET, SEC}
-  \draw[arrow, thesisorange] (T3.south) -- (\n.north);
+%% ────────────────────────────────────────────────────────────────────
+%% TIER 2 — System Integration & Validation (green, medium: 100 ms–min)
+%% ────────────────────────────────────────────────────────────────────
+\node[band,
+      draw=thesisgreen, fill=lightgreen,
+      minimum width=5.8cm]
+  (T2box) at (10.1, 3.1) {};
 
-%% ── Inter-tier data flows ────────────────────────────────────
-\draw[dataarrow] (T2.north) -- node[right, font=\scriptsize]
-  {$\hat{\kibr}, \hat{\alpha}$} (T1.south);
-\draw[dataarrow] (T3.north) -- node[right, font=\scriptsize]
-  {Settings, GOOSE} (T2.south);
+%% Title bar inside T2
+\fill[thesisgreen!25, rounded corners=2pt]
+  (T2box.north west) rectangle ++(5.8, -0.55);
+\node[font=\small\bfseries, thesisgreen!70!black, anchor=north west]
+  at ([xshift=4pt, yshift=-3pt] T2box.north west)
+  {Tier~2 \textemdash{} System Integration \hfill\textit{\scriptsize Ch.~7}};
 
-%% ── Tier labels on right ─────────────────────────────────────
-\node[font=\tiny, thesisblue, anchor=west] at (5.5, 0)
-  {Ch 4--6};
-\node[font=\tiny, thesisgreen!70!black, anchor=west] at (5.5,-3.2)
-  {Ch 7--8};
-\node[font=\tiny, thesisorange!80!black, anchor=west] at (5.5,-6.5)
-  {Ch 9};
+%% Sub-items (two columns)
+\node[sub, thesisgreen!70!black]
+  at ([xshift=5pt, yshift=-22pt] T2box.north west) {
+  \textbullet\ \textbf{5-Layer Architecture} \textit{(C16)}\\[1pt]
+  \quad Digital twin EKF\\
+  \quad $\kibr$ / $\alpha$ estimation};
 
-%% ── PMU / GOOSE infrastructure at bottom ────────────────────
+\node[sub, thesisgreen!70!black]
+  at ([xshift=95pt, yshift=-22pt] T2box.north west) {
+  \textbullet\ \textbf{Coordination} \textit{(C19--20)}\\[1pt]
+  \quad N-1 CTI protocol\\
+  \quad HIL: 62 scenarios};
+
+%% ────────────────────────────────────────────────────────────────────
+%% DATA FLOW ARROW between tiers
+%% ────────────────────────────────────────────────────────────────────
+\draw[-{Stealth[length=3mm]}, dashed, thick, thesisgray]
+  ([xshift=2pt] T1box.north east) --
+  node[above, font=\scriptsize, thesisgray]
+    {$\hat{\kibr},\;\hat{\alpha},\;\kappa_n$}
+  ([xshift=-2pt] T2box.north west);
+
+%% ────────────────────────────────────────────────────────────────────
+%% CLASSICAL PROTECTION FRAMEWORK (grey band, below separator)
+%% ────────────────────────────────────────────────────────────────────
+\node[font=\scriptsize\bfseries, thesisgray, anchor=west]
+  at (-0.1, 1.50) {Classical protection framework};
+
+\draw[thesisgray, thick] (-0.2, 1.25) -- (13.2, 1.25);
+
+%% Three classical boxes spanning different timescale ranges
+\node[clbox, minimum width=4.2cm]
+  (CL1) at (2.1, 0.30) {Overcurrent / fuses\\
+  \scriptsize\textit{sub-cycle to 1 s}};
+
+\node[clbox, minimum width=4.2cm]
+  (CL2) at (6.5, 0.30) {Distance / differential\\
+  \scriptsize\textit{cycles to seconds}};
+
+\node[clbox, minimum width=4.2cm]
+  (CL3) at (10.9, 0.30) {Protection coordination\\
+  \scriptsize\textit{seconds to minutes}};
+
+%% ────────────────────────────────────────────────────────────────────
+%% TIMESCALE AXIS
+%% ────────────────────────────────────────────────────────────────────
+%% Axis line
+\draw[{Stealth[length=2.5mm]}-{Stealth[length=2.5mm]},
+      thesisgray, thick] (-0.2,-1.2) -- (13.2,-1.2);
+
+%% Tick marks and labels
+\foreach \xp/\lbl in {
+    0/{1 ms},
+    2/{AC cycle\\(20 ms)},
+    4.5/{100 ms},
+    7/{1 s},
+    10/{10 s},
+    13/{minutes}} {
+  \draw[thesisgray, thick] (\xp,-1.0) -- (\xp,-1.4);
+  \node[tick] at (\xp,-1.85) {\lbl};
+}
+
+%% Timescale arrow label
+\node[font=\scriptsize\bfseries, thesisgray] at (6.5,-2.65)
+  {$\longleftarrow$ faster \hspace{2.5cm} slower $\longrightarrow$};
+
+%% ────────────────────────────────────────────────────────────────────
+%% TIMESCALE SPAN BRACKETS above the axis (show where each tier sits)
+%% ────────────────────────────────────────────────────────────────────
+%% Tier 1 bracket
+\draw[thesisblue, thick]
+  (0,-0.55) -- (0,-0.85) -- (6.2,-0.85) -- (6.2,-0.55);
+\node[font=\scriptsize\bfseries, thesisblue] at (3.1,-0.65)
+  {Tier 1 (1 ms \textendash{} 200 ms)};
+
+%% Tier 2 bracket
+\draw[thesisgreen, thick]
+  (6.4,-0.55) -- (6.4,-0.85) -- (13.0,-0.85) -- (13.0,-0.55);
+\node[font=\scriptsize\bfseries, thesisgreen!70!black] at (9.7,-0.65)
+  {Tier 2 (100 ms \textendash{} minutes)};
+
+%% ────────────────────────────────────────────────────────────────────
+%% IEC 61850 BUS at very bottom
+%% ────────────────────────────────────────────────────────────────────
 \node[draw=thesisgray, fill=lightgray, rounded corners=3pt,
-      font=\scriptsize, minimum width=9cm, minimum height=0.5cm,
-      align=center] (LAN) at (0,-9.3) {IEC~61850 GOOSE + IEEE C37.118 PMU Network};
+      font=\scriptsize, minimum width=13.4cm, minimum height=0.45cm,
+      align=center] at (6.5,-3.45)
+  {IEC~61850 GOOSE \;+\; IEEE C37.118 PMU Network};
 
-\foreach \n in {WAPC, SET, SEC}
-  \draw[dataarrow] (\n.south) -- (LAN.north -| \n);
+\foreach \xp in {2.1, 6.5, 10.9}
+  \draw[dashed, thesisgray, -{Stealth[length=2mm]}]
+    (\xp,-1.0) -- (\xp,-3.20);
 
 \end{tikzpicture}
