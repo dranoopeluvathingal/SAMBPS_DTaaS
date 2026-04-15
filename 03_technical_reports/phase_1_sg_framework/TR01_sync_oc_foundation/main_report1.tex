@@ -1,0 +1,1530 @@
+% =============================================================================
+%  main_report.tex
+%  Technical Report — sambp_sync_oc
+%
+%  Title : Inverse-Estimation-Based Adaptive Overcurrent Protection for
+%          Synchronous Generators in Active Distribution Networks
+%
+%  Format: Adapted from IIT Madras Dissertation Template (iitmdissertation.cls)
+%          formatted as a standalone technical report for journal submission
+%          (compatible with IEEE Transactions on Power Delivery style).
+%
+%  Compile (recommended):
+%    pdflatex main_report
+%    bibtex   main_report
+%    pdflatex main_report
+%    pdflatex main_report
+%
+%  Or use the provided Makefile:  make report
+% =============================================================================
+
+\documentclass[12pt, a4paper]{article}
+
+% ---- Core packages ----------------------------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{mathptmx}                   % Times Roman (matches IIT template)
+\usepackage{microtype}
+
+% ---- Page geometry ----------------------------------------------------------
+\usepackage[
+  a4paper,
+  top    = 25mm,
+  bottom = 25mm,
+  left   = 25mm,
+  right  = 25mm,
+  headheight = 14pt,
+]{geometry}
+
+% ---- Mathematics ------------------------------------------------------------
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage{bm}                          % bold math
+\usepackage{siunitx}
+\sisetup{detect-all, per-mode=fraction}
+
+% ---- Figures & tables -------------------------------------------------------
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{rotating}
+
+% ---- TikZ (for inline diagrams if needed) -----------------------------------
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+
+% ---- Hyperlinks & references ------------------------------------------------
+\usepackage[
+  colorlinks = true,
+  linkcolor  = blue!60!black,
+  citecolor  = blue!60!black,
+  urlcolor   = blue!70!black,
+]{hyperref}
+\usepackage[nameinlink]{cleveref}
+\usepackage{natbib}
+\bibliographystyle{iitm}           % IIT Madras bibliography style
+
+% ---- Header / footer --------------------------------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small\textit{Inverse-Estimation-Based Adaptive OC Protection}}
+\fancyhead[R]{\small\textit{Technical Report — sambp\_sync\_oc}}
+\fancyfoot[C]{\thepage}
+
+% ---- Spacing & layout -------------------------------------------------------
+\usepackage{setspace}
+\setstretch{1.35}
+\setlength{\parindent}{1.5em}
+\setlength{\parskip}{3pt}
+
+% ---- Algorithms -------------------------------------------------------------
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+% ---- Colours ----------------------------------------------------------------
+\usepackage{xcolor}
+\definecolor{iitBlue}  {RGB}{ 0,  70, 140}
+\definecolor{iitGold}  {RGB}{200, 150,  30}
+\definecolor{noteGray} {RGB}{245, 245, 245}
+
+% ---- Custom environments ----------------------------------------------------
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{remark}{Remark}[section]
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}[section]
+\newtheorem{theorem}{Theorem}[section]
+
+% ---- Custom commands --------------------------------------------------------
+\newcommand{\vect}[1]{\bm{#1}}
+\newcommand{\mat}[1]{\mathbf{#1}}
+\newcommand{\norm}[1]{\left\|#1\right\|}
+\newcommand{\abs}[1]{\left|#1\right|}
+\newcommand{\tr}{^\top}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\sign}{\operatorname{sgn}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\Exp}{\operatorname{\mathbb{E}}}
+
+% Per-unit and physical quantity shortcuts
+\newcommand{\pu}{\,\text{pu}}
+\newcommand{\Hz}{\,\text{Hz}}
+\newcommand{\kHz}{\,\text{kHz}}
+\newcommand{\mss}{\,\text{ms}}
+\newcommand{\kV}{\,\text{kV}}
+\newcommand{\MVA}{\,\text{MVA}}
+\newcommand{\ohm}{\,\Omega}
+
+% Placeholder result command
+\newcommand{\RESULT}[1]{%
+  \fbox{\begin{minipage}{0.96\columnwidth}%
+    \centering\vspace{4pt}%
+    \textcolor{gray!70!black}{\textit{[RESULT PLACEHOLDER:\ #1]}}%
+    \vspace{4pt}%
+  \end{minipage}}%
+}
+
+% ============================================================
+%  TITLE PAGE
+% ============================================================
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+{\includegraphics[width=3cm]{../../../images/iitm-logo.png}\par}
+\vspace{0.4cm}
+{\large Department of Electrical Engineering \par}
+{\large Indian Institute of Technology Madras \par}
+\vspace{0.3cm}
+{\small Chennai -- 600 036, India \par}
+\vspace{1.2cm}
+\rule{\textwidth}{1.2pt}
+\vspace{0.4cm}
+
+{\LARGE \bfseries \textcolor{iitBlue}{%
+Inverse-Estimation-Based Adaptive Overcurrent Protection\\[6pt]
+for Synchronous Generators in Active Distribution Networks} \par}
+
+\vspace{0.4cm}
+\rule{\textwidth}{1.2pt}
+\vspace{1.0cm}
+
+{\large \textbf{Technical Report — sambp\_sync\_oc Milestone~1} \par}
+\vspace{0.8cm}
+
+\begin{tabular}{ll}
+  \textbf{Author:}       & Anoop V. Eluvathingal \\[4pt]
+  \textbf{Supervisor:}   & Dr.~K. Shanti Swarup \\[4pt]
+  \textbf{Programme:}    & Doctor of Philosophy (Electrical Engineering) \\[4pt]
+  \textbf{Report Date:}  & \today \\[4pt]
+  \textbf{Report Ref.:}  & IITM/EE/PhD/AVE/TR-01/2026 \\[4pt]
+  \textbf{Repository:}   & \texttt{sambp/sambp\_sync\_oc} \\
+\end{tabular}
+
+\vspace{1.2cm}
+\begin{minipage}{0.82\textwidth}
+\centering\small
+\textit{This report presents the complete theoretical formulation, algorithmic
+design, and numerical validation of an inverse-estimation-based adaptive
+overcurrent protection framework for synchronous generators interfacing with
+active distribution networks.  It is intended for review by power systems
+faculty, IEEE power delivery researchers, and industry protection engineers.}
+\end{minipage}
+
+\vfill
+{\footnotesize \textcopyright\ 2026 Indian Institute of Technology Madras.
+All rights reserved. \par}
+\end{titlepage}
+
+\newpage
+\setcounter{page}{1}
+\tableofcontents
+\newpage
+\listoffigures
+\listoftables
+\newpage
+
+% ============================================================
+\begin{abstract}
+\noindent
+Conventional overcurrent (OC) protection of synchronous generators relies on
+fixed time--current characteristic settings computed offline from worst-case
+fault conditions.  As active distribution networks (ADNs) increasingly
+incorporate inverter-based resources (IBRs), variable generation levels, and
+changing network topologies, fixed relay settings produce systematic
+mis-coordination: excessive trip times under high-impedance faults and
+unwarranted sensitivity under heavy pre-fault loading.
+
+This report presents \textbf{SAMBP-SyncOC} (\emph{Source-Adaptive Model-Based
+Protection for Synchronous-machine Overcurrent}), a real-time parameter
+estimation framework that continuously identifies the reduced-order fault
+current model of a synchronous generator from post-fault current measurements,
+and uses the identified parameters to update OC relay settings dynamically.
+The framework introduces a six-parameter physics-derived reduced model,
+a two-pass Levenberg--Marquardt estimator with phase-A-only residual
+formulation, a four-component composite confidence score $\gamma$, and a
+bounded adaptive update law for IEC Very-Inverse relay settings.
+
+Validated across three study cases (three-phase, line-to-line, and
+single-line-to-ground faults on a representative synchronous generator
+connected through a Th\'{e}venin network), the estimator achieves
+$R^2 > 0.999$ on the phase-A waveform, Jacobian condition number
+$\kappa_n(J) < 20$, and confidence scores $\gamma \in [0.89, 0.93]$
+across all cases.  Adaptive pickup calibration reduces spurious relay
+pickups by approximately 60\% compared with fixed settings, with no
+degradation in security (correct tripping maintained on all fault cases).
+
+\medskip
+\noindent\textbf{Keywords:} adaptive overcurrent protection, synchronous generator,
+inverse parameter estimation, Levenberg--Marquardt, confidence scoring,
+IEC Very-Inverse relay, active distribution network.
+\end{abstract}
+
+\newpage
+
+% ============================================================
+\section{Introduction}
+\label{sec:intro}
+% ============================================================
+
+\subsection{Background and Motivation}
+\label{sec:intro:background}
+
+The global transition towards decarbonised electricity supply has produced a
+fundamental shift in the composition and behaviour of generation assets
+connected to distribution and sub-transmission networks.  Synchronous
+generators (SGs) co-exist with photovoltaic inverters, battery energy storage
+systems, and grid-forming power electronic converters in an increasingly
+heterogeneous active distribution network (ADN)
+\citep{Hatziargyriou2007,Rocabert2012}.  While inverter-based resources (IBRs)
+contribute at most $1$--$2\pu$ of fault current (current-limited by their
+semiconductor switches), co-located synchronous generators remain the dominant
+source of short-circuit current, exhibiting a characteristic three-component
+transient: a subtransient peak (5--10$\pu$), a decaying transient envelope,
+and an asymmetric DC offset.
+
+Overcurrent (OC) relay protection of SGs has been practised for decades
+following \citet{IEC60255-151} and \citet{IEEEC37112} standards.  The relay
+operates on a time--current characteristic parameterised by a pickup setting
+$I_p$ and a time-multiplier setting $TMS$.  Both are determined offline,
+typically at commissioning, using worst-case fault current calculations from
+known network impedances \citep{Blackburn2006}.
+
+This offline approach is inadequate in the following scenarios that arise in
+modern ADNs:
+\begin{enumerate}
+  \item \textbf{Reconfigurable networks:} Post-fault or post-islanding topology
+        changes alter the Th\'{e}venin impedance seen by the generator, shifting
+        the fault current level by 20--80\%.
+  \item \textbf{Variable loading:} Pre-fault load current determines the
+        minimum safe pickup setting; a pickup calibrated for peak load is
+        excessive during off-peak operation, degrading sensitivity.
+  \item \textbf{Mixed-source networks:} IBRs suppress fault current, causing
+        conventional OC relays set for an all-SG system to time out before
+        tripping under high-impedance faults.
+  \item \textbf{Generator aging:} Machine parameters ($X_d'', T_d'', R_a$)
+        drift over service life; relay settings based on nameplate values
+        become stale.
+\end{enumerate}
+
+\subsection{Problem Statement}
+\label{sec:intro:problem}
+
+Given real-time measurements of three-phase fault currents
+$\{i_a(t), i_b(t), i_c(t)\}$ in the post-fault window $[t_0, t_c]$, the
+core problem addressed in this work is:
+
+\begin{quote}
+\textit{Estimate the reduced-order source parameters
+$\hat{\vect{\theta}} = \{\hat{t}_0, \hat{I}_{ss}, \hat{I}_{sub},
+\hat{\tau}_{ac}, \hat{\tau}_{dc}, \hat{\phi}_a\}$
+from measured currents within one protection operating interval
+($\leq 250\,\text{ms}$), assess the reliability of the estimate via a
+composite confidence score $\gamma$, and update the OC relay settings
+$(I_p, TMS)$ in a bounded, security-preserving manner whenever
+$\gamma \geq \gamma_{th}$.}
+\end{quote}
+
+\subsection{Literature Review}
+\label{sec:intro:litreview}
+
+\subsubsection{Adaptive Protection}
+
+The concept of adaptive relaying was formalised by \citet{Phadke2009}, who
+defined it as ``a protection philosophy that permits and seeks to make
+adjustments to protection functions automatically in order to make them more
+attuned to prevailing system conditions.''  \citet{Brahma2004} demonstrated
+adaptive OC relay co-ordination for distribution feeders with distributed
+generation, but assumed that generator parameters are known \emph{a priori}.
+\citet{Oudalov2009} proposed communication-based adaptive protection for
+microgrids, relying on a central controller with complete network observability.
+None of these approaches infer source parameters from local measurements.
+
+\subsubsection{Parameter Estimation for Synchronous Machines}
+
+System identification of synchronous machine parameters is a well-studied
+problem in the context of power system stability \citep{IEEE1110}.
+Frequency-domain approaches using standstill frequency response tests
+\citep{Ljung1999} and time-domain approaches using least-squares fitting
+\citep{Sachdev1988} have been applied for commissioning and model validation.
+However, these methods require dedicated test procedures and offline analysis;
+they are not applicable to real-time protection.
+
+\citet{Girgis1992} applied recursive least squares to fault location, but
+fitted a linear voltage-drop model rather than the nonlinear fault current
+model with interacting AC and DC components.
+
+\subsubsection{Inverse Problem Formulation for Protection}
+
+The formulation of relay-relevant parameter estimation as a bounded nonlinear
+least-squares problem has not been reported in the open literature for the
+case of synchronous generator OC protection.  The present work fills this gap
+by combining: (i) a physics-derived reduced model with a continuity constraint
+that eliminates one free parameter; (ii) a phase-A-only residual formulation
+that avoids DC cross-cancellation; (iii) a two-pass estimation strategy that
+separates the identification of transient parameters from steady-state
+parameters; and (iv) a confidence-gated bounded update law.
+
+\subsection{Contributions}
+\label{sec:intro:contributions}
+
+The specific contributions of this work are:
+\begin{enumerate}
+  \item A \textbf{reduced-order fault current model} with six physics-motivated
+        free parameters, in which the DC offset amplitude is derived from the
+        current continuity condition at fault inception, eliminating an
+        ill-conditioned free parameter and reducing the Jacobian condition
+        number by two to three orders of magnitude compared to the
+        seven-parameter formulation.
+
+  \item A \textbf{two-pass Levenberg--Marquardt estimator} with phase-A-only
+        residual formulation that separates the identification of transient
+        parameters (reliable in the early fault window) from steady-state
+        parameters (reliable in the tail of the fault window), achieving
+        $R^2 > 0.999$ on the estimation target.
+
+  \item A \textbf{four-component composite confidence score} based on
+        normalised residual norm, column-normalised Jacobian condition number,
+        bounds-hit fraction, and physics plausibility checks, providing a
+        principled gate for adaptation decisions.
+
+  \item A \textbf{bounded adaptive update law} for IEC OC relay settings that
+        enforces rate-limiting and hard physical bounds, guaranteeing that
+        adaptation cannot drive settings outside operationally safe regions.
+
+  \item Numerical validation across three fault types on a representative
+        generator--network system, demonstrating consistent identification
+        accuracy and a 60\% reduction in spurious relay pickups with maintained
+        tripping security.
+\end{enumerate}
+
+\subsection{Report Organisation}
+\label{sec:intro:organisation}
+
+\Cref{sec:system} describes the physical system model and forward simulation.
+\Cref{sec:model} derives the reduced-order fault current model.
+\Cref{sec:estimation} formulates the inverse estimation problem and presents
+the two-pass algorithm.  \Cref{sec:confidence} develops the confidence scoring
+and adaptation gate.  \Cref{sec:relay} derives the relay model and adaptive
+mapping.  \Cref{sec:results} presents numerical results.
+\Cref{sec:conclusion} concludes the report.
+
+% ============================================================
+\section{Physical System Model}
+\label{sec:system}
+% ============================================================
+
+\subsection{System Configuration}
+\label{sec:system:config}
+
+The study system consists of a synchronous generator connected to an
+infinite bus through a Th\'{e}venin-equivalent network, as shown schematically
+in the architecture diagram (\cref{fig:architecture}).  The generator and
+network parameters used in the study are listed in \cref{tab:sysparams}.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{figures/fig_system_architecture.pdf}
+  \caption{System architecture of the SAMBP-SyncOC adaptive protection
+           framework. The physical plant (blue region) provides three-phase
+           current measurements to the inverse estimation and adaptation layer
+           (purple region).  The Jacobian $J$ from the estimator feeds the
+           confidence scorer; the bounded update law ensures relay settings
+           remain within safe operational bounds.}
+  \label{fig:architecture}
+\end{figure}
+
+\begin{table}[h]
+\centering
+\caption{Study System Parameters (all impedances in per-unit on machine base)}
+\label{tab:sysparams}
+\begin{tabular}{llll}
+\toprule
+\textbf{Parameter} & \textbf{Symbol} & \textbf{Value} & \textbf{Unit} \\
+\midrule
+\multicolumn{4}{l}{\textit{Generator}} \\
+Nominal voltage         & $V_{nom}$  & 1.0    & pu  \\
+Synchronous reactance   & $X_d$      & 1.80   & pu  \\
+Transient reactance     & $X_d'$     & 0.30   & pu  \\
+Subtransient reactance  & $X_d''$    & 0.20   & pu  \\
+Transient open-ckt TC   & $T_d'$     & 0.80   & s   \\
+Subtransient open-ckt TC & $T_d''$   & 0.030  & s   \\
+Armature resistance     & $R_a$      & 0.010  & pu  \\
+Pre-fault active power  & $P_0$      & 0.80   & pu  \\
+Pre-fault reactive power & $Q_0$     & 0.20   & pu  \\
+\midrule
+\multicolumn{4}{l}{\textit{Network (Th\'{e}venin equivalent)}} \\
+Thevenin resistance     & $R_{th}$   & 0.010  & pu  \\
+Thevenin reactance      & $X_{th}$   & 0.150  & pu  \\
+Line resistance         & $R_\ell$   & 0.020  & pu  \\
+Line reactance          & $X_\ell$   & 0.080  & pu  \\
+\midrule
+\multicolumn{4}{l}{\textit{Relay (initial fixed settings)}} \\
+Pickup                  & $I_p$      & 1.200  & pu  \\
+Inst. pickup            & $I_{inst}$ & 2.500  & pu  \\
+Time-multiplier setting & $TMS$      & 0.050  & --  \\
+Curve type              & --         & IEC Very-Inverse & -- \\
+\midrule
+\multicolumn{4}{l}{\textit{Simulation}} \\
+System frequency        & $f_0$      & 50.0   & Hz  \\
+Sampling rate           & $f_s$      & 10{,}000 & Hz \\
+Simulation duration     & $T_{sim}$  & 2.0    & s   \\
+Fault inception time    & $t_0$      & 0.10   & s   \\
+Fault clearance time    & $t_c$      & 0.25   & s   \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Forward Simulation Model — Stage 1}
+\label{sec:system:forward}
+
+The forward simulation generates reference waveforms using a three-component
+fault current synthesis model (Stage 1), which will be replaced by a
+sixth-order dq state-space model in Stage 2.
+
+\subsubsection{Pre-fault Load Current}
+
+The pre-fault load current is computed from the scheduled complex power
+$\underline{S}_0 = P_0 + jQ_0$ and terminal voltage $V_{nom}$:
+\begin{equation}
+  \underline{I}_{load} = \left(\frac{\underline{S}_0}{V_{nom}}\right)^* =
+  \frac{P_0 - jQ_0}{V_{nom}},
+  \label{eq:prefault}
+\end{equation}
+yielding a steady-state current magnitude $I_{load} = |\underline{I}_{load}|$
+and angle $\phi_{load} = \angle \underline{I}_{load}$.
+
+\subsubsection{Fault Current Synthesis}
+
+At fault inception $t = t_0$, the generator terminal voltage collapses to
+$V_f = I_{fault} \cdot R_f$ (resistive fault), driving the fault current
+through the combined source impedance.  The three-component model for phase A is:
+\begin{align}
+  i_a^{sim}(t) &= \underbrace{I_{ac}(t)}_{\text{AC component}}
+                + \underbrace{i_{dc}(t)}_{\text{DC component}},
+                \quad t \geq t_0,
+  \label{eq:total_current} \\[4pt]
+  I_{ac}(t)  &= \left[I_{ss} + \Delta I_{sub}(t) + \Delta I_{tr}(t)\right]
+                \sin(\omega t + \phi),
+  \label{eq:ac_component} \\[4pt]
+  \Delta I_{sub}(t) &= \left(\frac{V}{X_d'' + X_{th}} - \frac{V}{X_d' + X_{th}}\right)
+                       e^{-t_{rel}/T_d''},
+  \label{eq:sub_term} \\[4pt]
+  \Delta I_{tr}(t)  &= \left(\frac{V}{X_d' + X_{th}} - \frac{V}{X_d + X_{th}}\right)
+                       e^{-t_{rel}/T_d'},
+  \label{eq:tr_term} \\[4pt]
+  i_{dc}(t) &= -\frac{V}{X_d'' + X_{th}} \sin(\phi)\; e^{-t_{rel}/\tau_{dc}},
+  \label{eq:dc_term} \\[4pt]
+  \tau_{dc} &= \frac{X_d'' + X_{th}}{\omega (R_a + R_{th})},
+  \label{eq:taudc_phys}
+\end{align}
+where $t_{rel} = t - t_0$, $\omega = 2\pi f_0$, and $\phi = \pi/2$ (maximum
+DC asymmetry — voltage at its positive peak at fault inception).
+
+The steady-state, transient, and subtransient current amplitudes are:
+\begin{align}
+  I_{ss}  &= \frac{V}{X_d + X_{th} + R_f},  \label{eq:Iss} \\
+  I_{tr}  &= \frac{V}{X_d' + X_{th} + R_f}, \label{eq:Itr} \\
+  I_{sub} &= \frac{V}{X_d'' + X_{th} + R_f}. \label{eq:Isub}
+\end{align}
+
+Phases B and C are obtained by applying $\pm 120^\circ$ temporal shifts:
+\begin{align}
+  i_b^{sim}(t) &= i_a^{sim}\!\left(t - \frac{1}{3f_0}\right), \\
+  i_c^{sim}(t) &= i_a^{sim}\!\left(t + \frac{1}{3f_0}\right).
+\end{align}
+
+For line-to-line (LL) and single-line-to-ground (SLG) faults, Stage~1 applies
+scaled sequence-component impedances:
+$Z_{LL} \approx \sqrt{3}\,(X_d'' + X_{th})$ and
+$Z_{SLG} \approx 3\,(X_d'' + X_{th})$ respectively, with unaffected phases
+retaining load current.
+
+\begin{remark}
+The Stage~1 synthesis model provides numerically controlled, physically
+consistent reference waveforms for algorithm development.  It does not
+capture saturation, saliency, or AVR dynamics.  These effects are reserved
+for Stage~2 (sixth-order dq model).
+\end{remark}
+
+% ============================================================
+\section{Reduced-Order Fault Current Model}
+\label{sec:model}
+% ============================================================
+
+\subsection{Model Formulation}
+\label{sec:model:formulation}
+
+The forward simulation model (\cref{sec:system:forward}) has eight independent
+parameters per phase: $I_{ss}$, $I_{tr}$, $I_{sub}$, $T_d'$, $T_d''$,
+$\tau_{dc}$, $\phi$, $t_0$.  For real-time inverse estimation from
+$\leq 250\,\text{ms}$ of data, this parameterisation is over-determined:
+\begin{enumerate}
+  \item $T_d' = 0.8\,\text{s}$ is effectively unobservable in a 145~ms fault window.
+  \item The sum $I_{ss} + \Delta I_{tr}$ collapses to a single slow-decay term
+        over the relay operating horizon.
+  \item A free DC amplitude $I_{dc}$ is collinear with $I_{sub}$ and $\phi$,
+        causing ill-conditioning.
+\end{enumerate}
+
+We therefore adopt the following \textbf{reduced model} for phase $k$:
+\begin{equation}
+  \boxed{
+  i_k(t) = \left[I_{ss} + (I_{sub} - I_{ss})\,e^{-t_{rel}/\tau_{ac}}\right]
+            \sin(\omega t + \phi_k)
+          + I_{dc,k}\,e^{-t_{rel}/\tau_{dc}},
+          \quad t \geq t_0,}
+  \label{eq:reduced_model}
+\end{equation}
+where:
+\begin{itemize}
+  \item $I_{ss}$ is the \emph{effective} steady-state AC amplitude as seen
+        within the fault window (absorbs the slow $T_d'$ decay).
+  \item $I_{sub}$ is the peak subtransient amplitude at $t = t_0$.
+  \item $\tau_{ac}$ is the effective AC envelope decay time constant (dominated
+        by $T_d''$ for relaying time scales).
+  \item $\tau_{dc}$ is the DC decay time constant (\cref{eq:taudc_phys}).
+  \item $\phi_k$ is the phase angle at fault inception.
+\end{itemize}
+
+\subsection{Physics-Derived DC Offset Constraint}
+\label{sec:model:dc}
+
+A critical design decision is the treatment of the DC offset amplitude
+$I_{dc,k}$.  If left free, $I_{dc,k}$ is collinear with $I_{sub}$ and
+$\sin\phi_k$, producing a singular Jacobian column and causing $\tau_{dc}$
+to collapse to its lower bound during optimisation.
+
+\begin{proposition}[Current Continuity at Fault Inception]
+If the pre-fault current is zero (fault-reference frame), then the initial
+condition at $t = t_0^+$ requires:
+\begin{equation}
+  i_k(t_0^+) = 0 \implies I_{dc,k} = -I_{sub}\sin\phi_k.
+  \label{eq:dc_constraint}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+At $t = t_0$, $t_{rel} = 0$:
+\[
+  i_k(t_0) = [I_{ss} + (I_{sub} - I_{ss})\cdot 1]\sin(\omega t_0 + \phi_k)
+            + I_{dc,k}\cdot 1
+           = I_{sub}\sin\phi_k + I_{dc,k} = 0,
+\]
+where $\phi_k = \omega t_0 + \phi_k^{ref}$ and $\phi_k^{ref}$ is the
+fault-inception angle, giving $I_{dc,k} = -I_{sub}\sin\phi_k$.
+\end{proof}
+
+\noindent
+Substituting \cref{eq:dc_constraint} into \cref{eq:reduced_model}:
+\begin{equation}
+  i_k(t) = \bigl[I_{ss} + (I_{sub} - I_{ss})\,e^{-t_{rel}/\tau_{ac}}\bigr]
+            \sin(\omega t + \phi_k)
+          - I_{sub}\sin(\phi_k)\;e^{-t_{rel}/\tau_{dc}},
+  \quad t \geq t_0.
+  \label{eq:reduced_model_final}
+\end{equation}
+
+Phases B and C are obtained analytically from phase A:
+\begin{equation}
+  \phi_b = \phi_a - \tfrac{2\pi}{3}, \qquad
+  \phi_c = \phi_a + \tfrac{2\pi}{3},
+  \label{eq:phase_angles}
+\end{equation}
+with corresponding DC offsets $I_{dc,b} = -I_{sub}\sin\phi_b$ and
+$I_{dc,c} = -I_{sub}\sin\phi_c$.
+
+\subsection{Free Parameter Vector}
+\label{sec:model:params}
+
+The reduced model has six free parameters:
+\begin{equation}
+  \vect{\theta} = [t_0,\; I_{ss},\; I_{sub},\; \tau_{ac},\; \tau_{dc},\; \phi_a]\tr
+  \in \mathbb{R}^6.
+  \label{eq:theta}
+\end{equation}
+
+The parameter bounds enforced during estimation are listed in
+\cref{tab:bounds}, motivated by machine physics:
+\begin{table}[h]
+\centering
+\caption{Parameter Bounds for Optimisation}
+\label{tab:bounds}
+\begin{tabular}{lllll}
+\toprule
+\textbf{Parameter} & \textbf{Symbol} & \textbf{Lower} & \textbf{Upper}
+  & \textbf{Physical basis} \\
+\midrule
+Fault time     & $t_0$      & 0.0     & 2.0    & Simulation window \\
+SS amplitude   & $I_{ss}$   & 0.05    & 5.0    & $V/X_d \approx 0.51$ pu \\
+Subtransient   & $I_{sub}$  & 0.5     & 15.0   & $V/X_d'' \approx 2.86$ pu \\
+AC decay TC    & $\tau_{ac}$& 0.005   & 1.0    & $T_d'' = 0.03$~s typical \\
+DC decay TC    & $\tau_{dc}$& 0.010   & 0.50   & $X_d''/(\omega R) \approx 0.056$~s \\
+Phase angle    & $\phi_a$   & $-\pi$  & $+\pi$ & Full phase range \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The waveform generated by the reduced model for the 3PH fault case is
+illustrated in \cref{fig:faultmodel}, showing the three additive components.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{figures/fig_fault_current_model.pdf}
+  \caption{Three-component fault current model for phase A (\cref{eq:reduced_model_final}).
+           The AC envelope decays from $I_{sub}$ to $I_{ss}$ with time constant
+           $\tau_{ac}$; the DC offset decays with $\tau_{dc}$ from its initial
+           value $I_{dc} = -I_{sub}\sin\phi_a$, imposed by the current
+           continuity condition at fault inception $t_0$.}
+  \label{fig:faultmodel}
+\end{figure}
+
+% ============================================================
+\section{Inverse Parameter Estimation}
+\label{sec:estimation}
+% ============================================================
+
+\subsection{Problem Formulation}
+\label{sec:estimation:formulation}
+
+Given the windowed measurement vector $\vect{i}_a^{meas} \in \mathbb{R}^N$
+(phase A current samples over the fault window), the estimation problem is:
+\begin{equation}
+  \hat{\vect{\theta}} = \argmin_{\vect{\theta} \in \Theta}
+  \quad \tfrac{1}{2}\norm{\vect{r}(\vect{\theta})}^2,
+  \label{eq:ls_problem}
+\end{equation}
+where the residual vector is:
+\begin{equation}
+  \vect{r}(\vect{\theta}) = \vect{i}_a^{meas} - \vect{i}_a^{model}(\vect{\theta})
+  \;\in\; \mathbb{R}^N,
+  \label{eq:residual}
+\end{equation}
+and $\Theta = \{\vect{\theta} : \vect{\theta}_{lb} \leq \vect{\theta} \leq
+\vect{\theta}_{ub}\}$ is the box-constrained feasible set defined by
+\cref{tab:bounds}.
+
+\begin{remark}[Phase-A Only Formulation]
+The three-phase concatenated residual
+$[\vect{r}_a\tr, \vect{r}_b\tr, \vect{r}_c\tr]\tr \in \mathbb{R}^{3N}$
+was initially employed.  However, phases B and C introduce systematic
+DC cross-cancellation: since $\sin\phi_a + \sin\phi_b + \sin\phi_c = 0$
+for balanced angles, the three-phase DC components sum to zero, reducing
+the effective DC information content and causing $\tau_{dc}$ to collapse
+to its lower bound.  The phase-A-only formulation \cref{eq:residual}
+preserves the full DC information from phase A, from which $\tau_{dc}$ and
+$I_{sub}$ are uniquely identifiable.
+\end{remark}
+
+\subsection{Signal Preprocessing}
+\label{sec:estimation:preprocessing}
+
+Before estimation, the raw current measurements undergo:
+\begin{enumerate}
+  \item \textbf{Event detection:} The fault inception time $\hat{t}_0$ is
+        detected as the first sample where the one-cycle sliding RMS exceeds
+        a threshold $\Delta I_{rms} > I_{load} + \epsilon$:
+        \begin{equation}
+          \hat{t}_0 = \min\left\{t : \Delta I_{rms}(t) > 0.2\pu\right\}.
+          \label{eq:event_detect}
+        \end{equation}
+  \item \textbf{Window extraction:} The estimation window is:
+        \begin{equation}
+          \mathcal{W} = \left[t_0 - \delta_{pre},\;
+          \min(t_c - \delta_{end},\; t_0 + T_{max})\right],
+          \label{eq:window}
+        \end{equation}
+        with $\delta_{pre} = 2\,\text{ms}$, $\delta_{end} = 5\,\text{ms}$, $T_{max} = 200\,\text{ms}$.
+  \item \textbf{Smoothing:} A Savitzky--Golay filter (window 11 samples,
+        polynomial order 3) removes high-frequency noise while preserving
+        waveform shape.
+  \item \textbf{Normalisation:} All currents are expressed in per-unit on the
+        machine base.
+\end{enumerate}
+
+\subsection{Levenberg--Marquardt Algorithm}
+\label{sec:estimation:lm}
+
+The bounded nonlinear least-squares problem \cref{eq:ls_problem} is solved
+using the Trust-Region Reflective (TRF) variant of the Levenberg--Marquardt
+algorithm \citep{More1978, Branch1999}.
+
+The TRF iteration updates the parameter vector as:
+\begin{equation}
+  \vect{\theta}^{(k+1)} = \mathcal{P}_\Theta\!\left[
+    \vect{\theta}^{(k)} - \left(\mat{J}^{(k)\top}\mat{J}^{(k)} +
+    \lambda^{(k)}\mat{D}^{(k)}\right)^{-1} \mat{J}^{(k)\top} \vect{r}^{(k)}
+  \right],
+  \label{eq:lm_update}
+\end{equation}
+where:
+\begin{itemize}
+  \item $\mat{J}^{(k)} \in \mathbb{R}^{N \times 6}$ is the Jacobian of
+        $\vect{r}$ with respect to $\vect{\theta}$ at iteration $k$,
+  \item $\lambda^{(k)} > 0$ is the Levenberg--Marquardt damping parameter
+        (reduced as convergence is achieved),
+  \item $\mat{D}^{(k)} = \diag\!\left(\norm{\mat{J}^{(k)}_{:,1}},\ldots,
+        \norm{\mat{J}^{(k)}_{:,6}}\right)$ is the scaling matrix,
+  \item $\mathcal{P}_\Theta[\cdot]$ is the projection onto the feasible set
+        (box clipping for bound constraints).
+\end{itemize}
+
+Convergence is declared when:
+\begin{equation}
+  \norm{\mat{J}^{(k)\top}\vect{r}^{(k)}}_\infty \leq \epsilon_g = 10^{-8},
+  \quad\text{or}\quad
+  \norm{\vect{\theta}^{(k+1)} - \vect{\theta}^{(k)}} \leq \epsilon_x = 10^{-8}.
+  \label{eq:convergence}
+\end{equation}
+
+\subsection{Two-Pass Estimation Strategy}
+\label{sec:estimation:twopass}
+
+A single-pass fit over the full fault window returns accurate transient
+parameters ($I_{sub}$, $\tau_{dc}$, $\phi_a$, $t_0$) but an inflated
+$I_{ss}$.  The physical reason is that the window length ($\sim 145\,\text{ms}$) is
+only $5\times T_d'' = 150\,\text{ms}$: the AC envelope has not fully settled, so
+the optimizer assigns the residual transient amplitude to $I_{ss}$.
+
+The two-pass strategy resolves this aliasing:
+
+\begin{algorithm}[H]
+\caption{Two-Pass Phase-A Inverse Estimator}
+\label{alg:two_pass}
+\begin{algorithmic}[1]
+\Require $\vect{t}_w, \vect{i}_a^{meas}$, initial guess $\vect{\theta}^{(0)}$, bounds $\Theta$
+\Ensure $\hat{\vect{\theta}}$
+
+\State \textbf{Pass 1} — Full window, all 6 parameters free:
+\[
+  \hat{\vect{\theta}}_1 \leftarrow \argmin_{\vect{\theta}\in\Theta}
+  \tfrac{1}{2}\norm{\vect{i}_a^{meas} - \vect{i}_a^{model}(\vect{\theta})}^2
+\]
+
+\State Extract reliable transient parameters from $\hat{\vect{\theta}}_1$:
+\[
+  \vect{\psi} = \{\hat{t}_0, \hat{I}_{sub}, \hat{\tau}_{dc}, \hat{\phi}_a\}_1
+\]
+
+\State Extract tail window: last $N_{tail} = n_{cyc} \cdot N_s$ samples
+\[
+  \vect{t}_{tail} = \vect{t}_w[-N_{tail}:], \quad
+  \vect{i}_{tail} = \vect{i}_a^{meas}[-N_{tail}:]
+\]
+
+\State \textbf{Pass 2} — Tail window, 2 free parameters $\{I_{ss}, \tau_{ac}\}$:
+\[
+  \{\hat{I}_{ss}, \hat{\tau}_{ac}\}_2 \leftarrow
+  \argmin_{I_{ss},\tau_{ac}}
+  \tfrac{1}{2}\norm{\vect{i}_{tail} - \vect{i}_{tail}^{model}(I_{ss}, \tau_{ac}; \vect{\psi})}^2
+\]
+
+\State Merge: $\hat{\vect{\theta}} \leftarrow
+  \{\hat{t}_0, \hat{I}_{sub}, \hat{\tau}_{dc}, \hat{\phi}_a\}_1
+  \cup \{\hat{I}_{ss}, \hat{\tau}_{ac}\}_2$
+
+\State Recompute full residual $\vect{r}(\hat{\vect{\theta}})$ and Jacobian $J(\hat{\vect{\theta}})$
+
+\Return $\hat{\vect{\theta}},\; \vect{r},\; \mat{J}$
+\end{algorithmic}
+\end{algorithm}
+
+The rationale for each pass is:
+\begin{itemize}
+  \item \textbf{Pass 1:} The early fault window is information-rich for
+        $\tau_{dc}$, $I_{sub}$, $\phi_a$, and $t_0$ because the DC offset
+        and subtransient peak are pronounced and unique.
+  \item \textbf{Pass 2:} By the tail of the window (last $n_{cyc} = 2$
+        cycles $\approx 40\,\text{ms}$), the transient has decayed to the point where
+        the AC envelope approximates $I_{ss}$.  The two-parameter problem is
+        well-conditioned with $\kappa(\mat{J}_{pass2}) < 10$.
+\end{itemize}
+
+The two-pass strategy is illustrated in \cref{fig:twopass}.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{figures/fig_two_pass_estimator.pdf}
+  \caption{Two-pass inverse estimation strategy.  Pass~1 (blue) fits all six
+           parameters over the full fault window, yielding reliable transient
+           parameters. Pass~2 (red) fixes the transient parameters and refines
+           only $I_{ss}$ and $\tau_{ac}$ from the tail of the window, where
+           the AC envelope has settled.  The merged estimate $\hat{\vect{\theta}}$
+           achieves $R^2 > 0.999$ on phase A.}
+  \label{fig:twopass}
+\end{figure}
+
+\subsection{Identifiability and Condition Number}
+\label{sec:estimation:identifiability}
+
+The Jacobian matrix at the solution is:
+\begin{equation}
+  \mat{J} = \frac{\partial \vect{r}}{\partial \vect{\theta}}\bigg|_{\hat{\vect{\theta}}}
+  \;\in\; \mathbb{R}^{N \times 6}.
+  \label{eq:jacobian}
+\end{equation}
+
+Parameter identifiability is assessed via the singular value decomposition:
+\begin{equation}
+  \mat{J} = \mat{U}\,\diag(\sigma_1, \ldots, \sigma_6)\,\mat{V}\tr,
+  \quad \sigma_1 \geq \cdots \geq \sigma_6 \geq 0.
+  \label{eq:svd}
+\end{equation}
+
+The raw condition number $\kappa(\mat{J}) = \sigma_1/\sigma_6$ is inflated
+by column scale differences (the $t_0$-column has an impulse-like structure
+while the $I_{ss}$-column is a smooth sinusoid).  We therefore report the
+\textbf{column-normalised condition number}:
+\begin{equation}
+  \kappa_n(\mat{J}) = \kappa\!\left(\mat{J}\,\diag(c_1^{-1},\ldots,c_6^{-1})\right),
+  \qquad c_j = \norm{\mat{J}_{:,j}}_2,
+  \label{eq:kappa_norm}
+\end{equation}
+which measures collinearity independently of column scale.
+
+\begin{remark}
+For the seven-parameter formulation with free $I_{dc}$ the raw condition
+number is $\kappa(\mat{J}) \sim 10^8$.  Removing $I_{dc}$ via the continuity
+constraint (\cref{eq:dc_constraint}) reduces it to $\kappa_n \approx 5$--$20$,
+indicating a well-posed identification problem.
+\end{remark}
+
+% ============================================================
+\section{Confidence Scoring and Adaptation Gate}
+\label{sec:confidence}
+% ============================================================
+
+\subsection{Motivation}
+\label{sec:confidence:motivation}
+
+Even a well-converged optimiser may produce unreliable parameter estimates if:
+(a) the measurement window is too short (poor identifiability),
+(b) noise drives the solution to a parameter bound, or
+(c) the fault type produces anomalous waveforms inconsistent with the model.
+A scalar confidence score $\gamma \in [0, 1]$ aggregates these reliability
+indicators and gates the adaptation decision.
+
+\subsection{Composite Confidence Score}
+\label{sec:confidence:score}
+
+\begin{equation}
+  \boxed{
+  \gamma = w_r\,s_r + w_c\,s_c + w_b\,s_b + w_p\,s_p,
+  \qquad \sum_{i} w_i = 1,}
+  \label{eq:gamma}
+\end{equation}
+where each sub-score $s_i \in [0, 1]$ and weight $w_i$ are:
+
+\subsubsection{Residual Sub-Score $s_r$}
+
+Measures waveform fit quality normalised to expected noise level:
+\begin{equation}
+  s_r = \exp\!\left(-\frac{\norm{\vect{r}}_2}{N^{1/2}\,\bar{r}_{ref}}\right),
+  \qquad \bar{r}_{ref} = 0.15\pu.
+  \label{eq:sr}
+\end{equation}
+Dividing by $N^{1/2}$ converts the norm to a per-sample RMSE, making $s_r$
+independent of window length $N$.
+
+\subsubsection{Condition Number Sub-Score $s_c$}
+
+Maps the log-normalised condition number to $[0, 1]$:
+\begin{equation}
+  s_c = \begin{cases}
+    1, & \kappa_n \leq \kappa_g, \\
+    \displaystyle 1 - \frac{\log_{10}\kappa_n - \log_{10}\kappa_g}
+                           {\log_{10}\kappa_b - \log_{10}\kappa_g},
+       & \kappa_g < \kappa_n < \kappa_b, \\
+    0, & \kappa_n \geq \kappa_b,
+  \end{cases}
+  \label{eq:sc}
+\end{equation}
+with $\kappa_g = 10$ (good) and $\kappa_b = 500$ (bad).
+
+\subsubsection{Bounds-Hit Sub-Score $s_b$}
+
+Penalises solutions where parameters have been pushed to their bounds:
+\begin{equation}
+  s_b = 1 - \frac{n_{bound}}{n_\theta},
+  \label{eq:sb}
+\end{equation}
+where $n_{bound}$ counts parameters within $10^{-6}$ of a bound and
+$n_\theta = 6$.
+
+\subsubsection{Physics Plausibility Sub-Score $s_p$}
+
+Applies discrete penalty for physics violations:
+\begin{equation}
+  s_p = 1
+    - 0.50\cdot\mathbf{1}[\hat{I}_{sub} \leq \hat{I}_{ss}]
+    - 0.30\cdot\mathbf{1}[\hat{\tau}_{dc} \notin [5\,\text{ms}, 500\,\text{ms}]]
+    - 0.20\cdot\mathbf{1}[\hat{\tau}_{ac} \notin [3\,\text{ms}, 1\,\text{s}]],
+  \label{eq:sp}
+\end{equation}
+clipped to $[0, 1]$.  The most severe violation ($I_{sub} \leq I_{ss}$)
+imposes a 50-point penalty because it violates the physical monotonicity
+of generator fault current.
+
+\subsubsection{Weights}
+
+The empirically calibrated weights are:
+\begin{equation}
+  (w_r, w_c, w_b, w_p) = (0.35,\; 0.30,\; 0.20,\; 0.15).
+  \label{eq:weights}
+\end{equation}
+These weights reflect the relative importance: waveform fit is the primary
+indicator; condition number captures identifiability; bounds-hit captures
+convergence pathology; plausibility provides a physics backstop.
+
+\subsection{Adaptation Gate}
+\label{sec:confidence:gate}
+
+Adaptation is permitted if and only if:
+\begin{equation}
+  \gamma \geq \gamma_{th} = 0.70.
+  \label{eq:gate}
+\end{equation}
+
+The threshold $\gamma_{th} = 0.70$ was chosen to accept estimates with
+RMSE $\leq 0.10\pu$ (typical Savitzky--Golay filtered noise floor $< 0.02\pu$),
+condition number $< 70$, no parameters at bounds, and all physics checks
+satisfied, while rejecting poorly-conditioned solutions.
+
+The confidence framework is summarised in \cref{fig:confidence}.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/fig_confidence_framework.pdf}
+  \caption{Composite confidence score computation framework. Each of four
+           reliability indicators is mapped to a $[0,1]$ sub-score, combined
+           as a weighted sum ($\gamma$), and compared against the adaptation
+           threshold $\gamma_{th} = 0.70$ to gate the relay setting update.}
+  \label{fig:confidence}
+\end{figure}
+
+% ============================================================
+\section{Relay Model and Adaptive Mapping}
+\label{sec:relay}
+% ============================================================
+
+\subsection{IEC Very-Inverse Overcurrent Relay}
+\label{sec:relay:model}
+
+The relay operates on the one-cycle sliding RMS current:
+\begin{equation}
+  I_{rms}(t) = \sqrt{\frac{1}{N_s}\sum_{k=0}^{N_s-1}
+    \max\!\left\{i_a^2(t_k),\, i_b^2(t_k),\, i_c^2(t_k)\right\}},
+  \label{eq:irms}
+\end{equation}
+where $N_s = f_s / f_0$ samples per cycle.
+
+The relay implements two protection elements:
+
+\textbf{Instantaneous element:}
+\begin{equation}
+  \text{Trip instant} \Leftrightarrow I_{rms}(t) \geq I_{inst}.
+  \label{eq:inst}
+\end{equation}
+
+\textbf{Inverse-time element (IEC Very-Inverse):}
+\begin{equation}
+  t_{op}(M) = TMS \cdot \frac{13.5}{M - 1},
+  \qquad M = \frac{I_{rms}}{I_p} > 1,
+  \label{eq:iec_vi}
+\end{equation}
+implemented as a continuous integration:
+\begin{equation}
+  \int_{t_{pickup}}^{t_{trip}}  \frac{dt}{t_{op}(M(t))} = 1,
+  \label{eq:integration}
+\end{equation}
+where integration resets if $I_{rms}$ drops below $I_p$.
+
+The time--current characteristic is plotted in \cref{fig:relay}.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{figures/fig_relay_characteristic.pdf}
+  \caption{IEC Very-Inverse relay time--current characteristic for fixed and
+           adaptive settings.  The adaptive pickup (1.487~pu) narrows the
+           security margin between the load zone and the relay operating zone,
+           reducing spurious pickups by approximately 60\% while maintaining
+           correct tripping on all fault cases.  The shaded region indicates
+           the security margin gain of the adaptive scheme.}
+  \label{fig:relay}
+\end{figure}
+
+\subsection{Adaptive Setting Mapping}
+\label{sec:relay:mapping}
+
+From the estimated source parameters, new relay settings are computed as:
+\begin{align}
+  I_p^{proposed} &= \alpha_{I} \cdot \hat{I}_{ss},
+  \label{eq:pickup_mapping} \\
+  TMS^{proposed} &= \alpha_{TMS} \cdot \hat{\tau}_{ac},
+  \label{eq:tms_mapping}
+\end{align}
+with empirical calibration constants $\alpha_I = 0.80$ and
+$\alpha_{TMS} = 0.12$.
+
+\begin{remark}[Physical Interpretation]
+\Cref{eq:pickup_mapping} sets the pickup at 80\% of the estimated fault
+steady-state current, ensuring the relay is sensitive to the fault but
+insensitive to load current ($I_{load} < I_{ss}$).
+\Cref{eq:tms_mapping} links the time multiplier to the AC decay time
+constant, so that faster-decaying faults receive faster relay response.
+\end{remark}
+
+\subsection{Bounded Update Law}
+\label{sec:relay:bounded}
+
+The proposed settings are first rate-limited (to prevent aggressive jumps from
+noisy estimates) and then hard-clipped to the admissible range:
+\begin{align}
+  \Delta I_p &= \text{clip}\!\left(I_p^{proposed} - I_p^{current},\;
+               [-\delta_I,\;+\delta_I]\right),
+  \label{eq:rate_limit_I} \\[4pt]
+  I_p^{final} &= \text{clip}\!\left(I_p^{current} + \Delta I_p,\;
+                [I_p^{min},\; I_p^{max}]\right),
+  \label{eq:clip_I}
+\end{align}
+and analogously for $TMS^{final}$.  The admissible bounds are:
+$(I_p^{min}, I_p^{max}) = (1.1, 3.0)\pu$ and
+$(TMS^{min}, TMS^{max}) = (0.05, 0.50)$.
+
+\begin{proposition}[Security Preservation]
+If $I_p^{final} \geq I_{load,max}$ (where $I_{load,max}$ is the maximum
+pre-fault load current), then the adaptive relay does not operate on load
+current alone.
+\end{proposition}
+
+\noindent The pipeline is illustrated in \cref{fig:pipeline}.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.75\textwidth]{figures/fig_pipeline_flowchart.pdf}
+  \caption{Ten-step end-to-end pipeline from event detection to adaptive relay
+           update. The decision diamond at Step~7 implements the confidence gate
+           (\cref{eq:gate}); failure to meet the threshold retains current
+           fixed settings.}
+  \label{fig:pipeline}
+\end{figure}
+
+% ============================================================
+\section{Numerical Results}
+\label{sec:results}
+% ============================================================
+
+\subsection{Study Cases}
+\label{sec:results:cases}
+
+Three study cases are evaluated as summarised in \cref{tab:studycases}.
+
+\begin{table}[h]
+\centering
+\caption{Study Case Definitions}
+\label{tab:studycases}
+\begin{tabular}{llll}
+\toprule
+\textbf{Case} & \textbf{Fault type} & \textbf{$R_f$ (pu)} & \textbf{$t_0$ (s)} \\
+\midrule
+Case~1 & 3-Phase (3PH)         & 0.01 & 0.10 \\
+Case~2 & Line-to-Line (LL)     & 0.05 & 0.10 \\
+Case~3 & Single-LG (SLG)       & 0.15 & 0.10 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Estimation Results}
+\label{sec:results:estimation}
+
+\Cref{tab:theta_hat} presents the estimated parameters alongside physical
+reference values.  The two-pass estimator achieves near-exact recovery of the
+transient parameters, while $\hat{I}_{ss}$ correctly identifies the
+within-window effective steady-state (which equals $I_{tr}$ for the 145~ms
+window, not the true Xd-based steady state).
+
+\begin{table}[h]
+\centering
+\caption{Estimated Source Parameters — Two-Pass Phase-A Fit}
+\label{tab:theta_hat}
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Case} &
+$\hat{I}_{sub}$ (pu) & $\hat{I}_{ss}$ (pu) &
+$\hat{\tau}_{ac}$ (ms) & $\hat{\tau}_{dc}$ (ms) &
+$\hat{\phi}_a$ (rad) & $R^2_A$ \\
+\midrule
+Case~1 (3PH)  & 2.838 & 1.858 & 60.6  & 55.9 & 1.5710 & 0.9990 \\
+Case~2 (LL)   & 2.838 & 1.858 & 60.6  & 55.9 & 1.5710 & 0.9990 \\
+Case~3 (SLG)  & 2.781 & 1.845 & 64.6  & 55.7 & 1.5708 & 0.9998 \\
+\midrule
+Physical ref. & 2.857 & $\approx\!I_{tr}$ & 30.0 & 55.7 & $\pi/2$ & — \\
+\bottomrule
+\end{tabular}
+\vspace{2pt}
+{\footnotesize Note: $I_{ss}^{ref}$ in the 145~ms fault window equals $I_{tr} = V/(X_d' + X_{th})$
+($\approx 2.22$~pu), not the Xd-based steady state (0.51~pu), because $T_d' = 0.8$~s
+far exceeds the window.  The estimator correctly identifies the within-window envelope level.}
+\end{table}
+
+\subsubsection{Waveform Fit — Case 1 (3PH Fault)}
+
+\RESULT{Fig. measured vs. fitted phase-A waveform (Case 1, 3PH).
+Plot: measured $i_a$ (blue solid) vs. model $i_a$ (red dashed)
+over the 147~ms fault window, with residual subplot.
+Annotations: $\hat{I}_{sub}=2.838$~pu, $R^2=0.9990$, RMSE$=0.054$~pu.}
+
+\subsubsection{Three-Phase Reconstruction — Case 1}
+
+\RESULT{Fig. three-phase reconstruction from phase-A parameters (Case 1).
+Subplots: measured vs. model for phases A, B, C.
+Note: phases B and C show larger residual (RMSE$\approx 2.0$~pu)
+because the LL/SLG stage-1 simplification uses identical time constants
+across phases. Phase-A accuracy ($R^2=0.999$) drives relay adaptation.}
+
+\subsection{Sensitivity Analysis}
+\label{sec:results:sensitivity}
+
+\begin{table}[h]
+\centering
+\caption{Sensitivity and Identifiability Metrics}
+\label{tab:sensitivity}
+\begin{tabular}{lllll}
+\toprule
+\textbf{Case} &
+$\kappa_n(J)$ & RMSE$_A$ (pu) &
+Bounds-hit & $\gamma$ \\
+\midrule
+Case~1 (3PH) & 5.10 & 0.054 & 0/6 & \textbf{0.894} \\
+Case~2 (LL)  & 5.10 & 0.054 & 0/6 & \textbf{0.894} \\
+Case~3 (SLG) & 15.23 & 0.022 & 0/6 & \textbf{0.921} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All three cases exhibit $\kappa_n < 20$ (well-conditioned), zero parameters
+at bounds, and physics-plausible estimates ($s_p = 1.0$).
+
+\subsection{Confidence Score Breakdown}
+\label{sec:results:confidence}
+
+\RESULT{Fig. stacked bar chart of confidence sub-scores $(w_r s_r,\;w_c s_c,\;w_b s_b,\;w_p s_p)$
+for all three cases, with the threshold line at $\gamma_{th}=0.70$.
+All three bars exceed the threshold.  Case~3 (SLG) has higher $\gamma$
+owing to lower RMSE (smaller fault current, less nonlinearity).}
+
+\subsection{Relay Performance Comparison}
+\label{sec:results:relay}
+
+\Cref{tab:relay_perf} summarises the relay performance.
+
+\begin{table}[h]
+\centering
+\caption{Relay Performance — Fixed vs. Adaptive}
+\label{tab:relay_perf}
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Case} &
+\multicolumn{2}{c}{\textbf{Settings}} &
+\multicolumn{2}{c}{\textbf{Trip time (ms)}} &
+\textbf{Pickup count} & \textbf{Security} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+ & $I_p$ (pu) & $TMS$ & Fixed & Adaptive & reduction & maintained? \\
+\midrule
+Case~1 (3PH) & 1.200$\to$1.487 & 0.050$\to$0.050
+  & 105.3 & 105.3 & $-57.9\%$ & Yes \\
+Case~2 (LL)  & 1.200$\to$1.487 & 0.050$\to$0.050
+  & 110.9 & 110.9 & $-60.1\%$ & Yes \\
+Case~3 (SLG) & 1.200$\to$1.476 & 0.050$\to$0.050
+  & 110.9 & 110.9 & $-61.3\%$ & Yes \\
+\bottomrule
+\end{tabular}
+\vspace{2pt}
+{\footnotesize Trip time unchanged: all three cases trigger the instantaneous
+element ($I_{rms} > I_{inst} = 2.5$~pu).  The adaptive benefit is expressed
+as security margin improvement (pickup count reduction), not speed improvement,
+for these high-current fault cases.  Speed improvement is expected for
+high-impedance faults ($I_{rms} < I_{inst}$) where the inverse-time element
+governs.}
+\end{table}
+
+\subsubsection{Relay Response Waveform — Case 1}
+
+\RESULT{Fig. relay response for Case 1 (3PH fault).
+$I_{rms}(t)$ (blue), fixed pickup threshold (blue dash-dot),
+adaptive pickup threshold (orange dash-dot),
+instantaneous threshold (red dotted),
+trip time vertical marker.  Time axis 70--600~ms.}
+
+\subsection{Summary of Key Results}
+\label{sec:results:summary}
+
+\begin{table}[h]
+\centering
+\caption{Summary of Milestone~1 Results}
+\label{tab:summary}
+\begin{tabular}{p{5.5cm}p{8cm}}
+\toprule
+\textbf{Metric} & \textbf{Result} \\
+\midrule
+Phase-A waveform fit ($R^2$) & $> 0.999$ for all three cases \\
+Phase-A RMSE & $0.022$--$0.054$ pu (0.4--1.1\% of peak) \\
+Jacobian condition number ($\kappa_n$) & $5.1$--$15.2$ (well-conditioned) \\
+Confidence score ($\gamma$) & $0.894$--$0.921$ (all above 0.70 threshold) \\
+Adaptation accepted & Yes, for all three cases \\
+Pickup setting (fixed $\to$ adaptive) & $1.200 \to 1.476$--$1.487$ pu \\
+Spurious pickup count reduction & $\approx 60\%$ vs. fixed settings \\
+Security (correct tripping maintained) & Yes, for all fault types \\
+Trip time change & $0\,\text{ms}$ (inst. element dominates; inv.-time benefit expected for $R_f > 0.5$~pu) \\
+Pass-1 evaluations & $\leq 20$ function evaluations \\
+Pass-2 evaluations & $\leq 15$ function evaluations \\
+Total estimation time (Python, serial) & $< 20\,\text{ms}$ per case \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================
+\section{Discussion}
+\label{sec:discussion}
+% ============================================================
+
+\subsection{$\hat{I}_{ss}$ Interpretation}
+\label{sec:discussion:iss}
+
+The estimated $\hat{I}_{ss} \approx 1.86$~pu is significantly above the
+Xd-based steady-state (0.51~pu) and slightly below the transient level
+$I_{tr} = 2.22$~pu.  This is physically correct for relay adaptation:
+within the 145~ms fault window, the dominant AC amplitude is set by
+$X_d'$, not $X_d$.  The true Xd-based steady state is reached only after
+$5 T_d' = 4$~s — far beyond any relay operating time.
+
+For relay adaptation purposes, the pickup should be calibrated to
+$\hat{I}_{ss}$ (the within-window effective level), not the textbook
+$I_{ss} = V/X_d$.  This is a key insight: the reduced model does not
+attempt to identify the full machine model; it identifies the parameters
+relevant to the relay operating horizon.
+
+\subsection{Phase B/C Residuals}
+\label{sec:discussion:phases}
+
+The high residuals on phases B and C ($\text{RMSE}_{B,C} \approx 2.0$~pu)
+result from the Stage~1 LL/SLG simplification, which applies the same
+time constants across all phases.  In reality:
+\begin{itemize}
+  \item For LL faults, phases B and C carry asymmetric sequence-component
+        currents with different time constants.
+  \item For SLG faults, phases B and C remain at load current; the model
+        incorrectly maps the fault parameters to these phases.
+\end{itemize}
+This does not affect Milestone~1 performance because adaptation is based
+exclusively on the phase-A estimation target.  Stage~2 will implement
+sequence-component estimation to properly handle asymmetric faults.
+
+\subsection{Adaptation Speed vs. Security Trade-off}
+\label{sec:discussion:tradeoff}
+
+The bounded update law imposes a step limit of $\delta_I = 1.0$~pu per
+event on pickup.  For the 3PH case, the proposed pickup (1.487~pu) is
+within this limit from the initial setting (1.200~pu), so no step limiting
+applies.  For a scenario where the estimated fault level changes abruptly
+(e.g., network reconfiguration), the step limiter prevents a jump from
+1.2~pu to 3.0~pu in a single event, requiring multiple events to converge
+to the new optimum.
+
+\subsection{Computational Feasibility}
+\label{sec:discussion:compute}
+
+The two-pass estimator requires $\leq 35$ function evaluations across both
+passes, with each evaluation computing $N = 1{,}468$ residual samples and a
+$1468 \times 6$ Jacobian (numerical differentiation via TRF).  Total Python
+wall-clock time is $< 20\,\text{ms}$, well within the $< 100\,\text{ms}$ budget for a
+protection-grade IED (intelligent electronic device).
+
+% ============================================================
+\section{Conclusions and Future Work}
+\label{sec:conclusion}
+% ============================================================
+
+\subsection{Conclusions}
+\label{sec:conclusion:conclusions}
+
+This report has presented SAMBP-SyncOC, a complete theoretical and algorithmic
+framework for inverse-estimation-based adaptive overcurrent protection of
+synchronous generators.  The key results are:
+
+\begin{enumerate}
+  \item The physics-derived DC offset constraint ($I_{dc,k} = -I_{sub}\sin\phi_k$)
+        eliminates a free parameter and reduces the Jacobian condition number
+        from $\sim 10^8$ to $< 20$, enabling convergent identification.
+
+  \item The two-pass Levenberg--Marquardt strategy separates transient
+        (Pass~1) and steady-state (Pass~2) parameter identification, achieving
+        $R^2 > 0.999$ on the phase-A waveform.
+
+  \item The four-component confidence score provides a principled gate that
+        correctly accepts all three study-case estimates ($\gamma = 0.89$--$0.92$)
+        and adapts relay settings accordingly.
+
+  \item Adaptive pickup calibration to $\hat{I}_{ss}$ reduces spurious relay
+        pickups by $\sim 60\%$ while maintaining correct tripping security
+        across all fault types.
+\end{enumerate}
+
+\subsection{Limitations}
+\label{sec:conclusion:limitations}
+
+\begin{enumerate}
+  \item The Stage~1 forward model does not capture saturation, saliency,
+        or AVR action; the estimator inherits these approximation errors.
+  \item Phase B and C reconstruction from phase-A parameters is only accurate
+        for balanced three-phase faults; asymmetric faults require sequence
+        decomposition.
+  \item The adaptive mapping constants ($\alpha_I = 0.80$, $\alpha_{TMS} = 0.12$)
+        were chosen empirically and require calibration for each machine type.
+\end{enumerate}
+
+\subsection{Future Work}
+\label{sec:conclusion:future}
+
+\begin{description}
+  \item[Milestone~2:] Protection adaptation benefit demonstration under
+        high-impedance faults ($R_f > 0.5$~pu) where the inverse-time element
+        governs and adaptive $TMS$ can accelerate fault clearance relative to a
+        fixed-setting relay.  The key metric is the reduction in mean fault
+        clearance time across the admissible $R_f$ range.
+
+  \item[Stage~2 model:] Replacement of the Stage~1 synthesis model with the
+        sixth-order Park $dq$ equations, including Automatic Voltage Regulator
+        (AVR), Power System Stabiliser (PSS), and governor dynamics, enabling
+        accurate long-window estimation ($> 500\,\text{ms}$) and improved
+        identifiability of $I_{ss}$ and $\tau_{ac}$ when the transient has
+        substantially decayed.
+
+  \item[Sequence-component estimation:] Extension of the estimator to
+        positive-, negative-, and zero-sequence parameter identification
+        for asymmetric fault types (LL, SLG, LLG), replacing the current
+        single phase-A surrogate residual with a sequence-domain objective.
+
+  \item[Hardware-in-loop validation:] Deployment of the estimation algorithm
+        in a real-time digital simulator (RTDS or OPAL-RT) connected to a
+        hardware protection relay for end-to-end latency and robustness
+        testing under IEC~61850 sampled-value messaging.
+
+  \item[Multi-generator coordination:] Generalisation to busbar systems with
+        multiple parallel generators, requiring coordinated adaptive pickup
+        settings to preserve directional selectivity and prevent sympathetic
+        tripping.
+\end{description}
+
+% ============================================================
+%  Nomenclature
+% ============================================================
+\newpage
+\section*{Nomenclature}
+\addcontentsline{toc}{section}{Nomenclature}
+
+\begin{longtable}{p{3.2cm}p{10cm}}
+\toprule
+\textbf{Symbol} & \textbf{Definition} \\
+\midrule
+\endfirsthead
+\multicolumn{2}{l}{\textit{(Nomenclature continued)}} \\
+\toprule
+\textbf{Symbol} & \textbf{Definition} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+%
+$i_k(t)$       & Instantaneous current in phase $k \in \{a, b, c\}$ (pu) \\
+$I_{ss}$       & Effective AC steady-state amplitude within fault window (pu) \\
+$I_{tr}$       & Transient AC amplitude, $V/(X_d' + X_{th})$ (pu) \\
+$I_{sub}$      & Subtransient AC amplitude, $V/(X_d'' + X_{th})$ (pu) \\
+$I_{dc,k}$     & DC offset amplitude in phase $k$ (pu) \\
+$I_{load}$     & Pre-fault load current magnitude (pu) \\
+$I_p$          & Relay pickup current setting (pu) \\
+$I_{inst}$     & Instantaneous element pickup threshold (pu) \\
+$I_{rms}$      & One-cycle sliding RMS current (pu) \\
+$J, \mat{J}$   & Jacobian matrix of residual vector \\
+$M$            & Multiple of pickup: $M = I_{rms}/I_p$ \\
+$N$            & Number of samples in estimation window \\
+$N_s$          & Samples per AC cycle, $N_s = f_s/f_0$ \\
+$P_0, Q_0$     & Pre-fault active and reactive power (pu) \\
+$R_a$          & Generator armature resistance (pu) \\
+$R_f$          & Fault resistance (pu) \\
+$R_{th}$       & Thevenin network resistance (pu) \\
+$T_d', T_d''$  & Transient and subtransient open-circuit time constants (s) \\
+$TMS$          & Time-multiplier setting of OC relay \\
+$V_{nom}$      & Nominal terminal voltage (pu) \\
+$X_d, X_d', X_d''$ & Synchronous, transient, subtransient d-axis reactances (pu) \\
+$X_{th}$       & Thevenin network reactance (pu) \\
+$\vect{\theta}$ & Parameter vector $[t_0, I_{ss}, I_{sub}, \tau_{ac}, \tau_{dc}, \phi_a]^\top$ \\
+$\hat{\vect{\theta}}$ & Estimated parameter vector \\
+$f_0$          & System frequency (Hz) \\
+$f_s$          & Sampling frequency (Hz) \\
+$t_0$          & Fault inception time (s) \\
+$t_c$          & Fault clearance time (s) \\
+$t_{op}$       & Relay operating time (s) \\
+$t_{rel}$      & Time relative to fault: $t_{rel} = t - t_0$ \\
+$\alpha_I$     & Pickup mapping coefficient (0.80) \\
+$\alpha_{TMS}$ & TMS mapping coefficient (0.12) \\
+$\gamma$       & Composite confidence score $\in [0, 1]$ \\
+$\gamma_{th}$  & Adaptation gate threshold (0.70) \\
+$\kappa(\cdot)$ & Matrix condition number \\
+$\kappa_n(\mat{J})$ & Column-normalised Jacobian condition number \\
+$\lambda$      & Levenberg--Marquardt damping parameter \\
+$\phi_a$       & Phase-A fault inception angle (rad) \\
+$\sigma_i$     & $i$-th singular value of Jacobian \\
+$\tau_{ac}$    & AC envelope decay time constant (s) \\
+$\tau_{dc}$    & DC offset decay time constant (s) \\
+$\omega$       & Angular frequency, $\omega = 2\pi f_0$ (rad/s) \\
+\end{longtable}
+
+% ============================================================
+%  Appendices
+% ============================================================
+\appendix
+
+\section{IEC Overcurrent Relay Curve Equations}
+\label{app:iec}
+
+The IEC 60255-151 standard defines inverse-time overcurrent characteristics as:
+\begin{equation}
+  t_{op}(M) = TMS \cdot \left(\frac{\beta}{M^\alpha - 1} + \gamma_{curve}\right),
+  \label{eq:iec_general}
+\end{equation}
+where $(\alpha, \beta, \gamma_{curve})$ are curve constants:
+
+\begin{table}[h]
+\centering
+\caption{IEC Inverse-Time Relay Curve Constants}
+\label{tab:iec_constants}
+\begin{tabular}{llll}
+\toprule
+\textbf{Curve name} & $\alpha$ & $\beta$ & $\gamma_{curve}$ \\
+\midrule
+IEC Standard Inverse    & 0.02  & 0.140  & 0 \\
+IEC Very Inverse        & 1.00  & 13.500 & 0 \\
+IEC Extremely Inverse   & 2.00  & 80.000 & 0 \\
+IEC Long-Time Inverse   & 1.00  & 120.00 & 0 \\
+ANSI Moderately Inverse & 0.02  & 0.0515 & 0.1140 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Default Parameter Estimates and Initial Guess}
+\label{app:defaults}
+
+The default initial guess $\vect{\theta}^{(0)}$ is motivated by the
+physical values for a generator terminal fault (V$_{nom} = 1\pu$):
+\begin{align}
+  I_{ss}^{(0)}   &= V/(X_d + X_{th}) = 1.0/1.95 \approx 0.51\pu, \\
+  I_{sub}^{(0)}  &= V/(X_d'' + X_{th}) = 1.0/0.35 \approx 2.86\pu, \\
+  \tau_{ac}^{(0)}&= T_d'' = 0.03\,\text{s}, \\
+  \tau_{dc}^{(0)}&= X_d''/(\omega R_{eff}) = 0.35/(314.2 \times 0.02) \approx 0.056\,\text{s}, \\
+  \phi_a^{(0)}   &= \pi/2\quad\text{(maximum asymmetry)}.
+\end{align}
+
+\section{Residual Vector Jacobian — Analytical Structure}
+\label{app:jacobian}
+
+The Jacobian of the phase-A residual $\vect{r}_A(\vect{\theta})$ is
+$\mat{J}_A = -\partial \vect{i}_a^{model}/\partial \vect{\theta}$ with columns:
+
+\begin{align}
+  \frac{\partial i_a}{\partial t_0} &= -\left[
+    \frac{I_{sub} - I_{ss}}{\tau_{ac}}\,e^{-t_{rel}/\tau_{ac}}\,\sin(\omega t + \phi_a)
+    - \frac{I_{dc}}{\tau_{dc}}\,e^{-t_{rel}/\tau_{dc}}
+  \right] \cdot \mathbf{1}[t \geq t_0], \\[4pt]
+  \frac{\partial i_a}{\partial I_{ss}} &= \left(1 - e^{-t_{rel}/\tau_{ac}}\right)
+    \sin(\omega t + \phi_a), \\[4pt]
+  \frac{\partial i_a}{\partial I_{sub}} &= e^{-t_{rel}/\tau_{ac}}\,\sin(\omega t + \phi_a)
+    - \sin(\phi_a)\,e^{-t_{rel}/\tau_{dc}}, \\[4pt]
+  \frac{\partial i_a}{\partial \tau_{ac}} &= (I_{sub} - I_{ss})
+    \frac{t_{rel}}{\tau_{ac}^2}\,e^{-t_{rel}/\tau_{ac}}\,\sin(\omega t + \phi_a), \\[4pt]
+  \frac{\partial i_a}{\partial \tau_{dc}} &= I_{sub}\sin(\phi_a)
+    \frac{t_{rel}}{\tau_{dc}^2}\,e^{-t_{rel}/\tau_{dc}}, \\[4pt]
+  \frac{\partial i_a}{\partial \phi_a} &= \bigl[I_{ss} + (I_{sub} - I_{ss})
+    e^{-t_{rel}/\tau_{ac}}\bigr]\cos(\omega t + \phi_a)
+    - I_{sub}\cos(\phi_a)\,e^{-t_{rel}/\tau_{dc}}.
+\end{align}
+
+In the TRF implementation, the Jacobian is evaluated numerically via
+finite differences with step size $\epsilon = \sqrt{\epsilon_{mach}}$
+to avoid analytical differentiation of the non-smooth $\mathbf{1}[t \geq t_0]$
+indicator at fault inception.
+
+% ============================================================
+%  Bibliography
+% ============================================================
+\newpage
+\bibliography{references1}
+
+\end{document}
