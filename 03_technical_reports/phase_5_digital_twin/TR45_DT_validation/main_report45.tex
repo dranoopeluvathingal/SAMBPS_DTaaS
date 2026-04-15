@@ -578,6 +578,33 @@ Z1 boundary these frequently chose different elements despite both being
 correct.
 
 % ─────────────────────────────────────────────────────────────────────────────
+\section{Limitations and v0.2 Direction}
+\label{sec:limitations}
+
+\subsection*{Alpha estimation degeneracy in the scalar measurement model}
+
+Although the phasor DFT extractor (Study~G) reduces the $\kibr$ RMSE by a
+factor of 28.5 (from 0.0517\,pu to 0.0018\,pu), the improvement in $\alpha$
+estimation is modest: RMSE falls from 0.3597 to 0.3060, a factor of only
+1.18$\times$.  The root cause is a structural degeneracy in the current
+measurement model.  The third observation is a scalar apparent impedance
+$Z_\mathrm{app} = |V_1|/|I_1|$, which collapses the complex ratio
+$V_1/I_1$ to a single real number.  The angle of $V_1/I_1$ carries
+information that distinguishes fault location $\alpha$ from line impedance
+$Z_\mathrm{line}$ — the two parameters that enter $h(x)[2]$ as a product
+$\alpha Z_\mathrm{line}/\kibr$ — but this angle is discarded by taking the
+magnitude.  The result is a near-rank-deficiency in the Jacobian rows for
+$\alpha$ and $Z_\mathrm{line}$ that no amount of noise averaging can resolve:
+both parameters are observable only through $Z_\mathrm{app}$, so the EKF
+cannot separate them.  The planned fix for v0.2 is to extend
+\texttt{EKFPhasorEstimator} to a complex measurement model in which the
+observation vector is $\mathbf{y} = [I_1,\, I_2,\, V_1/I_1] \in \mathbb{C}^3$
+(six real degrees of freedom), breaking the $\alpha$--$Z_\mathrm{line}$
+degeneracy via the impedance angle.  This work is tracked as issue
+\texttt{TR-45-v0.2-a} and is deferred to the physics-informed ML phase
+(TR-46--49).
+
+% ─────────────────────────────────────────────────────────────────────────────
 \section{Summary and Conclusions}
 \label{sec:summary}
 
