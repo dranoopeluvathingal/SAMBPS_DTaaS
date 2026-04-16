@@ -76,7 +76,8 @@ _T_81R_S        = 0.50    # s    — must persist for this long
 
 # 50/51AC — AC coupling overcurrent
 _I_AC_INST_PU   = 2.50    # pu — instantaneous pickup (50)
-_I_AC_PICKUP_PU = 1.20    # pu — inverse-time pickup (51)
+_I_AC_PICKUP_PU = 1.05    # pu — inverse-time pickup (51); 5% above rated allows
+                           #       relay to pick up when inverter current-limits fire
 # IEC 60255 Standard Inverse: t = TMS × 0.14 / ((I/Ip)^0.02 − 1)
 _TMS_DEFAULT    = 0.30    # time multiplier setting
 
