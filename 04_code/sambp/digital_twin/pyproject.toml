@@ -10,6 +10,7 @@ requires-python = ">=3.10"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 addopts = "--tb=short -q"
 markers = [
     "tier1: fast unit tests (< 1 s each)",
