@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "sambp-digital-twin"
+version = "0.1.0"
+description = "SAMBP Digital Twin Lab — IBR-adaptive protection validation framework"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--tb=short -q"
+markers = [
+    "tier1: fast unit tests (< 1 s each)",
+    "tier2: integration tests (1–30 s each)",
+    "tier3: heavy Monte Carlo / HIL tests (> 30 s)",
+]
+
+[tool.coverage.run]
+source = ["digital_twin"]
+omit = ["tests/*", "conftest.py"]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
