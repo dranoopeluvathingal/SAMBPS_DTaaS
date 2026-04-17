@@ -1,0 +1,71 @@
+========================================================================
+TR-80  DC MICROGRID PROTECTION — DIGITAL TWIN VALIDATION REPORT
+========================================================================
+
+────────────────────────────────────────────────────────────────────────
+WP 80.1  DC FAULT CURRENT MODEL  (models/dc_fault_model.py)
+────────────────────────────────────────────────────────────────────────
+
+Physics: RLC discharge + converter contribution + sustained source
+  Underdamped: I(t) = (V₀/Lω_d)·exp(−αt)·sin(ω_d·t)
+  Overdamped:  I(t) = (V₀/2Lω_d)·(exp(−γ₁t) − exp(−γ₂t))  [stable]
+  Converter:   I_conv(t) = I_max·(1 − exp(−t/τ_ctrl))
+
+LVDC 400V — fault current summary:
+  Type                  Peak I [A]   Peak dI/dt [A/ms]   Time to peak [ms]
+  ----------------------------------------------------------------------
+  pole_to_pole               19651              166448               2.330
+  pole_to_ground              1084               34738               2.330
+  arc                        24434              561225               4.790
+
+────────────────────────────────────────────────────────────────────────
+WP 80.2  DC PROTECTION MIRROR  (models/dc_protection_mirror.py)
+────────────────────────────────────────────────────────────────────────
+
+Protection functions:
+  76DC — DC overcurrent (instantaneous hi-set + time-delayed)
+  87DC — DC differential with percentage bias
+  81DC — dI/dt rate-of-rise (catches sub-ms capacitor discharge)
+  50ARC — arc flash (combined I-spike + V-dip signature)
+  27DC — DC undervoltage alarm
+
+Protection operate times (LVDC 400V, P-P bolted fault):
+  81DC: 0.10 ms
+  76DC: 0.05 ms
+  87DC: did not operate
+  50ARC: 0.05 ms
+  27DC: did not operate
+
+────────────────────────────────────────────────────────────────────────
+WP 80.3  DC MICROGRID DT ENGINE  (models/dc_microgrid.py)
+────────────────────────────────────────────────────────────────────────
+
+Pre-built configurations:
+
+  LVDC 400V (LVDC):
+    V_bus=400V  V_pu=1.000
+    Sources: ['BESS_1', 'PV_1', 'AC_TIE']
+      BESS_1: 125.0 A
+      PV_1: 75.0 A
+      AC_TIE: 200.0 A
+    P-P fault: I_peak=35292A, dI/dt_peak=173992 A/ms
+
+  MVDC 6kV (MVDC):
+    V_bus=6000V  V_pu=1.000
+    Sources: ['BESS_HV', 'GEN_RECT', 'PV_MVDC']
+      BESS_HV: 83.3 A
+      GEN_RECT: 166.7 A
+      PV_MVDC: 33.3 A
+    P-P fault: I_peak=175119A, dI/dt_peak=322054 A/ms
+
+────────────────────────────────────────────────────────────────────────
+CONCLUSION
+────────────────────────────────────────────────────────────────────────
+
+  12 unit tests PASS.
+  DC fault model: stable overdamped/underdamped/critically-damped RLC.
+  Protection mirror: 76DC trip <0.1 ms; 81DC dI/dt trip <0.2 ms.
+  LVDC 400V and MVDC 6kV configs validated.
+  TR-80 status: COMPLETE
+
+========================================================================
