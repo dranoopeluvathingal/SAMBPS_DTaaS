@@ -1,0 +1,68 @@
+# TR-70 test network — 5-bus, 2 IBR sources
+# Units: voltage in kV, power in MW/MVAr, impedance in pu on 100 MVA base
+
+network:
+  name: "test_5bus"
+  description: "5-bus meshed network with 2 IBR sources (GFM + GFL)"
+  base_mva: 100
+  f_hz: 50
+
+buses:
+  # id, name, vn_kv, type (b=busbar, n=normal, slack)
+  - {id: 0, name: "SLACK",  vn_kv: 132.0, type: slack}
+  - {id: 1, name: "BUS_1",  vn_kv: 132.0, type: b}
+  - {id: 2, name: "BUS_2",  vn_kv: 33.0,  type: b}
+  - {id: 3, name: "IBR_A",  vn_kv: 33.0,  type: b}   # GFM source bus
+  - {id: 4, name: "IBR_B",  vn_kv: 33.0,  type: b}   # GFL source bus
+
+lines:
+  # from_bus, to_bus, length_km, r_ohm_per_km, x_ohm_per_km, c_nf_per_km, max_i_ka
+  - {from_bus: 0, to_bus: 1, length_km: 40,  r_ohm_per_km: 0.120, x_ohm_per_km: 0.350, c_nf_per_km: 10.0, max_i_ka: 0.60, name: "L01"}
+  - {from_bus: 1, to_bus: 2, length_km: 30,  r_ohm_per_km: 0.150, x_ohm_per_km: 0.380, c_nf_per_km: 10.0, max_i_ka: 0.45, name: "L12"}
+  - {from_bus: 0, to_bus: 2, length_km: 50,  r_ohm_per_km: 0.120, x_ohm_per_km: 0.350, c_nf_per_km: 10.0, max_i_ka: 0.60, name: "L02_tie"}
+  - {from_bus: 2, to_bus: 3, length_km: 10,  r_ohm_per_km: 0.200, x_ohm_per_km: 0.400, c_nf_per_km:  8.0, max_i_ka: 0.30, name: "L23_ibrA"}
+  - {from_bus: 2, to_bus: 4, length_km: 15,  r_ohm_per_km: 0.200, x_ohm_per_km: 0.400, c_nf_per_km:  8.0, max_i_ka: 0.30, name: "L24_ibrB"}
+
+transformers: []
+
+ibr_sources:
+  - bus: 3
+    name: "GFM_A"
+    control_mode: gfm
+    rated_mw: 80.0
+    p_mw: 60.0
+    q_mvar: 10.0
+    k_ibr: 1.0
+    f_gfm: 1.0
+    z_source_pu: 0.05
+    max_i_pu: 1.20
+
+  - bus: 4
+    name: "GFL_B"
+    control_mode: gfl
+    rated_mw: 60.0
+    p_mw: 45.0
+    q_mvar: 5.0
+    k_ibr: 1.0
+    f_gfm: 0.0
+    z_source_pu: 0.08
+    max_i_pu: 1.10
+
+loads:
+  - {bus: 1, p_mw: 40.0, q_mvar: 10.0, name: "LOAD_1"}
+  - {bus: 2, p_mw: 35.0, q_mvar:  8.0, name: "LOAD_2"}
+
+fault_scenarios:
+  - {name: "F_L12_mid",   line: "L12",      location_pu: 0.50, fault_type: SLG,  r_fault_ohm: 0.0}
+  - {name: "F_L23_near",  line: "L23_ibrA", location_pu: 0.20, fault_type: 3PH,  r_fault_ohm: 0.0}
+  - {name: "F_L24_far",   line: "L24_ibrB", location_pu: 0.80, fault_type: DLG,  r_fault_ohm: 5.0}
+  - {name: "F_BUS2",      bus: 2,                               fault_type: SLG,  r_fault_ohm: 0.0}
+  - {name: "F_BUS3_ibr",  bus: 3,                               fault_type: 3PH,  r_fault_ohm: 0.0}
+
+relay_settings:
+  # Relay at sending end of each line: (line, pickup_pu, zone1_reach_pu, time_dial)
+  - {line: "L01",     pickup_pu: 1.25, zone1_reach_pu: 0.85, time_dial: 0.10}
+  - {line: "L12",     pickup_pu: 1.30, zone1_reach_pu: 0.85, time_dial: 0.15}
+  - {line: "L02_tie", pickup_pu: 1.25, zone1_reach_pu: 0.85, time_dial: 0.10}
+  - {line: "L23_ibrA",pickup_pu: 1.20, zone1_reach_pu: 0.80, time_dial: 0.15}
+  - {line: "L24_ibrB",pickup_pu: 1.20, zone1_reach_pu: 0.80, time_dial: 0.15}
