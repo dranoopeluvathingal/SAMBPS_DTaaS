@@ -1,0 +1,117 @@
+========================================================================
+TR-75  SSCI / SSRO DETECTION — DIGITAL TWIN VALIDATION REPORT
+========================================================================
+
+WP 75.1  FFT-based SSCIDetector (estimation/ssci_detector.py)
+WP 75.2  Online impedance scanner (models/impedance_scan.py)
+WP 75.3  40-scenario library (models/ssci_scenario_lib.py)
+
+────────────────────────────────────────────────────────────────────────
+SECTION 1  IMPEDANCE MODEL PHYSICS
+────────────────────────────────────────────────────────────────────────
+
+Series-compensated line Π-model:
+  Z_line(f) = R + j·(f/f₀)·XL – j·(f₀/f)·XC
+  Natural resonance: f_r = f₀·√(XC/XL) = f₀·√(comp%/100)
+
+GFL converter impedance (PI current controller, d-axis):
+  Y_conv(s) = (k_p·s + k_i) / (L_f·s² + (k_p+R_f)·s + k_i)
+  Re[Z_conv(f)] < 0 when f > f_cross = √(k_i/L_f) / (2π)
+
+SSCI criterion (evaluated at line resonance f_r):
+  Re[Z_network(f_r) + Z_conv(f_r)] < –0.005 pu
+
+GFM immunity:
+  Z_conv_gfm = R_virt + j·X_virt  (purely positive → no SSCI)
+
+────────────────────────────────────────────────────────────────────────
+SECTION 2  40-SCENARIO IMPEDANCE SWEEP
+────────────────────────────────────────────────────────────────────────
+
+    ID  Name                        f_r[Hz]   Re(Z_tot)    Exp    Got   OK
+  --------------------------------------------------------------------
+     1  A01_gfl_0pct                    0.0         N/A      F      F    ✓
+     2  A02_gfl_5pct                   11.2     +0.8791      F      F    ✓
+     3  A03_gfl_10pct                  15.8     +0.7494      F      F    ✓
+     4  A04_gfl_12pct                  17.3     +0.6979      F      F    ✓
+     5  A05_gfl_15pct                  19.4     +0.6210      F      F    ✓
+     6  A06_gfl_15pct                  19.4     +0.6210      F      F    ✓
+     7  A07_gfl_18pct                  21.2     +0.5446      F      F    ✓
+     8  A08_gfl_20pct                  22.4     +0.4938      F      F    ✓
+     9  A09_gfl_20pct                  22.4     +0.4938      F      F    ✓
+    10  A10_gfl_20pct                  22.4     +0.4938      F      F    ✓
+    11  B11_gfl_25pct                  25.0     +0.4742      F      F    ✓
+    12  B12_gfl_30pct                  27.4     +0.3700      F      F    ✓
+    13  B13_gfl_35pct                  29.6     +0.2667      F      F    ✓
+    14  B14_gfl_35pct                  29.6     +0.2667      F      F    ✓
+    15  B15_gfl_40pct                  31.6     +0.1643      F      F    ✓
+    16  B16_gfl_40pct                  31.6     +0.1643      F      F    ✓
+    17  B17_gfl_45pct                  33.5     +0.0629      F      F    ✓
+    18  B18_gfl_45pct                  33.5     +0.0629      F      F    ✓
+    19  B19_gfl_50pct                  35.4     -0.0377      T      T    ✓
+    20  B20_gfl_50pct                  35.4     -0.0377      T      T    ✓
+    21  C21_gfl_55pct                  37.1     -0.1373      T      T    ✓
+    22  C22_gfl_58pct                  38.1     -0.1967      T      T    ✓
+    23  C23_gfl_60pct                  38.7     -0.2361      T      T    ✓
+    24  C24_gfl_60pct                  38.7     -0.2361      T      T    ✓
+    25  C25_gfl_65pct                  40.3     -0.3340      T      T    ✓
+    26  C26_gfl_65pct                  40.3     -0.3340      T      T    ✓
+    27  C27_gfl_70pct                  41.8     -0.4311      T      T    ✓
+    28  C28_gfl_75pct                  43.3     -0.5273      T      T    ✓
+    29  C29_gfl_78pct                  44.2     -0.5846      T      T    ✓
+    30  C30_gfl_80pct                  44.7     -0.6226      T      T    ✓
+    31  D31_gfm_0pct                    0.0         N/A      F      F    ✓
+    32  D32_gfm_20pct                  22.4     +0.0304      F      F    ✓
+    33  D33_gfm_35pct                  29.6     +0.0306      F      F    ✓
+    34  D34_gfm_40pct                  31.6     +0.0306      F      F    ✓
+    35  D35_gfm_50pct                  35.4     +0.0307      F      F    ✓
+    36  D36_gfm_55pct                  37.1     +0.0307      F      F    ✓
+    37  D37_gfm_60pct                  38.7     +0.0308      F      F    ✓
+    38  D38_gfm_65pct                  40.3     +0.0308      F      F    ✓
+    39  D39_gfm_70pct                  41.8     +0.0308      F      F    ✓
+    40  D40_gfm_80pct                  44.7     +0.0309      F      F    ✓
+
+  Agreement rate: 40/40 = 100.0%  (pass threshold ≥ 85%)
+
+────────────────────────────────────────────────────────────────────────
+SECTION 3  GROUP SUMMARY
+────────────────────────────────────────────────────────────────────────
+
+  Group A — GFL low comp  (0–20%)
+    Scenarios: 10   Expected SSCI: 0   Detected SSCI: 0   Agree: 10/10
+  Group B — GFL med comp (25–50%)
+    Scenarios: 10   Expected SSCI: 2   Detected SSCI: 2   Agree: 10/10
+  Group C — GFL high comp (55–80%)
+    Scenarios: 10   Expected SSCI: 10   Detected SSCI: 10   Agree: 10/10
+  Group D — GFM any comp
+    Scenarios: 10   Expected SSCI: 0   Detected SSCI: 0   Agree: 10/10
+
+────────────────────────────────────────────────────────────────────────
+SECTION 4  SSCI DETECTOR PERFORMANCE (WP 75.1)
+────────────────────────────────────────────────────────────────────────
+
+  Algorithm: 5-cycle rolling FFT buffer (100 ms fill at 1 kHz)
+  FFT bin spacing: 10 Hz (bins at 10, 20, 30, 40 Hz in SS band)
+  Growth rate: log-linear regression on peak magnitude history
+
+  Test 1 — Growing oscillation (λ=+20 Np/s, f_ss=22 Hz):
+    Alarm at 160 ms  (buffer fill 100 ms + detection 60 ms)
+    Risk level: TRIP  [PASS — threshold ≤200 ms]
+
+  Test 2 — Pure 50 Hz balanced signal (500 ms):
+    No false alarm triggered  [PASS]
+
+  Test 8 — Decaying oscillation (λ=–15 Np/s, A₀=0.20 pu):
+    No alarm triggered  [PASS]
+
+────────────────────────────────────────────────────────────────────────
+CONCLUSION
+────────────────────────────────────────────────────────────────────────
+
+  All 8 unit tests PASS.
+  Impedance scanner agreement: 100.0% (≥85% required).
+  GFM converter correctly identified as immune to SSCI.
+  SSCIDetector response time: 160 ms (100 ms buffer + 60 ms).
+  TR-75 status: COMPLETE
+
+========================================================================
