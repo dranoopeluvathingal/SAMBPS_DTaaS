@@ -1,0 +1,64 @@
+TR-69 TYPE-4 FULL-CONVERTER WIND TURBINE MODEL — COMPLETION REPORT
+====================================================================
+Date: 2026-04-17
+Status: COMPLETE  (4/4 WPs done, 7/7 tests passing, agree_rate = 1.00)
+
+DELIVERABLES
+------------
+models/type4_wind_model.py
+  • Type4WindConfig dataclass — 22 parameters; 3 presets:
+      vestas_v164_8mw        (8 MW, GFL, IEC FRT)
+      siemens_sg14           (14 MW, GFM/VSM, AEMO FRT)
+      goldwind_gwh252_16mw   (16 MW, GFL, NERC FRT)
+  • Type4WindModel — 6-state nonlinear model:
+      States: P_gen, Q_gen, V_dc_link, I_grid_mag, omega_rotor, pitch_angle
+      Dynamics: Cp(λ,β) Heier polynomial, MPPT TSR tracking,
+                pitch PI controller (rate/angle limits),
+                DC link capacitor, grid-converter lag,
+                GFM/VSM swing equation (virtual inertia H + damping D)
+      FRT: delegates to wind_frt_lib.frt_reactive_injection()
+
+models/wind_frt_lib.py
+  • FRTEnvelope dataclass with LVRT/HVRT curves, reactive injection slopes
+  • Three grid-code implementations:
+      IEC 61400-27-1   : k_q=2.0, dead-band=0.05 pu, 0V for 140 ms
+      AEMO NER S5.2.5.14: k_q=4.0, dead-band=0.00 pu, 0V for 175 ms (most aggressive)
+      NERC PRC-024-2   : k_q=1.5, dead-band=0.10 pu, 0V for 160 ms
+
+models/wind_scenario_lib.py
+  • WindScenarioLibrary: 150 scenarios across 5 groups
+      Group A (1–30)  : MPPT below rated (3 turbines × 10 wind speeds)
+      Group B (31–60) : Pitch control at/above rated
+      Group C (61–90) : FRT — IEC/AEMO/NERC × 3 turbines × 3 dip depths
+      Group D (91–120): GFM/VSM inertia response (frequency steps)
+      Group E (121–150): Current limiting + post-fault recovery
+
+VALIDATION RESULTS
+------------------
+Unit tests (6/6 PASS):
+  test_mppt                  Cp ≥ 85% Cp_max at 8 m/s; pitch < 5° below rated
+  test_pitch_control         P_gen ≤ 1.05 pu at 18 m/s; pitch > 3° confirmed
+  test_frt_injection         IEC/AEMO/NERC reactive injection verified;
+                             AEMO ≥ NERC (k_q=4 vs 1.5); envelope in/out tests
+  test_vsm_inertia           ROCOF < 0.30 pu/s with H=6 s under 20% V disturbance
+  test_current_limit         I_grid ≤ i_max_trans_pu during 150 ms fault (GFL+GFM)
+  test_post_fault_recovery   P_gen ≥ 80% of pre-fault within 3 s
+
+Integration test (1/1 PASS):
+  20-scenario coverage       Agreement rate: 100% (20/20)
+  (PASS threshold: ≥ 92%)   Near-cut-in MPPT correctly accepts near-zero P
+
+DESIGN NOTES
+------------
+• GFM/VSM swing equation: M×dω/dt = P_mech – P_elec – D×Δω with M=2H.
+  This gives the Siemens SG14 (H=6 s, D=25) a ROCOF of ≈0.017 pu/s for
+  a 0.2 pu disturbance — comparable to a conventional SG with H=6 s.
+
+• FRT priority: during deep LVRT (V<0.2 pu) reactive current has priority
+  over active power (IEEE 1547-2018 §6.5.2 / IEC 61400-27-1 Annex E).
+
+• Cp polynomial: Heier 6-parameter polynomial (c1..c6), numerically validated
+  against GE-Wind Cp tables; Cp_max ≈ 0.48 at λ_opt ≈ 8.1, β=0°.
+
+• DC link: simple capacitor balance I_gen_dc – I_grid_dc with C_dc in mF.
+  Vestas 50 mF, Siemens 80 mF, Goldwind 100 mF — sized for 10% ΔV at rated P.
