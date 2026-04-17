@@ -1,0 +1,66 @@
+========================================================================
+TR-81  GMD / GIC PROTECTION — DIGITAL TWIN VALIDATION REPORT
+========================================================================
+
+────────────────────────────────────────────────────────────────────────
+WP 81.1  GIC FLOW MODEL  (models/gic_model.py)
+────────────────────────────────────────────────────────────────────────
+
+Method: Lehtinen-Pirjola (1985)
+  (Yn + Ye) · V = Je
+  I_GIC_k = Ye_kk · V_k   [quasi-DC neutral current]
+
+3-bus LP benchmark (R_line=R_earth=2Ω each):
+  Bus           x_km    y_km    GIC E_x=1[A]    GIC E_y=1[A]
+  --------------------------------------------------------
+  Bus1             0       0           25.00           37.50
+  Bus2             0     200           25.00          -37.50
+  Bus3           200     100          -50.00            0.00
+  KCL check (sum): 0.000000 A ≈ 0  [PASS]
+
+5-bus 400kV network — GIC vs E-field intensity:
+    E [V/km]   Max GIC [A]     Sum [A]
+  ------------------------------------
+         0.5          28.9     -0.0000
+         1.0          57.7     -0.0000
+         2.0         115.5     -0.0000
+         5.0         288.7     -0.0000
+        10.0         577.3     -0.0000
+
+────────────────────────────────────────────────────────────────────────
+WP 81.2  TRANSFORMER THERMAL MODEL  (estimation/transformer_thermal.py)
+────────────────────────────────────────────────────────────────────────
+
+Standard: IEC 60076-7:2018 (Thermal Model 1)
+  Top-oil:  τ_TO·dΔΘ_TO/dt = ΔΘ_TO_R·[(K²+R)/(1+R)]^n_TO − ΔΘ_TO
+  Hot-spot: τ_HS·dΔΘ_HS/dt = ΔΘ_HS_R·K^(2n_HS) − ΔΘ_HS
+  GIC:      K_eff = sqrt(K² + (I_GIC/I_rated × k_gic)²)
+
+Alarm levels (IEEE C57.91 / IEC 60076-7):
+  NORMAL   : Θ_HS < 98°C
+  ELEVATED : 98°C ≤ Θ_HS < 120°C
+  CRITICAL : 120°C ≤ Θ_HS < 140°C
+  TRIP     : Θ_HS ≥ 140°C
+
+Hot-spot at steady state (K=1, Θ_amb=25°C) vs GIC:
+   I_GIC [A]   Θ_HS [°C]       Alarm
+  ----------------------------------
+           0        91.0      NORMAL
+          50        91.3      NORMAL
+         100        92.3      NORMAL
+         200        96.3      NORMAL
+         350       107.8    ELEVATED
+         500       127.0    CRITICAL
+
+────────────────────────────────────────────────────────────────────────
+CONCLUSION
+────────────────────────────────────────────────────────────────────────
+
+  11 unit tests PASS.
+  LP GIC solver: exact KCL (sum=0), linear E-scaling confirmed.
+  3-bus benchmark: I_GIC consistent with analytical result.
+  Thermal model: Euler tracking < 5°C error (vs analytical).
+  End-to-end: LP GIC → thermal model pipeline validated.
+  TR-81 status: COMPLETE
+
+========================================================================
