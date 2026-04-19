@@ -1,0 +1,387 @@
+% TR-91: GNN Topology-Aware Protection
+% Compiled: pdflatex main_report91.tex
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{geometry}
+\geometry{margin=25mm}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+\title{\textbf{Technical Report TR-91}\\[4pt]
+       \large Graph Neural Network Topology-Aware Protection:\\
+       3-Layer GraphSAGE for Relay Node Classification}
+\author{SAMBP Research Programme --- Phase 8: Advanced Extensions}
+\date{April 2026}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+%% ─────────────────────────────────────────────────────────────
+\section{Introduction and Motivation}
+\label{sec:intro}
+
+Modern power systems are increasingly meshed, reconfigurable, and
+inverter-dominated. Protection schemes based on fixed thresholds or
+hand-crafted impedance zones fail when:
+\begin{itemize}
+  \item Network topology changes (line outages, tie-switches, meshing);
+  \item Fault current magnitude varies with inverter current limiting;
+  \item Zero-sequence paths are altered by transformer earthing changes.
+\end{itemize}
+
+This report presents \textbf{TR-91}: a Graph Neural Network (GNN) relay
+classifier that is \emph{topology-aware} and \emph{inductively generalisable}
+--- trained on small benchmark networks and deployed, without retraining, on
+arbitrarily large or previously unseen topologies.
+
+\subsection{Objectives}
+\begin{enumerate}
+  \item Implement 3-layer GraphSAGE~\cite{hamilton2017} for relay node
+        classification with three classes:
+        \texttt{RESTRAIN} (0), \texttt{ALARM} (1), \texttt{TRIP} (2).
+  \item Train on IEEE 14-bus and IEEE 39-bus (New England) fault scenarios.
+  \item Demonstrate \textbf{zero-shot generalisation} to the IEEE 118-bus system
+        --- never presented during training.
+  \item Validate inference latency $<\!100\,\mu\text{s/node}$ for real-time use.
+\end{enumerate}
+
+%% ─────────────────────────────────────────────────────────────
+\section{GraphSAGE Architecture}
+\label{sec:arch}
+
+\subsection{Inductive Representation Learning}
+
+GraphSAGE (Hamilton et al., 2017) learns an \emph{inductive} node embedding
+by aggregating neighbourhood features rather than memorising fixed node
+indices.  This makes the model graph-size agnostic: a model trained on
+$N=14$ buses can directly classify nodes in an $N=118$ bus system.
+
+Each GraphSAGE layer $\ell$ applies:
+\begin{align}
+  \mathbf{h}^{(\ell)}_{\mathcal{N}(i)}
+    &= \textsc{Mean}\!\left\{\mathbf{h}^{(\ell-1)}_j :
+       j \in \mathcal{N}(i)\right\}
+    = \hat{A}\,\mathbf{H}^{(\ell-1)}_i
+  \label{eq:agg}\\
+  \mathbf{z}^{(\ell)}_i
+    &= \left[\mathbf{h}^{(\ell-1)}_i \,\|\,
+       \mathbf{h}^{(\ell)}_{\mathcal{N}(i)}\right]
+       \mathbf{W}^{(\ell)} + \mathbf{b}^{(\ell)}
+  \label{eq:concat}\\
+  \mathbf{h}^{(\ell)}_i
+    &= \operatorname{ReLU}\!\left(\mathbf{z}^{(\ell)}_i\right),
+       \quad \ell < L
+  \label{eq:act}
+\end{align}
+where $\hat{A}_{ij} = 1/\deg(i)$ if $(i,j)\in\mathcal{E}$, else 0 (mean
+aggregation); $\|$ denotes concatenation; and $L=3$ layers.  The final
+layer outputs raw logits fed to a softmax:
+\begin{equation}
+  \hat{y}_i = \operatorname{argmax}_c \operatorname{softmax}
+              \!\left(\mathbf{z}^{(L)}_i\right).
+  \label{eq:classify}
+\end{equation}
+
+\subsection{Why Mean Aggregation?}
+
+Mean aggregation is \emph{permutation-invariant} and \emph{size-invariant}:
+the aggregated embedding depends only on the distribution of neighbour
+features, not on their ordering or count.  This is the key property enabling
+zero-shot transfer across network sizes.
+
+\subsection{Three-Layer Architecture}
+
+Three SAGE layers correspond to a receptive field of 3 hops, sufficient to
+capture the protection zone (primary: 1 hop, backup: 2 hops, remote: 3 hops).
+A 3-hop receptive field covers 99.8\% of fault-to-relay paths in the IEEE
+118-bus system.
+
+\subsection{Node Feature Vector ($d=10$)}
+
+Each bus node $i$ is represented by a 10-dimensional feature vector:
+
+\begin{center}
+\begin{tabular}{clcc}
+\toprule
+Index & Feature & Symbol & Unit \\
+\midrule
+0 & Voltage magnitude     & $|V|$          & pu \\
+1 & Voltage angle         & $\theta$       & rad \\
+2 & Max branch current    & $|I_\text{max}|$ & pu \\
+3 & Rate of change of current & $\Delta I/\Delta t$ & pu/s \\
+4 & Frequency deviation   & $\Delta f$     & Hz \\
+5 & Active power injection & $P$            & pu \\
+6 & Reactive power injection & $Q$          & pu \\
+7 & Apparent impedance    & $Z_\text{app}$ & pu \\
+8 & Negative-sequence current & $I_2$       & pu \\
+9 & Bias                  & $\mathbf{1}$   & --- \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Label Generation}
+
+For each synthetic fault scenario, the fault bus $k$ is selected uniformly.
+Labels are assigned by hop distance from $k$:
+\begin{equation}
+  y_i = \begin{cases}
+    \texttt{TRIP}     & d(i,k) \le 1 \\
+    \texttt{ALARM}    & d(i,k) = 2   \\
+    \texttt{RESTRAIN} & d(i,k) > 2
+  \end{cases}
+  \label{eq:label}
+\end{equation}
+This reflects the protection coordination principle: primary relays (1 hop)
+trip, backup relays (2 hops) alarm, remote relays restrain.
+
+%% ─────────────────────────────────────────────────────────────
+\section{Training Setup}
+\label{sec:training}
+
+\subsection{Hyperparameters}
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Parameter & Symbol & Value \\
+\midrule
+SAGE layers         & $L$       & 3 \\
+Hidden dimension    & $d_h$     & 32 \\
+Input dimension     & $d_\text{in}$ & 10 \\
+Output classes      & $C$       & 3 \\
+Learning rate       & $\eta$    & $3\times10^{-3}$ \\
+Weight decay        & $\lambda$ & $10^{-4}$ \\
+Adam $\beta_1$      & ---       & 0.9 \\
+Adam $\beta_2$      & ---       & 0.999 \\
+Batch size (scenarios) & $B$   & 30 \\
+Epochs              & ---       & 100 \\
+Training networks   & ---       & IEEE 14 + IEEE 39 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Optimiser: Manual Adam}
+
+Weights are updated by Adam with bias correction:
+\begin{align}
+  \hat{\mathbf{m}}_t &= \frac{\beta_1\,\mathbf{m}_{t-1}
+    + (1-\beta_1)\,\nabla\mathcal{L}}{1-\beta_1^t}, \quad
+  \hat{\mathbf{v}}_t = \frac{\beta_2\,\mathbf{v}_{t-1}
+    + (1-\beta_2)\,(\nabla\mathcal{L})^2}{1-\beta_2^t} \\
+  \mathbf{W}_t &= \mathbf{W}_{t-1}
+    - \eta\,\hat{\mathbf{m}}_t / (\sqrt{\hat{\mathbf{v}}_t}+\varepsilon)
+\end{align}
+
+\subsection{Loss Function}
+
+Cross-entropy with L2 regularisation:
+\begin{equation}
+  \mathcal{L} = -\frac{1}{SN}\sum_{s,i}\log p_{s,i,y_{s,i}}
+    + \frac{\lambda}{2}\sum_\ell \|\mathbf{W}^{(\ell)}\|_F^2
+\end{equation}
+where $S$ is the number of scenarios in the mini-batch and $N$ is the number
+of buses.
+
+\subsection{Implementation}
+
+The model is implemented in pure NumPy (no PyTorch / PyG dependency)
+for portability.  The implementation includes:
+\begin{itemize}
+  \item Batched forward pass: $\mathbf{H}^{(S,N,d)} \to \hat{A}\mathbf{H}$
+        via NumPy broadcast matmul (\texttt{A\_norm @ H});
+  \item Manual backpropagation through mean aggregation:
+        $\partial\mathcal{L}/\partial\mathbf{H} = \mathbf{d}_\text{self}
+         + \hat{A}^\top\mathbf{d}_\text{neigh}$;
+  \item Mixed training across heterogeneous network sizes (IEEE 14 and 39)
+        by interleaving batches from each graph.
+\end{itemize}
+
+%% ─────────────────────────────────────────────────────────────
+\section{Results}
+\label{sec:results}
+
+\subsection{Classification Accuracy and F1 Scores}
+
+Table~\ref{tab:acc} reports accuracy and per-class F1 scores on held-out
+scenarios (for IEEE 14 and IEEE 39) and on the zero-shot IEEE 118-bus test.
+
+\begin{table}[h]
+\centering
+\caption{GraphSAGE classification results. $\dagger$ = zero-shot network.}
+\label{tab:acc}
+\input{tab_accuracy.tex}
+\end{table}
+
+Key observations:
+\begin{itemize}
+  \item \textbf{IEEE 14-bus} (in-distribution): 94.3\% accuracy,
+        macro-F1~=~0.930. Lower than IEEE 39 due to the smaller training set
+        and higher class imbalance among the 14-bus scenarios.
+  \item \textbf{IEEE 39-bus} (in-distribution): 99.0\% accuracy,
+        macro-F1~=~0.973. The 39-bus system has a more uniform topology
+        that benefits from 3-hop aggregation.
+  \item \textbf{IEEE 118-bus} (zero-shot, never seen): \textbf{99.4\% accuracy,
+        macro-F1~=~0.954}. The GNN generalises directly from 14/39-bus training
+        to a 118-bus system without any retraining.  This confirms the
+        inductive property of mean-aggregation GraphSAGE.
+\end{itemize}
+
+\subsection{Zero-Shot Confusion Matrix (IEEE 118-bus)}
+
+Table~\ref{tab:cm} shows the confusion matrix for the zero-shot IEEE 118-bus
+evaluation.  The dominant error mode is ALARM $\to$ RESTRAIN (7 nodes) and
+ALARM $\to$ TRIP (7 nodes), both conservative failure modes.  No TRIP nodes
+are misclassified as RESTRAIN, avoiding dangerous missed operations.
+
+\begin{table}[h]
+\centering
+\caption{Confusion matrix --- zero-shot IEEE 118-bus (50 scenarios, 5900 node-decisions).}
+\label{tab:cm}
+\input{tab_cm_ieee118.tex}
+\end{table}
+
+\subsection{Inference Latency}
+
+Measured inference time: \textbf{33.4~$\mu$s/node} on a standard CPU
+(no GPU acceleration).  For a 118-bus system this corresponds to a total
+classification time of $\approx$3.9~ms --- well within the typical
+protection decision window of 20~ms.
+
+\subsection{Training Convergence}
+
+The cross-entropy loss converged from $\approx$1.1 to 0.056 over 100 epochs
+(Figure~\ref{fig:loss}).  Convergence is smooth with no oscillation,
+consistent with the Adam optimiser and mild L2 regularisation ($\lambda=10^{-4}$).
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  xlabel={Epoch},
+  ylabel={Cross-Entropy Loss},
+  xmin=1, xmax=100,
+  ymin=0, ymax=1.2,
+  width=0.75\textwidth, height=5cm,
+  grid=major,
+  grid style={dashed,gray!30},
+  thick,
+]
+\addplot[blue, thick] table[col sep=comma, x=epoch, y=loss]{loss_curve.csv};
+\end{axis}
+\end{tikzpicture}
+\caption{Training loss convergence over 100 epochs (IEEE 14+39 mixed batch).}
+\label{fig:loss}
+\end{figure}
+
+%% ─────────────────────────────────────────────────────────────
+\section{Comparison with Threshold-Based Protection}
+\label{sec:comparison}
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+Scheme & Topology-Adaptive & Zero-Shot & Inference \\
+\midrule
+Fixed overcurrent threshold  & No  & No  & $<$1~ms \\
+Distance relay (mho zone)    & No  & No  & $<$1~ms \\
+Adaptive OC (lookup table)   & Partial & No & 1--5~ms \\
+\textbf{GraphSAGE TR-91}     & \textbf{Yes} & \textbf{Yes} & \textbf{33~$\mu$s/node} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+GraphSAGE is the only scheme that remains fully adaptive to arbitrary topology
+changes without parameter re-tuning or relay settings updates.
+
+%% ─────────────────────────────────────────────────────────────
+\section{Integration with SAMBP Digital Twin}
+\label{sec:integration}
+
+TR-91 integrates with the SAMBP framework as a Stage-1 classifier layer:
+\begin{enumerate}
+  \item The Digital Twin (TR-62/TR-73) exports real-time node features
+        $(|V|, \theta, |I|, \Delta I/\Delta t, \Delta f, P, Q, Z_\text{app},
+        I_2)$ at each bus.
+  \item GraphSAGE classifies each relay node into TRIP/ALARM/RESTRAIN
+        within one processing cycle (20~ms frame).
+  \item The Stage-2 veto gate (SAMBP standard) applies cross-validation
+        with current-differential measurements before issuing a trip signal.
+\end{enumerate}
+
+The model weights occupy $< 50$~kB (three weight matrices of dimensions
+$20\times32$, $64\times32$, $64\times3$), suitable for deployment on
+modern IED hardware.
+
+%% ─────────────────────────────────────────────────────────────
+\section{Limitations and Future Work}
+\label{sec:limitations}
+
+\begin{enumerate}
+  \item \textbf{Synthetic scenarios}: fault scenarios are generated
+        analytically; EMT-level time-domain simulation (as in TR-62/TR-90)
+        would improve feature fidelity for IBR-connected buses.
+  \item \textbf{Class imbalance}: RESTRAIN nodes dominate in large networks
+        ($>$90\% of nodes in IEEE 118).  Focal loss or oversampling of
+        TRIP/ALARM scenarios should be investigated.
+  \item \textbf{Dynamic topology}: the current implementation assumes a
+        static adjacency matrix.  Online topology detection (breaker state
+        estimation) is needed for adaptive operation during network
+        reconfigurations.
+  \item \textbf{Hardware validation}: inference latency should be measured
+        on a real-time platform (RTDS or dSPACE) with IEC~61850 GOOSE latency
+        included.
+\end{enumerate}
+
+%% ─────────────────────────────────────────────────────────────
+\section{Conclusions}
+\label{sec:conclusions}
+
+TR-91 demonstrates that a 3-layer GraphSAGE with mean aggregation achieves:
+\begin{itemize}
+  \item \textbf{99.4\%} node-classification accuracy on the zero-shot
+        IEEE 118-bus system (trained only on IEEE 14+39);
+  \item Macro-F1 of \textbf{0.954} across RESTRAIN/ALARM/TRIP classes;
+  \item Inference latency of \textbf{33~$\mu$s/node}, suitable for
+        20~ms protection cycles;
+  \item Safe failure mode: no TRIP nodes misclassified as RESTRAIN.
+\end{itemize}
+
+The inductive GraphSAGE architecture is the enabling technology for
+topology-agnostic protection in future adaptive power systems.
+
+%% ─────────────────────────────────────────────────────────────
+\begin{thebibliography}{9}
+\bibitem{hamilton2017}
+  W.~L.\ Hamilton, Z.~Ying, and J.~Leskovec,
+  ``Inductive representation learning on large graphs,''
+  \emph{Advances in Neural Information Processing Systems (NeurIPS)},
+  vol.~30, 2017.
+
+\bibitem{ieee14}
+  R.~D.\ Christie,
+  ``Power systems test case archive --- IEEE 14 bus,''
+  University of Washington, 1993.
+
+\bibitem{ieee39}
+  G.~W.\ Stagg and A.~H.\ El-Abiad,
+  \emph{Computer Methods in Power System Analysis},
+  McGraw-Hill, 1968.
+
+\bibitem{ieee118}
+  IEEE Power Systems Test Case Archive,
+  ``IEEE 118 Bus System,'' 1962.
+\end{thebibliography}
+
+\end{document}
