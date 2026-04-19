@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAMBP Digital Twin Protection Lab</title>
+<style>
+  :root {
+    --navy:   #0b1628;
+    --navy2:  #112240;
+    --blue:   #1a6fdf;
+    --cyan:   #38bdf8;
+    --amber:  #f59e0b;
+    --green:  #22c55e;
+    --red:    #ef4444;
+    --slate:  #94a3b8;
+    --light:  #e2e8f0;
+    --white:  #f8fafc;
+    --card:   #162032;
+    --border: #1e3050;
+    --font:   -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--navy);
+    color: var(--light);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.65;
+  }
+  a { color: var(--cyan); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(11,22,40,0.92);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2.5rem;
+    height: 56px;
+  }
+  .nav-brand {
+    font-weight: 700; font-size: 1rem; color: var(--white);
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  .nav-brand span { color: var(--cyan); }
+  .nav-links { display: flex; gap: 2rem; }
+  .nav-links a { color: var(--slate); font-size: 0.875rem; font-weight: 500; }
+  .nav-links a:hover { color: var(--white); text-decoration: none; }
+  .nav-badge {
+    background: var(--blue); color: #fff;
+    font-size: 0.7rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── LAYOUT ── */
+  section { padding: 5rem 2rem; }
+  .container { max-width: 1080px; margin: 0 auto; }
+  .section-label {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--cyan);
+    margin-bottom: 0.6rem;
+  }
+  h1 { font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 800; line-height: 1.15; color: var(--white); }
+  h2 { font-size: clamp(1.4rem, 2.5vw, 2rem); font-weight: 700; color: var(--white); margin-bottom: 0.5rem; }
+  h3 { font-size: 1.05rem; font-weight: 700; color: var(--white); margin-bottom: 0.3rem; }
+  p { color: var(--slate); }
+  .accent { color: var(--cyan); }
+  .amber  { color: var(--amber); }
+  .green  { color: var(--green); }
+
+  /* ── HERO ── */
+  #hero {
+    min-height: 100vh;
+    display: flex; align-items: center;
+    padding-top: 80px;
+    background: radial-gradient(ellipse 80% 60% at 60% 40%, rgba(26,111,223,0.12) 0%, transparent 70%);
+  }
+  .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  .hero-kicker {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.3);
+    border-radius: 20px; padding: 4px 14px;
+    font-size: 0.75rem; font-weight: 600; color: var(--cyan);
+    margin-bottom: 1.2rem;
+  }
+  .hero-kicker::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+  .hero-sub {
+    font-size: 1.05rem; color: var(--slate); margin: 1.2rem 0 2rem;
+    max-width: 480px;
+  }
+  .btn-group { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .btn-primary {
+    background: var(--blue); color: #fff;
+    padding: 10px 24px; border-radius: 6px;
+    font-weight: 600; font-size: 0.875rem;
+    transition: background 0.2s;
+  }
+  .btn-primary:hover { background: #1558b8; text-decoration: none; }
+  .btn-outline {
+    border: 1px solid var(--border); color: var(--light);
+    padding: 10px 24px; border-radius: 6px;
+    font-weight: 600; font-size: 0.875rem;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-outline:hover { border-color: var(--cyan); color: var(--cyan); text-decoration: none; }
+
+  .hero-stats { display: flex; gap: 2rem; margin-top: 2.5rem; }
+  .stat { }
+  .stat-num { font-size: 1.8rem; font-weight: 800; color: var(--white); }
+  .stat-label { font-size: 0.72rem; color: var(--slate); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.5rem;
+  }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+  .card-icon { font-size: 1.6rem; margin-bottom: 0.7rem; }
+
+  /* ── CHALLENGE ── */
+  #challenge { background: var(--navy2); }
+  .challenge-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
+
+  /* ── FRAMEWORK ── */
+  .pipeline-steps { display: flex; gap: 0; margin-top: 2rem; align-items: stretch; }
+  .pipeline-step {
+    flex: 1;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.2rem 1rem;
+    text-align: center; position: relative;
+  }
+  .pipeline-step + .pipeline-step::before {
+    content: '→';
+    position: absolute; left: -16px; top: 50%; transform: translateY(-50%);
+    color: var(--cyan); font-size: 1.2rem;
+    background: var(--navy); padding: 0 2px;
+    z-index: 1;
+  }
+  .pipeline-step:not(:last-child) { margin-right: 16px; }
+  .step-num {
+    display: inline-block;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--blue); color: #fff;
+    font-size: 0.7rem; font-weight: 700;
+    line-height: 24px; text-align: center;
+    margin-bottom: 0.5rem;
+  }
+  .step-title { font-size: 0.8rem; font-weight: 700; color: var(--white); margin-bottom: 0.2rem; }
+  .step-desc { font-size: 0.72rem; color: var(--slate); }
+  .step-math { font-size: 0.68rem; color: var(--cyan); margin-top: 0.4rem; font-style: italic; }
+
+  /* ── COVERAGE ── */
+  #coverage { background: var(--navy2); }
+  .coverage-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start; margin-top: 2rem; }
+
+  /* ── TRS ── */
+  .tr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.8rem; margin-top: 2rem; }
+  .tr-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem 1.2rem;
+    display: flex; gap: 1rem; align-items: flex-start;
+  }
+  .tr-num {
+    min-width: 52px; text-align: center;
+    font-size: 0.7rem; font-weight: 800; color: var(--amber);
+    background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2);
+    border-radius: 5px; padding: 3px 6px; line-height: 1.4;
+    white-space: nowrap;
+  }
+  .tr-info h4 { font-size: 0.82rem; font-weight: 700; color: var(--white); margin-bottom: 0.15rem; }
+  .tr-info p { font-size: 0.72rem; color: var(--slate); }
+  .tr-status {
+    margin-left: auto; font-size: 0.65rem; font-weight: 700;
+    padding: 2px 7px; border-radius: 10px; white-space: nowrap;
+  }
+  .status-done { background: rgba(34,197,94,0.15); color: var(--green); }
+  .status-active { background: rgba(56,189,248,0.12); color: var(--cyan); }
+  .status-planned { background: rgba(148,163,184,0.12); color: var(--slate); }
+
+  /* ── GAPS ── */
+  .gap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-top: 2rem; }
+  .gap-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.1rem;
+  }
+  .gap-tag {
+    font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; padding: 2px 8px; border-radius: 10px;
+    display: inline-block; margin-bottom: 0.5rem;
+  }
+  .tier1 { background: rgba(239,68,68,0.15); color: #f87171; }
+  .tier2 { background: rgba(245,158,11,0.15); color: var(--amber); }
+  .tier3 { background: rgba(148,163,184,0.12); color: var(--slate); }
+
+  /* ── CONSORTIUM ── */
+  #consortium { background: var(--navy2); }
+  .value-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin-top: 2rem; }
+  .value-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.5rem;
+    border-top: 3px solid var(--blue);
+  }
+  .value-card.amber-top { border-top-color: var(--amber); }
+  .value-card.green-top { border-top-color: var(--green); }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem;
+    text-align: center;
+    color: var(--slate);
+    font-size: 0.8rem;
+  }
+
+  /* ── DIVIDERS ── */
+  .divider { width: 40px; height: 3px; background: var(--blue); border-radius: 2px; margin: 1rem 0 1.5rem; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .hero-grid, .challenge-grid, .coverage-wrap, .value-grid { grid-template-columns: 1fr; }
+    .pipeline-steps { flex-direction: column; }
+    .pipeline-step + .pipeline-step::before { content: '↓'; left: 50%; top: -14px; transform: translateX(-50%); }
+    .pipeline-step:not(:last-child) { margin-right: 0; margin-bottom: 14px; }
+    .nav-links { display: none; }
+  }
+
+  /* ── PULSE DOT ── */
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .pulse { animation: pulse 2s infinite; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════ NAV -->
+<nav>
+  <div class="nav-brand">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#38bdf8" stroke-width="1.5"/>
+      <path d="M6 11h10M11 6v10" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="11" cy="11" r="3" fill="#1a6fdf"/>
+    </svg>
+    SAMBP <span>Digital Twin</span> Lab
+    <span class="nav-badge">IIT Madras</span>
+  </div>
+  <div class="nav-links">
+    <a href="#challenge">Challenge</a>
+    <a href="#framework">Framework</a>
+    <a href="#coverage">Coverage</a>
+    <a href="#reports">Reports</a>
+    <a href="#gaps">Roadmap</a>
+    <a href="#consortium">Consortium</a>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════ HERO -->
+<section id="hero">
+<div class="container">
+  <div class="hero-grid">
+    <div>
+      <div class="hero-kicker">
+        <span class="pulse">Active Research Programme</span>
+      </div>
+      <h1>Physics-Informed Protection for <span class="accent">IBR-Dominated</span> Microgrids</h1>
+      <p class="hero-sub">
+        SAMBP delivers a unified adaptive relay framework — differential, distance, and overcurrent —
+        with inverse source estimation and confidence-gated adaptation verified across 15,000-trial
+        Monte Carlo studies.
+      </p>
+      <div class="btn-group">
+        <a href="#framework" class="btn-primary">Explore the Framework</a>
+        <a href="#consortium" class="btn-outline">Consortium Opportunities</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat">
+          <div class="stat-num">4</div>
+          <div class="stat-label">Relay Families</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">67+</div>
+          <div class="stat-label">Technical Reports</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">268</div>
+          <div class="stat-label">Simulation Scripts</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num accent">∞</div>
+          <div class="stat-label">Open for Collaboration</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HERO SVG — Microgrid topology -->
+    <div>
+      <svg viewBox="0 0 440 360" width="100%" style="max-width:440px;display:block;margin:auto;">
+        <defs>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <marker id="arr" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#38bdf8" opacity="0.7"/>
+          </marker>
+        </defs>
+
+        <!-- Background grid -->
+        <rect width="440" height="360" rx="12" fill="#0e1d35" stroke="#1e3050" stroke-width="1"/>
+        <g stroke="#1e3050" stroke-width="0.5" opacity="0.4">
+          <line x1="0" y1="60" x2="440" y2="60"/>
+          <line x1="0" y1="120" x2="440" y2="120"/>
+          <line x1="0" y1="180" x2="440" y2="180"/>
+          <line x1="0" y1="240" x2="440" y2="240"/>
+          <line x1="0" y1="300" x2="440" y2="300"/>
+          <line x1="88" y1="0" x2="88" y2="360"/>
+          <line x1="176" y1="0" x2="176" y2="360"/>
+          <line x1="264" y1="0" x2="264" y2="360"/>
+          <line x1="352" y1="0" x2="352" y2="360"/>
+        </g>
+
+        <!-- GRID label -->
+        <rect x="16" y="22" width="60" height="26" rx="5" fill="#112240" stroke="#1a6fdf" stroke-width="1"/>
+        <text x="46" y="39" text-anchor="middle" font-size="9" font-weight="700" fill="#38bdf8">UTILITY GRID</text>
+
+        <!-- Transmission line from grid -->
+        <line x1="76" y1="35" x2="200" y2="35" stroke="#38bdf8" stroke-width="1.5" opacity="0.6" stroke-dasharray="4,3"/>
+
+        <!-- Main Bus A -->
+        <rect x="190" y="20" width="120" height="30" rx="5" fill="#112240" stroke="#1a6fdf" stroke-width="1.5"/>
+        <text x="250" y="39" text-anchor="middle" font-size="9" font-weight="700" fill="#e2e8f0">BUS A (PCC)</text>
+
+        <!-- 87B badge -->
+        <circle cx="318" cy="35" r="10" fill="#1a6fdf" opacity="0.9"/>
+        <text x="318" y="39" text-anchor="middle" font-size="7" font-weight="800" fill="#fff">87B</text>
+
+        <!-- Lines from Bus A -->
+        <!-- Down to transformer -->
+        <line x1="250" y1="50" x2="250" y2="100" stroke="#38bdf8" stroke-width="1.5" opacity="0.7"/>
+        <!-- Right to Bus B via 87L -->
+        <line x1="310" y1="35" x2="420" y2="35" stroke="#38bdf8" stroke-width="1.5" opacity="0.7"/>
+
+        <!-- 87L badge on line -->
+        <rect x="338" y="22" width="26" height="16" rx="4" fill="#1a6fdf"/>
+        <text x="351" y="33" text-anchor="middle" font-size="7" font-weight="800" fill="#fff">87L</text>
+
+        <!-- Bus B (right) -->
+        <rect x="380" y="20" width="44" height="30" rx="5" fill="#112240" stroke="#1a6fdf" stroke-width="1.5"/>
+        <text x="402" y="32" text-anchor="middle" font-size="8" font-weight="700" fill="#e2e8f0">BUS B</text>
+        <text x="402" y="44" text-anchor="middle" font-size="7" fill="#94a3b8">MG bus</text>
+
+        <!-- Transformer symbol -->
+        <circle cx="250" cy="112" r="12" fill="none" stroke="#f59e0b" stroke-width="1.5"/>
+        <circle cx="250" cy="130" r="12" fill="none" stroke="#f59e0b" stroke-width="1.5"/>
+        <rect x="234" y="100" width="32" height="44" rx="3" fill="none" stroke="#f59e0b" stroke-width="1" stroke-dasharray="2,2"/>
+        <text x="282" y="118" font-size="8" fill="#f59e0b" font-weight="700">Yd11</text>
+        <!-- 87T badge -->
+        <circle cx="228" cy="118" r="9" fill="#f59e0b"/>
+        <text x="228" y="122" text-anchor="middle" font-size="7" font-weight="800" fill="#0b1628">87T</text>
+
+        <!-- Line down from transformer to Bus C -->
+        <line x1="250" y1="142" x2="250" y2="180" stroke="#38bdf8" stroke-width="1.5" opacity="0.7"/>
+
+        <!-- Bus C (MV) -->
+        <rect x="185" y="180" width="130" height="28" rx="5" fill="#112240" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="250" y="198" text-anchor="middle" font-size="9" font-weight="700" fill="#22c55e">BUS C — MV MICROGRID</text>
+
+        <!-- Sources hanging off Bus C -->
+        <!-- SG -->
+        <line x1="200" y1="208" x2="200" y2="248" stroke="#94a3b8" stroke-width="1.2"/>
+        <circle cx="200" cy="260" r="14" fill="#162032" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="200" y="257" text-anchor="middle" font-size="7" fill="#e2e8f0" font-weight="700">SG</text>
+        <text x="200" y="268" text-anchor="middle" font-size="6" fill="#94a3b8">~</text>
+        <text x="200" y="282" text-anchor="middle" font-size="7" fill="#94a3b8">Sync Gen</text>
+        <!-- OC badge -->
+        <circle cx="214" cy="245" r="8" fill="#1a6fdf"/>
+        <text x="214" y="249" text-anchor="middle" font-size="6" font-weight="800" fill="#fff">OC</text>
+
+        <!-- DFIG -->
+        <line x1="250" y1="208" x2="250" y2="248" stroke="#94a3b8" stroke-width="1.2"/>
+        <rect x="236" y="248" width="28" height="24" rx="4" fill="#162032" stroke="#38bdf8" stroke-width="1.5"/>
+        <text x="250" y="263" text-anchor="middle" font-size="7" font-weight="700" fill="#38bdf8">DFIG</text>
+        <text x="250" y="286" text-anchor="middle" font-size="7" fill="#94a3b8">Type-3 Wind</text>
+        <!-- Crowbar label -->
+        <text x="278" y="262" font-size="6" fill="#38bdf8">CUSUM</text>
+
+        <!-- PV + BESS -->
+        <line x1="305" y1="208" x2="305" y2="248" stroke="#94a3b8" stroke-width="1.2"/>
+        <rect x="288" y="248" width="34" height="24" rx="4" fill="#162032" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="305" y="260" text-anchor="middle" font-size="7" font-weight="700" fill="#22c55e">PV</text>
+        <text x="305" y="270" text-anchor="middle" font-size="6" fill="#22c55e">GFL</text>
+        <text x="305" y="286" text-anchor="middle" font-size="7" fill="#94a3b8">Solar IBR</text>
+
+        <!-- GFM on Bus B -->
+        <line x1="402" y1="50" x2="402" y2="100" stroke="#94a3b8" stroke-width="1.2"/>
+        <rect x="385" y="100" width="34" height="24" rx="4" fill="#162032" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="402" y="112" text-anchor="middle" font-size="7" font-weight="700" fill="#f59e0b">GFM</text>
+        <text x="402" y="122" text-anchor="middle" font-size="6" fill="#f59e0b">VSM</text>
+        <text x="402" y="138" text-anchor="middle" font-size="7" fill="#94a3b8">Grid-Forming</text>
+
+        <!-- Fault symbols -->
+        <g filter="url(#glow)">
+          <text x="340" y="90" font-size="14" fill="#ef4444" opacity="0.85">⚡</text>
+          <text x="148" y="55" font-size="11" fill="#ef4444" opacity="0.7">⚡</text>
+        </g>
+
+        <!-- ANDES / DT label -->
+        <rect x="14" y="290" width="110" height="40" rx="6" fill="#112240" stroke="#1a6fdf" stroke-width="1" stroke-dasharray="3,2"/>
+        <text x="69" y="308" text-anchor="middle" font-size="8" fill="#38bdf8" font-weight="700">Digital Twin</text>
+        <text x="69" y="320" text-anchor="middle" font-size="7" fill="#94a3b8">ANDES · PandaPower</text>
+        <text x="69" y="330" text-anchor="middle" font-size="7" fill="#94a3b8">OpenDSS · PSCAD</text>
+        <!-- dashed link to Bus C -->
+        <line x1="124" y1="310" x2="185" y2="240" stroke="#1a6fdf" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.5"/>
+
+        <!-- Monte Carlo label -->
+        <rect x="310" y="300" width="116" height="40" rx="6" fill="#112240" stroke="#22c55e" stroke-width="1" stroke-dasharray="3,2"/>
+        <text x="368" y="318" text-anchor="middle" font-size="8" fill="#22c55e" font-weight="700">Monte Carlo</text>
+        <text x="368" y="330" text-anchor="middle" font-size="7" fill="#94a3b8">15,000 trials / relay</text>
+        <text x="368" y="340" text-anchor="middle" font-size="7" fill="#94a3b8">κ_n · residual · f_int</text>
+        <line x1="310" y1="310" x2="280" y2="272" stroke="#22c55e" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.5"/>
+
+        <!-- Legend -->
+        <circle cx="22" cy="198" r="5" fill="#1a6fdf"/>
+        <text x="32" y="202" font-size="8" fill="#94a3b8">Relay element</text>
+        <line x1="17" y1="215" x2="27" y2="215" stroke="#38bdf8" stroke-width="1.5"/>
+        <text x="32" y="219" font-size="8" fill="#94a3b8">Live line</text>
+        <line x1="17" y1="232" x2="27" y2="232" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="3,2"/>
+        <text x="32" y="236" font-size="8" fill="#94a3b8">Comms link</text>
+      </svg>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════════════ CHALLENGE -->
+<section id="challenge">
+<div class="container">
+  <div class="section-label">The Problem</div>
+  <div class="challenge-grid">
+    <div>
+      <h2>Conventional Protection <span class="accent">Fails</span> in IBR-Rich Grids</h2>
+      <div class="divider"></div>
+      <p style="margin-bottom:1rem;">
+        Inverter-based resources — DFIG wind, PV, GFM batteries — inject fault currents that are
+        magnitude-limited, phase-shifted, and rapidly time-varying. Three classical assumptions break simultaneously:
+      </p>
+
+      <!-- SVG — 3 broken assumptions -->
+      <svg viewBox="0 0 380 160" width="100%" style="margin-top:0.5rem;">
+        <defs>
+          <marker id="cross" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+            <path d="M2,2 L6,6 M6,2 L2,6" stroke="#ef4444" stroke-width="1.5"/>
+          </marker>
+        </defs>
+
+        <!-- Row 1 -->
+        <rect x="0" y="0" width="116" height="70" rx="8" fill="#1a1a2e" stroke="#2d2d4e" stroke-width="1"/>
+        <text x="58" y="18" text-anchor="middle" font-size="8" fill="#94a3b8" font-weight="600">Assumption 1</text>
+        <text x="58" y="33" text-anchor="middle" font-size="9" fill="#e2e8f0" font-weight="700">Large Fault</text>
+        <text x="58" y="46" text-anchor="middle" font-size="9" fill="#e2e8f0" font-weight="700">Current</text>
+        <text x="58" y="63" text-anchor="middle" font-size="8" fill="#ef4444">✗ IBR: 1.1–1.2 p.u. max</text>
+
+        <rect x="132" y="0" width="116" height="70" rx="8" fill="#1a1a2e" stroke="#2d2d4e" stroke-width="1"/>
+        <text x="190" y="18" text-anchor="middle" font-size="8" fill="#94a3b8" font-weight="600">Assumption 2</text>
+        <text x="190" y="33" text-anchor="middle" font-size="9" fill="#e2e8f0" font-weight="700">Known Source</text>
+        <text x="190" y="46" text-anchor="middle" font-size="9" fill="#e2e8f0" font-weight="700">Impedance</text>
+        <text x="190" y="63" text-anchor="middle" font-size="8" fill="#ef4444">✗ Varies with dispatch</text>
+
+        <rect x="264" y="0" width="116" height="70" rx="8" fill="#1a1a2e" stroke="#2d2d4e" stroke-width="1"/>
+        <text x="322" y="18" text-anchor="middle" font-size="8" fill="#94a3b8" font-weight="600">Assumption 3</text>
+        <text x="322" y="33" text-anchor="middle" font-size="9" fill="#e2e8f0" font-weight="700">Predictable</text>
+        <text x="322" y="46" text-anchor="middle" font-size="9" fill="#e2e8f0" font-weight="700">Neg. Sequence</text>
+        <text x="322" y="63" text-anchor="middle" font-size="8" fill="#ef4444">✗ GFL injects ≈ 0 neg seq</text>
+
+        <!-- Row 2 — consequence -->
+        <rect x="0" y="85" width="380" height="65" rx="8" fill="rgba(239,68,68,0.08)" stroke="rgba(239,68,68,0.25)" stroke-width="1"/>
+        <text x="190" y="104" text-anchor="middle" font-size="8" fill="#f87171" font-weight="700" letter-spacing="0.05em">CONSEQUENCE</text>
+        <text x="190" y="120" text-anchor="middle" font-size="10" fill="#e2e8f0" font-weight="600">Mal-operation · Blind spots · Selectivity failures</text>
+        <text x="190" y="140" text-anchor="middle" font-size="9" fill="#94a3b8">under islanding, GFL dominance, and high-impedance faults</text>
+      </svg>
+    </div>
+
+    <div>
+      <h2>The <span class="accent">SAMBP</span> Answer</h2>
+      <div class="divider"></div>
+      <div class="card-grid" style="margin-top:0;">
+        <div class="card">
+          <div class="card-icon">🧮</div>
+          <h3>Inverse Estimation</h3>
+          <p style="font-size:0.8rem;">Two-pass Levenberg-Marquardt fits a physics-based reduced zone model to live fault measurements — no pre-stored lookup tables.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🛡️</div>
+          <h3>Confidence Gate</h3>
+          <p style="font-size:0.8rem;">Jacobian condition number κ_n and residual norm jointly govern whether estimated parameters update relay settings.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🔄</div>
+          <h3>Adaptive Coordination</h3>
+          <p style="font-size:0.8rem;">OC pickup and TMS re-derived per event; graded N-relay coordination enforced by bounded cascade logic.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🏗️</div>
+          <h3>Stage-2 Veto Gate</h3>
+          <p style="font-size:0.8rem;">When the model identifies CT saturation or channel skew rather than a fault, it suppresses the conventional trip — not just delays it.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════════════ FRAMEWORK -->
+<section id="framework">
+<div class="container">
+  <div class="section-label">Methodology</div>
+  <h2>A Uniform Five-Layer Architecture</h2>
+  <p style="max-width:620px;margin-top:0.5rem;">Every relay family in SAMBP inherits the same design pattern — allowing independent verification at each layer while ensuring the ensemble behaves coherently.</p>
+
+  <div class="pipeline-steps" style="margin-top:2.5rem;">
+    <div class="pipeline-step">
+      <div class="step-num">1</div>
+      <div class="step-title">Conventional Baseline</div>
+      <div class="step-desc">Independently operable relay. Always-on. Trip authority intact without any estimation.</div>
+    </div>
+    <div class="pipeline-step">
+      <div class="step-num">2</div>
+      <div class="step-title">Reduced Zone Model</div>
+      <div class="step-desc">Physics-motivated, bounded parameter set. Analytical Jacobian for stability.</div>
+      <div class="step-math">87L: θ=[I_fund, φ, I_DC, τ_DC]</div>
+    </div>
+    <div class="pipeline-step">
+      <div class="step-num">3</div>
+      <div class="step-title">Two-Pass LM Estimator</div>
+      <div class="step-desc">Pass 1: full-window global shape. Pass 2: tail window for τ_ac / CT error refinement.</div>
+    </div>
+    <div class="pipeline-step">
+      <div class="step-num">4</div>
+      <div class="step-title">Confidence Gate</div>
+      <div class="step-desc">κ_n &lt; 30 AND residual &lt; ε AND n_confirm ≥ 2 before any parameter update.</div>
+      <div class="step-math">Stage-2: model veto if f_int &lt; 0.5</div>
+    </div>
+    <div class="pipeline-step">
+      <div class="step-num">5</div>
+      <div class="step-title">Fallback / Coordination</div>
+      <div class="step-desc">Relay-specific: OC settings for sync, harmonic blocking for 87T, 3-mode FSM for 87L.</div>
+    </div>
+  </div>
+
+  <!-- Inverse estimation SVG -->
+  <div style="margin-top:3rem;">
+    <h3 style="margin-bottom:1.2rem;">Inverse Estimation Signal Chain</h3>
+    <svg viewBox="0 0 800 120" width="100%" style="max-width:800px;">
+      <defs>
+        <marker id="arr2" markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto">
+          <path d="M0,0 L7,3.5 L0,7 Z" fill="#38bdf8"/>
+        </marker>
+      </defs>
+
+      <!-- Blocks -->
+      <g>
+        <!-- Raw waveform -->
+        <rect x="0" y="20" width="110" height="70" rx="8" fill="#162032" stroke="#1e3050" stroke-width="1.5"/>
+        <text x="55" y="48" text-anchor="middle" font-size="9" fill="#94a3b8">CT / Relay input</text>
+        <text x="55" y="64" text-anchor="middle" font-size="10" fill="#e2e8f0" font-weight="700">Raw ia,ib,ic</text>
+        <!-- mini waveform -->
+        <polyline points="10,82 20,68 30,88 40,62 50,85 60,70 70,88 80,65 90,82 100,74" fill="none" stroke="#38bdf8" stroke-width="1.2" opacity="0.6"/>
+
+        <line x1="110" y1="55" x2="145" y2="55" stroke="#38bdf8" stroke-width="1.2" marker-end="url(#arr2)"/>
+
+        <!-- Event detection -->
+        <rect x="145" y="20" width="110" height="70" rx="8" fill="#162032" stroke="#1e3050" stroke-width="1.5"/>
+        <text x="200" y="48" text-anchor="middle" font-size="9" fill="#94a3b8">Event detection</text>
+        <text x="200" y="64" text-anchor="middle" font-size="10" fill="#e2e8f0" font-weight="700">Window + RMS</text>
+        <text x="200" y="80" text-anchor="middle" font-size="8" fill="#38bdf8">dI/dt threshold</text>
+
+        <line x1="255" y1="55" x2="290" y2="55" stroke="#38bdf8" stroke-width="1.2" marker-end="url(#arr2)"/>
+
+        <!-- Sequence -->
+        <rect x="290" y="20" width="110" height="70" rx="8" fill="#162032" stroke="#1e3050" stroke-width="1.5"/>
+        <text x="345" y="46" text-anchor="middle" font-size="9" fill="#94a3b8">Sequence</text>
+        <text x="345" y="60" text-anchor="middle" font-size="10" fill="#e2e8f0" font-weight="700">I₊ I₋ I₀</text>
+        <text x="345" y="76" text-anchor="middle" font-size="8" fill="#38bdf8">Fortescue decomp</text>
+
+        <line x1="400" y1="55" x2="435" y2="55" stroke="#38bdf8" stroke-width="1.2" marker-end="url(#arr2)"/>
+
+        <!-- LM Fit -->
+        <rect x="435" y="10" width="120" height="90" rx="8" fill="#112240" stroke="#1a6fdf" stroke-width="2"/>
+        <text x="495" y="34" text-anchor="middle" font-size="9" fill="#38bdf8" font-weight="700">Two-Pass LM</text>
+        <text x="495" y="50" text-anchor="middle" font-size="9" fill="#e2e8f0">Pass 1: shape fit</text>
+        <text x="495" y="64" text-anchor="middle" font-size="9" fill="#e2e8f0">Pass 2: tail refine</text>
+        <text x="495" y="80" text-anchor="middle" font-size="8" fill="#f59e0b">θ̂ = argmin‖r‖²</text>
+
+        <line x1="555" y1="55" x2="590" y2="55" stroke="#38bdf8" stroke-width="1.2" marker-end="url(#arr2)"/>
+
+        <!-- Confidence -->
+        <rect x="590" y="10" width="120" height="90" rx="8" fill="#112240" stroke="#22c55e" stroke-width="2"/>
+        <text x="650" y="34" text-anchor="middle" font-size="9" fill="#22c55e" font-weight="700">Confidence Gate</text>
+        <text x="650" y="50" text-anchor="middle" font-size="9" fill="#e2e8f0">κ_n · residual</text>
+        <text x="650" y="64" text-anchor="middle" font-size="9" fill="#e2e8f0">n_confirm ≥ 2</text>
+        <text x="650" y="80" text-anchor="middle" font-size="8" fill="#22c55e">TRIP / VETO / HOLD</text>
+
+        <!-- Output arrows -->
+        <line x1="710" y1="40" x2="800" y2="22" stroke="#22c55e" stroke-width="1.2" marker-end="url(#arr2)"/>
+        <text x="755" y="18" text-anchor="middle" font-size="8" fill="#22c55e" font-weight="700">TRIP</text>
+        <line x1="710" y1="55" x2="800" y2="55" stroke="#f59e0b" stroke-width="1.2" marker-end="url(#arr2)"/>
+        <text x="755" y="51" text-anchor="middle" font-size="8" fill="#f59e0b" font-weight="700">UPDATE θ</text>
+        <line x1="710" y1="70" x2="800" y2="88" stroke="#ef4444" stroke-width="1.2" marker-end="url(#arr2)"/>
+        <text x="755" y="100" text-anchor="middle" font-size="8" fill="#ef4444" font-weight="700">VETO</text>
+      </g>
+    </svg>
+  </div>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════════════ COVERAGE -->
+<section id="coverage">
+<div class="container">
+  <div class="section-label">Protection Coverage</div>
+  <h2>What SAMBP Covers — and What It Doesn't (Yet)</h2>
+  <p style="max-width:620px;margin-top:0.5rem;">Full transparency on coverage enables credible consortium scoping. The heatmap below reflects current simulation coverage across source type and relay element.</p>
+
+  <div class="coverage-wrap">
+    <!-- Coverage heatmap SVG -->
+    <div>
+      <svg viewBox="0 0 400 330" width="100%" style="max-width:420px;display:block;">
+        <defs>
+          <pattern id="stripe" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="6" stroke="#1e3050" stroke-width="3"/>
+          </pattern>
+        </defs>
+
+        <!-- Title -->
+        <text x="200" y="18" text-anchor="middle" font-size="10" fill="#94a3b8" font-weight="700">Coverage Matrix — Relay × Source Type</text>
+
+        <!-- Column headers -->
+        <g font-size="8" fill="#94a3b8" text-anchor="middle">
+          <text x="112" y="38">SG</text>
+          <text x="152" y="38">DFIG</text>
+          <text x="192" y="38">GFL-PV</text>
+          <text x="235" y="38">GFM</text>
+          <text x="275" y="38">BESS</text>
+          <text x="315" y="38">Type-4</text>
+          <text x="360" y="38">Meshed</text>
+        </g>
+        <!-- Column lines -->
+        <line x1="90" y1="42" x2="385" y2="42" stroke="#1e3050" stroke-width="0.5"/>
+
+        <!-- Row data: label, and 7 cells per row -->
+        <!-- Colours: green=full, blue=partial, stripe=gap, red-stripe=critical gap -->
+
+        <!-- Helper: cell at cx,cy with colour -->
+        <!-- 87L -->
+        <text x="84" y="65" text-anchor="end" font-size="9" fill="#e2e8f0" font-weight="700">87L</text>
+        <rect x="92" y="48" width="36" height="26" rx="3" fill="#22c55e" opacity="0.8"/>
+        <rect x="132" y="48" width="36" height="26" rx="3" fill="#22c55e" opacity="0.8"/>
+        <rect x="172" y="48" width="36" height="26" rx="3" fill="#22c55e" opacity="0.8"/>
+        <rect x="215" y="48" width="36" height="26" rx="3" fill="#1a6fdf" opacity="0.8"/>
+        <rect x="255" y="48" width="36" height="26" rx="3" fill="url(#stripe)" stroke="#ef4444" stroke-width="1"/>
+        <rect x="295" y="48" width="36" height="26" rx="3" fill="url(#stripe)" stroke="#ef4444" stroke-width="1"/>
+        <rect x="339" y="48" width="36" height="26" rx="3" fill="url(#stripe)" stroke="#f59e0b" stroke-width="1"/>
+
+        <!-- 87T -->
+        <text x="84" y="103" text-anchor="end" font-size="9" fill="#e2e8f0" font-weight="700">87T</text>
+        <rect x="92" y="86" width="36" height="26" rx="3" fill="#22c55e" opacity="0.8"/>
+        <rect x="132" y="86" width="36" height="26" rx="3" fill="#1a6fdf" opacity="0.8"/>
+        <rect x="172" y="86" width="36" height="26" rx="3" fill="#1a6fdf" opacity="0.8"/>
+        <rect x="215" y="86" width="36" height="26" rx="3" fill="#22c55e" opacity="0.8"/>
+        <rect x="255" y="86" width="36" height="26" rx="3" fill="url(#stripe)" stroke="#ef4444" stroke-width="1"/>
+        <rect x="295" y="86" width="36" height="26" rx="3" fill="url(#stripe)" stroke="#f59e0b" stroke-width="1"/>
+        <rect x="339" y="86" width="36" height="26" rx="3" fill="url(#stripe)" stroke="#f59e0b" stroke-width="1"/>
+
+        <!-- 87B -->
+        <text x="84" y="141" text-anchor="end" font-size="9" fill="#e2e8f0" font-weight="700">87B</text>
+        <rect x="92" y="124" width="36" height="26" rx="3" fill="#22c55e" opacity="0.8"/>
+        <rect x="132" y="124" width="36" height="26" rx="3" fill="#22c55e" opacity="0.8"/>
+        <rect x="172" y="124" width="36" height="26" rx="3" fill="#22c55e" opacity="0.8"/>
+        <rect x="215" y="124" width="36" height="26" rx="3" fill="#22c55e" opacity="0.8"/>
+        <rect x="255" y="124" width="36" height="26" rx="3" fill="url(#stripe)" stroke="#ef4444" stroke-width="1"/>
+        <rect x="295" y="124" width="36" height="26" rx="3" fill="url(#stripe)" stroke="#f59e0b" stroke-width="1"/>
+        <rect x="339" y="124" width="36" height="26" rx="3" fill="url(#stripe)" stroke="#f59e0b" stroke-width="1"/>
+
+        <!-- 21 (Distance) -->
+        <text x="84" y="179" text-anchor="end" font-size="9" fill="#e2e8f0" font-weight="700">21/21P</text>
+        <rect x="92" y="162" width="36" height="26" rx="3" fill="#22c55e" opacity="0.8"/>
+        <rect x="132" y="162" width="36" height="26" rx="3" fill="#1a6fdf" opacity="0.8"/>
+        <rect x="172" y="162" width="36" height="26" rx="3" fill="#1a6fdf" opacity="0.8"/>
+        <rect x="215" y="162" width="36" height="26" rx="3" fill="url(#stripe)" stroke="#f59e0b" stroke-width="1"/>
+        <rect x="255" y="162" width="36" height="26" rx="3" fill="url(#stripe)" stroke="#ef4444" stroke-width="1"/>
+        <rect x="295" y="162" width="36" height="26" rx="3" fill="url(#stripe)" stroke="#ef4444" stroke-width="1"/>
+        <rect x="339" y="162" width="36" height="26" rx="3" fill="url(#stripe)" stroke="#ef4444" stroke-width="1"/>
+
+        <!-- OC -->
+        <text x="84" y="217" text-anchor="end" font-size="9" fill="#e2e8f0" font-weight="700">OC/67</text>
+        <rect x="92" y="200" width="36" height="26" rx="3" fill="#22c55e" opacity="0.8"/>
+        <rect x="132" y="200" width="36" height="26" rx="3" fill="#1a6fdf" opacity="0.8"/>
+        <rect x="172" y="200" width="36" height="26" rx="3" fill="#1a6fdf" opacity="0.8"/>
+        <rect x="215" y="200" width="36" height="26" rx="3" fill="#1a6fdf" opacity="0.8"/>
+        <rect x="255" y="200" width="36" height="26" rx="3" fill="url(#stripe)" stroke="#ef4444" stroke-width="1"/>
+        <rect x="295" y="200" width="36" height="26" rx="3" fill="url(#stripe)" stroke="#ef4444" stroke-width="1"/>
+        <rect x="339" y="200" width="36" height="26" rx="3" fill="url(#stripe)" stroke="#f59e0b" stroke-width="1"/>
+
+        <!-- Gen Protection -->
+        <text x="84" y="255" text-anchor="end" font-size="9" fill="#e2e8f0" font-weight="700">40/64G/78</text>
+        <rect x="92" y="238" width="36" height="26" rx="3" fill="#22c55e" opacity="0.8"/>
+        <rect x="132" y="238" width="36" height="26" rx="3" fill="#22c55e" opacity="0.8"/>
+        <rect x="172" y="238" width="36" height="26" rx="3" fill="#1a6fdf" opacity="0.8"/>
+        <rect x="215" y="238" width="36" height="26" rx="3" fill="#22c55e" opacity="0.8"/>
+        <rect x="255" y="238" width="36" height="26" rx="3" fill="url(#stripe)" stroke="#ef4444" stroke-width="1"/>
+        <rect x="295" y="238" width="36" height="26" rx="3" fill="url(#stripe)" stroke="#ef4444" stroke-width="1"/>
+        <rect x="339" y="238" width="36" height="26" rx="3" fill="url(#stripe)" stroke="#f59e0b" stroke-width="1"/>
+
+        <!-- Row lines -->
+        <line x1="90" y1="278" x2="385" y2="278" stroke="#1e3050" stroke-width="0.5"/>
+
+        <!-- Legend -->
+        <rect x="92" y="288" width="14" height="10" rx="2" fill="#22c55e" opacity="0.85"/>
+        <text x="110" y="298" font-size="8" fill="#94a3b8">Full coverage</text>
+        <rect x="172" y="288" width="14" height="10" rx="2" fill="#1a6fdf" opacity="0.85"/>
+        <text x="190" y="298" font-size="8" fill="#94a3b8">Partial</text>
+        <rect x="238" y="288" width="14" height="10" rx="2" fill="url(#stripe)" stroke="#ef4444" stroke-width="1"/>
+        <text x="256" y="298" font-size="8" fill="#94a3b8">Critical gap</text>
+        <rect x="320" y="288" width="14" height="10" rx="2" fill="url(#stripe)" stroke="#f59e0b" stroke-width="1"/>
+        <text x="338" y="298" font-size="8" fill="#94a3b8">Roadmap gap</text>
+      </svg>
+    </div>
+
+    <!-- Fault scenario radar -->
+    <div>
+      <h3 style="margin-bottom:0.8rem;">Fault Scenario Radar</h3>
+      <svg viewBox="0 0 340 300" width="100%" style="max-width:340px;display:block;">
+        <defs>
+          <polygon id="hex" points="0,-1 0.866,-0.5 0.866,0.5 0,-1 -0.866,-0.5 -0.866,0.5"/>
+        </defs>
+
+        <!-- Radar grid -->
+        <g transform="translate(170,150)">
+          <!-- Grid rings -->
+          <g stroke="#1e3050" stroke-width="0.8" fill="none" opacity="0.7">
+            <polygon points="0,-100 86.6,-50 86.6,50 0,100 -86.6,50 -86.6,-50"/>
+            <polygon points="0,-75 64.95,-37.5 64.95,37.5 0,75 -64.95,37.5 -64.95,-37.5"/>
+            <polygon points="0,-50 43.3,-25 43.3,25 0,50 -43.3,25 -43.3,-25"/>
+            <polygon points="0,-25 21.65,-12.5 21.65,12.5 0,25 -21.65,12.5 -21.65,-12.5"/>
+          </g>
+          <!-- Grid spokes -->
+          <g stroke="#1e3050" stroke-width="0.8" opacity="0.5">
+            <line x1="0" y1="-100" x2="0" y2="100"/>
+            <line x1="86.6" y1="-50" x2="-86.6" y2="50"/>
+            <line x1="86.6" y1="50" x2="-86.6" y2="-50"/>
+          </g>
+
+          <!-- Covered area -->
+          <polygon points="0,-88 76,-48 72,42 0,85 -60,38 -52,-50"
+            fill="rgba(26,111,223,0.25)" stroke="#1a6fdf" stroke-width="1.5"/>
+
+          <!-- Gap area (what's missing) -->
+          <polygon points="0,-100 86.6,-50 86.6,50 0,100 -86.6,50 -86.6,-50"
+            fill="none" stroke="rgba(239,68,68,0.3)" stroke-width="1" stroke-dasharray="3,3"/>
+
+          <!-- Axis labels -->
+          <text x="0" y="-108" text-anchor="middle" font-size="9" fill="#e2e8f0" font-weight="700">3φ Faults</text>
+          <text x="97" y="-54" text-anchor="start" font-size="9" fill="#e2e8f0" font-weight="700">SLG / LL</text>
+          <text x="97" y="56" text-anchor="start" font-size="9" fill="#e2e8f0" font-weight="700">HIF / Arcing</text>
+          <text x="0" y="118" text-anchor="middle" font-size="9" fill="#e2e8f0" font-weight="700">Evolving Faults</text>
+          <text x="-98" y="56" text-anchor="end" font-size="9" fill="#e2e8f0" font-weight="700">BESS Scenarios</text>
+          <text x="-98" y="-54" text-anchor="end" font-size="9" fill="#e2e8f0" font-weight="700">Meshed Grid</text>
+
+          <!-- Dots at covered vertices -->
+          <circle cx="0" cy="-88" r="4" fill="#22c55e"/>
+          <circle cx="76" cy="-48" r="4" fill="#22c55e"/>
+          <circle cx="72" cy="42" r="4" fill="#1a6fdf"/>
+          <circle cx="0" cy="85" r="3" fill="#f59e0b"/>
+          <circle cx="-60" cy="38" r="3" fill="#ef4444"/>
+          <circle cx="-52" cy="-50" r="3" fill="#ef4444"/>
+
+          <!-- Scale labels -->
+          <text x="4" y="-98" font-size="7" fill="#22c55e">100%</text>
+          <text x="4" y="-73" font-size="7" fill="#94a3b8">75%</text>
+          <text x="4" y="-48" font-size="7" fill="#94a3b8">50%</text>
+          <text x="4" y="-23" font-size="7" fill="#94a3b8">25%</text>
+        </g>
+
+        <!-- Legend -->
+        <rect x="10" y="270" width="12" height="8" rx="2" fill="rgba(26,111,223,0.4)" stroke="#1a6fdf" stroke-width="1"/>
+        <text x="26" y="278" font-size="8" fill="#94a3b8">Current coverage</text>
+        <line x1="150" y1="274" x2="162" y2="274" stroke="rgba(239,68,68,0.5)" stroke-width="1.5" stroke-dasharray="3,2"/>
+        <text x="166" y="278" font-size="8" fill="#94a3b8">Target envelope</text>
+      </svg>
+
+      <!-- Key metrics -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-top:1rem;">
+        <div class="card" style="padding:0.9rem;text-align:center;">
+          <div style="font-size:1.4rem;font-weight:800;color:#22c55e;">7/7</div>
+          <div style="font-size:0.72rem;color:#94a3b8;">87T events pass</div>
+        </div>
+        <div class="card" style="padding:0.9rem;text-align:center;">
+          <div style="font-size:1.4rem;font-weight:800;color:#22c55e;">12/12</div>
+          <div style="font-size:0.72rem;color:#94a3b8;">87L scenarios pass</div>
+        </div>
+        <div class="card" style="padding:0.9rem;text-align:center;">
+          <div style="font-size:1.4rem;font-weight:800;color:#1a6fdf;">κ_n &lt; 6.3</div>
+          <div style="font-size:0.72rem;color:#94a3b8;">87B (lowest in suite)</div>
+        </div>
+        <div class="card" style="padding:0.9rem;text-align:center;">
+          <div style="font-size:1.4rem;font-weight:800;color:#f59e0b;">15k</div>
+          <div style="font-size:0.72rem;color:#94a3b8;">MC trials / 87L study</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════════════ TECHNICAL REPORTS -->
+<section id="reports">
+<div class="container">
+  <div class="section-label">Technical Reports</div>
+  <h2>Published & Active TRs — TR-01 through TR-67</h2>
+  <p style="margin-top:0.5rem;">Each TR maps directly to a thesis chapter and constitutes a replicable, documented study unit. All simulation code is versioned alongside the report.</p>
+
+  <div class="tr-grid">
+
+    <div class="tr-card">
+      <div class="tr-num">TR-01<br>TR-02</div>
+      <div class="tr-info">
+        <h4>Sync OC — Adaptive Overcurrent Foundation</h4>
+        <p>Park dq truth model · two-pass LM · IEC Very-Inverse coordination · 29-page IIT report</p>
+      </div>
+      <div class="tr-status status-done">Done</div>
+    </div>
+
+    <div class="tr-card">
+      <div class="tr-num">TR-03<br>TR-04</div>
+      <div class="tr-info">
+        <h4>87T — Transformer Differential</h4>
+        <p>7-event library · Yd11 vector-group compensation · Stage-2 CT-saturation veto · κ_n &lt; 30</p>
+      </div>
+      <div class="tr-status status-done">Done</div>
+    </div>
+
+    <div class="tr-card">
+      <div class="tr-num">TR-05<br>TR-06</div>
+      <div class="tr-info">
+        <h4>87L — Line Current Differential</h4>
+        <p>12 scenarios · π-section · channel skew FSM · 4-param identifiable model · 15k MC</p>
+      </div>
+      <div class="tr-status status-done">Done</div>
+    </div>
+
+    <div class="tr-card">
+      <div class="tr-num">TR-07<br>TR-08</div>
+      <div class="tr-info">
+        <h4>87B — Bus Differential</h4>
+        <p>6-event library · double-bus transfer · Prop 3.1 identifiability proof · 3-param θ_B</p>
+      </div>
+      <div class="tr-status status-done">Done</div>
+    </div>
+
+    <div class="tr-card">
+      <div class="tr-num">TR-56<br>TR-59</div>
+      <div class="tr-info">
+        <h4>DFIG + 87L — ANDES Integration</h4>
+        <p>DFIG crowbar CUSUM · slip s∈[0.03,0.35] · ANDES EMT validation · 1k MC per slip</p>
+      </div>
+      <div class="tr-status status-active">Active</div>
+    </div>
+
+    <div class="tr-card">
+      <div class="tr-num">TR-57<br>TR-64</div>
+      <div class="tr-info">
+        <h4>87T SPRT — Sequential Probability Ratio Test</h4>
+        <p>Deterministic · EMT surrogate · MC integration · IBR inrush discrimination</p>
+      </div>
+      <div class="tr-status status-active">Active</div>
+    </div>
+
+    <div class="tr-card">
+      <div class="tr-num">TR-60<br>TR-63</div>
+      <div class="tr-info">
+        <h4>Gen Suite — 40 / 64G / 78 / 81</h4>
+        <p>LOE · sensitive earth fault (3.3 Hz) · GFM out-of-step · frequency relays</p>
+      </div>
+      <div class="tr-status status-active">Active</div>
+    </div>
+
+    <div class="tr-card">
+      <div class="tr-num">TR-65<br>TR-67</div>
+      <div class="tr-info">
+        <h4>System Integration — IEEE 39-bus · OpenDSS</h4>
+        <p>Multi-relay coordination · IEC 61850 GOOSE · digital twin validation · PINN</p>
+      </div>
+      <div class="tr-status status-planned">Planned</div>
+    </div>
+
+  </div>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════════════ GAPS / ROADMAP -->
+<section id="gaps" style="background: var(--navy2);">
+<div class="container">
+  <div class="section-label">Open Research Gaps</div>
+  <h2>Honest Scope Boundaries &amp; Consortium Opportunities</h2>
+  <p style="max-width:640px;margin-top:0.5rem;">
+    Gap analysis against CIGRE WG B5, IEEE 1547-2018, and Horizon Europe IEC 61850 requirements.
+    Tier 1 gaps represent the highest-value collaboration opportunities.
+  </p>
+
+  <div class="gap-grid">
+
+    <div class="gap-card">
+      <span class="gap-tag tier1">Tier 1 — Critical</span>
+      <h3>BESS Source Model</h3>
+      <p style="font-size:0.8rem;">Grid-scale BESS (GFM-BESS, VSM mode) produces no natural fault current. All four relay families require new source models. Proposed: TR-68 (BESS 87L + 87B).</p>
+    </div>
+
+    <div class="gap-card">
+      <span class="gap-tag tier1">Tier 1 — Critical</span>
+      <h3>Type-4 / PMSG Wind</h3>
+      <p style="font-size:0.8rem;">Full back-to-back converter with negligible negative-sequence injection. Inrush blocking, sequence-based protection, and DFIG crowbar logic all need revisiting for Type-4.</p>
+    </div>
+
+    <div class="gap-card">
+      <span class="gap-tag tier1">Tier 1 — Critical</span>
+      <h3>Meshed / Ring Topology</h3>
+      <p style="font-size:0.8rem;">All current network models are radial. Meshed topology requires directional relaying (67), pilot schemes, and loop-flow aware coordination — structurally absent from the framework.</p>
+    </div>
+
+    <div class="gap-card">
+      <span class="gap-tag tier1">Tier 1 — Critical</span>
+      <h3>Auto-Reclose (79) on IBR Feeders</h3>
+      <p style="font-size:0.8rem;">Standard 79 logic assumes synchronous recovery. IBR ride-through, delayed reclose, and live-line supervision logic are required for IEEE 1547-2018 compliance. No relay-79 element exists yet.</p>
+    </div>
+
+    <div class="gap-card">
+      <span class="gap-tag tier2">Tier 2 — Significant</span>
+      <h3>Evolving &amp; Cross-Country Faults</h3>
+      <p style="font-size:0.8rem;">Static fault types only. SLG → 3-phase escalation and simultaneous independent faults are not modelled. IBR current-limiting complicates detection of escalating faults.</p>
+    </div>
+
+    <div class="gap-card">
+      <span class="gap-tag tier2">Tier 2 — Significant</span>
+      <h3>IEEE 1547 Ride-Through Window</h3>
+      <p style="font-size:0.8rem;">During mandatory ride-through, IBR operates in a controlled low-current regime. Protection must not mal-operate in this window. No structured ride-through compliance study exists.</p>
+    </div>
+
+    <div class="gap-card">
+      <span class="gap-tag tier2">Tier 2 — Significant</span>
+      <h3>SSCI / Subsynchronous Resonance</h3>
+      <p style="font-size:0.8rem;">SSCI between DFIG wind and series-compensated lines (ERCOT 2009 event). Protection must distinguish resonant oscillation from fault. Frequency range 5–40 Hz overlaps with 64G sub-harmonic work.</p>
+    </div>
+
+    <div class="gap-card">
+      <span class="gap-tag tier2">Tier 2 — Significant</span>
+      <h3>COMTRADE / Field Data Validation</h3>
+      <p style="font-size:0.8rem;">All validation is against synthetic or ANDES-simulated waveforms. A COMTRADE import pipeline and at least one real disturbance recording are needed to close the lab-to-field gap.</p>
+    </div>
+
+    <div class="gap-card">
+      <span class="gap-tag tier3">Tier 3 — Emerging</span>
+      <h3>DC Microgrids &amp; Hybrid AC/DC</h3>
+      <p style="font-size:0.8rem;">DC bus protection — di/dt discrimination, DC CB coordination — is a distinct discipline. Relevant for data-centre, EV, and marine microgrids. Entirely absent from current scope.</p>
+    </div>
+
+    <div class="gap-card">
+      <span class="gap-tag tier3">Tier 3 — Emerging</span>
+      <h3>Cyber-Physical Attacks on GOOSE</h3>
+      <p style="font-size:0.8rem;">GOOSE modelled as ideal. GPS spoofing, replay attacks, and latency injection on the adaptive confidence gate are not tested. IEC 62351 security compliance is increasingly mandated.</p>
+    </div>
+
+    <div class="gap-card">
+      <span class="gap-tag tier3">Tier 3 — Emerging</span>
+      <h3>GMD / Geomagnetic Disturbance</h3>
+      <p style="font-size:0.8rem;">Quasi-DC GIC causes transformer half-cycle saturation, generating harmonics that can mal-operate 87T inrush blocking. NERC TPL-007 compliance study absent. CIGRE WG C4.204 active.</p>
+    </div>
+
+    <div class="gap-card">
+      <span class="gap-tag tier3">Tier 3 — Emerging</span>
+      <h3>N-2 / Degraded Relay Set</h3>
+      <p style="font-size:0.8rem;">All studies assume full relay complement. Performance under single-relay failure, CT bypass, or communication loss beyond the 87L FSM fallback has not been quantified.</p>
+    </div>
+
+  </div>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════════════ CONSORTIUM -->
+<section id="consortium">
+<div class="container">
+  <div class="section-label">Consortium &amp; Collaboration</div>
+  <h2>What SAMBP Digital Twin Lab Brings to a Partnership</h2>
+  <p style="max-width:620px;margin-top:0.5rem;">
+    Developed at the Smart Grid Computational Research Lab (SGCRL), IIT Madras, the SAMBP framework is structured for handoff — each TR is a
+    self-contained study unit with reproducible simulations, explicit identifiability proofs,
+    and quantified uncertainty.
+  </p>
+
+  <div class="value-grid">
+
+    <div class="value-card">
+      <div style="font-size:1.5rem;margin-bottom:0.7rem;">📐</div>
+      <h3>Research-Grade Rigour</h3>
+      <p style="font-size:0.82rem;margin-top:0.4rem;">Every relay model has an analytical identifiability proof (e.g. Proposition 3.1 for 87B). Parameter count is justified from rank analysis — not heuristic. Reproducible to the seed.</p>
+    </div>
+
+    <div class="value-card amber-top">
+      <div style="font-size:1.5rem;margin-bottom:0.7rem;">⚙️</div>
+      <h3>Deployment-Ready Architecture</h3>
+      <p style="font-size:0.82rem;margin-top:0.4rem;">The Stage-2 veto gate and two-pass LM pipeline are designed for real-time relay execution. Signal chain runs in &lt; 1 power cycle on standard hardware. IEC 61850 GOOSE integration included.</p>
+    </div>
+
+    <div class="value-card green-top">
+      <div style="font-size:1.5rem;margin-bottom:0.7rem;">🔭</div>
+      <h3>Transparent Roadmap</h3>
+      <p style="font-size:0.82rem;margin-top:0.4rem;">Gaps are documented publicly. BESS, Type-4 wind, meshed topology, and field-data validation are scoped as TR-68+. Consortia can adopt, fund, or co-develop specific TRs.</p>
+    </div>
+
+  </div>
+
+  <!-- Compatibility badges -->
+  <div style="margin-top:2.5rem;">
+    <h3 style="margin-bottom:1rem;font-size:0.9rem;color:var(--slate);text-transform:uppercase;letter-spacing:0.1em;">Simulator &amp; Standards Compatibility</h3>
+    <div style="display:flex;flex-wrap:wrap;gap:0.6rem;">
+      <span style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:0.8rem;color:var(--light);">ANDES (EMT)</span>
+      <span style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:0.8rem;color:var(--light);">PandaPower</span>
+      <span style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:0.8rem;color:var(--light);">OpenDSS</span>
+      <span style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:0.8rem;color:var(--light);">IEC 61850 GOOSE</span>
+      <span style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:0.8rem;color:var(--light);">C37.118 Synchrophasors</span>
+      <span style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:0.8rem;color:var(--light);">IEC 60255 Relay Standard</span>
+      <span style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:0.8rem;color:var(--light);">IEEE 1547-2018</span>
+      <span style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:0.8rem;color:var(--light);">CIGRE WG B5</span>
+      <span style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:0.8rem;color:var(--light);">NERC TPL-007</span>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div style="margin-top:3rem;padding:2rem;background:var(--card);border:1px solid var(--border);border-radius:12px;border-left:4px solid var(--blue);">
+    <div style="display:grid;grid-template-columns:1fr auto;gap:2rem;align-items:center;flex-wrap:wrap;">
+      <div>
+        <h3 style="margin-bottom:0.4rem;">Open for Consortium Engagement</h3>
+        <p style="font-size:0.85rem;">
+          SAMBP Digital Twin Lab is actively seeking partners for BESS protection, Type-4 wind validation,
+          and field-data COMTRADE integration. Each collaboration is structured as a named TR with
+          co-authorship and open-source code release.
+        </p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.7rem;min-width:180px;">
+        <a href="mailto:anoop@iitb.ac.in" class="btn-primary" style="text-align:center;white-space:nowrap;">Contact PI</a>
+        <a href="#gaps" class="btn-outline" style="text-align:center;white-space:nowrap;">View Roadmap</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+</section>
+
+<!-- ══════════════════════════════════════════════ FOOTER -->
+<footer>
+  <div style="margin-bottom:0.4rem;">
+    <strong style="color:var(--white);">Smart Grid Computational Research Lab (SGCRL)</strong>
+    &nbsp;·&nbsp; IIT Madras
+    &nbsp;·&nbsp; Anoop Eluvathingal
+  </div>
+  <div style="color:var(--slate);font-size:0.75rem;">
+    Physics-Informed Protection for IBR-Dominated Microgrids &nbsp;·&nbsp;
+    Single-file · no external dependencies · opens anywhere
+  </div>
+  <div style="margin-top:0.8rem;font-size:0.7rem;color:#3d5270;">
+    SAMBP · 87L · 87T · 87B · 21/21P · OC · 40 · 64G · 78 · 81 · DFIG · GFM · GFL · PV · BESS (roadmap)
+  </div>
+</footer>
+
+</body>
+</html>
