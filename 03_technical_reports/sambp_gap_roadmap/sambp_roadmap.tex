@@ -666,23 +666,66 @@ Chapter~10.
 \end{warnbox}
 
 %% ════════════════════════════════════════════════════════════
-\section{What Is Not a Gap (Scope Bounds)}
+\section{Scope Bounds — What Lies Outside the PhD but Inside the Roadmap}
 
-The following items were considered and deliberately excluded:
+\subsection*{Items excluded from the PhD thesis (SGCRL / IIT Madras scope)}
+
+The following are deliberately out of scope for the \emph{thesis}. They are
+not technical gaps in SAMBP — they are domain boundaries that would widen the
+thesis beyond its examination scope.
 
 \begin{itemize}
-  \item \textbf{HVDC protection:} Out of scope for a microgrid/distribution
-        protection thesis; a separate HVDC protection programme is warranted.
   \item \textbf{Arc-flash detection:} Overlap with occupational safety standards
         (NFPA 70E / IEC 62271); not a relay protection problem in the SAMBP sense.
   \item \textbf{Stator ground fault (64S) for synchronous machines:} Covered
-        adequately by existing 64G work; marginal additional value.
+        adequately by existing 64G work; marginal additional value within the thesis.
   \item \textbf{Load shedding (UFLS) schemes:} System-stability function, not a
-        selective protection function; separate discipline.
+        selective protection function; separate engineering discipline.
   \item \textbf{PSCAD as primary simulator:} ANDES + PandaPower + OpenDSS cover the
-        required fidelity range. PSCAD is used in Ch.~6 data generation only;
-        no additional PSCAD integration is planned.
+        required fidelity range for the thesis. PSCAD is used in Ch.~6 data
+        generation only; no additional PSCAD integration is planned within the PhD.
 \end{itemize}
+
+\subsection*{HVDC Protection — Designated DTaaS Product Line (not excluded; deferred)}
+
+\begin{warnbox}
+\textbf{Positioning note (internal only).}
+HVDC converter protection is \emph{not} declared ``not a gap'' and is
+\emph{not} out of scope for SAMBPS DTaaS. It is deferred from the current
+PhD thesis solely because the thesis examination scope is bounded to
+AC microgrid and distribution protection. The commercial and collaboration
+opportunity is real and actively pursued.
+\end{warnbox}
+
+HVDC protection represents a natural and high-value extension of the SAMBP
+Digital Twin-as-a-Service (DTaaS) platform for the following reasons:
+
+\begin{itemize}
+  \item \textbf{Technical continuity:} The SAMBP identifiability framework
+        (Stage-1 reduced model + Stage-2 veto) applies directly to VSC-HVDC
+        converter fault models. The IBR current-limiting logic developed in
+        TR-56/TR-62 is a direct precursor to MMC sub-module protection.
+  \item \textbf{Collaboration vectors:} The Amprion HVDC corridor and NTU
+        power-electronics protection group represent active engagement
+        opportunities. The DTaaS platform is the natural vehicle for
+        delivering HVDC protection Digital Twin services to these partners.
+  \item \textbf{Market differentiation:} HVDC-capable DTaaS is a distinct
+        commercial offering from AC microgrid protection. Branding it as a
+        separate product line (``SAMBPS DTaaS — HVDC Edition'') avoids scope
+        dilution of the PhD while preserving the commercial vector.
+\end{itemize}
+
+\paragraph{Recommended action.}
+Initiate a separate HVDC Protection TR stream (TR-H01 onwards, outside the
+PhD TR-01–TR-100 namespace) under the DTaaS product line umbrella. Target
+first deliverable: VSC-HVDC fault current model with SAMBP Stage-1 wrapper,
+benchmarked against CIGRÉ B4 DC grid test system. Potential consortium entry
+point: Amprion / NTU joint proposal, Q3 2026.
+
+\medskip
+\noindent\textit{The PhD thesis (TR-01–TR-100) remains bounded to AC protection.
+HVDC work proceeds in parallel under the DTaaS product roadmap and does not
+affect thesis examination scope or timeline.}
 
 %% ════════════════════════════════════════════════════════════
 \section{Document Maintenance}
