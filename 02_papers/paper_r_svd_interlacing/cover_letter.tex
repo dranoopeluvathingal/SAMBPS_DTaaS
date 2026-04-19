@@ -1,0 +1,93 @@
+%% cover_letter.tex — C9: SVD Interlacing / Physics-Reduction Proposition
+%% SIAM Journal on Matrix Analysis and Applications
+\documentclass[11pt,a4paper]{letter}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{microtype}
+\usepackage{amsmath}
+
+\signature{Anoop~V.~Eluvathingal\\
+           Ph.D.\ Candidate, Dept.\ of Electrical Engineering\\
+           Indian Institute of Technology Madras\\
+           Chennai 600036, India\\[2pt]
+           \texttt{arun.eluvathingal@iitm.ac.in}}
+
+\address{Department of Electrical Engineering\\
+         Indian Institute of Technology Madras\\
+         Chennai 600036, India}
+
+\begin{document}
+\begin{letter}{Editor-in-Chief\\
+               \textit{SIAM Journal on Matrix Analysis and Applications}}
+
+\opening{Dear Editor,}
+
+We submit for your consideration the manuscript:
+
+\begin{center}
+  \textbf{Singular Value Interlacing for Physics-Structured Projections:
+  Condition-Number Inheritance and the Physics-Reduction Proposition}
+\end{center}
+
+\textbf{Mathematical content.}
+This paper proves three results in matrix analysis.
+
+\emph{Theorem~1} establishes Cauchy-type SVD interlacing inequalities
+for a physics-structured projection $\tilde{\mathbf{H}} = \mathbf{H}\mathbf{P}$,
+where $\mathbf{P}$ is determined by the algebraic constraints of a
+differential-algebraic equation (DAE) system:
+\[
+  \sigma_k(\mathbf{H}) \geq \tilde{\sigma}_k \geq
+  \frac{\sigma_{k+n_a}(\mathbf{H})}{\sqrt{1+\rho_Q^2}},
+  \quad k = 1,\ldots,r.
+\]
+The correction factor $1/\sqrt{1+\|\mathbf{Q}\|^2}$ is new; standard
+Cauchy interlacing (for column-restriction by an orthonormal matrix)
+does not carry this term, but the physics projection $\mathbf{P}$
+generally does not have orthonormal columns.
+
+\emph{Theorem~2} derives an explicit condition-number inheritance bound:
+\[
+  \kappa(\tilde{\mathbf{H}}) \leq
+  \kappa(\mathbf{H}) \cdot \frac{1+\rho}{1-\rho} \cdot \Delta_r^{-1},
+\]
+where $\rho$ is the algebraic coupling ratio and $\Delta_r$ is the
+spectral gap.  When $\Delta_r \geq (1+\rho)/(1-\rho)$, the condition
+number is inherited exactly: $\kappa(\tilde{\mathbf{H}}) \leq \kappa(\mathbf{H})$.
+
+\emph{Proposition~1 (Physics-Reduction Proposition)} specialises
+Theorem~2 to the 6-state IBR fault-current Jacobian with $r=2$
+dynamic states, proving that $\kappa(\mathbf{H}) < 30$ implies
+$\kappa(\tilde{\mathbf{H}}) < 30$ for standard generator parameters.
+
+All bounds are shown to be \emph{sharp}: we exhibit explicit matrix
+families attaining each inequality.
+
+\textbf{Novelty.}
+Prior work on SVD interlacing \cite{Thompson1972} addresses
+column-submatrix restrictions.  The physics-structured projection
+$\mathbf{P} = (\mathbf{I}; \mathbf{Q})$ arising from DAE constraint
+elimination is a perturbation of a column restriction and requires a
+separate analysis.  The condition-number inheritance bound and
+the spectral-gap criterion (Corollary~1) are new.
+
+\textbf{AMS classification.} 15A18 (eigenvalues), 15A60 (norms),
+65F35 (numerical linear algebra), 93B30 (identifiability).
+
+\textbf{Suggested reviewers.}
+\begin{itemize}
+  \item Prof.\ Roger Horn (University of Utah) --- matrix analysis
+  \item Prof.\ Ilse Ipsen (NC State University) --- perturbation theory,
+        condition numbers
+  \item Prof.\ Zlatko Drmac (University of Zagreb)
+        --- SVD algorithms and perturbation bounds
+  \item Prof.\ Ran Ran (Beijing Institute of Technology)
+        --- interlacing and eigenvalue inequalities
+\end{itemize}
+
+This manuscript is not under review elsewhere.
+
+\closing{Sincerely,}
+\end{letter}
+\end{document}

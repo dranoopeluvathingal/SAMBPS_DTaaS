@@ -1,0 +1,966 @@
+% =============================================================================
+%  sambp_research_summary.tex
+%  SAMBP PhD Research — Comprehensive Summary Report
+%
+%  Title : SAMBP Research Programme: Comprehensive Summary, Thesis Modification
+%          Plan, and Future Research Objectives
+%          (Post-OpenDSS / ANDES / pandapower Phase)
+%
+%  Format: IIT Madras Internal Document  — April 2026
+%
+%  Compile:
+%    pdflatex sambp_research_summary
+%    bibtex   sambp_research_summary
+%    pdflatex sambp_research_summary
+%    pdflatex sambp_research_summary
+% =============================================================================
+
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{mathptmx}
+\usepackage{microtype}
+
+\usepackage[a4paper,top=25mm,bottom=25mm,left=25mm,right=25mm,
+            headheight=14pt]{geometry}
+
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{siunitx}
+\sisetup{detect-all,per-mode=fraction}
+
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{pifont}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+\newcommand{\pmark}{\ding{118}}   % pending bullet
+
+\usepackage{xcolor}
+\definecolor{passgreen}{rgb}{0.0,0.55,0.27}
+\definecolor{failred}{rgb}{0.75,0.0,0.0}
+\definecolor{warnblue}{rgb}{0.0,0.30,0.70}
+\definecolor{pendgold}{rgb}{0.70,0.45,0.0}
+\definecolor{sectionblue}{rgb}{0.07,0.27,0.52}
+\definecolor{rowgray}{rgb}{0.93,0.93,0.93}
+
+\newcommand{\DONE}{\textcolor{passgreen}{\textbf{Done}}}
+\newcommand{\PEND}{\textcolor{pendgold}{\textbf{Pending}}}
+\newcommand{\BLKD}{\textcolor{failred}{\textbf{Blocked}}}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc,backgrounds,fit}
+
+\usepackage[colorlinks=true,linkcolor=sectionblue,
+            citecolor=sectionblue,urlcolor=blue!70!black]{hyperref}
+\usepackage[nameinlink]{cleveref}
+\usepackage[numbers,sort&compress]{natbib}
+\bibliographystyle{ieeetr}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small SAMBP Research Summary — April 2026}
+\fancyhead[R]{\small Eluvathingal, IIT Madras}
+\fancyfoot[C]{\thepage}
+
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries\color{sectionblue}}{}{0pt}{\thesection\quad}[\vspace{-2pt}\rule{\linewidth}{0.6pt}]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0pt}{\thesubsection\quad}
+\titleformat{\subsubsection}{\normalsize\itshape}{}{0pt}{\thesubsubsection\quad}
+
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{0pt}
+
+% Handy macros
+\newcommand{\kn}{\kappa_n}
+\newcommand{\pu}{\,\text{p.u.}}
+\newcommand{\tr}[1]{\textbf{TR-#1}}
+\newcommand{\ch}[1]{\textbf{Ch.\,#1}}
+\newcommand{\paper}[1]{\textit{Paper~#1}}
+
+% =============================================================================
+\begin{document}
+% =============================================================================
+
+% --------------- Title block ------------------------------------------------
+\begin{titlepage}
+  \vspace*{20mm}
+  \begin{center}
+    {\small IITM\,/\,EE\,/\,PhD\,/\,AVE\,/\,SUMMARY\,/\,2026}\\[8mm]
+    \rule{\linewidth}{1.2pt}\\[4mm]
+    {\LARGE\bfseries\color{sectionblue}
+      SAMBP Research Programme:\\[4pt]
+      Comprehensive Summary, Thesis Modification Plan,\\[4pt]
+      and Future Research Objectives}\\[4mm]
+    \rule{\linewidth}{1.2pt}\\[10mm]
+    {\large\itshape Post-OpenDSS\,/\,ANDES\,/\,pandapower Phase}\\[2mm]
+    {\large Covering Technical Reports TR-56 through TR-66}\\[12mm]
+    {\large Anoop V. Eluvathingal}\\[3mm]
+    {\normalsize Department of Electrical Engineering\\
+     Indian Institute of Technology Madras}\\[8mm]
+    {\normalsize April 2026}\\[20mm]
+    \begin{tabular}{ll}
+      \toprule
+      Document type & Internal Research Summary \\
+      Total TRs covered & TR-01 through TR-66 \\
+      Phase 7 TRs (new) & TR-56, TR-57, TR-58, TR-59, TR-62, TR-65, TR-66 \\
+      Journal papers & 8 (Papers~A--H) \\
+      Validation scenarios (cumulative) & $\sim$91 \\
+      Overall selectivity (TR-66) & 12/12 = 100\% \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+\end{titlepage}
+
+\tableofcontents
+\clearpage
+
+% =============================================================================
+\section{Purpose and Scope}
+\label{sec:purpose}
+% =============================================================================
+
+This document provides a structured record of the SAMBP (Self-Adaptive Model-Based
+Protection) research programme from the point at which three external simulation
+tools were installed and activated: \textbf{OpenDSS} (via opendssdirect.py),
+\textbf{ANDES} (dynamic stability simulator for IBR), and \textbf{pandapower}
+(power network analysis).
+
+Before these tools, all SAMBP validation scenarios were constructed from
+analytically synthesised phasors.  After their installation, the validation
+chain is:
+\[
+  \text{Network solver} \;\longrightarrow\; \text{Waveform synthesis}
+  \;\longrightarrow\; \text{SAMBP relay pipeline}
+  \;\longrightarrow\; \text{Trip/restrain decision + } \kn
+\]
+This represents a qualitative increase in validation credibility: the relay
+now operates on currents that a real power system would produce, not on
+idealised synthetic signals.
+
+The document is organised as follows:
+\begin{itemize}
+  \item \S\ref{sec:toolchain} — the enabling toolchain and its role
+  \item \S\ref{sec:tr_evolution} — how each Phase-7 TR evolved, with major changes
+  \item \S\ref{sec:papers} — journal paper landscape (Papers A--H)
+  \item \S\ref{sec:gaps} — identified gaps (evidence, architectural, theoretical)
+  \item \S\ref{sec:thesis_plan} — detailed thesis modification plan (per chapter)
+  \item \S\ref{sec:future} — future research objectives with timeline
+  \item \S\ref{sec:scorecard} — summary scorecard
+\end{itemize}
+
+% =============================================================================
+\section{Enabling Toolchain}
+\label{sec:toolchain}
+% =============================================================================
+
+\begin{table}[H]
+\centering
+\caption{Three external simulators installed at the start of Phase 7.}
+\label{tab:tools}
+\begin{tabular}{llll}
+\toprule
+Tool & Interface & Physical role & First TR \\
+\midrule
+\textbf{pandapower} & Python API, \texttt{pn.case39()} & Z-bus network analysis, IEEE 39-bus case, load-flow & TR-66 \\
+\textbf{ANDES}      & Python API, \texttt{andes.run()} & Positive-sequence dynamic simulation (WTDTA1, PVD1) & TR-56, TR-59, TR-62 \\
+\textbf{OpenDSS}    & opendssdirect.py & Distribution-level 3-phase network with DG infeed & TR-65 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{ANDES — Dynamic IBR Simulation}
+
+ANDES provides a positive-sequence phasor-domain dynamic model of the power system.
+For the SAMBP validation it was used with two built-in models:
+\begin{itemize}
+  \item \textbf{WTDTA1} (Type-3 DFIG wind turbine): rotor dynamics, RSC current
+    control, crowbar activation.  Used in TR-56 to validate the 10-parameter
+    piecewise-ODE fault current model.
+  \item \textbf{PVD1} (Solar PV converter): SRF $dq$ current controller,
+    zero-DC output.  Used in TR-62 to validate the 2-parameter PV model.
+\end{itemize}
+
+TR-59 revealed an important limitation: ANDES reconstructs three-phase
+waveforms from positive-sequence states and cannot reproduce the DC offset
+transient with the physical fidelity required by the SAMBP LM estimator.
+This finding is documented as a correct engineering outcome and justifies
+using PSCAD/EMTDC for the final EMT validation (TR-67).
+
+\subsection{OpenDSS — Distribution Network}
+
+OpenDSS was used in TR-65 to model an 11\,kV radial feeder with one
+distributed generator.  The load-flow solution provides three-phase phasor
+currents at each bus; these are passed to the SAMBP 87B pipeline after
+DC-offset synthesis:
+\[
+  i(t) = \sqrt{2}\,|I|\Bigl(
+    \sin(\omega t + \theta) - \sin(\theta)\,K_{\rm DC}\,e^{-t/\tau}
+  \Bigr),
+  \quad \theta = \angle I + \tfrac{\pi}{2}.
+\]
+
+\subsection{pandapower — Transmission Network}
+
+pandapower was used in TR-66 to load the IEEE 39-bus New England test system
+(\texttt{case39()}) and compute the bus impedance matrix via:
+\[
+  \mathbf{Y}_{\rm bus} = \texttt{makeYbus}(\ldots),\qquad
+  \mathbf{Z}_{\rm bus} = \mathbf{Y}_{\rm bus}^{-1},\qquad
+  I_f^{(k)} = \frac{V_{\rm pre}^{(k)}}{Z_{kk}},\qquad
+  \Delta\mathbf{V} = -\mathbf{Z}_{\bullet k}\,I_f^{(k)}.
+\]
+All nine SAMBP protection functions were then evaluated against 12 fault
+scenarios derived from this Z-bus analysis.
+
+% =============================================================================
+\section{Phase-7 Technical Report Evolution}
+\label{sec:tr_evolution}
+% =============================================================================
+
+\subsection{TR-56 — DFIG Piecewise-ODE Model for 87L/87G}
+\label{sec:tr56}
+
+\subsubsection{Problem}
+The 4-parameter SG reduced model assumes a smooth exponential DC decay.
+DFIG fault current has a slip-frequency oscillation during the RSC-active
+phase that violates this assumption, followed by an abrupt transition when
+the crowbar fires and bypasses the rotor circuit.
+
+\subsubsection{Contributions}
+\begin{itemize}
+  \item \textbf{10-parameter piecewise model}: RSC-active phase
+    (amplitudes $I_0^{\rm RSC}$, slip frequency $\omega_s$, decay $\tau_{\rm RSC}$,
+    phase $\phi_{\rm RSC}$) joined to post-crowbar phase (4 SG-equivalent params)
+    via smoothed Heaviside with sigmoid width $\sigma_H$.
+  \item \textbf{Analytical Jacobian}: all 10 partial derivatives in closed form,
+    reducing LM iteration cost vs.\ finite-difference by $\sim$60\%.
+  \item \textbf{CUSUM crowbar detector}: band-power ratio test detects the
+    RSC-to-crowbar transition in $O(1)$ sample latency.
+  \item \textbf{Two-pass LM}: Pass~1 fits all 10 params; Pass~2 refines
+    $\omega_s$ and $\tau_{\rm DC}$ on the tail window where the signal-to-noise
+    ratio is highest for frequency estimation.
+\end{itemize}
+
+\subsubsection{ANDES Validation (6/6)}
+Validated against ANDES WTDTA1 (Type-3 DFIG) with 6-case matrix:
+3 external (correctly restrained) + 3 internal (correctly tripped at $\sim$950\,ms).
+Condition number $\kn \le$ threshold confirmed in all internal cases.
+
+\subsubsection{Major evolution vs.\ prior SG model}
+The SG model is a single 4-parameter exponential.  The DFIG model is a
+structural extension: a piecewise ODE with a real-time state-machine (CUSUM)
+detecting the regime transition.  The CUSUM module has no equivalent in the
+87T or 87B chains.
+
+\subsubsection{Status and pending work}
+\begin{tabular}{ll}
+  \cmark & ANDES validation (6/6 correct) \\
+  \pmark & 10-scenario deterministic sweep (driver script not yet written) \\
+  \pmark & 1000-trial Monte Carlo ($\kn$ distribution table) \\
+  \pmark & Thesis §6.1 write-up \\
+\end{tabular}
+
+\bigskip
+
+% -----------------------------------------------------------------------
+\subsection{TR-57 — Bayesian SPRT for 87T IBR Inrush Discrimination}
+\label{sec:tr57}
+
+\subsubsection{Problem}
+Second-harmonic restraint (IEC~60255-187-3 baseline) fails for
+IBR-fed transformers because current controllers suppress harmonics;
+GFM inverter inrush waveforms lack the second-harmonic signature that
+conventional 87T relays depend on.  This causes either (a) false trips
+on energisation, or (b) failure to distinguish true inrush from
+IBR-sourced internal faults.
+
+\subsubsection{Contributions}
+\begin{itemize}
+  \item \textbf{Waveform asymmetry index} $A_k$: ratio of positive-half-cycle
+    area to negative-half-cycle area per fundamental cycle.  Inrush:
+    $A_k \gg 1$ (asymmetric); internal fault: $A_k \approx 1$ (symmetric);
+    CT saturation: $A_k$ moderately elevated on alternate half-cycles.
+  \item \textbf{Jiles--Atherton (JA) core model}: derives the theoretical
+    distribution of $A_k$ under inrush ($H_0$), giving $\mu_0, \sigma_0$
+    calibrated to physical core parameters $(M_s, a, \alpha, c, k_{\rm JA})$.
+  \item \textbf{IBR current-controller model}: derives the distribution
+    of $A_k$ under internal fault ($H_1$).  Current-controlled IBR suppresses DC,
+    so $A_k \approx 1$; gives $\mu_1, \sigma_1$.
+  \item \textbf{CT saturation model}: derives $A_k$ under external fault
+    with CT saturation ($H_2$).  Flat-top on alternate half-cycles yields
+    moderate asymmetry; gives $\mu_2, \sigma_2$.
+  \item \textbf{Three-hypothesis SPRT}: parallel log-likelihood ratio tests
+    $H_0$ vs.\ $H_1$ and $H_0$ vs.\ $H_2$ using Wald boundaries.
+    Expected decision in 3--5 cycles vs.\ $O(\infty)$ blocking for conventional
+    2nd harmonic.
+  \item \textbf{Patent claims}: four independent claims identified (asymmetry
+    index method, three-hypothesis SPRT, CT-saturation veto, IBR parameter
+    adaptation).  Most commercially disruptive TR in Phase~7.
+\end{itemize}
+
+\subsubsection{Status and pending work}
+\begin{tabular}{ll}
+  \cmark & Full theoretical derivation (JA model, SPRT formulation, KL divergence) \\
+  \pmark & 24-scenario deterministic simulation \\
+  \pmark & 5000-trial Monte Carlo \\
+  \pmark & PSCAD/EMTDC validation with detailed JA transformer model \\
+  \pmark & IEEE TPWRD paper draft \\
+\end{tabular}
+
+\bigskip
+
+% -----------------------------------------------------------------------
+\subsection{TR-58 — Generalised EAC + Conservative CUEP for Relay~78}
+\label{sec:tr58}
+
+\subsubsection{Problem}
+Relay~78 (out-of-step protection) uses the Equal Area Criterion (EAC)
+from classical SG swing equations.  In a hybrid SG\,+\,GFM\,+\,GFL system:
+GFM IBR adds virtual inertia (increases decelerating area), while GFL
+clips current at rated (reduces decelerating area during fault clearing).
+The standard CUEP ignores both effects, producing a blinder setting that
+either trips stable power swings or fails to trip unstable ones.
+
+\subsubsection{Contributions}
+\begin{itemize}
+  \item \textbf{Extended power-angle equation}: augments the classical
+    $P_e(\delta)$ with GFM virtual inertia $H_{\rm IBR}$ and GFL
+    current-limited injection term.
+  \item \textbf{Lyapunov energy function}: $V(\delta, \omega) =
+    \sum_i (H_i/H_{\rm total})\tfrac{1}{2}\omega^2 + W(\delta)$
+    giving the augmented potential well for the hybrid system.
+  \item \textbf{Conservative CUEP lower bound}:
+    $\delta_{\rm CUEP,LB} = \delta_{\rm CUEP,classical} - \Delta\Omega_{\rm IBR}$,
+    where $\Delta\Omega_{\rm IBR}$ is the IBR-driven reduction in potential energy.
+  \item \textbf{IBR-corrected blinder}:
+    $\delta_{\rm blinder} = \delta_{\rm LB} - 5^\circ$ (explicit conservatism margin).
+  \item \textbf{Worked numerical example}: 30\% GFL penetration; blinder
+    crosses the impedance trajectory at $Z(\delta_{\rm LB}) - 5^\circ$
+    before the classical blinder does.
+\end{itemize}
+
+\subsubsection{Status and pending work}
+\begin{tabular}{ll}
+  \cmark & Full theoretical derivation and Lyapunov proof \\
+  \cmark & Worked numerical example (TikZ figure produced) \\
+  \pmark & 18-scenario deterministic simulation (3 GFM $\times$ 3 GFL $\times$ 2 fault types) \\
+  \pmark & IBR parameter sensitivity sweep \\
+  \pmark & IEEE TPWRS paper draft \\
+\end{tabular}
+
+\bigskip
+
+% -----------------------------------------------------------------------
+\subsection{TR-59 — ANDES Positive-Sequence Validation of SAMBP Sync-OC}
+\label{sec:tr59}
+
+\subsubsection{Problem}
+Before TR-67 (EMT HIL), can ANDES positive-sequence simulation serve as
+an intermediate validation of the SAMBP sync-OC estimator?
+
+\subsubsection{Findings}
+The 10-case matrix (5 fault types $\times$ 2 SG operating points) shows that
+the SAMBP confidence gate correctly rejects ANDES waveforms with
+$\gamma_{\rm conf} = 0.42$--$0.65$ (threshold 0.70).  This is a
+\emph{correct} engineering outcome: the positive-sequence reconstruction
+lacks the DC offset physics that the LM estimator needs to identify
+$\tau_{\rm DC}$ and $I_{\rm DC}$.
+
+For comparison, synthetic data gives $\gamma_{\rm conf} = 0.89$--$0.97$.
+
+\subsubsection{Major finding}
+ANDES positive-sequence simulation is \emph{not} suitable for protection-grade
+validation of the SAMBP estimator.  This finding:
+\begin{enumerate}
+  \item Justifies TR-67 (RTDS/PSCAD) as the definitive validation path.
+  \item Proves the SAMBP confidence gate is functioning correctly as a quality filter.
+  \item Establishes that the validation chain must use a true EMT simulator
+    for final results.
+\end{enumerate}
+
+\subsubsection{Status}
+\begin{tabular}{ll}
+  \cmark & 10-case validation matrix \\
+  \cmark & Confidence score breakdown and physical interpretation \\
+  \pmark & PDF compilation (LaTeX source exists, compile pass pending) \\
+  \pmark & EMT follow-up (TR-67) \\
+\end{tabular}
+
+\bigskip
+
+% -----------------------------------------------------------------------
+\subsection{TR-62 — Solar PV 2-Parameter Model and $k_{\rm ibr}$-Driven Selector for 87L}
+\label{sec:tr62}
+
+\subsubsection{Problem}
+The \textit{ieee\_line\_diff} paper validates 87L only for SG sources.
+PV inverters inject near-pure sinusoids: the SRF current controller tracks
+$d$-axis current to rated with negligible DC.  When the 4-parameter SG model
+is applied to a PV fault, the two DC terms are collinear (both approach zero)
+and the Jacobian becomes rank-deficient ($\kn \to 10^6$).
+
+\subsubsection{Contributions}
+\begin{itemize}
+  \item \textbf{2-parameter PV model}: $\theta_{\rm PV} = [I_{\rm fund}, \varphi_{\rm fund}]$;
+    DC terms fixed to zero analytically.  Jacobian rank\,=\,2, $\kn \le 1.00$.
+  \item \textbf{DC Decay Ratio (DDR)}: $\text{DDR} = (i_{\rm peak} - i_{\rm ss})/i_{\rm peak}$
+    measured in the first 20\,ms post-fault.
+    DDR $< 0.05$\,: PV model.  DDR $\in [0.05, 0.20]$\,: DFIG model.
+    DDR $> 0.20$\,: SG model.
+  \item \textbf{Exponential veto}: if fitted $\tau_{\rm DC} > 200$\,ms $\Rightarrow$
+    override to PV model (prevents over-parameterisation on near-sinusoidal faults).
+  \item \textbf{Drop-in replacement architecture}: unified LM call with DDR selector
+    switching the parameter vector before each LM step; the 87L pipeline is unchanged.
+\end{itemize}
+
+\subsubsection{ANDES Validation (6/6)}
+Validated against ANDES PVD1 with 6-case matrix:
+3 external (correctly restrained) + 3 internal (tripped).
+$\kn = 1.00$ in all internal cases — perfect identifiability.
+DDR correctly selects PV model in 100\% of cases.
+
+\subsubsection{Status and pending work}
+\begin{tabular}{ll}
+  \cmark & 2-parameter model derivation and Jacobian \\
+  \cmark & ANDES PVD1 validation (6/6) \\
+  \pmark & 9-scenario deterministic PV study (driver script) \\
+  \pmark & 5000-trial Monte Carlo ($P_D$, $t_{50}$, $t_{95}$, DDR accuracy) \\
+  \pmark & \textit{ieee\_line\_diff} paper §III update (add PV results column) \\
+\end{tabular}
+
+\bigskip
+
+% -----------------------------------------------------------------------
+\subsection{TR-65 — OpenDSS 87B Bus Differential, 11\,kV Distribution Bus}
+\label{sec:tr65}
+
+\subsubsection{Problem}
+All prior 87B validation (TR-04) used synthetic phasors.  This does not
+demonstrate that the SAMBP 87B pipeline operates correctly when the bus
+currents are computed by a real network solver under distribution-level
+topology with DG infeed, line charging, and CT mismatch.
+
+\subsubsection{What was built}
+\begin{itemize}
+  \item OpenDSS 11\,kV radial feeder: VSOURCE 11\,kV, 3 feeders, 1 DG at Feeder~3.
+  \item Physics-correct DC offset from OpenDSS phasor output:
+    $\theta = \angle I + \pi/2$, sign from $-\sin\theta$.
+  \item CT model: $\varepsilon_{\rm CT} = I_{\rm sat}/(1 + I_{\rm sat}/I_{\rm peak})$.
+  \item 6 scenarios: normal load, external F1, external F2\,+\,CT-sat,
+    internal AG, internal 3-phase, external F2\,+\,DG.
+\end{itemize}
+
+\subsubsection{Results (6/6)}
+All six scenarios returned the correct relay decision.
+The external-fault\,+\,CT-saturation case was correctly vetoed by the
+Stage-2 gate ($\kn = 4.9$, $f_{\rm int} = 0.45 < 0.60$).
+The DG reverse-infeed case correctly balanced KCL at the bus.
+
+\subsubsection{Status and pending work}
+\begin{tabular}{ll}
+  \cmark & 6/6 correct decisions \\
+  \cmark & Stage-2 veto on CT saturation confirmed \\
+  \pmark & Multi-feeder buses (3-winding, bus-section switch) \\
+  \pmark & Monte Carlo study (CT mismatch, DG penetration sweep) \\
+  \pmark & HIL integration (TR-67) \\
+\end{tabular}
+
+\bigskip
+
+% -----------------------------------------------------------------------
+\subsection{TR-66 — IEEE 39-Bus Full-System Validation (All 9 Functions)}
+\label{sec:tr66}
+
+\subsubsection{Problem}
+No single previous test had exercised all nine SAMBP protection functions
+simultaneously on a realistic multi-machine transmission system.
+Each function had been validated in isolation; their ability to
+\emph{co-exist without cross-tripping} was unproven.
+
+\subsubsection{Network}
+IEEE 39-bus New England test system (pandapower \texttt{case39()}):
+39 buses, 35 lines, 11 transformers, 9 generators + external grid,
+100\,MVA / 345\,kV base.  Z-bus fault analysis provides
+$I_f^{(k)} = V_{\rm pre}^{(k)} / Z_{kk}$ at each faulted bus.
+
+\subsubsection{Nine protection functions}
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Element & Function & Key parameter \\
+\midrule
+51G  & Generator overcurrent (inverse-time) & $I_{\rm pickup} = 1.1\,\pu$, TMS = 0.5 \\
+87G  & Generator differential (two-terminal zone) & Slope 20\%, pickup 0.2\,\pu \\
+87B  & Bus differential (SAMBP pipeline) & Slope 30\%, $\kn < 30$, $f_{\rm int}$ gate \\
+87L  & Line differential (SAMBP pipeline) & $k_{\rm line} = 0.12\,\pu$ threshold \\
+87LN & Negative-sequence differential & $I_2 > 0.06\,\pu$ threshold \\
+87LN0& Zero-sequence differential & $I_0 > 0.04\,\pu$ threshold \\
+TDCS & IBR adaptive threshold & $K_\sigma = 3$, $\delta_{\rm floor} = 0.025\,\pu$ \\
+87T  & Transformer differential (SAMBP pipeline) & Yd11, slope 15/25\%, $\kn < 30$ gate \\
+21   & Mho distance (3-zone) & Zone1 = 80\%, Zone2 = 120\%, Zone3 = 180\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection{Key engineering decisions resolved}
+
+\paragraph{87G convention.}
+For an external bus fault, the HV terminal current flows \emph{out} of the
+generator zone (convention: into-zone is positive).  Therefore:
+\[
+  I_{\rm op}^{87G} = |I_{\rm stator} + (-I_{\rm delivered})| = 0
+  \quad\text{(external fault)} \qquad
+  I_{\rm op}^{87G} = |I_{\rm stator}| \gg 0
+  \quad\text{(internal fault)}.
+\]
+Using $+I_{\rm delivered}$ (wrong sign) produced false trips on 4 of 12 scenarios.
+
+\paragraph{KCL balance at Bus~39.}
+Generator G9 contributes only 0.39/15.03\,=\,2.6\% of the Bus~39 fault current.
+The remaining 97.4\% is supplied via Line~9-39 from the network.
+Ignoring the correct proportional split created a 5.72\,\pu\ false differential.
+
+\paragraph{Yd11 cancellation.}
+For a transformer external fault, the LV phasor must lead the HV phasor
+by $5\pi/6$ so that after the $M_X$ compensation matrix, the restrained
+differential is zero.  Using the same phase (LV\,=\,HV) produced a
+41\,\pu\ false trip.
+
+\paragraph{TDCS IBR detection.}
+The IBR scenario produces $k_{\rm ibr} = 0.08\,\pu < 0.12\,\pu$ (87L threshold),
+so 87L correctly restrains.  TDCS post-RMS = 0.057\,\pu\ $>$ threshold 0.026\,\pu;
+TDCS alone trips, demonstrating the IBR fallback function.
+
+\subsubsection{Results}
+\begin{center}
+\begin{tabular}{llc}
+\toprule
+Scenario & Expected trip(s) & Outcome \\
+\midrule
+Normal load           & None                   & \DONE\ \\
+Bus 39 — 3-phase      & 87B                    & \DONE\ \\
+Bus 39 — A-G          & 87B                    & \DONE\ \\
+Gen stator — 3-phase  & 51G, 87G               & \DONE\ \\
+Line 9--39 — 3-phase  & 87L, TDCS              & \DONE\ \\
+Line 9--39 — A-G      & 87L, 87LN, 87LN0, TDCS & \DONE\ \\
+Line 9--39 — IBR      & TDCS only              & \DONE\ \\
+Bus 9 external — 3ph  & None (Zone\,2 delayed) & \DONE\ \\
+Line 8--9 — Zone 1    & 21                     & \DONE\ \\
+Line 8--9 external    & None                   & \DONE\ \\
+Trafo internal — 3ph  & 87T                    & \DONE\ \\
+Trafo external — 3ph  & None                   & \DONE\ \\
+\midrule
+\multicolumn{2}{l}{\textbf{Overall selectivity}} & \textbf{12/12 = 100\%} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% =============================================================================
+\section{Journal Paper Landscape}
+\label{sec:papers}
+% =============================================================================
+
+\begin{longtable}{p{0.12\linewidth}p{0.38\linewidth}p{0.13\linewidth}p{0.10\linewidth}p{0.10\linewidth}}
+\caption{Eight journal papers in the SAMBP programme.}\label{tab:papers}\\
+\toprule
+Label & Title & Target journal & Status & Chapter \\
+\midrule\endfirsthead
+\toprule
+Label & Title & Target journal & Status & Chapter \\
+\midrule\endhead
+Paper~A & Real-Time Inverse Parameter Estimation for Adaptive Overcurrent & IEEE TPWRD & Draft & Ch.\,3 \\[4pt]
+Paper~B & Hilbert--Fortescue Sequence Estimation and Cascaded OC Coordination & IEEE TPWRD & Draft & Ch.\,3 \\[4pt]
+Paper~C & Self-Adaptive Model-Based Protection: A Unified Framework & IEEE TPS & Draft & Ch.\,7 \\[4pt]
+Paper~D & Validation Boundaries of Reduced-Order Inverse Protection Under 6th-Order Park~$dq$ Dynamics & IEEE TEC & Draft & Ch.\,2 \\[4pt]
+Paper~E & Impedance-Aware Adaptive Very-Inverse OC for High-Impedance Faults & IEEE TPWRD & Draft & Ch.\,3 \\[4pt]
+Paper~F & Sequence-Component Inverse Estimation for Adaptive OC Under Asymmetric Faults & IEEE TPWRD & Draft & Ch.\,7 \\[4pt]
+Paper~G & Coordinated Adaptive OC for Parallel Synchronous Generators Using Online Inverse Estimation & IEEE TPWRD & Draft & Ch.\,3 \\[4pt]
+Paper~H & IBR-Adaptive Line Differential Protection: Harmonic Discrimination, Zero-Seq, TDCS & IEEE TIE & Draft & Ch.\,4 \\
+\bottomrule
+\end{longtable}
+
+\noindent Papers A--H are all in draft form.  The most urgent updates are to
+Paper~C (needs TR-66 selectivity matrix) and Paper~H (needs TR-62 PV results).
+
+% =============================================================================
+\section{Identified Gaps}
+\label{sec:gaps}
+% =============================================================================
+
+\subsection{G1 — Simulation Evidence Gaps in Existing TRs}
+
+\begin{longtable}{p{0.08\linewidth}p{0.40\linewidth}p{0.40\linewidth}}
+\caption{Missing simulation runs blocking paper submissions.}\label{tab:g1}\\
+\toprule
+TR & Missing evidence & Impact \\
+\midrule\endfirsthead
+\toprule
+TR & Missing evidence & Impact \\\midrule\endhead
+TR-56 & 10-scenario deterministic sweep; 1000-trial MC; $\kn$ table empty & Ch.\,6 §6.1 and IEEE TEC paper blocked \\
+TR-57 & 24-scenario sim and 5000-trial MC not run; no PSCAD validation & IEEE TPWRD paper blocked \\
+TR-58 & 18-scenario simulation not run; blinder performance unquantified & IEEE TPWRS paper blocked \\
+TR-59 & No PSCAD/EMT follow-up; positive-sequence limitation documented but not resolved & TR-67 is the only path forward \\
+TR-62 & 9-scenario PV study not run; DDR accuracy not measured empirically & Paper~H §III update blocked \\
+TR-65 & MC, multi-feeder, 3-winding bus not done & Single-feeder result only \\
+TR-66 & Multi-corridor extension (only Bus~39 covered); 10k-trial MC pending & Paper~C §IV update and Chapter~7 blocked \\
+\bottomrule
+\end{longtable}
+
+\subsection{G2 — Missing TRs from the Gap Plan}
+
+\begin{table}[H]
+\centering
+\caption{Five TRs planned but not yet written.}
+\begin{tabular}{llp{0.50\linewidth}}
+\toprule
+TR & Topic & Gap filled \\
+\midrule
+TR-60 & Relay 40 (Loss of Excitation) with GFM admittance correction & No LOE treatment anywhere in SAMBP \\
+TR-61 & 64G stator earth fault, optimal sub-harmonic injection $f^* = 25$--35\,Hz & No stator EF treatment \\
+TR-63 & Relay 81 IFDI for zero-inertia GFM networks & Frequency detection entirely absent \\
+TR-64 & IBR-aware 87T with SPRT + 5k MC & TR-57 is theory; TR-64 is the validated implementation \\
+TR-67 & HIL with DFIG and PV emulators on RTDS/PSCAD & Whole SAMBP stack validated in Python only \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{G3 — Paper Update Gaps}
+
+\begin{table}[H]
+\centering
+\caption{Papers requiring material updates from new TR results.}
+\begin{tabular}{lp{0.40\linewidth}p{0.35\linewidth}}
+\toprule
+Paper & What needs updating & Reason \\
+\midrule
+Paper~H & PV 2-param model (§III), DDR selector (§IV), PV results column (§V) & TR-62 adds third source type \\
+Paper~C & Ch.\,7 integration results from TR-66 selectivity matrix & TR-66 provides cross-element evidence \\
+Paper~D & Validity boundary for DFIG and PV sources absent & TR-56/TR-62 change the boundary conditions \\
+Papers A/E/F/G & IBR infeed OC coordination section absent & No paper addresses IBR effect on 51 settings \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{G4 — Architectural Gaps}
+
+\begin{enumerate}
+  \item \textbf{No hardware validation.}  All validation is Python simulation.
+    SAMBP claims real-time capability but has never run on embedded hardware or an RTDS.
+  \item \textbf{Single protection corridor.}  TR-66 validates one corridor (Bus~39).
+    The 39-bus system has 10 generators and 35 lines; the remaining 9 corridors are untested.
+  \item \textbf{No adaptive setting update loop.}  SAMBP estimates parameters and
+    decides trip/restrain but never feeds $\kn$ or model type back to setting management.
+    The ``self-adaptive'' claim in Paper~C is not demonstrated end-to-end.
+  \item \textbf{No communications model.}  87L assumes perfect latency.  The interaction
+    between TDCS and channel degradation (packet loss, jitter) has not been co-validated.
+  \item \textbf{Sequence elements not in unified test.}  87LN and 87LN0 trip correctly in
+    TR-66 (line9\_39\_ag scenario), but TR-22/TR-25 (the defining TRs) have not been
+    updated to show IBR-sourced AG fault behaviour.
+\end{enumerate}
+
+\subsection{G5 — Theoretical Gaps}
+
+\begin{enumerate}
+  \item \textbf{DFIG sub-synchronous resonance (SSR).}  TR-56 models crowbar transition
+    but not SSR coupling between the DFIG shaft and series-compensated lines — a known
+    failure mode for 87L protection.
+  \item \textbf{GFM virtual inertia during fault ride-through.}  TR-58 assumes GFM tracks
+    SG angle during swing.  Grid-forming converters with current limiters enter a
+    different regime during fault; the EAC energy function is not valid during current limiting.
+  \item \textbf{Multi-infeed IBR coordination.}  All TRs model one IBR source.
+    A bus simultaneously fed by DFIG and PV has a mixed DDR; the TR-62 selector has
+    no defined behaviour for this case.
+  \item \textbf{Non-stationary noise in TDCS.}  TDCS uses a static $\sigma_{\rm pre}$.
+    If background load switches near the IBR bus (motor starts, capacitor energisation),
+    $\sigma_{\rm pre}$ evolves.  No adaptive noise floor update is defined.
+\end{enumerate}
+
+% =============================================================================
+\section{Thesis Modification Plan}
+\label{sec:thesis_plan}
+% =============================================================================
+
+\subsection{Chapter 2 — Machine Modelling}
+
+\textit{Current state:} 6th-order Park $dq$ truth model (Paper~D), reduced 4-parameter SG model.
+
+\begin{itemize}
+  \item \textbf{Add §2.4 — DFIG Reduced Piecewise-ODE Model} (from TR-56 §3--§5).
+    Present the 10-parameter model as a natural structural extension of the
+    4-parameter SG model, framed as: ``as the source transitions from SG to DFIG,
+    the single exponential is replaced by a two-regime ODE.''
+  \item \textbf{Add §2.5 — PV 2-Parameter Model} (from TR-62 §2).
+    Show the model reduction as a motivated collapse: when $\tau_{\rm DC} \to \infty$,
+    the DC terms vanish and the identifiable parameter space collapses to
+    $[I_{\rm fund}, \varphi_{\rm fund}]$.
+  \item \textbf{Update validity boundary discussion.}
+    $L^* \approx 150$\,ms for SG (AVR time constant).
+    For DFIG: boundary set by crowbar transition time ($\sim$50--100\,ms).
+    For PV: no DC $\Rightarrow$ no validity boundary.
+    A three-row comparison table (SG vs.\ DFIG vs.\ PV) is required.
+  \item \textbf{Add Figure 2.X}: source-model taxonomy tree
+    (SG\,$\to$\,4-param; DFIG\,$\to$\,10-param piecewise; PV\,$\to$\,2-param zero-DC).
+\end{itemize}
+
+\subsection{Chapter 3 — Overcurrent Protection (51)}
+
+\textit{Current state:} Papers A, B, E, F, G covering SG feeders, HIF, sequence decomposition,
+cascade coordination, and parallel generator coordination.
+
+\begin{itemize}
+  \item \textbf{Add §3.6 — IBR infeed effect on 51 coordination.}
+    When an IBR is on the same bus as the protected SG, the fault current at the relay
+    is $I_{\rm relay} = I_{\rm SG} + k_{\rm ibr}\,I_{\rm rated}^{\rm IBR}$.
+    The existing Very-Inverse characteristic uses only SG-sourced current in its
+    $M = I/I_{\rm pickup}$ ratio.  An IBR infeed correction factor is needed.
+  \item \textbf{Update Papers A and G selectivity tables.}
+    Re-run the 10-scenario and multi-gen scenarios adding a PV or DFIG at the feeder bus.
+    Show that existing coordination holds when $k_{\rm ibr} \le 0.30\,\pu$.
+  \item \textbf{Update Paper E (HIF).}
+    Add a note that HIF detectability with IBR infeed may be reduced: the rising
+    impedance signature can be masked when the IBR current controller clamps output.
+\end{itemize}
+
+\subsection{Chapter 4 — Line Differential (87L)}
+
+\textit{Current state:} Paper~H covers 21 scenarios for SG source only.
+
+\begin{itemize}
+  \item \textbf{Add §4.5 — PV-Source 87L via 2-Parameter Model and DDR Selector.}
+    The DDR selector algorithm (TR-62 §5) must be promoted from TR appendix to
+    thesis body — it is the first automated source-type classifier in the SAMBP
+    chain and deserves a dedicated algorithm box.
+  \item \textbf{Update Paper~H results table.}
+    Add 9 PV scenarios from TR-62 Table~5.
+    Column header ``Source type: SG'' becomes a three-row grouping: SG, DFIG, PV.
+  \item \textbf{Add §4.6 — TDCS with non-stationary background.}
+    Frame TR-24 (adaptive TDCS) as the reference and identify the static $\sigma_{\rm pre}$
+    as a known limitation.
+  \item \textbf{Update §4.3 (sequence elements).}
+    Cross-reference TR-66 §5.5: 87LN trips at $I_2 = 4.88\,\pu$ (AG fault on line9\_39),
+    confirming the 0.06\,\pu\ threshold is conservative by $80\times$.
+\end{itemize}
+
+\subsection{Chapter 5 — Transformer Differential (87T)}
+
+\textit{Current state:} TR-03 (87T foundation), TR-57 (SPRT theory only).
+No validated simulation results exist.
+
+\begin{itemize}
+  \item \textbf{Write §5.1--§5.3 from TR-57 theory.}
+    JA core model, asymmetry index, and SPRT formulation are publication-quality
+    derivations and go into the chapter body directly.
+  \item \textbf{§5.4 must explicitly state results are PENDING (TR-57a).}
+    Do not write a results section without data.
+  \item \textbf{§5.5 — Integration with SAMBP 87T gate} (TR-57 §6).
+    The SPRT replaces 2nd-harmonic blocking but is \emph{additive} to the
+    Stage-2 $\kn$ gate — both must pass for a trip.
+  \item \textbf{Critical path:} This chapter is on the Q3\,2026 target.
+    TR-57 simulation must be the next coding task after TR-62a.
+\end{itemize}
+
+\subsection{Chapter 6 — Generator Protection Suite (40/64G/78/81/87G)}
+
+\textit{Current state:} TR-56 (DFIG 87G/87L model), TR-58 (Relay~78 EAC).
+TRs for 40/64G/81 not yet written.
+
+\begin{itemize}
+  \item \textbf{§6.1 — DFIG machine model} (TR-56): write from TR-56 §2--§8,
+    ending with the 6/6 ANDES validation.
+  \item \textbf{§6.2 — Generator differential 87G}: note that TR-66 §3.2 establishes
+    the two-terminal zone convention.  Write this as the governing convention
+    for all 87G analysis in the chapter.
+  \item \textbf{§6.3 — Relay 78} (out-of-step): write from TR-58 §3--§5.
+    The Lyapunov energy function and conservative CUEP bound are the
+    theoretical centrepiece of this section.
+  \item \textbf{§6.4--§6.6 PENDING}: Relay~40, 64G, 81 require TR-60, TR-61, TR-63.
+    Mark with explicit PENDING placeholders and target dates.
+  \item \textbf{Submission target:} Chapter~6 cannot be submitted until Q1~2028.
+\end{itemize}
+
+\subsection{Chapter 7 — System Integration}
+
+\textit{Current state:} Paper~C (unified SAMBP framework), Paper~F (sequence estimation).
+TR-65 and TR-66 are new evidence not yet reflected in these papers.
+
+\begin{itemize}
+  \item \textbf{Add §7.4 — IEEE 39-Bus Multi-Function Coordination} (TR-66).
+    The selectivity matrix (TR-66 Table~6) is the primary evidence that all 9 functions
+    coexist without false interaction at transmission level.
+  \item \textbf{Add §7.5 — OpenDSS Distribution-Level Integration} (TR-65).
+    Connects transmission protection (TR-66) to distribution protection (TR-65) —
+    a unique two-level validation across voltage levels.
+  \item \textbf{Update Paper~C §IV.}
+    The unified framework claim is now supported by 12/12 selectivity.
+    The current Paper~C has no multi-function, multi-source evidence;
+    TR-66 fills this gap directly.
+  \item \textbf{§7.6 — Remaining coordination gaps.}
+    Multi-corridor extension (35 lines not covered) and HIL (TR-67).
+    State as future work with specific quantitative targets.
+\end{itemize}
+
+\subsection{Chapter 8 (new) — Conclusions and Future Directions}
+
+\begin{itemize}
+  \item Section on RTDS/HIL (TR-67 scope and timeline)
+  \item Section on adaptive setting update loop (the missing link in the
+    ``self-adaptive'' claim of Paper~C)
+  \item Section on multi-infeed IBR coordination
+  \item Explicit statement on out-of-scope items: LVRT/HVRT control,
+    PV string internal faults, cybersecurity, machine learning,
+    economic optimisation.
+\end{itemize}
+
+% =============================================================================
+\section{Future Research Objectives}
+\label{sec:future}
+% =============================================================================
+
+\subsection{Near-Term (Q2--Q3 2026): Close Evidence Gaps}
+
+\begin{enumerate}
+  \item \textbf{TR-57a} — Run 24-scenario 87T SPRT deterministic study.
+    Compute KL divergence empirically and compare against theoretical ESC formula.
+    \textit{This is the highest-priority task: it unblocks the most commercially
+    disruptive paper and the Chapter~5 critical path.}
+  \item \textbf{TR-56a} — Write \texttt{sambp\_generator} driver.
+    Run 10-scenario sweep + 1000-trial MC.  Populate $\kn$ distribution table.
+  \item \textbf{TR-62a} — Run 9-scenario PV deterministic study and 5000-trial MC.
+    Measure DDR accuracy vs.\ source type ($P_D$, $t_{50}$, $t_{95}$).
+  \item \textbf{Compile TR-59 PDF} — LaTeX source exists; run \texttt{pdflatex} + \texttt{bibtex}.
+\end{enumerate}
+
+\subsection{Medium-Term (Q4 2026--Q1 2027): Generator Protection Suite}
+
+\begin{enumerate}
+  \setcounter{enumi}{4}
+  \item \textbf{TR-60} — Relay~40 LOE with GFM admittance correction.
+    Key equation: $Z_{40} = E_q^2/P - j(X_d - jX_q/2)$ corrected for GFM
+    virtual admittance.  Requires a new distance-type element not in current SAMBP code.
+  \item \textbf{TR-61} — 64G stator earth fault with optimal sub-harmonic injection.
+    Optimal frequency $f^* = 25$--35\,Hz minimises capacitive coupling noise
+    while maximising earth-fault sensitivity.
+  \item \textbf{TR-64} — Complete IBR-aware 87T with SPRT + 5000-trial MC.
+    Extends TR-57 from theory to validated implementation.
+\end{enumerate}
+
+\subsection{Medium-Term (Q2--Q3 2027): System-Level Completion}
+
+\begin{enumerate}
+  \setcounter{enumi}{7}
+  \item \textbf{TR-63} — Relay~81 IFDI for zero-inertia GFM networks.
+    Requires a frequency estimation algorithm robust to rapidly changing virtual
+    inertia — a genuinely novel problem with no published solution.
+  \item \textbf{Multi-corridor TR-66 extension} — Extend IEEE 39-bus validation to
+    all 10 generator corridors.  Generalise Z-bus superposition code for arbitrary
+    bus fault locations.
+  \item \textbf{Paper~H update} — Merge TR-62 PV material into \textit{ieee\_line\_diff}
+    §III--§V.  Target IEEE TIE submission Q3~2027.
+  \item \textbf{Paper~C update} — Merge TR-66 selectivity matrix into §IV.
+    Reframe contribution as ``multi-function, multi-source, multi-level integration.''
+\end{enumerate}
+
+\subsection{Long-Term (Q4 2027--Q2 2028): Hardware Validation and Self-Adaptation}
+
+\begin{enumerate}
+  \setcounter{enumi}{11}
+  \item \textbf{TR-67} — RTDS/PSCAD HIL with real DFIG and PV emulators.
+    Definitive validation closing the gap TR-59 identified:
+    positive-sequence ANDES is insufficient for protection-grade validation.
+  \item \textbf{Adaptive setting update loop} — Implement feedback from the LM
+    estimator's $\kn$ output to the 51 relay's $I_{\rm pickup}$.
+    When $\kn$ rises, widen the 51 time-grading margin automatically.
+    This makes ``self-adaptive'' a literal truth, not a framing claim.
+  \item \textbf{Multi-infeed DDR mixer} — Define DDR behaviour for a bus fed by
+    both DFIG (DDR $\in [0.05, 0.20]$) and PV (DDR $< 0.05$) simultaneously.
+    Requires a convex combination rule or parallel hypothesis test.
+  \item \textbf{Non-stationary TDCS} — Replace static $\sigma_{\rm pre}$ with
+    an EWMA adaptive estimate.  Makes the threshold adaptive to motor starts,
+    capacitor bank energisation, and IBR MPPT transients.
+\end{enumerate}
+
+% =============================================================================
+\section{Summary Scorecard}
+\label{sec:scorecard}
+% =============================================================================
+
+\begin{table}[H]
+\centering
+\caption{Before/after comparison across key research dimensions.}
+\label{tab:scorecard}
+\begin{tabular}{p{0.35\linewidth}p{0.27\linewidth}p{0.27\linewidth}}
+\toprule
+Dimension & Before Phase 7 & After Phase 7 \\
+\midrule
+Source types modelled & SG only & SG, DFIG, PV (3 types) \\
+Protection elements tested in isolation & All 9 elements & All 9 simultaneously (TR-66) \\
+Network realism & Synthetic phasors & OpenDSS (distribution) + pandapower/Z-bus (transmission) \\
+Dynamic simulator & None & ANDES (WTDTA1 + PVD1) \\
+Validation scenarios (cumulative) & $\sim$55 & $\sim$91 \\
+Phase-7 PDFs compiled & — & 6 (TR-56/57/58/62/65/66) \\
+Papers with IBR content & 1 (Paper~H draft) & 1 complete + 2 pending updates \\
+Pending simulation runs & 0 & 5 (TR-56a, 57a, 58, 62a, 66 ext.) \\
+Overall selectivity (best test) & 7/7 (87T, TR-04) & 12/12 (all 9 functions, TR-66) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent\textbf{Critical path}: TR-57a simulation (Q2~2026)
+$\to$ TR-56a MC (Q3~2026)
+$\to$ TR-62a MC (Q3~2026)
+$\to$ TR-60/61/64 (Q1~2027)
+$\to$ TR-63/67 (Q4~2027)
+$\to$ Chapter~7 write-up
+$\to$ Submission \textbf{Q3~2028}.
+
+\bigskip
+
+\noindent The most urgent single action is \textbf{TR-57a simulation} — it unblocks the
+most commercially significant patent and the only paper targeting IEEE TPWRD on
+transformer differential protection.  The second most urgent is \textbf{TR-62a} —
+the data is needed to update Paper~H before the IEEE TIE submission.
+
+% ---------------------------------------------------------------------------
+\appendix
+\section{Technical Report Directory}
+\label{app:trs}
+
+\begin{table}[H]
+\centering
+\caption{All Phase-7 technical reports with file locations and PDF status.}
+\begin{tabular}{lllc}
+\toprule
+TR & Title (short) & LaTeX file & PDF \\
+\midrule
+TR-56 & DFIG piecewise-ODE model & \texttt{TR56\_DFIG\_.../main\_report56.tex} & \cmark \\
+TR-57 & SPRT 3-hypothesis 87T & \texttt{TR57\_SPRT\_.../main\_report57.tex} & \cmark \\
+TR-58 & Generalised EAC + Relay 78 & \texttt{TR58\_EAC\_.../main\_report58.tex} & \cmark \\
+TR-59 & ANDES sync-OC validation & \texttt{TR59\_ANDES\_.../main\_report59.tex} & \xmark \\
+TR-62 & PV 2-param + DDR selector & \texttt{TR62\_PV\_.../main\_report62.tex} & \cmark \\
+TR-65 & OpenDSS 87B distribution & \texttt{TR65\_OpenDSS\_.../main\_report65.tex} & \cmark \\
+TR-66 & IEEE 39-bus, 9-function & \texttt{TR66\_IEEE39\_.../main\_report66.tex} & \cmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Code and Output Locations}
+\label{app:code}
+
+\begin{description}
+  \item[ANDES DFIG validation (TR-56):] \texttt{04\_code/sambp/generator/}
+  \item[ANDES PV validation (TR-62):]   \texttt{04\_code/sambp/line\_diff/} (PV extension modules)
+  \item[OpenDSS 87B script (TR-65):]    \texttt{04\_code/sambp/system/run\_tr65\_opendss.py}
+  \item[IEEE 39-bus script (TR-66):]    \texttt{04\_code/sambp/system/run\_tr66\_ieee39bus.py}
+  \item[TR-66 results CSV:]             \texttt{04\_code/sambp/system/outputs/tr66/tr66\_results.csv}
+  \item[All TR LaTeX sources:]          \texttt{03\_technical\_reports/phase\_7\_IBR\_extension/}
+  \item[All journal paper sources:]     \texttt{02\_papers/}
+\end{description}
+
+\end{document}

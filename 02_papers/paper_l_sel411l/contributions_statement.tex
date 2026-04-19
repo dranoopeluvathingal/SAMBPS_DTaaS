@@ -1,0 +1,78 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{microtype}
+
+\title{Author Contributions Statement\\[4pt]
+       \large Hardware-in-the-Loop Firmware Validation of the SEL-411L\\
+       Advanced Line Differential Relay via SAMBPS and IEC~61850 Sampled Values}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle\thispagestyle{empty}
+
+\noindent
+Author contributions are reported using the CRediT (Contributor Roles Taxonomy)
+framework.  Two authors are listed: \textbf{AVE} (Arun V.\ Eluvathingal) and
+\textbf{RKP} (R.\ K.\ Prasad, supervisor).
+
+\bigskip
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{CRediT role} & \textbf{AVE} & \textbf{RKP} \\
+\midrule
+Conceptualisation        & Lead   & Supporting \\
+Methodology              & Lead   & Supporting \\
+Software                 & Lead   & ---        \\
+Validation               & Lead   & Supporting \\
+Formal analysis          & Lead   & Supporting \\
+Investigation            & Lead   & ---        \\
+Resources                & ---    & Lead       \\
+Writing -- original draft & Lead   & ---        \\
+Writing -- review \& editing & Lead & Lead     \\
+Supervision              & ---    & Lead       \\
+\bottomrule
+\end{tabular}
+
+\bigskip
+\noindent\textbf{Detailed statement.}
+
+\medskip
+\noindent\textbf{Arun V.\ Eluvathingal (AVE):}
+Conceived and implemented the SAMBPS co-processor architecture on the SEL~RTAC~3530.
+Derived Proposition~1 (critical-path timing bound) and Proposition~2
+(float32 $\kappa_n$ bound) with full perturbation-theory proofs.
+Designed and executed all 48 HIL scenarios; characterised deviations D3 and D4.
+Implemented IEC~61850 Sampled Value ingestion and GOOSE coordination on the RTAC.
+Wrote all sections of the manuscript.
+
+\medskip
+\noindent\textbf{R.\ K.\ Prasad (RKP):}
+Provided research direction and laboratory resources (SEL-411L, SEL~RTAC~3530,
+RTDS GPC-III hardware).
+Reviewed all technical propositions and validation results.
+Edited and approved the final manuscript.
+
+\bigskip\bigskip
+\noindent\rule{0.5\textwidth}{0.4pt}
+
+\bigskip
+\noindent\textbf{Plain-text version (for journal submission portal):}
+
+\medskip
+\begin{minipage}{\textwidth}\small
+\textbf{AVE:} Conceptualisation (Lead); Methodology (Lead); Software (Lead);
+Validation (Lead); Formal analysis (Lead); Investigation (Lead);
+Writing -- original draft (Lead); Writing -- review \& editing (Lead).
+
+\medskip
+\textbf{RKP:} Conceptualisation (Supporting); Methodology (Supporting);
+Validation (Supporting); Formal analysis (Supporting); Resources (Lead);
+Writing -- review \& editing (Lead); Supervision (Lead).
+\end{minipage}
+
+\end{document}

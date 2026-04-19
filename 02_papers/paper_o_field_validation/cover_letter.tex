@@ -1,0 +1,95 @@
+%% cover_letter.tex — G7: Real DSO Field-Fault Validation
+%% IEEE Transactions on Power Systems
+\documentclass[11pt,a4paper]{letter}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{microtype}
+
+\signature{Anoop~V.~Eluvathingal\\
+           Ph.D.\ Candidate, Dept.\ of Electrical Engineering\\
+           Indian Institute of Technology Madras\\
+           Chennai 600036, India\\[2pt]
+           \texttt{arun.eluvathingal@iitm.ac.in}}
+
+\address{Department of Electrical Engineering\\
+         Indian Institute of Technology Madras\\
+         Chennai 600036, India}
+
+\begin{document}
+\begin{letter}{Editor-in-Chief\\
+               \textit{IEEE Transactions on Power Systems}}
+
+\opening{Dear Editor,}
+
+We submit for your consideration the manuscript titled:
+
+\begin{center}
+  \textbf{Field Validation of the Self-Adaptive Model-Based Protection
+  System on 157 Production IBR Fault Recordings from a 33\,kV DSO
+  Network}
+\end{center}
+
+\textbf{Motivation.}
+Inverter-based resource (IBR) proliferation has profoundly altered
+fault-current signatures in distribution networks, yet most protection
+algorithms are validated exclusively on synthetic or hardware-in-the-loop
+data.  The gap between simulation-domain performance and field performance
+is poorly characterised, particularly for high-impedance faults (HIF) and
+legacy non-compliant inverters.
+
+\textbf{Contributions.}
+This paper makes five distinct contributions:
+
+\begin{enumerate}
+  \item \textbf{Field dataset curation (C1).}  We curate and label 157
+        disturbance-fault recordings from DSO-A, a real 33\,kV network
+        with 12 substations and 47 feeders, covering January 2023 to
+        December 2025 (dataset protocol: TR-73).
+
+  \item \textbf{Synthetic-vs-real gap characterisation (C2).}  Systematic
+        comparison reveals a $-17.6\%$ HIF detection gap and $+1.1$\,pp
+        false-alarm increase when the SAMBPS framework is applied
+        unmodified to field data.
+
+  \item \textbf{F1 correction: legacy-IBR $\kappa_n$-trajectory detector
+        (C3).}  A sliding-window $\kappa_n$ rise-rate flag identifies
+        pre-IEEE-2800 inverter saturation and routes the estimator to a
+        one-cycle hold, recovering zone accuracy by $+3.5$\,pp.
+
+  \item \textbf{F2 correction: split-window HIF estimator (C4).}  A
+        two-regime negative-sequence estimator handles evolving
+        HIF-to-bolted transitions, improving HIF detection by $+7.4$\,pp.
+
+  \item \textbf{F3 correction: shape-factor calibration (C5).}  A scalar
+        $\beta$ factor ($\beta_{\rm tri} = 8/\pi^2 \approx 0.811$) corrects
+        the asymmetric limiter waveform for unusual inverter profiles,
+        closing the remaining detection gap.
+\end{enumerate}
+
+Combined, the three corrections (F1--F3) raise zone accuracy from 89.2\%
+to 95.5\% and reduce false alarms from 2.1\% to 1.4\%, approaching the
+synthetic benchmark of 98.2\% and 1.0\% respectively.
+
+\textbf{Fit to the journal.}
+\textit{IEEE Transactions on Power Systems} is the premier venue for
+rigorous field-validated protection studies.  This work provides the
+first large-scale IBR protection field-validation dataset in a real DSO
+context, directly advancing the journal's stated interest in
+grid-edge protection and IBR integration.
+
+\textbf{Suggested reviewers.}
+\begin{itemize}
+  \item Prof.\ Ali Hooshyar (University of Toronto) — IBR protection
+  \item Prof.\ Geza Joos (McGill University) — microgrid and distribution protection
+  \item Prof.\ Wilsun Xu (University of Alberta) — power quality and HIF detection
+  \item Dr.\ Evangelos Farantatos (EPRI) — field validation of protection algorithms
+\end{itemize}
+
+This manuscript is not under review elsewhere.  All authors have approved
+the submission.  The field dataset was provided under a research agreement
+with DSO-A; identifying substation details have been anonymised.
+
+\closing{Sincerely,}
+\end{letter}
+\end{document}

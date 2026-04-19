@@ -1,0 +1,93 @@
+%% cover_letter.tex — C1: Physics-Constrained Adaptive Slope
+%% IEEE Transactions on Automatic Control
+\documentclass[11pt,a4paper]{letter}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{microtype}
+
+\signature{Anoop~V.~Eluvathingal\\
+           Ph.D.\ Candidate, Dept.\ of Electrical Engineering\\
+           Indian Institute of Technology Madras\\
+           Chennai 600036, India\\[2pt]
+           \texttt{arun.eluvathingal@iitm.ac.in}}
+
+\address{Department of Electrical Engineering\\
+         Indian Institute of Technology Madras\\
+         Chennai 600036, India}
+
+\begin{document}
+\begin{letter}{Editor-in-Chief\\
+               \textit{IEEE Transactions on Automatic Control}}
+
+\opening{Dear Editor,}
+
+We submit for your consideration the manuscript:
+
+\begin{center}
+  \textbf{Physics-Constrained Adaptive Slope for Differential
+  Protection: A Projected-Gradient Law with Lyapunov Stability
+  Guarantees}
+\end{center}
+
+\textbf{Control-theoretic content.}
+This paper casts a power engineering problem --- adapting the slope
+parameter $k$ in percentage-restrain differential protection --- as a
+formally stated online parameter estimation problem and provides a
+complete stability analysis via a quadratic Lyapunov function.
+The central result, Theorem~1, proves uniform ultimate boundedness (UUB)
+of the tracking error $\tilde{k} = k - k^*$ with an explicit,
+computable ultimate bound $\varepsilon_\infty$.  Corollary~1 shows
+that the physics-derived constraint on the feasible set (the SAMBPS
+veto gate $\kappa_n < 30$) is \emph{necessary and sufficient} for
+the constraint set to be non-empty and the UUB guarantee to hold.
+These are clean, self-contained control-theoretic results that use
+power engineering as the motivating application but stand independently.
+
+\textbf{Novelty over prior adaptive relaying work.}
+Prior adaptive differential relaying work (\textit{e.g.}, Kasztenny
+2000, Sachdev 1989, Phadke 1988) relies on offline tuning or MRAS
+frameworks proven only for LTI plants.  The proposed law handles a
+\emph{time-varying} unknown $k^*(t)$ under a nonlinear
+physics-derived constraint, and provides a closed-form ultimate bound
+that is verifiable at design time.
+
+\textbf{Five contributions.}
+\begin{enumerate}
+  \item Formal problem statement: slope as constrained time-varying
+        parameter with a physics-derived feasible set $\mathcal{K}(\kappa_n)$.
+  \item Projected-gradient adaptive law (Algorithm~1) implementable
+        at 100\,ms cycle rates on embedded DSPs.
+  \item Lyapunov UUB theorem with explicit bound
+        $\varepsilon_\infty$ and convergence rate $\alpha$.
+  \item Necessity-and-sufficiency proof linking the control-theoretic
+        result to the model-based protection veto gate.
+  \item $7\times$ RMSE improvement over fixed-slope alternatives on a
+        33\,kV mixed-IBR feeder (2400 simulation scenarios).
+\end{enumerate}
+
+\textbf{Fit to the journal.}
+\textit{IEEE Transactions on Automatic Control} has a strong tradition
+of Lyapunov-based adaptive control theory and its application to
+engineering systems.  This paper makes a new connection between
+adaptive parameter estimation with projection and the power system
+protection domain, where formal stability guarantees are currently
+absent from the literature.
+
+\textbf{Suggested reviewers.}
+\begin{itemize}
+  \item Prof.\ Petros Ioannou (University of Southern California)
+        --- robust adaptive control, projection operators
+  \item Prof.\ Romeo Ortega (Universit\'{e} Paris-Saclay)
+        --- Lyapunov stability, port-Hamiltonian methods
+  \item Prof.\ Anna Stefanopoulou (University of Michigan)
+        --- constrained adaptive estimation
+  \item Prof.\ Anuradha Annaswamy (MIT) --- adaptive control theory
+\end{itemize}
+
+This manuscript is not under review elsewhere.
+All authors have approved the submission.
+
+\closing{Sincerely,}
+\end{letter}
+\end{document}

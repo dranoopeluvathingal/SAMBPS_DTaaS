@@ -1,0 +1,97 @@
+\documentclass[11pt,a4paper]{letter}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{microtype}
+
+\signature{Arun V.\ Eluvathingal\\
+           Department of Electrical Engineering\\
+           IIT Madras, Chennai 600036, India\\
+           \texttt{arun.eluvathingal@iitm.ac.in}}
+
+\address{Arun V.\ Eluvathingal\\
+         Department of Electrical Engineering\\
+         IIT Madras, Chennai 600036, India}
+
+\begin{document}
+\begin{letter}{Editor-in-Chief\\
+               \textit{IET Generation, Transmission \& Distribution}}
+
+\opening{Dear Editor,}
+
+We submit for your consideration the manuscript:
+
+\begin{center}
+  \textbf{Adaptive Forgetting Factor for Drifting Inverter-Based Resource
+  Penetration in Model-Based Protection Systems}
+\end{center}
+
+\noindent for publication in \textit{IET Generation, Transmission \& Distribution}.
+
+\medskip
+\noindent\textbf{Context.}
+The Self-Adaptive Model-Based Protection System (SAMBPS) uses a
+Levenberg--Marquardt zone-model estimator to adapt relay settings to the
+instantaneous IBR current ratio $k_{\rm ibr}$.  Existing SAMBPS publications
+assume $k_{\rm ibr}$ is approximately stationary within the estimation window.
+In practice, solar PV follows a diurnal ramp, wind generation executes rapid
+fluctuations, and topology switching creates step discontinuities — causing
+$k_{\rm ibr}$ to drift on timescales of seconds to hours.  A fixed forgetting
+factor ($\lambda = 0.995$) creates a 63\,ms tracking lag that degrades protection
+detection probability by up to 16\% during drift.
+
+\medskip
+\noindent\textbf{Key contributions.}
+\begin{enumerate}
+  \item \textbf{CUSUM drift detector.}
+        A one-sided CUSUM applied to successive LM estimates $\hat{k}_{\rm ibr}$
+        detects drift within 3 cycles (median) for all four drift archetypes,
+        with false-alarm rate $< 2\!\times\!10^{-4}$ per cycle under
+        noise-only conditions.
+  \item \textbf{Logistic $\lambda$-adaptation law.}
+        A closed-form law interpolates between $\lambda_{\min} = 0.970$
+        (effective window 33 samples, fast tracking during drift) and
+        $\lambda_{\max} = 0.995$ (200 samples, low noise during stationary
+        conditions), driven by the estimated drift rate $\dot{r}_k$.
+  \item \textbf{Stability proposition.}
+        A formal proof that $\kappa_n(\mathbf{J}) < 30$ is preserved for all
+        $\lambda_k \geq \lambda_{\min} = 0.970$, guaranteeing LM convergence and
+        the SAMBPS Stage-2 veto integrity under all credible drift conditions.
+  \item \textbf{Monte Carlo validation.}
+        20\,000 trials across four drift scenarios (solar diurnal, cloud transient,
+        wind random walk, topology step) confirm: tracking RMSE reduced $3.4\times$
+        (0.062 to 0.018\,pu); $P_{\rm FA}$ reduced to $\leq 0.002$;
+        $P_D \geq 0.981$ vs.\ $0.789$--$0.862$ for fixed $\lambda$.
+\end{enumerate}
+
+\medskip
+\noindent\textbf{Relationship to companion papers.}
+This is gap paper G2 in the SAMBPS series.  The SAMBPS framework is developed
+in companion papers submitted to \textit{IEEE Transactions on Smart Grid}
+(unified architecture, J4) and \textit{IEEE Transactions on Power Delivery}
+(87L algorithm, J1; SEL-411L hardware validation, G1).  This paper addresses
+a distinct open problem — the non-stationary $k_{\rm ibr}$ environment — that
+arises between fault events and is not covered in the fault-scenario validation
+of the companion papers.
+
+\medskip
+\noindent\textbf{Suggested reviewers.}
+\begin{itemize}
+  \item Prof.\ Ali Hooshyar, University of Toronto
+        (IBR protection, adaptive relay settings)
+  \item Prof.\ Wilsun Xu, University of Alberta
+        (power quality, IBR system identification)
+  \item Prof.\ Geza Joos, McGill University
+        (power electronics, inverter-grid interaction)
+  \item Prof.\ Lennart Ljung, Linköping University
+        (system identification, recursive estimation)
+\end{itemize}
+
+\medskip
+\noindent
+The manuscript has not been submitted elsewhere and all authors have approved
+the final version.
+
+\closing{Sincerely,}
+\end{letter}
+\end{document}

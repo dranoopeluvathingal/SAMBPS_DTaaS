@@ -1,0 +1,67 @@
+%% contributions_statement.tex — G6: Full VSM Dynamics (AVR + PSS Extension)
+%% CRediT author contribution statement for IEEE TEC submission
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{booktabs,array,microtype}
+\usepackage{hyperref}
+
+\title{\textbf{Author Contribution Statement}\\[4pt]
+       \large Extending the SAMBPS Estimation Window Beyond 150\,ms:
+       A Nine-State VSM Model with Full AVR and PSS Dynamics}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle\thispagestyle{empty}
+
+\section*{CRediT Taxonomy}
+
+\noindent
+\begin{tabular}{@{}p{5.8cm} p{3.0cm} p{3.0cm}@{}}
+\toprule
+\textbf{Contribution} & \textbf{A.\,V.\,Eluvathingal} & \textbf{R.\,K.\,Prasad} \\
+\midrule
+Conceptualisation          & Lead   & Supporting \\
+Formal analysis            & Lead   & ---        \\
+Funding acquisition        & ---    & Lead       \\
+Investigation              & Lead   & ---        \\
+Methodology                & Lead   & Supporting \\
+Project administration     & ---    & Lead       \\
+Software                   & Lead   & ---        \\
+Supervision                & ---    & Lead       \\
+Validation                 & Lead   & Supporting \\
+Visualisation              & Lead   & ---        \\
+Writing --- original draft & Lead   & ---        \\
+Writing --- review \& editing & Supporting & Lead \\
+\bottomrule
+\end{tabular}
+
+\bigskip
+
+\section*{Plain-Language Statement (for portal upload)}
+
+\textbf{Anoop V. Eluvathingal:} Identified the 150\,ms estimation-window
+limitation of the sixth-order Park~$dq$ model; formulated the nine-state
+VSM augmented ODE with IEEE~Type-1 AVR and lead-lag PSS; derived the
+observability conditions and proved the window-extension proposition;
+implemented the Levenberg--Marquardt estimator for the augmented state
+vector; designed and ran all simulation case studies on the 10-bus
+islanded microgrid; produced all figures and tables; wrote the manuscript
+draft.
+
+\textbf{R. K. Prasad:} Supervised the research programme; provided
+guidance on excitation system modelling and microgrid case study design;
+reviewed and edited the final manuscript; secured funding through the
+SAMBP project.
+
+\bigskip
+\noindent\textit{Conflict of interest:} The authors declare no conflict
+of interest.
+
+\bigskip
+\noindent\textit{Data and code availability:} Simulation scripts
+(MATLAB/Simulink and Python) and benchmark system data will be made
+available via the IIT Madras institutional repository upon acceptance.
+\end{document}

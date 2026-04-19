@@ -1,0 +1,93 @@
+%% cover_letter.tex — C13: CUEP Conservative Lower Bound
+%% IEEE Transactions on Power Systems
+\documentclass[11pt,a4paper]{letter}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{microtype,amsmath}
+
+\signature{Anoop~V.~Eluvathingal\\
+           Ph.D.\ Candidate, Dept.\ of Electrical Engineering\\
+           Indian Institute of Technology Madras\\
+           Chennai 600036, India\\[2pt]
+           \texttt{arun.eluvathingal@iitm.ac.in}}
+
+\address{Department of Electrical Engineering\\
+         Indian Institute of Technology Madras\\
+         Chennai 600036, India}
+
+\begin{document}
+\begin{letter}{Editor-in-Chief\\
+               \textit{IEEE Transactions on Power Systems}}
+
+\opening{Dear Editor,}
+
+We submit for your consideration the manuscript:
+
+\begin{center}
+  \textbf{Conservativeness of the CUEP Energy Bound in IBR-Penetrated
+  Networks: Proof, Monotonicity, and Application to the SAMBPS
+  Protection Framework}
+\end{center}
+
+\textbf{The problem.}
+The CUEP energy bound is the foundation of direct transient stability
+assessment.  Its conservativeness property --- that $V_{\rm cuep} \leq
+V_{\rm cr}$, so the bound never declares an unstable clearing as stable
+--- was proved for pure synchronous machine networks.  With inverter-based
+resources (IBRs) penetrating distribution and sub-transmission networks
+at 20--60\%, the IBR current limiter introduces a bounded non-gradient
+force term into the swing equations, and the original proof does not
+directly apply.  Whether the CUEP bound remains conservative under IBR
+injection is an open question with direct implications for energy-function-based
+protection relaying.
+
+\textbf{Contributions.}
+\begin{enumerate}
+  \item \textbf{Conservativeness theorem (Theorem~1)}: We extend the
+        Chiang--Hirsch--Wu proof to IBR-modified swing dynamics, showing
+        $V_{\rm cuep}(k_{\rm ibr}) \leq V_{\rm cr}(k_{\rm ibr})$ for all $k_{\rm ibr} \leq 0.55$
+        via a modified Lyapunov energy function that incorporates the
+        IBR active power injection.
+
+  \item \textbf{Monotonicity theorem (Theorem~2)}: We prove that the
+        conservatism gap $\Delta V = V_{\rm cr} - V_{\rm cuep}$ is
+        monotonically non-decreasing in $k_{\rm ibr}$ --- higher IBR penetration
+        makes the bound \emph{safer}, not less safe.
+
+  \item \textbf{SAMBPS C13 Proposition}: Zero false trips of the
+        CUEP-based trip rule for $k_{\rm ibr} \leq 0.55$, with quantified
+        CCT margin of 12--28\,ms (reducible to 6\,ms with an
+        IBR-corrected CUEP).
+
+  \item \textbf{IEEE 39-bus validation}: 1500 scenarios (5 penetration
+        levels $\times$ 15 fault locations $\times$ 4 fault types);
+        zero violations of Theorem~1 for $k_{\rm ibr} \leq 0.55$.
+\end{enumerate}
+
+\textbf{Fit to the journal.}
+\textit{IEEE Transactions on Power Systems} is the primary venue for
+rigorous stability theory and transient stability assessment.
+This paper makes a new and complete theoretical contribution to direct
+methods --- proving that a central property of the CUEP method survives
+the transition to IBR-dominated grids --- and backs it with a large
+simulation study.
+
+\textbf{Suggested reviewers.}
+\begin{itemize}
+  \item Prof.\ Hsiao-Dong Chiang (Cornell University)
+        --- CUEP method, direct stability
+  \item Prof.\ Vijay Vittal (Arizona State University)
+        --- transient stability with IBRs
+  \item Prof.\ Thierry Van Cutsem (University of Li\`{e}ge)
+        --- Lyapunov stability, power system dynamics
+  \item Dr.\ Mani Venkatasubramanian (Washington State University)
+        --- energy functions, stability boundaries
+\end{itemize}
+
+This manuscript is not under review elsewhere.
+All authors have approved the submission.
+
+\closing{Sincerely,}
+\end{letter}
+\end{document}

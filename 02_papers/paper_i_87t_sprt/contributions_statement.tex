@@ -1,0 +1,119 @@
+% contributions_statement.tex
+% IEEE Transactions on Power Delivery — Author Contributions Statement
+% Paper: "Bayesian Three-Hypothesis SPRT for IBR-Aware Transformer
+%         Differential Protection"
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{newtxtext}
+\usepackage{booktabs}
+\usepackage{array}
+\pagestyle{empty}
+
+\begin{document}
+
+\begin{center}
+{\large\bfseries Author Contributions Statement}\\[6pt]
+\textit{IEEE Transactions on Power Delivery}\\[4pt]
+``Bayesian Three-Hypothesis SPRT for IBR-Aware Transformer Differential
+Protection: Waveform Asymmetry, Fault-Integrity Gating, and 30,000-Trial
+Monte Carlo Certification''
+\end{center}
+
+\bigskip
+
+\noindent\begin{tabular}{@{} >{\bfseries}p{4.0cm} p{5.1cm} p{5.1cm} @{}}
+\toprule
+CRediT Role &
+\textbf{Anoop V. Eluvathingal} &
+\textbf{K. Shanti Swarup} \\
+\midrule
+
+Conceptualisation &
+Originated the three-hypothesis SPRT framework for 87T; identified
+$A_k$ as the separating statistic across inrush, IBR fault, and CT
+saturation &
+Provided the strategic research framing and guided novelty positioning
+relative to 2H-restraint literature \\[5pt]
+
+Methodology &
+Derived the truncated-Normal distributions for $H_0$/$H_1$/$H_2$ from
+first principles (Jiles--Atherton, IBR controller bandwidth, CT knee-point);
+designed the Wald boundary parameters; formulated the $f_{\rm int}$ index
+and proved the 0.34\,pu formal separation (Proposition~1) &
+Reviewed all derivations; confirmed alignment with IEC~60255-111 and
+IEC~60255-187 standard requirements \\[5pt]
+
+Software &
+Implemented the full SPRT algorithm and five-priority relay logic in
+Python/ANDES; coded the 30\,000-trial MC engine across four groups;
+developed TR-57a/b and TR-64 test harnesses &
+--- \\[5pt]
+
+Validation &
+Ran all 48 deterministic scenarios and all MC trials; performed Wilson~CI
+analysis; verified zero-overlap of $f_{\rm int}$ distributions across
+5\,000 inrush trials &
+Independently verified the KL-divergence computations and the formal
+separation proof \\[5pt]
+
+Formal Analysis &
+Proved Proposition~1 (0.34\,pu trip/restrain separation); derived the
+expected decision time formula from Wald's approximation &
+Reviewed the proof for mathematical rigour and physical interpretation \\[5pt]
+
+Investigation &
+Designed three-stage simulation trilogy (TR-57a/b/c + TR-64); identified
+the four algorithm refinements (R1--R4); characterised the SG DC-transient
+worst case (220\,ms) &
+Advised on transformer CT class selection and magnetisation parameters \\[5pt]
+
+Writing --- Original Draft &
+Wrote the full manuscript &
+--- \\[5pt]
+
+Writing --- Review \& Editing &
+--- &
+Reviewed and edited all sections; approved the final submission \\[5pt]
+
+Supervision &
+--- &
+Supervised the PhD programme of which this paper forms a part \\[5pt]
+
+Funding Acquisition &
+--- &
+Secured SERB and IIT Madras research funding \\
+
+\bottomrule
+\end{tabular}
+
+\bigskip\bigskip
+
+\noindent\textbf{Plain-text version for portal upload:}
+
+\medskip
+
+\noindent
+\textbf{Anoop V. Eluvathingal:} Conceptualisation (lead) --- identified
+waveform asymmetry index as the separating statistic across all three
+87T hypotheses; Methodology (lead) --- derived all truncated-Normal
+distributions from physical models, designed Wald boundaries, formulated
+and proved the 0.34\,pu formal separation; Software (sole); Validation
+(lead) --- ran 30\,000 MC trials and 48 deterministic scenarios; Formal
+Analysis (lead) --- proved Proposition~1 and expected decision time
+formula; Investigation (lead) --- designed three-stage simulation trilogy
+and identified R1--R4 algorithm refinements; Writing --- original draft
+(sole).
+
+\medskip\noindent
+\textbf{K. Shanti Swarup:} Conceptualisation (supporting) --- strategic
+research framing; Methodology (supporting) --- reviewed all derivations
+and confirmed standard compliance; Validation (supporting) ---
+independently verified KL divergence computations and separation proof;
+Formal Analysis (supporting) --- reviewed Proposition~1; Writing ---
+review and editing (sole); Supervision; Funding acquisition.
+
+\end{document}

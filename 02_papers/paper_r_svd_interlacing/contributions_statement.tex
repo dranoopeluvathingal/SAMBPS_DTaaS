@@ -1,0 +1,69 @@
+%% contributions_statement.tex — C9: SVD Interlacing / Physics-Reduction Proposition
+%% SIAM Journal on Matrix Analysis and Applications
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{booktabs,array,microtype,amsmath}
+\usepackage{hyperref}
+
+\title{\textbf{Author Contribution Statement}\\[4pt]
+       \large Singular Value Interlacing for Physics-Structured Projections:
+       Condition-Number Inheritance and the Physics-Reduction Proposition}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle\thispagestyle{empty}
+
+\section*{CRediT Taxonomy}
+
+\noindent
+\begin{tabular}{@{}p{5.8cm} p{3.0cm} p{3.0cm}@{}}
+\toprule
+\textbf{Contribution} & \textbf{A.\,V.\,Eluvathingal} & \textbf{R.\,K.\,Prasad} \\
+\midrule
+Conceptualisation          & Lead   & Supporting \\
+Formal analysis            & Lead   & ---        \\
+Funding acquisition        & ---    & Lead       \\
+Investigation              & Lead   & ---        \\
+Methodology                & Lead   & Supporting \\
+Project administration     & ---    & Lead       \\
+Software (numerical expts) & Lead   & ---        \\
+Supervision                & ---    & Lead       \\
+Validation                 & Lead   & ---        \\
+Visualisation              & Lead   & ---        \\
+Writing --- original draft & Lead   & ---        \\
+Writing --- review \& editing & Supporting & Lead \\
+\bottomrule
+\end{tabular}
+
+\bigskip
+
+\section*{Plain-Language Statement (for portal upload)}
+
+\textbf{Anoop V. Eluvathingal:} Identified the need for SVD interlacing
+bounds for non-orthonormal physics-structured projections arising from
+DAE constraint elimination; formulated and proved Theorem~1 (interlacing
+with coupling correction), Theorem~2 (condition-number inheritance),
+Corollary~1 (sufficient inheritance condition), and Proposition~1
+(Physics-Reduction Proposition for the IBR fault-current Jacobian);
+proved sharpness of all bounds; carried out all numerical experiments
+(1000-point Monte Carlo on the Park $dq$ measurement map); produced
+all figures; wrote the manuscript.
+
+\textbf{R. K. Prasad:} Supervised the research; provided physical
+intuition connecting the algebraic coupling ratio $\rho$ to generator
+inductance parameters; reviewed and edited the final manuscript; secured
+project funding.
+
+\bigskip
+\noindent\textit{Conflict of interest:} The authors declare no conflict
+of interest.
+
+\bigskip
+\noindent\textit{Data and code:} MATLAB code for computing the
+physics-structured projection $\mathbf{P}$, singular values, and
+condition numbers, together with the 1000-point experiment scripts,
+will be deposited at \url{https://zenodo.org} upon acceptance.
+\end{document}

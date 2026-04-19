@@ -1,0 +1,149 @@
+% cover_letter.tex
+% IEEE Transactions on Power Delivery — submission cover letter
+% Paper: "Bayesian Three-Hypothesis SPRT for IBR-Aware Transformer
+%         Differential Protection: Waveform Asymmetry, Fault-Integrity
+%         Gating, and 30,000-Trial Monte Carlo Certification"
+% Authors: A. V. Eluvathingal and K. S. Swarup, IIT Madras
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{newtxtext}
+\pagestyle{empty}
+
+\begin{document}
+
+\noindent
+\today
+
+\bigskip
+
+\noindent
+Editor-in-Chief\\
+\textit{IEEE Transactions on Power Delivery}
+
+\bigskip
+
+\noindent
+Dear Editor-in-Chief,
+
+\medskip
+
+We submit for your consideration the original research article:
+
+\begin{center}
+\textbf{``Bayesian Three-Hypothesis SPRT for IBR-Aware Transformer\\
+Differential Protection: Waveform Asymmetry, Fault-Integrity Gating,\\
+and 30,000-Trial Monte Carlo Certification''}\\[4pt]
+\textit{Anoop V. Eluvathingal and K. Shanti Swarup}\\
+Department of Electrical Engineering,
+Indian Institute of Technology Madras, Chennai~600~036, India
+\end{center}
+
+\medskip\noindent\textbf{Motivation and problem addressed.}
+Transformer differential (87T) protection has relied on second-harmonic (2H)
+restraint to distinguish magnetising inrush from internal faults since the
+1950s.
+Inverter-based resources (IBRs) systematically destroy the assumption
+underlying this restraint: the IBR current controller produces a sinusoidal
+fault current with $I_2/I_1 < 2\,\%$, indistinguishable from inrush under
+the 2H criterion.
+Concurrently, residual-flux energisation ($B_r \geq 0.7\,$T) reduces the
+inrush second-harmonic ratio to 8--10\,\%, below the blocking threshold,
+creating a risk of false trips.
+Monte Carlo evidence confirms that at $k_{\rm ibr} \geq 0.70$, the
+conventional relay achieves a detection probability of only $P_D = 0.236$
+--- one internal fault in four goes undetected.
+No published method simultaneously addresses all three discriminands
+(IBR internal fault, magnetising inrush, and CT-saturation-masked external
+fault) within a single statistical framework with formal error-probability
+bounds.
+
+\medskip\noindent\textbf{Contributions.}
+This paper proposes and validates a three-contribution IBR-aware 87T relay
+architecture:
+
+\begin{enumerate}
+  \item \textbf{Three-hypothesis SPRT on waveform asymmetry (C6):}
+        The per-half-cycle asymmetry index $A_k$ is derived from first
+        principles and shown to be statistically separable across the
+        three hypotheses --- inrush ($H_0$, $\mu_{A_k} = 0.62$), IBR
+        fault ($H_1$, $\mu_{A_k} = 0.00$), and CT saturation
+        ($H_2$, $\mu_{A_k} = -0.65$) --- with KL divergences of
+        1.15 and 1.42 nats respectively.
+        Two parallel log-likelihood-ratio accumulators with Wald boundaries
+        achieve $P_D = 1.000$ and median trip time $t_{50} = 20\,$ms across
+        30\,000 Monte Carlo trials.
+
+  \item \textbf{Five-priority integration architecture (C7):}
+        The SPRT is embedded into existing 87T relay logic through five
+        sequentially evaluated priorities, with the SPRT trip signal gated
+        by the fault-integrity index $f_{\rm int} \geq 0.55$ at Priority~4.
+        This restores $P_D^{\rm ibr}$ from 0.236 to 1.000 across 20\,000
+        MC trials and reduces the IBR-fault median trip time from
+        $\geq 60\,$ms to 20\,ms, without hardware modification.
+
+  \item \textbf{Fault-integrity index with formal separation proof (C8):}
+        The scalar index $f_{\rm int} = 1 - \|\mathbf{r}_n\|/I_{\rm op}$,
+        derived from the LM estimator residual, provides a formally proved
+        0.34\,pu separation between the maximum inrush value
+        ($f_{\rm int}^{H_0} \leq 0.21$) and the minimum internal-fault
+        value ($f_{\rm int}^{H_1} \geq 0.55$), confirmed numerically across
+        all 5\,000 Group~B (inrush) MC trials with zero overlap.
+\end{enumerate}
+
+\medskip\noindent\textbf{Validation.}
+The chain is validated on 48 deterministic scenarios across three staged
+studies (TR-57a analytical, TR-57b EMT-surrogate, TR-64 five-priority
+integration) with zero misclassification, and on 30\,000 MC trials
+(10\,000 Group~A IBR fault, 5\,000 Group~B inrush, 5\,000 Group~C
+CT-saturation, 10\,000 Group~D SG fault).
+All groups achieve rate $= 1.000$ with 95\,\% Wilson CI lower bound
+$\geq 0.9992$, meeting IEC~60255-111 performance targets.
+
+\medskip\noindent\textbf{Fit for \textit{IEEE Transactions on Power Delivery}.}
+The paper addresses the transformer protection reliability gap created by
+IBR integration~---~a problem directly relevant to the Transactions'
+readership of protection engineers, utility planners, and relay manufacturers.
+The combination of Wald's sequential hypothesis testing, formal distribution
+derivation from physical models (Jiles--Atherton, Park, CT knee-point
+saturation), and 30\,000-trial MC certification delivers the analytical and
+empirical depth appropriate for a Transactions paper.
+The work is original and has not been submitted elsewhere.
+
+\medskip\noindent\textbf{Suggested reviewers.}
+\begin{itemize}
+  \item Prof.\ Ali Hooshyar, University of Toronto (IBR-impacted protection,
+        transformer differential relaying)
+  \item Prof.\ Bogdan Kasztenny, SEL Engineering (transformer inrush
+        discrimination, differential relay design)
+  \item Prof.\ Massimo Mitolo, Irvine Valley College / IEEE PSRC
+        (power transformer protection, harmonic analysis)
+  \item Dr.\ Evangelos Farantatos, EPRI (IBR fault characterisation and
+        protection impacts)
+\end{itemize}
+
+\medskip\noindent\textbf{Authorship and conflicts.}
+Both authors declare no conflicts of interest.
+The contributions statement follows separately.
+Simulation code and parametric data are available upon request.
+
+\bigskip
+
+\noindent Yours sincerely,
+
+\bigskip\bigskip
+
+\noindent
+\textbf{Anoop V. Eluvathingal} \hfill \textbf{K. Shanti Swarup}\\
+PhD Scholar (Corresponding Author) \hfill Professor\\
+Department of Electrical Engineering \hfill Department of Electrical
+Engineering\\
+IIT Madras, Chennai 600 036, India \hfill IIT Madras, Chennai 600 036,
+India\\
+\texttt{ee21d017@smail.iitm.ac.in} \hfill
+\texttt{swarup@ee.iitm.ac.in}
+
+\end{document}

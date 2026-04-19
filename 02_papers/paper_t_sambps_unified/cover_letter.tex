@@ -1,0 +1,108 @@
+%% cover_letter.tex — C16: SAMBPS Unified 5-Layer Architecture
+%% Proceedings of the IEEE — Tutorial/Survey
+\documentclass[11pt,a4paper]{letter}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{microtype,amsmath}
+
+\signature{Anoop~V.~Eluvathingal\\
+           Ph.D.\ Candidate, Dept.\ of Electrical Engineering\\
+           Indian Institute of Technology Madras\\
+           Chennai 600036, India\\[2pt]
+           \texttt{arun.eluvathingal@iitm.ac.in}}
+
+\address{Department of Electrical Engineering\\
+         Indian Institute of Technology Madras\\
+         Chennai 600036, India}
+
+\begin{document}
+\begin{letter}{Editor-in-Chief\\
+               \textit{Proceedings of the IEEE}}
+
+\opening{Dear Editor,}
+
+We submit for your consideration the manuscript:
+
+\begin{center}
+  \textbf{Self-Adaptive Model-Based Protection for IBR-Penetrated
+  Networks: A Unified Five-Layer Framework}
+\end{center}
+
+for publication as a \textit{Tutorial and Survey} article in
+\textit{Proceedings of the IEEE}.
+
+\textbf{The problem.}
+Inverter-based resources (IBRs) --- photovoltaic plants, DFIG wind
+turbines, battery storage, and virtual synchronous machines --- are
+penetrating distribution and sub-transmission networks at levels that
+break the fundamental assumptions of classical protection (overcurrent,
+distance, and differential).  IBR current limiters clip fault currents
+at 1.1--1.2\,pu, IBR control laws transition modes during sustained
+faults, and the aggregate penetration ratio $k_{\rm ibr}$ varies
+continuously.  As a result, classical differential relays with fixed
+slope settings are losing 7--11 percentage points of zone accuracy
+when $k_{\rm ibr} > 0.25$.  There is no unified framework that
+combines online IBR estimation, physics-constrained adaptation, and
+stability-verified tripping in a single deployable relay algorithm.
+
+\textbf{Contributions.}
+This paper presents the \textbf{Self-Adaptive Model-Based Protection
+System (SAMBPS)}, a five-layer hierarchical architecture developed
+over sixteen theoretical contributions and validated in seven
+independent campaigns:
+
+\begin{enumerate}
+  \item \textbf{Unified architecture (C16)}: A five-layer framework
+        (signal conditioning, LM estimation, adaptive laws, stability
+        verification, protection decision) with well-defined layer
+        contracts and a single integrating signal --- the
+        condition number $\kappa_n$ from the Levenberg--Marquardt
+        estimator.
+
+  \item \textbf{$\kappa_n$ as system integrator}: We prove that the
+        same threshold $\kappa_n = 30$ is simultaneously the gate
+        condition for the adaptive law (C1), the SVD reliability
+        criterion for the LM estimator (C9), the CUEP gate (C13),
+        and the Stage-2 trip veto (L5).  This triple-role consistency
+        is proved in an appendix.
+
+  \item \textbf{Comprehensive theory-to-validation mapping}: All
+        sixteen contributions and seven campaigns are allocated to
+        specific layers via a contribution map (Fig.~2), showing that
+        every layer has at least two independent validation campaigns.
+
+  \item \textbf{Field demonstration}: 95.5\% zone accuracy on
+        157 real 33\,kV DSO fault recordings, compared to 89.2\%
+        for classical protection on the same dataset.
+\end{enumerate}
+
+\textbf{Fit to \textit{Proceedings of the IEEE}.}
+\textit{Proceedings of the IEEE} is the primary venue for broad
+tutorial surveys that unify a research programme and orient the field
+towards future directions.  This paper synthesises five primary
+research papers (C1, C9, C13, C14, and seven G-series validations)
+into a coherent framework suitable for readers who want to understand
+the full SAMBPS system without reading each component paper.  The
+architecture is novel, the field validation is the most comprehensive
+to date, and the open problems section identifies concrete next steps
+for the community.
+
+\textbf{Suggested reviewers.}
+\begin{itemize}
+  \item Prof.\ Arun G.\ Phadke (Virginia Tech)
+        --- wide-area protection, phasor measurement
+  \item Prof.\ Ali Hooshyar (University of Toronto)
+        --- inverter-based resource protection
+  \item Prof.\ Vijay Vittal (Arizona State University)
+        --- transient stability, power system dynamics
+  \item Prof.\ Petros Ioannou (University of Southern California)
+        --- adaptive control, Lyapunov methods
+\end{itemize}
+
+This manuscript is not under review elsewhere.
+All authors have approved the submission.
+
+\closing{Sincerely,}
+\end{letter}
+\end{document}

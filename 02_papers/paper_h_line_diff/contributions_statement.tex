@@ -1,0 +1,117 @@
+% contributions_statement.tex
+% IEEE Transactions on Power Delivery — Author Contributions Statement
+% Paper: "IBR-Adaptive Line Differential Protection: Harmonic Discrimination,
+%         Sequence Elements, and Transient Differential Security"
+% Authors: A. V. Eluvathingal and K. S. Swarup, IIT Madras
+%
+% For the portal "Author Contributions" field — paste the plain-text version
+% below. The LaTeX source is retained for record.
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{newtxtext}
+\usepackage{booktabs}
+\usepackage{array}
+\pagestyle{empty}
+
+\begin{document}
+
+\begin{center}
+{\large\bfseries Author Contributions Statement}\\[6pt]
+\textit{IEEE Transactions on Power Delivery}\\[4pt]
+``IBR-Adaptive Line Differential Protection: Harmonic Discrimination,
+Sequence Elements, and Transient Differential Security''
+\end{center}
+
+\bigskip
+
+The contributions of each author are described below using the
+CRediT (Contributor Roles Taxonomy) framework.
+
+\bigskip
+
+\noindent\begin{tabular}{@{} >{\bfseries}p{4.2cm} p{5.0cm} p{5.0cm} @{}}
+\toprule
+CRediT Role &
+\textbf{Anoop V. Eluvathingal} &
+\textbf{K. Shanti Swarup} \\
+\midrule
+Conceptualisation &
+Originated the five-element 87L chain concept; identified TDCS-87L as the
+primary detection mechanism for symmetric IBR faults &
+Provided the strategic research framing; guided scope and novelty
+positioning relative to prior art \\[6pt]
+
+Methodology &
+Derived the physics-constrained adaptive slope $k_m^\ast(k_{\rm ibr})$;
+developed the 87LN $\rho_2 = 2$ proof; designed the DDR model selector;
+formulated the TDCS security bound and its formal proof &
+Reviewed and validated all analytical derivations; confirmed alignment with
+IEC~60255 and IEEE~C37.243 relay standards \\[6pt]
+
+Software &
+Implemented the full protection chain in Python/ANDES; coded the Monte Carlo
+engine (20\,000 trials, four groups); developed the deterministic test harness
+(30 scenarios) &
+--- \\[6pt]
+
+Validation &
+Ran all simulations; performed Wilson CI analysis; verified zero-regression
+on SG reference cases &
+Independently verified the 15.5\,\% TDCS security margin computation and
+the $\kappa_n = 1$ condition number proof \\[6pt]
+
+Formal Analysis &
+Proved Propositions~1--3 (87LN sensitivity, TDCS detection floor,
+PV unit condition number) &
+Reviewed all proofs for mathematical rigour and physical interpretation \\[6pt]
+
+Investigation &
+Designed and executed the parametric sensitivity study; identified the
+$k_{\rm ibr} = 0.12$\,pu TDCS/87L transition threshold &
+Advised on study network parameters and CT class selection \\[6pt]
+
+Writing — Original Draft &
+Wrote the full manuscript &
+--- \\[6pt]
+
+Writing — Review \& Editing &
+--- &
+Reviewed and edited all sections; approved the final submission version \\[6pt]
+
+Supervision &
+--- &
+Supervised the overall PhD programme of which this paper forms a part \\[6pt]
+
+Funding Acquisition &
+--- &
+Secured SERB and IIT Madras research funding supporting this work \\
+\bottomrule
+\end{tabular}
+
+\bigskip\bigskip
+
+\noindent\textbf{Plain-text version for portal upload:}
+
+\medskip
+
+\noindent
+\textbf{Anoop V. Eluvathingal:} Conceptualisation (lead); Methodology
+(lead) --- derived all analytical results including the adaptive slope
+formula, the 87LN sensitivity proposition, the TDCS detection floor proof,
+and the PV unit condition number; Software (sole); Validation (lead);
+Formal Analysis (lead); Investigation (lead); Writing --- original draft
+(sole).
+
+\medskip\noindent
+\textbf{K. Shanti Swarup:} Conceptualisation (supporting) --- strategic
+research framing; Methodology (supporting) --- reviewed all derivations and
+verified standard compliance; Validation (supporting) --- independently
+verified key numerical results; Formal Analysis (supporting) --- reviewed
+all propositions; Writing --- review and editing (sole); Supervision; Funding
+acquisition.
+
+\end{document}

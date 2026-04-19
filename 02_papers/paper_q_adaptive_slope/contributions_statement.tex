@@ -1,0 +1,67 @@
+%% contributions_statement.tex — C1: Physics-Constrained Adaptive Slope
+%% CRediT author contribution statement for IEEE TAC submission
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{booktabs,array,microtype}
+\usepackage{hyperref}
+
+\title{\textbf{Author Contribution Statement}\\[4pt]
+       \large Physics-Constrained Adaptive Slope for Differential Protection:
+       A Projected-Gradient Law with Lyapunov Stability Guarantees}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle\thispagestyle{empty}
+
+\section*{CRediT Taxonomy}
+
+\noindent
+\begin{tabular}{@{}p{5.8cm} p{3.0cm} p{3.0cm}@{}}
+\toprule
+\textbf{Contribution} & \textbf{A.\,V.\,Eluvathingal} & \textbf{R.\,K.\,Prasad} \\
+\midrule
+Conceptualisation          & Lead   & Supporting \\
+Formal analysis            & Lead   & Supporting \\
+Funding acquisition        & ---    & Lead       \\
+Investigation              & Lead   & ---        \\
+Methodology                & Lead   & Supporting \\
+Project administration     & ---    & Lead       \\
+Software                   & Lead   & ---        \\
+Supervision                & ---    & Lead       \\
+Validation                 & Lead   & Supporting \\
+Visualisation              & Lead   & ---        \\
+Writing --- original draft & Lead   & ---        \\
+Writing --- review \& editing & Supporting & Lead \\
+\bottomrule
+\end{tabular}
+
+\bigskip
+
+\section*{Plain-Language Statement (for portal upload)}
+
+\textbf{Anoop V. Eluvathingal:} Identified and formalised the slope
+adaptation problem as a constrained online parameter estimation task;
+derived the physics-feasible set $\mathcal{K}(\kappa_n)$ from the
+LM condition number; designed the projected-gradient adaptive law
+(Algorithm~1); carried out the complete Lyapunov stability analysis
+including Theorem~1, Lemma~1, and Corollary~1; implemented all
+simulations on the 33\,kV mixed-IBR test feeder (2400 scenarios);
+produced all figures and tables; wrote the manuscript draft.
+
+\textbf{R. K. Prasad:} Supervised the research programme; provided
+guidance on the connection between the Lyapunov framework and the
+SAMBPS architecture; reviewed and edited the final manuscript;
+secured project funding.
+
+\bigskip
+\noindent\textit{Conflict of interest:} The authors declare no conflict
+of interest.
+
+\bigskip
+\noindent\textit{Code availability:} MATLAB/Simulink simulation
+files and the projected-gradient implementation will be deposited in
+the IIT Madras institutional repository upon acceptance.
+\end{document}

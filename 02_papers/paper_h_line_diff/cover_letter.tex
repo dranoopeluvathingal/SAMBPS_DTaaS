@@ -1,0 +1,166 @@
+% cover_letter.tex
+% IEEE Transactions on Power Delivery — submission cover letter
+% Paper: "IBR-Adaptive Line Differential Protection: Harmonic Discrimination,
+%         Sequence Elements, and Transient Differential Security"
+% Authors: A. V. Eluvathingal and K. S. Swarup, IIT Madras
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{newtxtext}
+\pagestyle{empty}
+
+\begin{document}
+
+\noindent
+\today
+
+\bigskip
+
+\noindent
+Editor-in-Chief\\
+\textit{IEEE Transactions on Power Delivery}
+
+\bigskip
+
+\noindent
+Dear Editor-in-Chief,
+
+\medskip
+
+We submit for your consideration the original research article:
+
+\begin{center}
+\textbf{``IBR-Adaptive Line Differential Protection:\\
+Harmonic Discrimination, Sequence Elements, and Transient Differential
+Security''}\\[4pt]
+\textit{Anoop V. Eluvathingal and K. Shanti Swarup}\\
+Department of Electrical Engineering, Indian Institute of Technology Madras,
+Chennai~600~036, India
+\end{center}
+
+\medskip\noindent\textbf{Motivation and problem addressed.}
+The progressive displacement of synchronous generators by inverter-based
+resources (IBRs) --- solar PV, battery storage, and grid-forming wind
+converters --- imposes a well-documented but unsolved problem on line
+differential (87L) protection.
+IBR fault-current limiters restrict the short-circuit contribution to
+1.0--1.2\,pu, producing a differential signal of 0.06--0.20\,pu at the
+relay CT primary, which falls below the standard 87L pickup threshold.
+In our deterministic test matrix, the baseline relay fails on 9 of 21
+scenarios (57\% failure rate) at low IBR penetration.
+Three independent failure modes are responsible: magnitude suppression for
+three-phase faults, harmonic-induced confidence collapse, and
+negative-sequence suppression for asymmetric faults.
+No published 87L scheme addresses all three simultaneously, and no prior
+work has exploited the fault-inception transient as a primary detection
+feature for symmetric IBR faults.
+
+\medskip\noindent\textbf{Contributions.}
+This paper proposes a five-element IBR-adaptive 87L protection chain that
+closes all three gaps:
+\begin{enumerate}
+  \item \textbf{Physics-constrained adaptive threshold (C1):}
+        The bias slope $k_m^\ast$ is derived analytically from simultaneous
+        CT-mismatch stability and high-impedance-fault sensitivity constraints
+        as a closed-form function of the real-time IBR current ratio $k_{\rm ibr}$.
+        This eliminates the conservative fixed setting that previously caused
+        either missed trips (low $k_{\rm ibr}$) or false trips (high
+        $k_{\rm ibr}$).
+
+  \item \textbf{Frequency-adaptive harmonic pre-filter (C2):}
+        A zero-crossing frequency tracker maintains the pi-section charging
+        canceller orthogonal to 47--53\,Hz; a QR-based harmonic regressor
+        removes IBR-injected odd harmonics, restoring the relay confidence
+        score from $c = 0.37$ to $c \geq 0.99$ under 10\,\% THD.
+
+  \item \textbf{Negative- and zero-sequence differential elements (C3):}
+        An 87LN element provably achieves differential-to-bias ratio
+        $\rho_2 = 2$ irrespective of $k_{\rm ibr}$ when the IBR suppresses its
+        negative-sequence output --- inverting the conventional assumption that
+        IBR sequence suppression is always detrimental.
+        An 87LN0 element extends coverage to solidly-earthed pure-IBR earth
+        faults.
+
+  \item \textbf{Transient differential current signature element (C4):}
+        TDCS-87L exploits the step-change in differential RMS at fault
+        inception, which does not occur for external faults or load steps.
+        An analytical bound proves detection for all faults with
+        $k_{\rm ibr} \geq 0.058$\,pu.
+        Monte Carlo Group~C (5\,000 external fault trials) confirms a
+        15.5\,\% security margin against Class~5P CT mismatch at the
+        joint worst-case parameter corner.
+
+  \item \textbf{Solar PV two-parameter model and DDR selector (C5):}
+        The zero-DC-offset property of GFL PV fault current is exploited to
+        reduce the zone estimator from four parameters (condition number
+        $\kappa_n \in [3,36]$) to two ($\kappa_n = 1$ analytically).
+        A DC Decay Ratio gate routes each relay cycle to the correct
+        estimator, reducing the median PV-fault trip time from 63\,ms to
+        42\,ms.
+\end{enumerate}
+
+\medskip\noindent\textbf{Validation.}
+The chain is validated deterministically on 30 scenarios (21 SG/IBR + 9 PV),
+with zero regression on the 10 synchronous-generator reference cases, and
+probabilistically on 20\,000 Monte Carlo trials ($N = 5\,000$ per group,
+four groups).
+Groups~A--C (three-phase internal, SLG internal, external faults) achieve
+TPR\,=\,1.000 and FPR\,=\,0.000 with 95\,\% Wilson CI lower bound
+$\geq 0.9992$.
+Group~D (PV internal faults) achieves TPR\,=\,0.9984
+(CI$_{\rm lo} \geq 0.9976$).
+All results exceed IEC~60255-181 performance targets.
+
+\medskip\noindent\textbf{Fit for \textit{IEEE Transactions on Power Delivery}.}
+The paper addresses a fundamental protection challenge that is directly
+relevant to the Transactions' readership: relay engineers and system
+planners dealing with the ongoing transition to high-IBR networks.
+The combination of closed-form analytical derivation, formal propositions
+with proofs, and large-scale Monte Carlo certification meets the technical
+depth expected of a Transactions paper.
+The work is original and has not been submitted elsewhere.
+
+\medskip\noindent\textbf{Suggested reviewers.}
+Given the subject matter, we suggest the following independent experts (none
+have been involved in this work):
+\begin{itemize}
+  \item Prof.\ Ali Hooshyar, University of Toronto (IBR protection,
+        line differential relaying)
+  \item Prof.\ Evangelos Farantatos, EPRI (IBR fault current characterisation,
+        adaptive protection)
+  \item Prof.\ Hossein Hooshyar, NTNU (IBR-impacted protection coordination)
+  \item Dr.\ Bogdan Kasztenny, SEL (differential relay design and
+        negative-sequence elements)
+\end{itemize}
+
+\medskip\noindent\textbf{Authorship and conflicts.}
+Both authors declare no conflicts of interest.
+The contributions statement is provided separately in the portal upload.
+All data and simulation parameters are disclosed in the paper body and
+referenced technical reports; simulation code is available upon request.
+
+\medskip
+
+We look forward to the editorial review and are available to respond to
+any reviewer queries.
+
+\bigskip
+
+\noindent Yours sincerely,
+
+\bigskip\bigskip
+
+\noindent
+\textbf{Anoop V. Eluvathingal} \hfill \textbf{K. Shanti Swarup}\\
+PhD Scholar (Corresponding Author) \hfill Professor\\
+Department of Electrical Engineering \hfill Department of Electrical
+Engineering\\
+IIT Madras, Chennai 600 036, India \hfill IIT Madras, Chennai 600 036,
+India\\
+\texttt{ee21d017@smail.iitm.ac.in} \hfill
+\texttt{swarup@ee.iitm.ac.in}
+
+\end{document}

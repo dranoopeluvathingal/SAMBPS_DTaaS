@@ -1,0 +1,90 @@
+\documentclass[11pt,a4paper]{letter}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{microtype}
+
+\signature{Arun V.\ Eluvathingal\\
+           Department of Electrical Engineering\\
+           IIT Madras, Chennai 600036, India\\
+           \texttt{arun.eluvathingal@iitm.ac.in}}
+
+\address{Arun V.\ Eluvathingal\\
+         Department of Electrical Engineering\\
+         IIT Madras, Chennai 600036, India}
+
+\begin{document}
+\begin{letter}{Editor-in-Chief\\
+               \textit{IEEE Transactions on Smart Grid}}
+
+\opening{Dear Editor,}
+
+We submit for your consideration the manuscript:
+
+\begin{center}
+  \textbf{Hierarchical Wide-Area Protection Coordination for Multi-Substation
+  IBR Networks: Delayed Consensus and Scalability Analysis}
+\end{center}
+
+\noindent for publication in \textit{IEEE Transactions on Smart Grid}.
+
+\medskip
+\noindent\textbf{Context.}
+The Self-Adaptive Model-Based Protection System (SAMBPS) achieves $P_D \geq 0.99$
+for all protection functions within a single-substation domain.  The thesis
+explicitly identifies wide-area multi-substation extension (G4) as a high-priority
+open problem: the single-substation SAMBPS cannot resolve fault location across
+substation boundaries, and standard GOOSE-based coordination cannot cope with the
+10--50~ms propagation delays of wide-area networks.  This paper addresses that gap.
+
+\medskip
+\noindent\textbf{Key contributions.}
+\begin{enumerate}
+  \item \textbf{Hierarchical three-layer architecture.}
+        Local SAMBPS coordinators (Layer~A, 20~ms cycle) report to regional
+        coordinators (Layer~B, 50~ms consensus window), which aggregate to a
+        system-operator interface (Layer~C).  Spectral clustering of substations
+        into $K$ regions gives $\mathcal{O}(N\log N)$ WA-GOOSE overhead.
+  \item \textbf{Delayed $\kappa_n$-weighted consensus protocol.}
+        Each substation's WA-GOOSE packet is weighted by $w_s =
+        \kappa_n^{-1}(s)\,e^{-\tau_s/T_c}$ — rewarding well-conditioned LM
+        estimates and penalising stale arrivals.  This is the first WAPC
+        protocol that exploits model-quality metrics for inter-substation message
+        weighting.
+  \item \textbf{Convergence proposition.}
+        Proves correct zone identification whenever (a) all delays $\tau_s \leq
+        T_c = 50$~ms and (b) at least one substation in the faulted cluster
+        achieves $\kappa_n < 30$.  The proof uses graph-theoretic weight
+        dominance, preserving the SAMBPS single-substation guarantee.
+  \item \textbf{Scalability validation.}
+        15\,000 Monte Carlo trials (IEEE~39, IEEE~118, synthetic 50-substation)
+        confirm zone accuracy 94.1--98.2\%, false isolation 0.8--2.8\%, and
+        consensus convergence 45--94~ms (below the 100~ms budget).
+        Communication overhead remains below 40~Mbps WAN capacity for $N \leq 200$.
+\end{enumerate}
+
+\medskip
+\noindent\textbf{Relationship to companion papers.}
+This is gap paper G4 in the SAMBPS series.  The SAMBPS architecture is introduced
+in a companion paper submitted to this journal (J4: unified five-layer architecture,
+C16--C20) and validated on commercial hardware in a companion submitted to
+\textit{IEEE Transactions on Power Delivery} (G1: SEL-411L HIL).  The present
+paper extends the framework to multi-substation wide-area networks, a dimension
+not addressed in either companion.
+
+\medskip
+\noindent\textbf{Suggested reviewers.}
+\begin{itemize}
+  \item Prof.\ Arun Phadke, Virginia Tech (synchrophasors, WAPC)
+  \item Prof.\ Mladen Kezunovic, Texas A\&M (wide-area protection, PMU)
+  \item Prof.\ Ali Hooshyar, University of Toronto (IBR protection)
+  \item Dr.\ Evangelos Farantatos, EPRI (wide-area monitoring, protection)
+\end{itemize}
+
+\medskip
+\noindent
+The manuscript has not been submitted elsewhere.
+
+\closing{Sincerely,}
+\end{letter}
+\end{document}

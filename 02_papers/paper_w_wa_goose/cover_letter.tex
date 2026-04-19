@@ -1,0 +1,85 @@
+%% cover_letter.tex — C14: Wide-Area GOOSE Consensus Protocol
+%% IEEE Transactions on Smart Grid
+\documentclass[11pt,a4paper]{letter}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{microtype,amsmath}
+
+\signature{Anoop~V.~Eluvathingal\\
+           Ph.D.\ Candidate, Dept.\ of Electrical Engineering\\
+           Indian Institute of Technology Madras\\
+           Chennai 600036, India\\[2pt]
+           \texttt{arun.eluvathingal@iitm.ac.in}}
+
+\address{Department of Electrical Engineering\\
+         Indian Institute of Technology Madras\\
+         Chennai 600036, India}
+
+\begin{document}
+\begin{letter}{Editor-in-Chief\\
+               \textit{IEEE Transactions on Smart Grid}}
+
+\opening{Dear Editor,}
+
+We submit for your consideration:
+
+\begin{center}
+  \textbf{Wide-Area Consensus via GOOSE for Coordinated Protection
+  in IBR-Rich Distribution Networks}
+\end{center}
+
+\textbf{The problem.}
+In IBR-penetrated distribution networks, a single substation may
+see a bounded fault current below the local sensitivity threshold,
+while adjacent substations observe clear fault signatures.  No
+individual relay has the full picture.  Classical wide-area
+protection schemes aggregate raw measurements but do not account
+for the varying \emph{reliability} of estimates across substations
+under IBR operating conditions.
+
+\textbf{Contributions.}
+\begin{enumerate}
+  \item \textbf{Quality-weighted consensus (C14)}: Trip votes are
+        weighted by $w_i = \max(0, 1 - k_n^{(i)}/30)$, derived
+        directly from the SAMBPS condition number $k_n^{(i)}$.
+        Ill-conditioned substations are down-weighted automatically,
+        without any manual configuration.
+
+  \item \textbf{Conservativeness preservation (Theorem 1)}: The
+        multi-node consensus trip rule is proven to inherit the
+        zero-false-trip guarantee of the single-node CUEP trip rule
+        (C13), making the aggregate at least as conservative as any
+        constituent relay.
+
+  \item \textbf{Dropout robustness (Proposition 1)}: Zone accuracy
+        $\geq 94.8\%$ with up to $\lfloor (N_{\rm SS}-1)/2 \rfloor$
+        simultaneous substation dropouts, degrading gracefully
+        to unweighted majority in the limit.
+
+  \item \textbf{Hardware validation}: 6.1\,ms P99 trip latency on
+        a three-relay IEC\,61850 Class P2 testbed, meeting the
+        10\,ms requirement with 38\% margin.
+\end{enumerate}
+
+\textbf{Fit to \textit{IEEE Transactions on Smart Grid}.}
+The Smart Grid journal covers coordinated control and communication
+for power system protection and automation.  This paper directly
+addresses the smart grid integration of IBR-aware protection
+coordination, with a practical IEC\,61850 GOOSE implementation
+and hardware demonstration.
+
+\textbf{Suggested reviewers.}
+\begin{itemize}
+  \item Prof.\ Arun G.\ Phadke (Virginia Tech) --- wide-area protection
+  \item Prof.\ Ali Hooshyar (University of Toronto) --- IBR protection
+  \item Prof.\ Mladen Kezunovic (Texas A\&M) --- smart grid relaying
+  \item Dr.\ Alexander Apostolov (OMICRON) --- IEC 61850, GOOSE
+\end{itemize}
+
+This manuscript is not under review elsewhere.
+All authors have approved the submission.
+
+\closing{Sincerely,}
+\end{letter}
+\end{document}
