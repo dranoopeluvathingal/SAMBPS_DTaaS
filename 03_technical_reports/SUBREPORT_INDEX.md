@@ -22,3 +22,8 @@ Auto-sorted by ID. Append one line per new sub-report.
 | TR-04 | TR | SAMBP 87B Bus Differential: 3-param CT-distortion model, κ_n=2–6 (best in suite) | `03_technical_reports/phase_1_sg_framework/TR04_87B_bus_differential/SUBREPORT_TR04.md` | 2026-04-20 |
 | TR-05 | TR | System Integration v1: 4 SAMBP functions concurrent, 10/10 selective, namespace isolation | `03_technical_reports/phase_1_sg_framework/TR05_system_integration_v1/SUBREPORT_TR05.md` | 2026-04-20 |
 | TR-06 | TR | IEC 61850 GOOSE Integration: κ_n/f_int state sharing, 42ms clearance, 2ms overhead | `03_technical_reports/phase_1_sg_framework/TR06_iec61850_goose/SUBREPORT_TR06.md` | 2026-04-20 |
+| TR-07 | TR | Double-Busbar 87B: 3-zone (Z1+Z2+CK), blind-spot proposition proven, zero code changes | `03_technical_reports/phase_1_sg_framework/TR07_double_busbar/SUBREPORT_TR07.md` | 2026-04-20 |
+| TR-08 | TR | Monte Carlo 4k Trials: v1 model artefacts identified (LM clipping + transformer DC); v2 pandapower TPR/FPR=1.0/0.0 | `03_technical_reports/phase_1_sg_framework/TR08_monte_carlo_4k/SUBREPORT_TR08.md` | 2026-04-20 |
+| TR-09 | TR | Stage-2 Recalibration: dynamic LM upper bound + pw_tr() fix; ±30%/±60° TPR=FPR=1.0/0.0 | `03_technical_reports/phase_1_sg_framework/TR09_stage2_recalibration/SUBREPORT_TR09.md` | 2026-04-20 |
+| TR-10 | TR | CT Saturation Injection: magnitude override (I_ovr=0.60 pu) resolves internal TPR; ext FPR=0.000 all ε_CT | `03_technical_reports/phase_1_sg_framework/TR10_ct_saturation/SUBREPORT_TR10.md` | 2026-04-20 |
+| TR-11 | TR | HIF Sensitivity Margin: 87L penalty 3–4× (I_min=0.56–0.72 pu); 87B/87T no penalty to α=0.05 | `03_technical_reports/phase_1_sg_framework/TR11_hif_sensitivity/SUBREPORT_TR11.md` | 2026-04-20 |
