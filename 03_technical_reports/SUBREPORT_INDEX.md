@@ -11,3 +11,5 @@ Auto-sorted by ID. Append one line per new sub-report.
 | TR-91 | TR | GNN Topology-Aware Protection: 3-Layer GraphSAGE for Relay Node Classification | `03_technical_reports/phase_8_advanced_extensions/TR91_GNN_topology/SUBREPORT_TR91.md` | 2026-04-20 |
 | paper_b | Paper | Hilbert–Fortescue Sequence Estimation and Greedy Cascade Coordination for Multi-Generator OC | `02_papers/paper_b_cascade_oc/SUBREPORT_paper_b.md` | 2026-04-20 |
 | paper_c | Paper | Self-Adaptive Model-Based Protection: Unified SAMBP Framework (OC+87T+87L+87B, Phase 1) | `02_papers/paper_c_unified_sambp/SUBREPORT_paper_c.md` | 2026-04-20 |
+| TR-58 | TR | Generalised EAC and Conservative CUEP Bound for Relay 78 Out-of-Step Protection | `03_technical_reports/phase_7_IBR_extension/TR58_EAC_CUEP_relay78/SUBREPORT_TR58.md` | 2026-04-20 |
+| TR-67 | TR | HIL Validation with DFIG and PV Emulators on RTDS (62-scenario, 96.8% agreement) | `03_technical_reports/phase_7_IBR_extension/TR67_HIL_RTDS/SUBREPORT_TR67.md` | 2026-04-20 |
