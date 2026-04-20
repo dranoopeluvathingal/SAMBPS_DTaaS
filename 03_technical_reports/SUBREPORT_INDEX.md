@@ -10,3 +10,4 @@ Auto-sorted by ID. Append one line per new sub-report.
 | TR-59 | TR | ANDES Positive-Sequence Validation of sync_oc Confidence Adaptation | `03_technical_reports/phase_7_IBR_extension/TR59_ANDES_syncoc/SUBREPORT_TR59.md` | 2026-04-20 |
 | TR-91 | TR | GNN Topology-Aware Protection: 3-Layer GraphSAGE for Relay Node Classification | `03_technical_reports/phase_8_advanced_extensions/TR91_GNN_topology/SUBREPORT_TR91.md` | 2026-04-20 |
 | paper_b | Paper | Hilbert–Fortescue Sequence Estimation and Greedy Cascade Coordination for Multi-Generator OC | `02_papers/paper_b_cascade_oc/SUBREPORT_paper_b.md` | 2026-04-20 |
+| paper_c | Paper | Self-Adaptive Model-Based Protection: Unified SAMBP Framework (OC+87T+87L+87B, Phase 1) | `02_papers/paper_c_unified_sambp/SUBREPORT_paper_c.md` | 2026-04-20 |
