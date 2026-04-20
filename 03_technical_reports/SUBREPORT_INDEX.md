@@ -12,5 +12,7 @@ Auto-sorted by ID. Append one line per new sub-report.
 | paper_b | Paper | Hilbert–Fortescue Sequence Estimation and Greedy Cascade Coordination for Multi-Generator OC | `02_papers/paper_b_cascade_oc/SUBREPORT_paper_b.md` | 2026-04-20 |
 | paper_c | Paper | Self-Adaptive Model-Based Protection: Unified SAMBP Framework (OC+87T+87L+87B, Phase 1) | `02_papers/paper_c_unified_sambp/SUBREPORT_paper_c.md` | 2026-04-20 |
 | TR-58 | TR | Generalised EAC and Conservative CUEP Bound for Relay 78 Out-of-Step Protection | `03_technical_reports/phase_7_IBR_extension/TR58_EAC_CUEP_relay78/SUBREPORT_TR58.md` | 2026-04-20 |
+| TR-01 | TR | Inverse-Estimation-Based Adaptive OC Protection for SGs — SyncOC Milestone 1 | `03_technical_reports/phase_1_sg_framework/TR01_sync_oc_foundation/SUBREPORT_TR01.md` | 2026-04-20 |
+| TR-02 | TR | Extended SyncOC: HIF, Park dq, Sequence Estimation, Multi-Generator Coordination | `03_technical_reports/phase_1_sg_framework/TR02_sync_oc_extended/SUBREPORT_TR02.md` | 2026-04-20 |
 | TR-62 | TR | Two-Parameter Solar PV Zone Model for IBR-Tolerant 87L (κ_n=1, 20ms trip) | `03_technical_reports/phase_7_IBR_extension/TR62_PV_2param_87L/SUBREPORT_TR62.md` | 2026-04-20 |
 | TR-67 | TR | HIL Validation with DFIG and PV Emulators on RTDS (62-scenario, 96.8% agreement) | `03_technical_reports/phase_7_IBR_extension/TR67_HIL_RTDS/SUBREPORT_TR67.md` | 2026-04-20 |
