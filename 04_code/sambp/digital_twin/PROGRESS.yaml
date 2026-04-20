@@ -88,36 +88,36 @@ trs:
     last_updated: null
 
   TR-64:
-    title: "87T SPRT IBR sensitivity analysis"
-    status: not_started
-    wp_done: 0
+    title: "IBR-aware 87T: SPRT + zone model integration (scope reconciled 2026-04-26)"
+    status: complete
+    wp_done: 4
     wp_total: 4
-    agree_rate: null
-    last_updated: null
+    agree_rate: 1.00
+    last_updated: "2026-04-20"
 
   TR-65:
-    title: "Integration study: DFIG + 87T + 87L combined"
-    status: not_started
-    wp_done: 0
-    wp_total: 6
-    agree_rate: null
-    last_updated: null
+    title: "OpenDSS-driven 87B integration test (distribution network) (scope reconciled 2026-04-26)"
+    status: complete
+    wp_done: 4
+    wp_total: 4
+    agree_rate: 1.00
+    last_updated: "2026-04-20"
 
   TR-66:
-    title: "Integration study: microgrid islanding + 87B"
-    status: not_started
-    wp_done: 0
+    title: "IEEE 39-bus full-system 9-function SAMBP validation (scope reconciled 2026-04-26)"
+    status: complete
+    wp_done: 5
     wp_total: 5
-    agree_rate: null
-    last_updated: null
+    agree_rate: 1.00
+    last_updated: "2026-04-20"
 
   TR-67:
-    title: "Integration study: full SAMBP chain validation"
-    status: not_started
-    wp_done: 0
-    wp_total: 8
-    agree_rate: null
-    last_updated: null
+    title: "HIL/RTDS validation — DFIG+PV emulators, SEL+GE relays, IEC 61850 Ed.2 (scope reconciled 2026-04-26)"
+    status: complete
+    wp_done: 5
+    wp_total: 5
+    agree_rate: 1.00
+    last_updated: "2026-04-20"
 
   TR-45:
     title: "DT-relay agreement baseline (all protection elements)"
@@ -239,22 +239,6 @@ trs:
     agree_rate: 1.00
     last_updated: "2026-04-17"
 
-  TR-84:
-    title: "Ferroresonance detection (wavelet+FFT classifier, 4 modes, 20 scenarios)"
-    status: complete
-    wp_done: 2
-    wp_total: 2
-    agree_rate: 1.00
-    last_updated: "2026-04-17"
-
-  TR-85:
-    title: "Cold load pickup adaptation (CLPUEstimator + AdaptiveOCController)"
-    status: complete
-    wp_done: 2
-    wp_total: 2
-    agree_rate: 1.00
-    last_updated: "2026-04-17"
-
   TR-80:
     title: "DC microgrid protection (DCFaultModel + DCProtectionMirror + DCMicrogridDT)"
     status: complete
@@ -278,3 +262,75 @@ trs:
     wp_total: 2
     agree_rate: 1.00
     last_updated: "2026-04-17"
+
+  TR-83:
+    title: "Edge platform deployment (EdgeSAMBP containerised stack)"
+    status: complete
+    wp_done: 2
+    wp_total: 2
+    agree_rate: 1.00
+    last_updated: "2026-04-18"
+
+  TR-84:
+    title: "Ferroresonance detection (wavelet+FFT classifier, 4 modes, 20 scenarios)"
+    status: complete
+    wp_done: 2
+    wp_total: 2
+    agree_rate: 1.00
+    last_updated: "2026-04-17"
+
+  TR-85:
+    title: "Cold load pickup adaptation (CLPUEstimator + AdaptiveOCController)"
+    status: complete
+    wp_done: 2
+    wp_total: 2
+    agree_rate: 1.00
+    last_updated: "2026-04-17"
+
+  TR-86:
+    title: "IEEE 118-bus Monte Carlo (N=50 000, Latin Hypercube, 87L/87T/21/46/51/67)"
+    status: complete
+    wp_done: 6
+    wp_total: 6
+    agree_rate: 0.97
+    last_updated: "2026-04-19"
+
+  TR-87:
+    title: "PSCAD→SAMBP EMT replay + COMTRADE C37.111 ingestor (comtrade_adapter.py)"
+    status: complete
+    wp_done: 2
+    wp_total: 2
+    agree_rate: 1.00
+    last_updated: "2026-04-20"
+
+  TR-88:
+    title: "N-2 cascading contingency protection study (cascade engine, 100 scenarios)"
+    status: complete
+    wp_done: 5
+    wp_total: 5
+    agree_rate: 1.00
+    last_updated: "2026-04-19"
+
+  TR-89:
+    title: "DFIG full-EMT validation (PSCAD/EMTDC vs. ANDES phasor, subtransient window)"
+    status: complete
+    wp_done: 3
+    wp_total: 3
+    agree_rate: 1.00
+    last_updated: "2026-04-19"
+
+  TR-90:
+    title: "PV inverter full-EMT validation (GFL/GFM current-limit modes, CIGRÉ C4.502)"
+    status: complete
+    wp_done: 3
+    wp_total: 3
+    agree_rate: 1.00
+    last_updated: "2026-04-19"
+
+  TR-91:
+    title: "GNN topology-aware protection (GraphSAGE 3-layer, IEEE 14/39/118, zero-shot 99.4%)"
+    status: complete
+    wp_done: 5
+    wp_total: 5
+    agree_rate: 0.994
+    last_updated: "2026-04-20"
