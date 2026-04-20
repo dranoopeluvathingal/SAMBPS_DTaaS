@@ -116,6 +116,45 @@ numerical results in TR-44 remain identical.
 
 ---
 
+### TR-87-v0.1-a — Alias miss for all-lowercase channel names in comtrade_adapter
+
+**Title:** `extract_relay_waveforms()` returns zeros for CSV columns named `ia`, `va` etc.  
+**Priority:** Medium (correctness defect; affects real PSCAD exports with lowercase headers)  
+**Milestone:** v0.1-patch  
+**Filed:** 2026-04-20 (discovered during SUBREPORT_TR87 validation)  
+**Related:** TR-87
+
+**Body:**  
+`_IA_KEYS = ("Ia","IA","I_a","i_a","Ia_pu","Br_Ia")` — `"ia"` (no underscore,
+all-lowercase) is absent. `read_pscad_csv()` preserves the column name verbatim,
+so `pscad_fault_data.csv` (columns `ia,ib,ic`) loads into `ComtradeResult.channels`
+correctly but `extract_relay_waveforms()` silently returns a zero array with a
+`UserWarning`. The result is a FaultCase with all-zero current waveforms — incorrect.
+
+**Reproduction:**
+```python
+from io_utils.comtrade_adapter import read_pscad_csv, extract_relay_waveforms
+cr = read_pscad_csv("05_data/fault_waveforms/pscad_fault_data.csv")
+wf = extract_relay_waveforms(cr)   # UserWarning; wf["ia"] == zeros
+```
+
+**Fix:**
+```python
+_VA_KEYS = ("Va","VA","V_a","v_a","va","Va_pu","Bus_Va")
+_VB_KEYS = ("Vb","VB","V_b","v_b","vb","Vb_pu","Bus_Vb")
+_VC_KEYS = ("Vc","VC","V_c","v_c","vc","Vc_pu","Bus_Vc")
+_IA_KEYS = ("Ia","IA","I_a","i_a","ia","Ia_pu","Br_Ia")
+_IB_KEYS = ("Ib","IB","I_b","i_b","ib","Ib_pu","Br_Ib")
+_IC_KEYS = ("Ic","IC","I_c","i_c","ic","Ic_pu","Br_Ic")
+```
+
+**Acceptance criteria:**
+- [ ] `pscad_fault_data.csv` pipeline returns non-zero `ia` waveform
+- [ ] All existing synthetic tests still pass
+- [ ] `UserWarning` no longer emitted for canonical lowercase headers
+
+---
+
 ## Closed
 
 *(none yet — v0.1 is the first tagged release)*
