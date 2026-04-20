@@ -18,3 +18,7 @@ Auto-sorted by ID. Append one line per new sub-report.
 | TR-67 | TR | HIL Validation with DFIG and PV Emulators on RTDS (62-scenario, 96.8% agreement) | `03_technical_reports/phase_7_IBR_extension/TR67_HIL_RTDS/SUBREPORT_TR67.md` | 2026-04-20 |
 | paper_k | Paper | Unified Five-Layer SAMBPS Framework: Architecture, Coordination, and System-Wide HIL Validation (IEEE TSG) | `02_papers/paper_k_sambps_unified/SUBREPORT_paper_k.md` | 2026-04-20 |
 | paper_t | Paper | Self-Adaptive Model-Based Protection for IBR-Penetrated Networks: Unified Five-Layer Framework (Tutorial/Survey) | `02_papers/paper_t_sambps_unified/SUBREPORT_paper_t.md` | 2026-04-20 |
+| TR-03 | TR | SAMBP Differential Protection: 87T (5-param harmonic) + 87L (4-param sine+DC, 3-mode FSM) | `03_technical_reports/phase_1_sg_framework/TR03_87T_87L_foundation/SUBREPORT_TR03.md` | 2026-04-20 |
+| TR-04 | TR | SAMBP 87B Bus Differential: 3-param CT-distortion model, κ_n=2–6 (best in suite) | `03_technical_reports/phase_1_sg_framework/TR04_87B_bus_differential/SUBREPORT_TR04.md` | 2026-04-20 |
+| TR-05 | TR | System Integration v1: 4 SAMBP functions concurrent, 10/10 selective, namespace isolation | `03_technical_reports/phase_1_sg_framework/TR05_system_integration_v1/SUBREPORT_TR05.md` | 2026-04-20 |
+| TR-06 | TR | IEC 61850 GOOSE Integration: κ_n/f_int state sharing, 42ms clearance, 2ms overhead | `03_technical_reports/phase_1_sg_framework/TR06_iec61850_goose/SUBREPORT_TR06.md` | 2026-04-20 |
