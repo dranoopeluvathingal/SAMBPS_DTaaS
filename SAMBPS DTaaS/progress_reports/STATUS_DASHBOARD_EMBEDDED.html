@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAMBPS DTaaS — Status Dashboard (embedded)</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 20px; background: #f5f7fa; color: #1a1a2e; }
+  h1 { color: #004aad; border-bottom: 3px solid #004aad; padding-bottom: 8px; }
+  h2 { color: #5a6473; margin-top: 28px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 20px 0; }
+  .card { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .card .num { font-size: 2.4em; font-weight: 700; color: #004aad; }
+  .card .label { font-size: 0.85em; color: #5a6473; margin-top: 4px; }
+  .card.warn .num { color: #e67e22; }
+  .card.ok .num { color: #27ae60; }
+  .card.crit .num { color: #c0392b; }
+  table { border-collapse: collapse; width: 100%; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  th { background: #004aad; color: #fff; padding: 10px 14px; text-align: left; font-size: 0.85em; }
+  td { padding: 8px 14px; border-bottom: 1px solid #eef0f4; font-size: 0.9em; }
+  tr:last-child td { border-bottom: none; }
+  .tag-open { background: #fdecea; color: #c0392b; border-radius: 4px; padding: 2px 8px; font-size: 0.8em; }
+  .tag-closed { background: #eafaf1; color: #27ae60; border-radius: 4px; padding: 2px 8px; font-size: 0.8em; }
+  .tag-warn { background: #fef9e7; color: #e67e22; border-radius: 4px; padding: 2px 8px; font-size: 0.8em; }
+  .meta { font-size: 0.8em; color: #aaa; margin-top: 32px; border-top: 1px solid #eee; padding-top: 12px; }
+  .bar-bg { background: #e8eaf0; border-radius: 4px; height: 10px; margin-top: 8px; }
+  .bar-fill { background: #004aad; border-radius: 4px; height: 10px; }
+</style>
+</head>
+<body>
+
+<script id="embedded-yaml" type="text/yaml" data-generated="2026-04-20">
+last_run_ts: "2026-04-20"
+runs_today: 2
+tr_namespace:
+  active_count: 91
+  contiguous_range: "TR-01..TR-91"
+  sequence_gaps: 0
+  hard_collisions: 0
+  backlog_count: 9
+progress_yaml:
+  total_rows: 41
+  complete_rows: 27
+  not_started_rows: 14
+  avg_agree_rate_complete: 0.9987
+issues:
+  open_v02: 3
+thesis:
+  chapters_drafted: 10
+  chapters_target: 10
+papers:
+  folders_present: 21
+risks:
+  open: 7
+  closed: 9
+  new_this_run: 1
+critical_path:
+  next_tr: "TR-92"
+  next_tr_window: "Q4-2026"
+  submission_target: "Q3-2028"
+</script>
+
+<script>
+function loadYaml() {
+  // Prefer embedded YAML block
+  const block = document.getElementById('embedded-yaml');
+  if (block) {
+    return {
+      last_run_ts: "2026-04-20",
+      runs_today: 2,
+      tr_active: 91, tr_backlog: 9, tr_gaps: 0, tr_collisions: 0,
+      progress_complete: 27, progress_total: 41, progress_stale: 14,
+      avg_agree_rate: 0.9987,
+      issues_open: 3,
+      chapters: 10, chapters_target: 10,
+      papers: 21,
+      risks_open: 7, risks_closed: 9,
+      next_tr: "TR-92", next_window: "Q4-2026",
+      submission: "Q3-2028"
+    };
+  }
+}
+
+window.onload = function() {
+  const d = loadYaml();
+  document.getElementById('tr-count').textContent = d.tr_active;
+  document.getElementById('tr-backlog').textContent = d.tr_backlog;
+  document.getElementById('agree-rate').textContent = (d.avg_agree_rate * 100).toFixed(1) + '%';
+  document.getElementById('issues-open').textContent = d.issues_open;
+  document.getElementById('chapters').textContent = d.chapters + '/' + d.chapters_target;
+  document.getElementById('risks-open').textContent = d.risks_open;
+  document.getElementById('next-tr').textContent = d.next_tr + ' (' + d.next_window + ')';
+  document.getElementById('last-run').textContent = d.last_run_ts + ' (run ' + d.runs_today + ')';
+  document.getElementById('submission').textContent = d.submission;
+  // progress bar
+  const pct = Math.round(d.tr_active / (d.tr_active + d.tr_backlog) * 100);
+  document.getElementById('tr-bar').style.width = pct + '%';
+  document.getElementById('tr-pct').textContent = pct + '%';
+};
+</script>
+
+<h1>SAMBPS DTaaS — Status Dashboard</h1>
+<p style="color:#5a6473">Smart Grid Computational Research Lab (SGCRL) · IIT Madras · PhD: Anoop V. Eluvathingal · Guide: Prof. K. Shanti Swarup</p>
+
+<div class="grid">
+  <div class="card ok">
+    <div class="num" id="tr-count">91</div>
+    <div class="label">Active TRs (TR-01..TR-91)</div>
+    <div class="bar-bg"><div class="bar-fill" id="tr-bar" style="width:91%"></div></div>
+    <div style="font-size:0.8em;color:#aaa;margin-top:4px"><span id="tr-pct">91%</span> of 100-TR scope</div>
+  </div>
+  <div class="card ok">
+    <div class="num" id="agree-rate">99.9%</div>
+    <div class="label">Avg agree-rate (tracked TRs)</div>
+  </div>
+  <div class="card">
+    <div class="num" id="tr-backlog">9</div>
+    <div class="label">Backlog TRs (TR-92..TR-100)</div>
+  </div>
+  <div class="card warn">
+    <div class="num" id="issues-open">3</div>
+    <div class="label">Open v0.2 issues</div>
+  </div>
+  <div class="card ok">
+    <div class="num" id="chapters">10/10</div>
+    <div class="label">Thesis chapters drafted</div>
+  </div>
+  <div class="card warn">
+    <div class="num" id="risks-open">7</div>
+    <div class="label">Open risks (R-01..R-18)</div>
+  </div>
+</div>
+
+<h2>Critical Path</h2>
+<table>
+  <tr><th>Item</th><th>Value</th></tr>
+  <tr><td>Next TR to open</td><td id="next-tr">TR-92 (Q4-2026)</td></tr>
+  <tr><td>Submission target</td><td id="submission">Q3-2028</td></tr>
+  <tr><td>Last report run</td><td id="last-run">2026-04-20 (run 2)</td></tr>
+  <tr><td>Sequence gaps</td><td><span class="tag-closed">0 — clean</span></td></tr>
+  <tr><td>Hard namespace collisions</td><td><span class="tag-closed">0 — clean</span></td></tr>
+  <tr><td>Soft description mismatches</td><td><span class="tag-closed">0 — all resolved</span></td></tr>
+</table>
+
+<h2>Risk Register Summary</h2>
+<table>
+  <tr><th>ID</th><th>Description</th><th>Status</th></tr>
+  <tr><td>R-01</td><td>EKF alpha–Z_line degeneracy</td><td><span class="tag-open">open v0.2</span></td></tr>
+  <tr><td>R-02</td><td>Field COMTRADE recordings absent (0/50)</td><td><span class="tag-warn">open Q3-2026</span></td></tr>
+  <tr><td>R-03</td><td>PSCAD licence Phase B</td><td><span class="tag-warn">open Q3-2026</span></td></tr>
+  <tr><td>R-04</td><td>Shallow walk regression</td><td><span class="tag-closed">mitigated</span></td></tr>
+  <tr><td>R-05</td><td>Thesis citation drift</td><td><span class="tag-warn">open — TR-99 closes</span></td></tr>
+  <tr><td>R-06</td><td>Advisor sign-off delay</td><td><span class="tag-open">open</span></td></tr>
+  <tr><td>R-07</td><td>iThenticate > 15%</td><td><span class="tag-open">not yet tested</span></td></tr>
+  <tr><td>R-08</td><td>Phasor approx error > 2%</td><td><span class="tag-closed">mitigated TR-89/90</span></td></tr>
+  <tr><td>R-09..R-17</td><td>Namespace / audit issues</td><td><span class="tag-closed">all closed 2026-04-20</span></td></tr>
+  <tr><td>R-18</td><td>PROGRESS.yaml stale (14 rows not_started, folders exist)</td><td><span class="tag-warn">new · low priority</span></td></tr>
+</table>
+
+<h2>TR Phase Coverage</h2>
+<table>
+  <tr><th>Phase</th><th>TR range</th><th>TRs</th><th>Status</th></tr>
+  <tr><td>1 — Foundation</td><td>TR-01..07</td><td>7</td><td><span class="tag-closed">complete</span></td></tr>
+  <tr><td>2 — 87L/87T/distance</td><td>TR-08..22</td><td>15</td><td><span class="tag-closed">complete</span></td></tr>
+  <tr><td>3 — IBR + distance</td><td>TR-23..37</td><td>15</td><td><span class="tag-closed">complete</span></td></tr>
+  <tr><td>4 — Microgrid</td><td>TR-38..42</td><td>5</td><td><span class="tag-closed">complete</span></td></tr>
+  <tr><td>5 — Digital Twin + ML</td><td>TR-43..55</td><td>13</td><td><span class="tag-closed">complete</span></td></tr>
+  <tr><td>6 — IBR extension</td><td>TR-56..67</td><td>12</td><td><span class="tag-closed">complete</span></td></tr>
+  <tr><td>7 — Advanced IBR</td><td>TR-68..79</td><td>12</td><td><span class="tag-closed">complete</span></td></tr>
+  <tr><td>8 — Advanced extensions</td><td>TR-80..91</td><td>12</td><td><span class="tag-closed">complete</span></td></tr>
+  <tr><td colspan="2"><strong>Backlog</strong></td><td>9</td><td><span class="tag-warn">planned</span></td></tr>
+</table>
+
+<div class="meta">
+  Generated: 2026-04-20 · Run 2 · Branch: master · HEAD: 3ab3f6e2 ·
+  SGCRL, IIT Madras · SAMBPS DTaaS internal — not for external distribution
+</div>
+
+</body>
+</html>
