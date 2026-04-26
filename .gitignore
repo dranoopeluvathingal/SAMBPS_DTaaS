@@ -1,0 +1,66 @@
+# ============================================================
+#  SAMS root .gitignore
+# ============================================================
+
+# Secrets
+.env
+**/.env
+
+# LaTeX build artefacts
+**/*.aux
+**/*.log
+**/*.out
+**/*.toc
+**/*.blg
+**/*.bbl
+**/*.nav
+**/*.snm
+**/*.nlo
+**/*.nls
+**/*.nlg
+**/*.ist
+**/*.acn
+**/*.glo
+**/*.lof
+**/*.lot
+**/*.fls
+**/*.fdb_latexmk
+**/*.synctex.gz
+**/*.synctex\(busy\)
+**/*.bcf
+**/*.run.xml
+texput.log
+
+# Build directories
+**/build/
+
+# Python
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/.ipynb_checkpoints/
+
+# Virtual environments
+phd_env/
+venv/
+.venv/
+**/phd_env/
+**/venv/
+**/.venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/settings.json
+**/*.swp
+
+# Quarto
+_site/
+.quarto/
+
+# Large binaries (commit selectively)
+**/*.pkl
+**/*.xlsx
+**/*.zip
