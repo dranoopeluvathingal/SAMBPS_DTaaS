@@ -5,6 +5,7 @@ __version__ = "0.3.0"
 from .plant import Plant, PlantParams, M_MATRIX, SWITCHING_VECTORS
 from .inner_fsmpc import FSMPCController, FSMPCParams
 from .outer_energy_pi import EnergyPI, EnergyPIParams
+from .outer_linear_pi import LinearVdcPI, LinearVdcPIParams
 from .pll import IdealPLL, SOGIPLL, SOGIPLLParams
 from .load_model import HarmonicLoad, HarmonicLoadParams
 from .rectifier_load import RectifierLoad, RectifierLoadParams
@@ -16,6 +17,7 @@ __all__ = [
     "Plant", "PlantParams", "M_MATRIX", "SWITCHING_VECTORS",
     "FSMPCController", "FSMPCParams",
     "EnergyPI", "EnergyPIParams",
+    "LinearVdcPI", "LinearVdcPIParams",
     "IdealPLL", "SOGIPLL", "SOGIPLLParams",
     "HarmonicLoad", "HarmonicLoadParams",
     "RectifierLoad", "RectifierLoadParams",
