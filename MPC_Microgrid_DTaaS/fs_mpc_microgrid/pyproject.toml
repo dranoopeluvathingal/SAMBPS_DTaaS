@@ -30,6 +30,11 @@ mqtt = [
 powerflow = [
     "pandapower>=2.13",
 ]
+dashboard-live = [
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+    "websockets>=12",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
