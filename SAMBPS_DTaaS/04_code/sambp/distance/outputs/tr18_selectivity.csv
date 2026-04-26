@@ -1,0 +1,13 @@
+label,description,Z_m_real,Z_m_imag,zone1_in,zone2_in,zone3_in,load_block,trip,zone,exp_zone,exp_trip,correct,notes
+INT_25,25% line fault 3ph (bolted),0.0,0.0125,True,True,True,False,True,1,1,True,True,87L also trips (Zone 1)
+INT_50,50% line fault 3ph (bolted),0.0,0.025,True,True,True,False,True,1,1,True,True,87L also trips (Zone 1)
+INT_79,79% line fault 3ph (bolted),0.0,0.0395,True,True,True,False,True,1,1,True,True,87L trips (Zone 1)
+INT_82,82% line fault 3ph (just outside Zone 1),0.0,0.041,False,True,True,False,True,2,2,True,True,87L trips (Zone 2 timed)
+RBUS,Remote bus fault 3ph (d=1.05),0.0,0.0525,False,True,True,False,True,2,2,True,True,87B remote trips; 21 Zone 2 backup
+BKUP,Beyond remote (d=1.45),0.0,0.0725,False,False,True,False,True,3,3,True,True,Zone 3 back-up only
+LBUS,Local bus fault 3ph (d=0.0),0.0,0.001,True,True,True,False,True,1,1,True,True,87B trips bus; 21 Zone1 overlap
+AG_50,"50% ag fault (bolted, d=0.50)",0.0,0.025,True,True,True,False,True,1,1,True,True,ag Zone 1 trip
+AG_HIF,"ag HIF (d=0.50, Z_arc=1.5)",0.0,2.275,False,False,False,False,False,0,0,False,True,Outside Zone 1 due to arc R; 87L detects
+LOAD_N,"Normal load (R=0.5 pu, X=0.1 pu)",0.5,0.1,False,False,False,True,False,0,0,False,True,Load blinder: no trip
+LOAD_H,"Heavy load (R=0.3 pu, X=0.08 pu)",0.3,0.08,False,False,False,False,False,0,0,False,True,Small R — check blinder margin
+OOZ,Outside Zone 3 (d=2.0),0.0,0.1,False,False,False,False,False,0,0,False,True,No trip (outside all zones)
