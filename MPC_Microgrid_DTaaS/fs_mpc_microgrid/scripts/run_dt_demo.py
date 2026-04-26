@@ -22,6 +22,10 @@ import sys
 import numpy as np
 import matplotlib
 
+# Force UTF-8 stdout on Windows so unit symbols (µ, Ω) below don't crash cp1252.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
