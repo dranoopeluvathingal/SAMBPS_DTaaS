@@ -50,11 +50,30 @@ class SwitchEdge:
 
 
 @dataclass
+class LineEdge:
+    """A power-line / cable segment between two buses with R, X impedance.
+
+    Distinct from a SwitchEdge: a line always carries impedance, a switch
+    is an ideal connector. A real network has both — a switch in series
+    with a line is the typical breaker-cable arrangement.
+    """
+    line_id: str
+    bus_a: str
+    bus_b: str
+    r_ohm_per_km: float
+    x_ohm_per_km: float
+    length_km: float = 1.0
+    c_nf_per_km: float = 0.0           # shunt capacitance (nF/km), often 0 for short MV
+    max_i_ka: float = 1.0              # ampacity for thermal checks
+
+
+@dataclass
 class Topology:
     buses: dict[str, BusNode] = field(default_factory=dict)
     icas: dict[str, ICANode]  = field(default_factory=dict)
     loads: dict[str, LoadNode] = field(default_factory=dict)
     switches: dict[str, SwitchEdge] = field(default_factory=dict)
+    lines: dict[str, LineEdge] = field(default_factory=dict)
 
     # ------------------------------------------------------------------ adders
     def add_bus(self, bus: BusNode) -> "Topology":
@@ -78,6 +97,13 @@ class Topology:
             if bid not in self.buses:
                 raise KeyError(f"Switch {sw.switch_id}: bus {bid} not in topology")
         self.switches[sw.switch_id] = sw
+        return self
+
+    def add_line(self, line: LineEdge) -> "Topology":
+        for bid in (line.bus_a, line.bus_b):
+            if bid not in self.buses:
+                raise KeyError(f"Line {line.line_id}: bus {bid} not in topology")
+        self.lines[line.line_id] = line
         return self
 
     # ----------------------------------------------------------------- queries
