@@ -1,0 +1,47 @@
+% fig_zone_accuracy.tex — Zone identification accuracy vs N_substations
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  width  = 0.90\columnwidth,
+  height = 5.0cm,
+  xlabel = {Number of substations $N$},
+  ylabel = {Zone identification accuracy (\%)},
+  xmin=5, xmax=55,
+  ymin=88, ymax=101,
+  xtick={10,20,30,40,50},
+  ytick={88,90,92,94,96,98,100},
+  legend pos=south west,
+  legend style={font=\scriptsize},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+]
+
+%% Weighted consensus (proposed) — hierarchical RC
+\addplot[thick,thesisblue,mark=*,mark size=2pt,mark options={thesisblue}]
+  coordinates {(10,98.2)(20,96.8)(30,95.7)(40,95.1)(50,94.1)};
+\addlegendentry{Weighted consensus (proposed)};
+
+%% Simple majority vote (baseline)
+\addplot[thick,thesisorange,mark=square*,mark size=2pt,
+         mark options={thesisorange},dashed]
+  coordinates {(10,95.8)(20,92.3)(30,89.9)(40,88.7)(50,88.2)};
+\addlegendentry{Majority vote (baseline)};
+
+%% Single-substation (no WAPC) — flat
+\addplot[thick,thesisgray,mark=triangle*,mark size=2pt,
+         mark options={thesisgray},dotted]
+  coordinates {(10,91.4)(20,91.4)(30,91.4)(40,91.4)(50,91.4)};
+\addlegendentry{Single-substation SAMBPS};
+
+%% 95% target line
+\addplot[thesisred,thick,dotted,domain=5:55,samples=2] {95.0};
+\node[thesisred,font=\tiny,right] at (axis cs:50,95.8) {95\%};
+
+%% Annotations
+\node[draw=thesisblue!40,fill=white,rounded corners=2pt,
+      font=\tiny,align=center,inner sep=2pt]
+  at (axis cs:35,97.5)
+  {Hierarchical RC\\3--5 region clusters};
+
+\end{axis}
+\end{tikzpicture}

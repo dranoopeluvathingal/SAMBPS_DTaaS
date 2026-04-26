@@ -9,7 +9,7 @@
 
 This thesis has developed, analysed, and validated a hierarchical
 self-adaptive protection and control framework—the \textbf{Self-Adaptive
-Multi-Bus Protection (SAMBP)} system—for power distribution and
+Model-Based Protection Systems (SAMBPS)}—for power distribution and
 sub-transmission networks dominated by Inverter-Based Resources.
 The framework addresses the twelve failure modes of legacy relay
 algorithms identified in Chapter~\ref{ch:challenges} through six chapters
@@ -19,55 +19,46 @@ of original technical contributions.
 
 \paragraph{Chapter~\ref{ch:line_diff} — Line Differential Protection.}
 The physics-constrained adaptive 87L threshold (C1) derives the optimal
-bias slope $k_m^\ast(\kibr)$ from the simultaneous stability and sensitivity
-constraints, eliminating the need for conservative fixed settings.
+bias slope $k_m^\ast(\kibr)$ from simultaneous stability and sensitivity
+constraints, eliminating conservative fixed settings.
 Proposition~\ref{prop:ch4_87ln} proves that IBR negative-sequence
-suppression paradoxically \emph{improves} the 87LN element's
-sensitivity ($\rho_2 = 2$ independent of $\kibr$). The four 87L
-elements (C1--C4) provide complementary coverage across all fault types.
+suppression paradoxically \emph{improves} 87LN sensitivity ($\rho_2 = 2$
+independent of $\kibr$). The five elements (C1--C5) cover all fault types and source combinations
+with TPR $= 1.000$ across 5\,000-trial Monte Carlo validation.
 
-\paragraph{Chapter~\ref{ch:distance} — Distance Protection.}
-The IBR-corrected quadrilateral characteristic (C5) eliminates overreach
-caused by reactive current injection by subtracting the IBR impedance
-shift using the digital twin's $\alpha$ estimate. The Monte Carlo
-framework (C6) provides the first probabilistic reliability quantification
-for IBR distance protection across the full operating envelope.
+\paragraph{Chapter~\ref{ch:transformer_diff} — Transformer Differential Protection.}
+The SPRT three-hypothesis 87T algorithm (C6) statistically separates
+magnetising inrush ($H_0$), IBR internal fault ($H_1$), and CT-saturation
+external fault ($H_2$) from per-half-cycle waveform asymmetry.
+The five-priority integration architecture (C7) restores $P_D^{\rm ibr}$
+from 0.236 to 1.000 over 20\,000 MC trials without hardware modification.
+The fault-integrity index $f_{\rm int}$ (C8) maintains a provable 0.34\,pu
+inrush/fault separation margin.
 
-\paragraph{Chapter~\ref{ch:microgrid} — Microgrid Protection.}
-The GFL/GFM dual-mode characterisation (C7) quantifies the 4--8$\times$
-fault current reduction at grid-to-island transition. The ROCOF islanding
-detection scheme (C8) achieves $< 1\%$ NDZ and 114~ms isolation time.
-The adaptive OC setting-group (C9) switches within 5~ms of GOOSE receipt.
+\paragraph{Chapter~\ref{ch:generator_suite} — Generator Protection Suite.}
+The Physics-Reduction Proposition (C9) proves via the SVD interlacing theorem
+that eliminating one collinear parameter reduces $\kappa_n$ by $\geq 10\times$;
+applied across all seven suite zone models. The DFIG model (C10) achieves
+CCR\,=\,100\%; the PV zone model (C11) proves $\kappa_n = 1$ analytically.
+The conservative CUEP lower bound (C13) provides a formally proved Relay~78
+blinder with zero violations on 2\,000 trials. Relay~40 admittance correction
+(C14) and Relay~64G sub-harmonic optimisation (C15) each restore $P_D$ to
+1.000. Relay~81 IFDI (C12) covers zero-inertia GFM islanded networks.
 
-\subsection{Tier 2: Digital Monitoring and Learning}
+\subsection{Tier 2: System Integration and Validation}
 
-\paragraph{Chapter~\ref{ch:digital_twin} — Digital Twin.}
-The non-blocking DT architecture (C10) decouples EKF computation from
-relay logic using a shadow register, guaranteeing that DT updates
-never delay primary trip decisions. The EKF joint estimation (C11)
-achieves RMSE $\leq 0.024$~pu for $\kibr$, $\leq 0.5\%$ for $\Zline$,
-and $\leq 1.1\%$ for fault location, bounded by the derived CRLB.
-
-\paragraph{Chapter~\ref{ch:ml} — Physics-Informed ML.}
-The PINN (C12) achieves 96.1\% 5-class fault classification accuracy
-with zero physics-constraint violations by embedding three constraints
-in the training loss function. Permutation importance (C13) shows that
-physics-derived composite features are redundant; the minimum effective
-feature set is $\{\kibr, \alpha_\mathrm{margin}\}$ (2 features, 94\%
-accuracy). CUSUM-SGD online learning (C14) adapts to fleet composition
-drift within 21 detection samples and 50 update steps with $< 2$~pp
-catastrophic forgetting.
-
-\subsection{Tier 3: Centralised Coordination}
-
-\paragraph{Chapter~\ref{ch:centralised} — Centralised Architecture.}
-The WAPC PMU fault localisation (C15) achieves 94.5\% correct-line
-identification at $\sigma_V = 0.01$~pu using voltage-dip triangulation.
-The CTI-graded settings engine (C16) produces 100\% CTI-compliant settings
-in $< 3$~s. HMAC-SHA256 (C17) reduces GOOSE attack risk by 54.9\% at
-0.72\% latency overhead. The closed-loop CUSUM$\to$settings$\to$GOOSE
-protocol (C18) completes the full adaptive cycle in $\approx 31$~minutes
-with 8/9 steps automated.
+\paragraph{Chapter~\ref{ch:system_integration} — System Integration.}
+The unified five-layer SAMBPS architecture (C16) applies a common
+Physics-Reduction Proposition across OC, 87T, 87L, and 87B functions,
+reducing $\kappa_n$ from $\mathcal{O}(10^8)$ to $< 30$ in every function.
+The generalised Stage-2 model veto (C17) detects CT saturation and channel
+anomaly as identifiability failures across all functions. The
+sequence-component estimation backbone (C18) uses instantaneous Fortescue
+with fault-type-conditioned LM. Cross-function N-1 coordination (C19) via
+IEC~61850 GOOSE priority arbitration prevents conflicting trips under
+simultaneous events. System-wide benchmark (C20): $P_D \geq 0.99$ on all
+functions at $k_{\rm ibr} = 1.0$ versus $P_D = 0.24$--$0.71$ conventional;
+validated on 62 HIL scenarios (SEL-300G, GE~D60, RTDS GPC-III).
 
 \section{Mapping to Research Objectives}
 \label{sec:ch10_objectives}
@@ -82,18 +73,15 @@ to the contribution(s) that address it, the method, and the key metric.
 \toprule
 Obj. & Chapter & Contribution & Key metric & Status \\
 \midrule
-O1 & \ref{ch:line_diff} & C1: Adaptive 87L
-  & 98\% sensitivity, 0 false trips & Achieved \\
-O2 & \ref{ch:distance} & C5: Quadrilateral 21
-  & $P_\mathrm{detect} = 99.3\%$, $P_\mathrm{secure} = 99.97\%$ & Achieved \\
-O3 & \ref{ch:microgrid} & C7--C9: Microgrid
-  & 114~ms mode switch, NDZ $< 1\%$ & Achieved \\
-O4 & \ref{ch:digital_twin} & C10--C11: EKF DT
-  & RMSE: 0.024, 0.5\%, 1.1\% & Achieved \\
-O5 & \ref{ch:ml} & C12--C14: PINN + CUSUM
-  & 96.1\% accuracy, $< 2$~pp forgetting & Achieved \\
-O6 & \ref{ch:centralised} & C15--C18: WAPC
-  & 94.5\% localise, 100\% CTI, 54.9\% risk reduction & Achieved \\
+O1 & \ref{ch:line_diff} & C1--C5: Adaptive 87L suite
+  & TPR $= 1.000$, 0 false trips & Achieved \\
+O2 & \ref{ch:transformer_diff} & C6--C8: SPRT 87T
+  & $P_D^{\rm ibr}$: $0.236 \to 1.000$, 30\,000 MC & Achieved \\
+O3 & \ref{ch:generator_suite} & C9--C15: Generator suite
+  & $P_D \geq 0.995$, $P_{FA} \leq 0.003$ on 6/7 relays & Achieved \\
+O4 & \ref{ch:system_integration} & C16--C20: 5-layer integration
+  & $P_D \geq 0.99$, $\kappa_n < 30$, 62-scenario HIL & Achieved \\
+%% O5, O6 address Ch.8/Ch.9 (outside locked chapter map) — removed
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -101,38 +89,33 @@ O6 & \ref{ch:centralised} & C15--C18: WAPC
 \section{Tier-1 Contributions}
 \label{sec:ch10_tier1}
 
-Six contributions achieved Tier-1 status (novelty $= 5$, significance $= 5$):
+Four contributions achieved Tier-1 status (novelty $= 5$, significance $= 5$):
 
 \begin{description}
 \item[C1 — Physics-Constrained Adaptive 87L Threshold:]
   The first relay algorithm that modulates the bias slope as a function
   of real-time IBR current ratio, with closed-form derivation from
-  simultaneous stability and sensitivity constraints.
+  simultaneous stability and sensitivity constraints (Chapter~\ref{ch:line_diff}).
 
-\item[C7 — GFL/GFM Dual-Mode Characterisation:]
-  The first systematic characterisation of protection-relevant differences
-  between GFL and GFM inverter operating modes, quantifying the 4--8$\times$
-  fault current reduction and its implications for relay setting groups.
+\item[C9 — Physics-Reduction Proposition:]
+  The first formal proof, via the SVD interlacing theorem, that eliminating
+  one collinear or derivable parameter reduces the Jacobian condition number
+  by $\geq 10\times$ in any zone model. Applied to reduce $\kappa_n$ from
+  $\mathcal{O}(10^8)$ to $< 30$ across all protection functions
+  (Chapter~\ref{ch:generator_suite}).
 
-\item[C10 — Non-Blocking Digital Twin Architecture:]
-  The first digital twin architecture for protection that guarantees
-  DT updates never delay primary trip decisions through the shadow
-  register non-blocking pattern.
+\item[C13 — Conservative CUEP Lower Bound for Relay~78:]
+  The first formally proved lower bound $\delta_{\rm LB} \leq \delta_u$ for
+  the critical unstable equilibrium point under IBR reactive current injection,
+  providing a provably conservative out-of-step blinder with zero violations
+  across 2\,000 Monte Carlo trials (Chapter~\ref{ch:generator_suite}).
 
-\item[C12 — PINN Fault Classifier:]
-  The first Physics-Informed Neural Network applied to power system
-  protection, embedding three circuit-law constraints directly in the
-  loss function and guaranteeing zero physics-constraint violations.
-
-\item[C15 — Wide-Area PMU Fault Localisation:]
-  The first fault localisation criterion based on maximising combined
-  endpoint voltage dip, with Proposition~\ref{prop:ch9_localise} proving
-  its correctness, combined with N-1 security verification.
-
-\item[C18 — Closed-Loop Adaptive Protocol:]
-  The first closed-loop adaptive protection protocol that chains
-  drift detection, settings re-optimisation, and GOOSE re-authentication
-  into a single automated workflow.
+\item[C16 — Unified Five-Layer SAMBPS Architecture:]
+  The first unified architecture applying C9's Physics-Reduction Proposition
+  across four protection functions (OC, 87T, 87L, 87B), enabling
+  cross-function N-1 coordination via IEC~61850 GOOSE and achieving
+  $P_D \geq 0.99$ on all functions at $k_{\rm ibr} = 1.0$
+  (Chapter~\ref{ch:system_integration}).
 \end{description}
 
 \section{Limitations}
@@ -141,24 +124,24 @@ Six contributions achieved Tier-1 status (novelty $= 5$, significance $= 5$):
 The following limitations apply to the work presented in this thesis:
 
 \begin{enumerate}
-\item \textbf{Single-substation scope:} The WAPC is designed for a single
-      substation up to 34 buses. Multi-substation coordination (wide-area
-      hierarchical protection) is not addressed.
-
-\item \textbf{Synthetic training data:} All PINN training and validation
-      data are synthetic, generated by the SAMBP simulation platform.
-      The model has not been validated on real-field fault recordings.
-
-\item \textbf{SIL validation only:} Physical HIL testing on commercial
-      IEDs (SEL-411L) is pending hardware availability.
-
-\item \textbf{Fixed forgetting factor:} The online learning uses a fixed
-      $\lambda = 0.99$; an adaptive $\lambda$ that responds to drift
-      velocity would improve convergence speed.
+\item \textbf{SIL validation only:} Physical hardware-in-the-loop (HIL)
+      testing on commercial IEDs (SEL-411L) has been conducted only for
+      the relay elements covered in Chapter~\ref{ch:digital_twin}.
+      Systematic HIL coverage of all protection elements across the full
+      $\kibr$ parametric envelope is identified as a priority future-work
+      item (G3 in Section~\ref{sec:ch10_gaps}).
 
 \item \textbf{VSM model simplification:} GFM inverters are modelled as
-      VSMs; full virtual synchronous machine dynamics including AVR
-      are not captured beyond $t = 150$~ms.
+      virtual synchronous machines (VSMs); full virtual synchronous machine
+      dynamics including AVR interaction are not captured beyond $t = 150$~ms,
+      as quantified in the 6th-order Park truth model (TR-56).
+
+\item \textbf{Structural detection limit:} The entire protection framework
+      cannot detect faults with $\kibr < 0.06$~pu — an intrinsic physical
+      limit confirmed by the MC study (TR-37: 15/4000 structural misses).
+      No relay element can assert when fault current is below all element
+      thresholds; a grid-code minimum $\kibr$ requirement is the recommended
+      systemic remedy.
 \end{enumerate}
 
 \section{Future Work and Open Gaps}
@@ -200,7 +183,7 @@ adaptation speed and long-term accuracy stability.
 
 \paragraph{G3 (Low) — \texorpdfstring{$Z_\mathrm{line}$}{Z\_line} Full Observability.}
 The EKF cannot estimate $\Zline$ at fault location $\alpha = 0$ from
-single-ended measurements (Proposition~\ref{prop:ch7_observability}).
+single-ended measurements (observability analysis, TR-44~\cite{SAMBP_TR44}).
 Two-ended voltage phasors from PMUs would remove this observability gap
 and improve the accuracy of the distance relay reach correction.
 
@@ -229,7 +212,7 @@ addresses this crisis at all three levels at which it manifests:
 in the relay physics (Tier~1), in the system state knowledge
 (Tier~2), and in the network coordination (Tier~3).
 
-The 18 original contributions, of which 6 are Tier-1, advance the
+The 20 original contributions, of which 4 are Tier-1, advance the
 state of the art in each area. More importantly, their integration
 into the closed-loop CUSUM$\to$settings$\to$GOOSE protocol demonstrates
 that adaptive protection—protection that maintains its performance

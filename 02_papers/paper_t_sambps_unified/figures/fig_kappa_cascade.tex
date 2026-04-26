@@ -1,0 +1,112 @@
+% fig_kappa_cascade.tex
+% How kappa_n propagates through the 5-layer architecture
+% Timeline plot showing kappa_n trajectory and the decisions it gates at each layer
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=1 by 2, vertical sep=0.45cm},
+  thesis style,
+  width=\columnwidth,
+  xmin=0, xmax=200,
+  xtick={0,40,80,120,160,200},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+  clip=true,
+]
+
+%% ── Panel 1: kappa_n trajectory ─────────────────────────────────────────────
+\nextgroupplot[
+  height=3.6cm,
+  ylabel={$\kappan$ (condition number)},
+  ymin=0, ymax=55,
+  ytick={0,10,20,30,40,50},
+  xticklabels={},
+  legend pos=north east,
+  legend style={font=\scriptsize,cells={anchor=west}},
+]
+
+%% kappa_n from LM estimator
+\addplot[thick,thesisblue,mark=none,domain=0:200,samples=80]
+  { (x<5) ? 50 :
+    (x<60) ? max(6, 50*exp(-x/17)) :
+    max(6, 7 + 0.045*(x-60)) };
+\addlegendentry{$\kappan$ (L2 LM estimator)};
+
+%% Threshold
+\addplot[thesisred,thick,dotted,domain=0:200,samples=2] {30};
+\node[thesisred,font=\tiny,anchor=west] at (axis cs:202,31.5) {30};
+
+%% Layer-gate events
+%% L3 adaptive law activates when kappa < 30
+\draw[thesisgreen,thin,dashed] (axis cs:35,0) -- (axis cs:35,55)
+  node[above,font=\tiny,thesisgreen,align=center]{L3\\active};
+
+%% L4 CUEP gate
+\draw[thesisblue,thin,dashed] (axis cs:35,0) -- (axis cs:35,55);
+\node[thesisblue,font=\tiny,anchor=south] at (axis cs:50,30)
+  {$\mathcal{K}(\kappan)$ narrows};
+
+%% L5 veto lifted
+\draw[thesisorange,thin,dashed] (axis cs:35,0) -- (axis cs:35,55);
+
+%% Fill: kappa>30 (veto active, gray)
+\addplot[thesisgray!25,fill=thesisgray!20,draw=none,domain=0:35,samples=2]
+  {55} \closedcycle;
+\node[thesisgray,font=\tiny,align=center] at (axis cs:17.5,45)
+  {Veto\\active};
+
+%% Fill: kappa<30 (decisions enabled, green tint)
+\addplot[thesisgreen!10,fill=thesisgreen!8,draw=none,domain=35:200,samples=2]
+  {30} \closedcycle;
+\node[thesisgreen,font=\tiny,align=center] at (axis cs:115,22)
+  {Gate open\\(decisions enabled)};
+
+%% ── Panel 2: Layer output status over time ───────────────────────────────────
+\nextgroupplot[
+  height=3.0cm,
+  ylabel={Layer output status},
+  xlabel={Time after fault inception (ms)},
+  ymin=0, ymax=5.5,
+  ytick={1,2,3,4,5},
+  yticklabels={L1,L2,L3,L4,L5},
+]
+
+%% Each layer: gray = inactive/waiting, coloured = active/valid
+%% L1: always active (raw measurements)
+\addplot[thesisblue!60,fill=thesisblue!25,draw=none]
+  coordinates{(0,0.6)(200,0.6)(200,1.4)(0,1.4)} \closedcycle;
+\node[font=\tiny,thesisblue] at (axis cs:100,1.0) {Active throughout};
+
+%% L2: active after first LM iteration (~5ms)
+\addplot[thesisorange!60,fill=thesisorange!20,draw=none]
+  coordinates{(5,1.6)(200,1.6)(200,2.4)(5,2.4)} \closedcycle;
+\addplot[thesisgray!30,fill=thesisgray!15,draw=none]
+  coordinates{(0,1.6)(5,1.6)(5,2.4)(0,2.4)} \closedcycle;
+\node[font=\tiny,thesisorange] at (axis cs:100,2.0) {Estimating $\hat\theta,\kappan$};
+
+%% L3: active when kappa < 30 (from ~35ms)
+\addplot[thesisgreen!60,fill=thesisgreen!20,draw=none]
+  coordinates{(35,2.6)(200,2.6)(200,3.4)(35,3.4)} \closedcycle;
+\addplot[thesisgray!30,fill=thesisgray!15,draw=none]
+  coordinates{(0,2.6)(35,2.6)(35,3.4)(0,3.4)} \closedcycle;
+\node[font=\tiny,thesisgreen] at (axis cs:115,3.0) {Adapting $k(t),\lambda(t)$};
+\node[font=\tiny,thesisgray] at (axis cs:17.5,3.0) {Hold};
+
+%% L4: CUEP check from ~35ms
+\addplot[thesisred!50,fill=thesisred!15,draw=none]
+  coordinates{(35,3.6)(200,3.6)(200,4.4)(35,4.4)} \closedcycle;
+\addplot[thesisgray!30,fill=thesisgray!15,draw=none]
+  coordinates{(0,3.6)(35,3.6)(35,4.4)(0,3.4)} \closedcycle;
+\node[font=\tiny,thesisred] at (axis cs:115,4.0) {CUEP check: $V_0$ vs $V_{\rm cuep}$};
+
+%% L5: decision from ~35ms
+\addplot[thesisgray!50,fill=thesisgray!30,draw=none]
+  coordinates{(35,4.6)(200,4.6)(200,5.4)(35,5.4)} \closedcycle;
+\addplot[thesisgray!30,fill=thesisgray!15,draw=none]
+  coordinates{(0,4.6)(35,4.6)(35,5.4)(0,5.4)} \closedcycle;
+\node[font=\tiny,thesisgray] at (axis cs:115,5.0) {Trip / restrain};
+
+%% veto boundary
+\draw[thesisred,thin,dashed] (axis cs:35,0) -- (axis cs:35,5.5);
+
+\end{groupplot}
+\end{tikzpicture}

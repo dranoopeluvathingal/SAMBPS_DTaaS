@@ -3,10 +3,9 @@
 \begin{tabular}{@{} >{\bfseries}p{0.22\textwidth} p{0.75\textwidth} @{}}
 \MakeUppercase{Keywords} &
 Inverter-Based Resources, Line Differential Protection,
-Distance Protection, Microgrid Protection, Digital Twin,
-Physics-Informed Neural Network, Fault Classification,
-Wide-Area Protection Coordinator, IEC~61850 GOOSE Security,
-Adaptive Relay Coordination.
+Transformer Differential Protection, Generator Protection Suite,
+System Integration, IEC~61850 GOOSE, Adaptive Relay Coordination,
+Sequential Probability Ratio Test, Monte Carlo Reliability Analysis.
 \end{tabular}
 \par
 
@@ -25,7 +24,7 @@ assumptions of legacy overcurrent (ANSI~51/67), impedance distance (ANSI~21),
 and differential (ANSI~87) protection algorithms.
 
 This thesis proposes a hierarchical, self-adaptive protection and control
-architecture---termed the \textbf{Self-Adaptive Multi-Bus Protection (SAMBP)}
+architecture---termed the \textbf{Self-Adaptive Model-Based Protection Systems (SAMBPS)}
 framework---for IBR-dominated distribution and sub-transmission networks.
 The framework spans six technical tiers, each developed from first principles
 and validated through Monte Carlo simulation, digital twin emulation, and
@@ -38,45 +37,40 @@ $k_\mathrm{ibr} = I_\mathrm{IBR}/I_\mathrm{rated}$, eliminating the static
 bias margin that previously caused missed trips under weak-infeed conditions.
 Supplementary harmonic-discrimination (87LH), negative-sequence (87LN), and
 transient-differential (TDCS-87L) elements extend sensitivity across the full
-spectrum of unsymmetrical and high-impedance fault types. Chapter~5 derives the
-apparent impedance trajectory seen by a distance relay under IBR reactive current
-injection and proposes a quadrilateral characteristic with an IBR reach-correction
-term. A Monte Carlo framework quantifies the reliability gain over classical mho
-elements at $\Delta P_\mathrm{detect} = +7.6$ percentage points.
+spectrum of unsymmetrical and high-impedance fault types (Monte Carlo: 5\,000
+trials per group, TPR $= 1.000$ across all groups).
 
-Chapter~6 characterises the protection-relevant distinction between GFL and
-GFM inverter modes and proposes a ROCOF-supervised mode-switch islanding
-detection scheme that achieves isolation within 120~ms while remaining
-compliant with IEEE~1547-2018 ride-through requirements. An adaptive
-overcurrent setting-group scheme uses IEC~61850~GOOSE mode flags to
-reconfigure relay parameters within 50~ms of a grid-to-island transition.
+Chapter~5 develops IBR-aware transformer differential protection. A Bayesian
+sequential probability ratio test (SPRT) on the per-half-cycle waveform
+asymmetry index separates magnetising inrush, IBR internal fault, and
+CT-saturation external fault as three statistically distinct hypotheses.
+The SPRT architecture restores $P_D^{\rm ibr}$ from 0.236 (conventional
+second-harmonic restraint) to 1.000 without hardware modification, validated
+on 30\,000 Monte Carlo trials and 16 deterministic scenarios.
 
-Chapter~7 introduces a non-blocking real-time digital twin architecture
-that runs an Extended Kalman Filter (EKF) to jointly estimate the IBR
-current ratio, line impedance, and fault location parameter from current
-measurements alone. The EKF achieves steady-state RMSE of 0.024~pu in
-$k_\mathrm{ibr}$, 0.5\% in $Z_\mathrm{line}$, and 1.1\% in fault location
-at a 50~$\mu$s relay sampling cycle.
+Chapter~6 develops IBR-corrected algorithms for five generator relay functions:
+Relay~40 (loss of excitation), Relay~64G (stator earth fault), Relay~78
+(out-of-step), Relay~81 (frequency deviation), and Relay~87L-PV (line
+differential for PV-fed networks). A Conservative CUEP lower bound provides
+a formally proved IBR-corrected out-of-step blinder (zero violations, 2\,000
+trials). A two-parameter PV zone model with analytically proven condition
+number $\kappa_n = 1$ achieves $P_D = 0.9984$ and $P_{FA} = 0.0000$.
 
-Chapter~8 develops a Physics-Informed Neural Network (PINN) fault classifier
-that embeds three physics constraints directly in the loss function.
-The PINN achieves 96.1\% five-class accuracy on synthetic IBR fault data
-while guaranteeing zero physics-constraint violations. A CUSUM change-point
-detector triggers selective online re-training in response to fleet
-composition drift, recovering full accuracy within 21 decision cycles.
+Chapter~7 integrates all protection elements into a unified five-layer SAMBPS
+architecture applied consistently across four functions (OC, 87T, 87L, 87B).
+A common Physics-Reduction Proposition reduces Jacobian condition numbers from
+$\mathcal{O}(10^8)$ to $\kappa_n < 30$ in every function. Cross-function N-1
+coordination via IEC~61850 GOOSE prevents conflicting trip decisions under
+simultaneous events. The integrated system is validated through a 62-scenario
+hardware-in-the-loop regression suite on commercial IEDs (SEL-300G, GE~D60)
+connected to an RTDS real-time simulator, achieving $P_D \geq 0.99$ on all
+functions at $k_{\rm ibr} = 1.0$.
 
-Chapter~9 integrates all components into a Wide-Area Protection Coordinator
-(WAPC) that localises faults via PMU voltage-dip triangulation (94.5\%
-accuracy), optimises relay settings through an IEC standard-inverse
-CTI-graded engine, secures GOOSE channels with HMAC-SHA256 (0.36~ms overhead,
-54.9\% risk reduction), and validates the complete system through a
-100-scenario hardware-in-the-loop regression suite.
-
-Collectively, this thesis contributes 18 original algorithms and architectures,
-of which 6 are Tier-1 (novelty $= 5$, significance $= 5$ on independent
-expert assessment). The proposed SAMBP framework provides the first complete,
+Collectively, this thesis contributes 20 original algorithms and architectures,
+of which 4 are Tier-1 (novelty $= 5$, significance $= 5$ on independent
+expert assessment). The proposed SAMBPS framework provides the first complete,
 closed-loop, self-adaptive protection architecture for mixed GFL/GFM power
-systems, from local relay physics through centralised coordination and
-cybersecurity.
+systems, spanning local relay physics, system-state digital monitoring, and
+microgrid coordination within IEC~61850 infrastructure.
 
 \end{doublespacing}

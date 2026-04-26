@@ -1,46 +1,58 @@
-% fig_improvement.tex
-% Cumulative improvement bar chart: 87L baseline -> +87LN -> +TDCS
-% Data: 12/21 (57%) -> 17/21 (81%) -> 21/21 (100%)
+% fig_improvement.tex — fragment (\input-able)
 \begin{tikzpicture}
 \begin{axis}[
-  width=\columnwidth, height=5.6cm,
+  width=7.5cm, height=5.5cm,
+  title={Cumulative Improvement: 87L Protection Chain},
+  title style={font=\small\bfseries},
   ybar,
-  bar width=1.5cm,
+  bar width=1.1cm,
   xlabel={Protection chain configuration},
   ylabel={Correctly classified (\%)},
+  xlabel style={font=\small},
+  ylabel style={font=\small},
   xtick={1,2,3},
   xticklabels={Baseline 87L,{+87LN\\(TR-22)},{+TDCS-87L\\(TR-23)}},
-  xticklabel style={font=\scriptsize,align=center,text width=2.5cm},
+  xticklabel style={font=\scriptsize, align=center, text width=2.8cm},
   xmin=0.2, xmax=3.8,
   ymin=0, ymax=115,
   ytick={0,20,40,60,80,100},
   yticklabel style={font=\scriptsize},
   grid=both,
-  grid style={gray!25,line width=0.3pt},
-  label style={font=\small},
-  tick label style={font=\scriptsize}]
+  grid style={gray!25, line width=0.3pt},
+  tick style={draw=none},
+  axis line style={gray!60},
+]
 
-  % Bars
-  \addplot[fill=blue!40,draw=blue!60] coordinates {
-    (1, 57.1)
-    (2, 81.0)
-    (3, 100.0)
-  };
+% ---- Bars -------------------------------------------------------------------
+\addplot[fill=blue!35, draw=blue!60, line width=0.7pt] coordinates {
+  (1,  57.1)
+  (2,  81.0)
+  (3, 100.0)
+};
 
-  % Value labels
-  \node[font=\scriptsize\bfseries,above] at (axis cs:1, 57.1) {57\%};
-  \node[font=\scriptsize\bfseries,above] at (axis cs:2, 81.0) {81\%};
-  \node[font=\scriptsize\bfseries,above] at (axis cs:3,100.0) {100\%};
+% ---- Percentage labels above bars -------------------------------------------
+\node[font=\scriptsize\bfseries, above] at (axis cs:1,  57.1) {57\%};
+\node[font=\scriptsize\bfseries, above] at (axis cs:2,  81.0) {81\%};
+\node[font=\scriptsize\bfseries, above] at (axis cs:3, 103.0) {100\%};
 
-  % Count labels inside bars
-  \node[font=\tiny,white] at (axis cs:1, 30) {12/21};
-  \node[font=\tiny,white] at (axis cs:2, 42) {17/21};
-  \node[font=\tiny,white] at (axis cs:3, 52) {21/21};
+% ---- Count labels inside bars -----------------------------------------------
+\node[font=\small, white] at (axis cs:1, 28) {12/21};
+\node[font=\small, white] at (axis cs:2, 40) {17/21};
+\node[font=\small, white] at (axis cs:3, 50) {21/21};
 
-  % Target line at 100%
-  \draw[green!60!black,very thick,dashed]
-    (axis cs:0.2,100) -- (axis cs:3.8,100)
-    node[right,font=\tiny,green!50!black,xshift=-10pt]{Target};
+% ---- 100% target line -------------------------------------------------------
+\draw[green!60!black, very thick, dashed]
+  (axis cs:0.2, 100) -- (axis cs:3.8, 100);
+\node[font=\scriptsize, green!50!black, anchor=north west] at (axis cs:0.25, 99) {Target};
+
+% ---- Delta annotations between bars -----------------------------------------
+\draw[-latex, gray!70, thin]
+  (axis cs:1.45, 69) -- (axis cs:1.55, 69);
+\node[font=\scriptsize, gray!70!black] at (axis cs:1.5, 74) {$+24$\,pp};
+
+\draw[-latex, gray!70, thin]
+  (axis cs:2.45, 90) -- (axis cs:2.55, 90);
+\node[font=\scriptsize, gray!70!black] at (axis cs:2.5, 95) {$+19$\,pp};
 
 \end{axis}
 \end{tikzpicture}

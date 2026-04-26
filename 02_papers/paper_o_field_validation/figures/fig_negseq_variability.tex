@@ -1,0 +1,45 @@
+% fig_negseq_variability.tex — k₂ = |I₂|/|I₁| distribution: field vs synthetic model
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  ybar interval,
+  width  = 0.90\columnwidth,
+  height = 4.8cm,
+  xlabel = {Negative-sequence ratio $k_2 = |I_2|/|I_1|$},
+  ylabel = {Count (LL and LLG faults, $n{=}50$)},
+  xmin=-0.02, xmax=0.56,
+  ymin=0, ymax=20,
+  xtick={0,0.10,0.20,0.30,0.40,0.50},
+  ytick={0,5,10,15,20},
+  legend pos=north east,
+  legend style={font=\scriptsize},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+]
+
+%% Field measurements — continuous distribution
+\addplot[fill=thesisblue!55,draw=thesisblue,opacity=0.8]
+  coordinates {
+    (0.00, 3)(0.05, 5)(0.10, 7)(0.15, 8)(0.20,11)(0.25,12)(0.30, 9)
+    (0.35, 6)(0.40, 5)(0.45, 3)(0.50, 1)(0.55, 0)
+  };
+\addlegendentry{Field measurements ($k_2 \in [0.03,\,0.41]$)};
+
+%% Synthetic model: two spikes at k₂=0 and k₂=0.5
+%% Shown as vertical reference lines since the model is discrete
+\addplot[fill=thesisgray!40,draw=thesisgray,opacity=0.6]
+  coordinates {
+    (0.00,18)(0.05,0)(0.45,0)(0.50,16)(0.55,0)
+  };
+\addlegendentry{Synthetic model ($k_2 \in \{0,\,0.5\}$)};
+
+%% Annotations
+\node[thesisblue,font=\tiny,align=center] at (axis cs:0.25,14)
+  {Continuous field\\distribution};
+\draw[thesisblue,->] (axis cs:0.25,13.5) -- (axis cs:0.25,12.2);
+
+\node[thesisgray,font=\tiny,align=center] at (axis cs:0.43,17)
+  {Model spike\\at $k_2{=}0.5$};
+
+\end{axis}
+\end{tikzpicture}

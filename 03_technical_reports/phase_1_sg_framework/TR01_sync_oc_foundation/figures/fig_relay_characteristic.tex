@@ -39,59 +39,56 @@
 % Fixed relay: Ip=1.20, TMS=0.05  => t = 0.05 * 13.5/(M-1)
 \addplot[blue, thick, domain=1.05:20, samples=120, smooth]
   {0.05 * 13.5 / (x - 1.0)};
-\addlegendentry{Fixed: $I_p=1.20$ pu, $TMS=0.05$}
+\addlegendentry{Fixed: $I_p=1.20$\,pu, $TMS=0.05$}
 
-% Adaptive relay: Ip=1.487, TMS=0.05  => t = 0.05 * 13.5/(M_adapt-1)
-% Note: M_adapt = I_rms / I_p_adapt = I_rms / 1.487
-% Same TMS but shifted curve along M-axis (different Ip)
-\addplot[orange, thick, dashed, domain=1.05:20, samples=120, smooth]
-  {0.05 * 13.5 / (x - 1.0)};   % same shape in M-units
+% Adaptive relay: Ip=1.487, TMS=0.05
+% On the fixed M-axis: M_adapt = M_fixed * (1.20/1.487) = M_fixed * 0.8071
+% => t = 0.05 * 13.5 / (M*0.8071 - 1)  — curve shifts right (needs more current to trip)
+\addplot[orange, thick, dashed, domain=1.24:20, samples=120, smooth]
+  {0.05 * 13.5 / (x * 0.8071 - 1.0)};
+\addlegendentry{Adaptive: $I_p=1.487$\,pu, $TMS=0.05$}
+
+% ---- Shaded region: adaptive discriminates better (drawn before markers) ----
+\addplot[fill=orange!10, draw=none, forget plot]
+  coordinates {(1.682, 0.02)(2.083, 0.02)(2.083,20)(1.682,20)} \closedcycle;
+\addlegendimage{area legend, fill=orange!15, draw=orange!40}
+\addlegendentry{Security margin gain (adaptive)}
 
 % ---- Instantaneous element: Iinst=2.5 pu -----------------------------------
 % In M-units for fixed relay: M_inst = 2.5/1.20 = 2.083
-\addplot[red, thick, dotted, domain=0.02:20]
+\addplot[red, thick, dotted]
   coordinates {(2.083, 0.001) (2.083, 20)};
-\addlegendentry{Inst. pickup $I_{inst}=2.5$ pu (fixed)}
+\addlegendentry{Inst.\ pickup $I_{inst}=2.5$\,pu (fixed)}
 
 % Adaptive instantaneous: 2.5/1.487 = 1.682
-\addplot[red!60!orange, thick, dotted, domain=0.02:20]
+\addplot[red!60!orange, thick, dotted]
   coordinates {(1.682, 0.001) (1.682, 20)};
-\addlegendentry{Inst. pickup $I_{inst}=2.5$ pu (adaptive)}
+\addlegendentry{Inst.\ pickup $I_{inst}=2.5$\,pu (adaptive)}
 
 % ---- Operating points -------------------------------------------------------
-% 3PH fault: I_rms_peak ≈ 3.2 pu
-% Fixed:    M = 3.2/1.20 = 2.667, t = 0.05*13.5/(2.667-1) = 0.405s (BUT inst trips first)
-% Adaptive: M = 3.2/1.487= 2.152
+% 3PH fault: I_rms ≈ 3.2 pu
+% Fixed:    M = 3.2/1.20 = 2.667, t = 0.05*13.5/1.667 = 0.405 s
+% Adaptive: M_fixed = 2.667, t_adapt = 0.05*13.5/(2.667*0.8071-1) = 0.05*13.5/1.152 = 0.586 s
 \addplot[blue, only marks, mark=*, mark size=3pt]
   coordinates {(2.667, 0.4054)};
 \addlegendentry{Operating pt (fixed, 3PH)}
 
-\addplot[orange, only marks, mark=square*, mark size=3pt]
-  coordinates {(2.152, 0.8139)};
+\addplot[orange, only marks, mark=square*, mark size=4pt]
+  coordinates {(2.667, 0.5859)};
 \addlegendentry{Operating pt (adaptive, 3PH)}
 
-% ---- SLG fault: I_rms ≈ 1.1 pu (low current, adaptive discriminates better)
-% Fixed:    M = 1.1/1.2 = 0.917 (below pickup — no trip!)
-% Adaptive: M = 1.1/1.487 = 0.740 (also below — correctly no trip in load zone)
-% Mid-level fault M=1.8 for fixed, t = 0.05*13.5/0.8 = 0.844s
-\addplot[blue!50, only marks, mark=triangle*, mark size=3.5pt]
+% SLG fault: mid-level, M=1.8 for fixed, t = 0.05*13.5/0.8 = 0.844 s
+\addplot[blue!60, only marks, mark=triangle*, mark size=3.5pt]
   coordinates {(1.8, 0.844)};
-\addlegendentry{Operating pt (fixed, SLG $R_f{=}0.15$ pu)}
+\addlegendentry{Operating pt (fixed, SLG $R_f{=}0.15$\,pu)}
 
-% ---- Characteristic equation annotation -------------------------------------
+% ---- Characteristic equation annotation — lower right, clear of legend ------
 \node[draw=gray!50, fill=white, rounded corners=2pt, inner sep=5pt,
-      align=left, font=\footnotesize]
-  at (axis cs: 8, 5)
+      align=left, font=\footnotesize, anchor=south east]
+  at (axis cs: 18, 0.025)
   {IEC Very-Inverse:\\[2pt]
    $\displaystyle t_{op} = TMS \cdot \dfrac{13.5}{M - 1}$\\[4pt]
-   $M = I_{rms} / I_p$\\[2pt]
-   \textcolor{blue}{Fixed:} $I_p=1.200$ pu, $TMS=0.050$\\
-   \textcolor{orange}{Adaptive:} $I_p=1.487$ pu, $TMS=0.050$};
-
-% ---- Shaded region: adaptive discriminates better ---------------------------
-\addplot[fill=orange!10, draw=none, area legend]
-  coordinates {(1.682, 0.02)(2.083, 0.02)(2.083,20)(1.682,20)} \closedcycle;
-\addlegendentry{Security margin gain (adaptive)}
+   $M = I_{rms} / I_p$};
 
 \end{loglogaxis}
 \end{tikzpicture}

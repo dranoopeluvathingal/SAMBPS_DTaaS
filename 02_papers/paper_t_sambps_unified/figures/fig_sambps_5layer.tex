@@ -1,0 +1,103 @@
+% fig_sambps_5layer.tex — Master 5-layer SAMBPS architecture
+% Five horizontal stacked layers; data-flow arrows; key equations annotated
+\begin{tikzpicture}[
+  >=Stealth,
+  layer/.style={draw,rounded corners=4pt,minimum width=\linewidth-6pt,
+                minimum height=1.05cm,font=\scriptsize,align=left,
+                inner xsep=6pt,inner ysep=3pt},
+  L1/.style={layer,fill=thesisblue!12,   draw=thesisblue},
+  L2/.style={layer,fill=thesisorange!14, draw=thesisorange},
+  L3/.style={layer,fill=thesisgreen!12,  draw=thesisgreen},
+  L4/.style={layer,fill=thesisred!10,    draw=thesisred},
+  L5/.style={layer,fill=thesisgray!12,   draw=thesisgray},
+  arr/.style={->,thick},
+  sarr/.style={->,thin,gray},
+  label/.style={font=\scriptsize\bfseries,anchor=east},
+  eqlabel/.style={font=\tiny,thesisgray,anchor=west},
+]
+
+\def\linewidth{8.8cm}
+\def\layersep{1.28cm}
+
+%% ── Layer 5: Protection Decision ────────────────────────────────────────────
+\node[L5] (L5) at (0, 4*\layersep)
+  {\textbf{L5 — Protection Decision \& Coordination}\\
+   Trip/restrain/veto; SAMBPS veto gate; WA-GOOSE inter-substation};
+\node[label] at (-4.5cm, 4*\layersep) {L5};
+
+%% ── Layer 4: Stability Verification ────────────────────────────────────────
+\node[L4] (L4) at (0, 3*\layersep)
+  {\textbf{L4 — Stability Verification}\\
+   CUEP energy bound $V_{\rm cuep}(\kibr)$ (C13);
+   fault-cleared energy $V_0$; SVD gate $\kappan<30$ (C9)};
+\node[label] at (-4.5cm, 3*\layersep) {L4};
+
+%% ── Layer 3: Adaptive Parameter Laws ───────────────────────────────────────
+\node[L3] (L3) at (0, 2*\layersep)
+  {\textbf{L3 — Adaptive Parameter Laws}\\
+   Slope $k(t){=}\Pi_{\mathcal{K}(\kappan)}\{-\gamma\phi e\}$ (C1);
+   forgetting factor $\lambda(t)$ (C2);
+   IBR ratio $\kibr(t)$};
+\node[label] at (-4.5cm, 2*\layersep) {L3};
+
+%% ── Layer 2: LM Inverse Estimator ──────────────────────────────────────────
+\node[L2] (L2) at (0, 1*\layersep)
+  {\textbf{L2 — Levenberg--Marquardt Zone Estimator}\\
+   $\min\|y-h(\theta)\|^2{+}\lambda\|\theta{-}\theta^0\|^2$;
+   outputs $\hat\theta$, $\kappan$, $\hat k_{\rm ibr}$};
+\node[label] at (-4.5cm, 1*\layersep) {L2};
+
+%% ── Layer 1: Signal Conditioning ───────────────────────────────────────────
+\node[L1] (L1) at (0, 0)
+  {\textbf{L1 — Signal Conditioning \& Phasor Extraction}\\
+   CT/PT $\to$ 4\,kHz DFT $\to$ $I_{\rm diff}$, $I_{\rm bias}$,
+   $V_t$, $\omega$; GPS timestamp};
+\node[label] at (-4.5cm, 0) {L1};
+
+%% ── Vertical data-flow arrows (upward) ────────────────────────────────────
+\draw[arr,thesisblue]   ([xshift=2.0cm]L1.north) --
+  node[right,font=\tiny]{$V_t,I_t,\omega,\phi_k$}
+  ([xshift=2.0cm]L2.south);
+
+\draw[arr,thesisorange] ([xshift=2.0cm]L2.north) --
+  node[right,font=\tiny]{$\hat\theta,\kappan,\hat k_{\rm ibr}$}
+  ([xshift=2.0cm]L3.south);
+
+\draw[arr,thesisgreen]  ([xshift=2.0cm]L3.north) --
+  node[right,font=\tiny]{$k(t),\lambda(t)$}
+  ([xshift=2.0cm]L4.south);
+
+\draw[arr,thesisred]    ([xshift=2.0cm]L4.north) --
+  node[right,font=\tiny]{$V_0,V_{\rm cuep},\text{gate}$}
+  ([xshift=2.0cm]L5.south);
+
+%% ── Downward feedback: kappa_n from L2 → L3 and L4 ─────────────────────────
+\draw[arr,thesisgray,densely dashed]
+  ([xshift=-1.5cm]L2.north) -- ([xshift=-1.5cm]L3.south)
+  node[midway,left,font=\tiny]{$\kappan$};
+
+\draw[arr,thesisgray,densely dashed]
+  ([xshift=-1.5cm]L3.north) -- ([xshift=-1.5cm]L4.south)
+  node[midway,left,font=\tiny]{$\calK(\kappan)$};
+
+%% ── External inputs (left) ────────────────────────────────────────────────
+\draw[sarr] ([xshift=-3.8cm,yshift=0.1cm]L1.west) --
+  node[above,font=\tiny]{CT/PT raw} ([xshift=-0.05cm]L1.west);
+
+%% ── Stage-2 veto bracket ─────────────────────────────────────────────────
+\draw[thesisred,thick,decorate,
+      decoration={brace,amplitude=5pt,mirror}]
+  ([xshift=3.8cm]L4.south east) -- ([xshift=3.8cm]L5.north east)
+  node[midway,right=6pt,font=\tiny,thesisred,align=left]
+    {Stage-2\\veto gate\\$\kappan{<}30$};
+
+%% ── WA-GOOSE lateral arrow ────────────────────────────────────────────────
+\draw[arr,thesisgray] ([xshift=0.5cm]L5.east) --
+  node[above,font=\tiny]{WA-GOOSE} ++(1.1,0)
+  node[right,font=\tiny,align=left]{remote\\SS};
+
+%% ── Trip output ──────────────────────────────────────────────────────────
+\draw[arr,thesisred,very thick] ([xshift=-0.5cm]L5.east) --
+  node[above,font=\tiny]{\textbf{TRIP}} ++(1.1,0);
+
+\end{tikzpicture}

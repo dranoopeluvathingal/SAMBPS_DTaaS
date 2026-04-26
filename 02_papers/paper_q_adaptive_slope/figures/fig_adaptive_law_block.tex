@@ -1,0 +1,89 @@
+% fig_adaptive_law_block.tex
+% Block diagram: physics-constrained adaptive slope control loop
+\begin{tikzpicture}[
+  >=Stealth,
+  block/.style ={draw,fill=thesisblue!12,rounded corners=3pt,
+                 minimum width=2.2cm,minimum height=0.80cm,
+                 font=\scriptsize,align=center},
+  pblock/.style={draw,fill=thesisorange!18,rounded corners=3pt,
+                 minimum width=2.2cm,minimum height=0.80cm,
+                 font=\scriptsize,align=center},
+  cblock/.style={draw,fill=thesisgreen!18,rounded corners=3pt,
+                 minimum width=2.2cm,minimum height=0.80cm,
+                 font=\scriptsize,align=center},
+  sum/.style   ={draw,circle,fill=thesisgray!15,inner sep=0pt,
+                 minimum size=0.55cm,font=\scriptsize},
+  arr/.style   ={->,thick},
+  sarr/.style  ={->,thin},
+]
+
+%% ── Row 1: Measurement path ──────────────────────────────────────────────────
+\node[block] (ct)    at (0,0)    {CT/PT\\measurement};
+\node[block] (phasor)[right=0.7cm of ct]  {Phasor\\extraction\\(DFT)};
+\node[block] (idiff) [right=0.7cm of phasor] {Compute\\$I_{\rm diff},\,I_{\rm bias}$\\$\phi_k$};
+
+%% ── Row 2: Adaptive law ──────────────────────────────────────────────────────
+\node[sum]   (esum)  [below=1.0cm of idiff] {$-$};
+\node[block] (grad)  [left=0.8cm of esum]
+  {Gradient\\$\dot{V}{=}{-}\gamma\phi_k e_k$};
+\node[pblock](proj)  [left=0.8cm of grad]
+  {Projection\\$\Pi_{\mathcal{K}(\kappan)}$};
+\node[block] (integ) [left=0.8cm of proj]
+  {Integrator\\$k(t)$};
+
+%% ── Row 3: Physics constraint ────────────────────────────────────────────────
+\node[cblock](lm)    [below=1.0cm of esum]
+  {LM estimator\\$\hat{k}_{\rm ibr},\kappan$};
+\node[cblock](bound) [left=0.8cm of lm]
+  {Constraint\\$\mathcal{K}(\kappan)$\\$[k_{\min},k_{\max}]$};
+
+%% ── Decision block ───────────────────────────────────────────────────────────
+\node[block] (trip)  [right=1.0cm of esum,yshift=-0.5cm]
+  {Trip logic\\$I_{\rm diff}{>}k{\cdot}I_{\rm bias}$};
+
+%% ── Connections: measurement path ───────────────────────────────────────────
+\draw[arr] (ct.east)     -- (phasor.west);
+\draw[arr] (phasor.east) -- (idiff.west);
+
+%% ── idiff → esum (regressor phi_k)
+\draw[arr] (idiff.south) -- node[right,font=\tiny]{$\phi_k,I_{\rm diff}$}
+  (idiff.south |- esum.north) -- (esum.north);
+
+%% ── k(t) → esum (predicted Idiff = k·Ibias)
+\draw[arr] (integ.east |- esum.west) -- node[above,font=\tiny]{$k(t)$}
+  (esum.west);
+\node[font=\tiny,thesisgray] at ([xshift=-0.15cm]esum.west) {$+$};
+\node[font=\tiny,thesisgray] at ([yshift=0.15cm]esum.north) {$-$};
+
+%% ── esum → gradient
+\draw[arr] (esum.west) -- node[above,font=\tiny]{$e_k$} (grad.east);
+
+%% ── gradient → projection → integrator
+\draw[arr] (grad.west) -- node[above,font=\tiny]{$\dot{k}_{\rm raw}$}
+  (proj.east);
+\draw[arr] (proj.west) -- node[above,font=\tiny]{$\dot{k}$} (integ.east);
+
+%% ── Integrator feedback: k(t) loops back
+\draw[arr,thesisblue] (integ.south) |-
+  node[below,font=\tiny,pos=0.25]{$k(t)$}
+  ([yshift=-0.35cm]integ.south -| trip.south) -- (trip.south);
+
+%% ── idiff → trip
+\draw[arr] (idiff.east) -| node[right,font=\tiny,pos=0.4]{$I_{\rm diff},I_{\rm bias}$}
+  (trip.north);
+
+%% ── LM estimator: terminal measurements feed in
+\draw[sarr] ([xshift=-0.5cm]ct.south) |- node[below,font=\tiny,pos=0.7]
+  {$V_t,I_t,\omega$} (lm.east);
+
+%% ── LM → bound → projection
+\draw[arr,thesisgreen] (lm.west) -- node[above,font=\tiny]{$\hat{k}_{\rm ibr},\kappan$}
+  (bound.east);
+\draw[arr,thesisgreen] (bound.north) |-
+  node[left,font=\tiny,pos=0.6]{$\mathcal{K}(\kappan)$} (proj.south);
+
+%% ── Trip output
+\draw[arr,thesisred,thick] (trip.east) -- node[above,font=\tiny]{\textbf{TRIP/RESTRAIN}}
+  ++(1.0,0);
+
+\end{tikzpicture}

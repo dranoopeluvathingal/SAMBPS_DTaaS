@@ -1,0 +1,78 @@
+% fig_sel411l_architecture.tex — SEL-411L + RTAC SAMBPS deployment architecture
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  hw/.style={draw=thesisblue,thick,fill=lightblue!40,rounded corners=3pt,
+             minimum width=2.8cm,minimum height=0.65cm,align=center},
+  sw/.style={draw=thesisgreen,thick,fill=lightgreen!30,rounded corners=3pt,
+             minimum width=2.8cm,minimum height=0.65cm,align=center},
+  net/.style={draw=thesisorange,thick,fill=lightorange!25,rounded corners=3pt,
+              minimum width=2.8cm,minimum height=0.65cm,align=center},
+  cloud/.style={draw=thesisgray,fill=gray!10,rounded corners=6pt,
+                minimum width=3.0cm,minimum height=0.75cm,align=center},
+  arr/.style={-{Stealth[length=2mm]},thick},
+  darr/.style={{Stealth[length=2mm]}-{Stealth[length=2mm]},thick,thesisblue},
+]
+
+%% ── Field layer ──────────────────────────────────────────────────────────
+\node[hw] (mu) at (0,0) {Merging Unit\\(IEC 61869-9)\\16-bit A/D};
+\node[hw] (cb) at (4.5,0) {Circuit Breaker\\IEC~61850-7-2\\XCBR GOOSE};
+
+%% ── SEL-411L ─────────────────────────────────────────────────────────────
+\node[hw,minimum width=3.4cm,draw=thesisblue!80,fill=thesisblue!15]
+  (sel411) at (0,-1.8)
+  {\textbf{SEL-411L}\\
+   87L / 21 / 67N native\\
+   SELOGIC equations};
+
+%% ── SEL RTAC 3530 ────────────────────────────────────────────────────────
+\node[sw,minimum width=3.4cm] (rtac) at (4.5,-1.8)
+  {\textbf{SEL RTAC 3530}\\
+   Python SAMBPS logic\\
+   Lua float32 arithmetic};
+
+%% ── IEC 61850 GOOSE LAN ──────────────────────────────────────────────────
+\node[net,minimum width=8.5cm] (goose) at (2.25,-3.3)
+  {IEC~61850 GOOSE Ethernet LAN \quad P2 class \quad $\leq 4$\,ms};
+
+%% ── RTDS (external) ──────────────────────────────────────────────────────
+\node[cloud] (rtds) at (8.5,-1.8)
+  {RTDS GPC-III\\IEEE 39-bus\\$\Delta t = 50\,\mu$s};
+
+%% ── Connections ──────────────────────────────────────────────────────────
+%% Merging unit → SEL-411L (IEC 61850-9-2 Sampled Values)
+\draw[arr,thesisblue] (mu.south) -- node[left,font=\tiny]{SV ($16\times$/cycle)} (sel411.north);
+
+%% RTDS → Merging unit (analogue currents simulation)
+\draw[arr,thesisgray] (rtds.west) -- node[above,font=\tiny]{Analogue $i(t)$} (mu.east|-rtds.west)
+  -- (mu.east);
+
+%% SEL-411L → GOOSE bus (conv trip + κ_n state)
+\draw[arr,thesisblue] (sel411.south) -- node[right,font=\tiny]{conv\_trip, $\kappa_n$} (goose.north-|sel411.south);
+
+%% RTAC → GOOSE bus (adapt_trip)
+\draw[arr,thesisgreen] (rtac.south) -- node[right,font=\tiny]{adapt\_trip} (goose.north-|rtac.south);
+
+%% GOOSE bus → SEL-411L (SAMBPS trip input)
+\draw[arr,thesisorange] (goose.north-|sel411.south) -- node[left,font=\tiny,align=left]
+  {SAMBPS\\ext.\ trip} (sel411.south);
+
+%% RTAC receives SV from merging unit (via Ethernet tap)
+\draw[arr,thesisgreen,dashed] (mu.south) |- node[right,font=\tiny,near end]{SV mirror} (rtac.west);
+
+%% RTDS → RTAC (direct digital link for scenario control)
+\draw[arr,thesisgray,dashed] (rtds.south) -- node[right,font=\tiny]{DNP3} (rtac.east);
+
+%% EIA-232 serial link (SELOGIC watchdog)
+\draw[arr,thesisblue,dotted] (sel411.east) -- node[above,font=\tiny]{EIA-232 watchdog}
+  (rtac.west |- sel411.east) -- (rtac.west);
+
+%% CB receives trip
+\draw[arr,thesisred] (goose.north-|cb.south) -- node[right,font=\tiny]{TRIP/BLOCK} (cb.south);
+
+%% Float32 annotation
+\node[draw=thesisorange!60,fill=lightorange!20,rounded corners=2pt,
+      font=\tiny,align=center,inner sep=2pt]
+  at (4.5,-2.75)
+  {float32 accumulation\\$|\delta\kappa_n| \leq 0.12$};
+
+\end{tikzpicture}

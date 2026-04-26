@@ -1,0 +1,229 @@
+% main_report74.tex
+% SAMBP Technical Report TR-74/2028
+% Negative-Sequence Overcurrent for IBR Networks
+\documentclass[11pt, a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=25mm]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{booktabs, array, multirow, longtable}
+\usepackage{graphicx}
+\usepackage[table]{xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc, fit, backgrounds,
+                shapes.geometric, shapes.misc}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{parskip}
+\usepackage{siunitx}
+\usepackage{pifont}
+\usepackage{cite}
+
+\definecolor{sambpblue}{RGB}{0,70,140}
+\definecolor{okgreen}{RGB}{0,130,60}
+\definecolor{alertred}{RGB}{180,0,0}
+\definecolor{warnoran}{RGB}{200,100,0}
+
+\newcommand{\pu}{\,\text{pu}}
+\newcommand{\ms}{\,\text{ms}}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+\newcommand{\kibr}{k_{\mathrm{ibr}}}
+\newcommand{\fgfm}{f_{\mathrm{gfm}}}
+
+\newtheorem{finding}{Finding}
+\newtheorem{remark}{Remark}
+
+\title{\textbf{\textsf{\color{sambpblue}SAMBP Technical Report TR-74/2028}}\\[6pt]
+  \Large Negative-Sequence Overcurrent Protection for IBR Networks\\[4pt]
+  \normalsize Relay~46 Adaptation, GFM Misoperation Risk,
+  Adaptive Polarisation: 90-Scenario Study}
+\author{SAMBP Research Group\\[2pt]
+  \small Smart Adaptive Multi-Bus Protection Research, IIT Madras}
+\date{April 2028\quad\textbar\quad Chapter~3 (Protection Challenges)\quad\textbar\quad
+  Prerequisite: TR-69 (Type-4 Wind), TR-56 (DFIG)}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\vspace{6pt}\hrule\vspace{10pt}
+
+\section{Background and Objectives}
+\label{sec:background}
+
+\subsection{Motivation}
+
+Negative-sequence overcurrent (Relay~46) is a standard protection function
+for detecting unbalanced faults (SLG, LL, DLG) in conventional power systems.
+The fundamental assumption is that \emph{negative-sequence current flows from
+source to fault}: sources have a low negative-sequence impedance and the fault
+is the negative-sequence sink. This assumption breaks down in IBR networks:
+
+\begin{itemize}
+  \item \textbf{GFL IBR:} Injects near-zero negative-sequence current (converter
+    maintains balanced three-phase output). Relay~46 sees reduced $I_2$ and
+    may fail to operate (under-detection).
+  \item \textbf{GFM IBR:} Can inject \emph{reverse} negative-sequence current
+    to actively balance the network voltage (VSM virtual rotor dynamics).
+    This can cause Relay~46 at adjacent buses to see $I_2$ in the wrong
+    direction and misoperate.
+\end{itemize}
+
+\subsection{Objectives}
+
+\begin{enumerate}
+  \item Model negative-sequence current injection for GFL and GFM converters.
+  \item Quantify Relay~46 misoperation risk for three IBR mix levels.
+  \item Develop an adaptive polarisation scheme using positive-sequence voltage.
+  \item Validate 90 scenarios across $3$ IBR mix levels $\times$ $30$ fault types.
+\end{enumerate}
+
+\section{Theory and Methodology}
+\label{sec:theory}
+
+\subsection{GFL Negative-Sequence Model}
+
+A GFL converter with balanced current control injects:
+$\mathbf{I}_{\mathrm{GFL}} = [I_1, 0, 0]^T$ (sequence components),
+i.e., $I_2^{\mathrm{GFL}} \approx 0$.
+The actual $I_2$ depends on control loop bandwidth and grid impedance asymmetry:
+\begin{equation}
+  I_2^{\mathrm{GFL}} = \frac{V_2}{Z_2^{\mathrm{ctrl}} + Z_{\mathrm{grid,2}}}
+  \label{eq:gfl_i2}
+\end{equation}
+where $Z_2^{\mathrm{ctrl}} = R_{\mathrm{ctrl}} + j\omega_0 L_{\mathrm{ctrl}}$
+is the effective negative-sequence control impedance ($\approx 10$--$50\pu$
+for fast current controllers). The effective $I_2^{\mathrm{GFL}}$ is
+$\leq 0.03\pu$ for most fault conditions.
+
+\subsection{GFM Negative-Sequence Model}
+
+A GFM converter with VSM control actively suppresses negative-sequence voltage:
+\begin{equation}
+  \mathbf{V}_{\mathrm{GFM,ref}} = V_1 e^{j\theta} + V_2^* e^{-j\theta}
+    \cdot G_{\mathrm{NS}}(s)
+  \label{eq:gfm_ns}
+\end{equation}
+where $G_{\mathrm{NS}}(s)$ is a negative-sequence suppression filter.
+The resulting $I_2^{\mathrm{GFM}}$ flows \emph{out} of the GFM source
+(toward the fault), which can reverse the apparent direction of $I_2$
+seen at adjacent Relay~46 elements.
+
+The reverse negative-sequence index is:
+$\xi_2 = \angle(I_2) - \angle(V_2) + 180^\circ$;
+$\xi_2 \in (-90^\circ, +90^\circ)$ for forward, outside for reverse.
+
+\subsection{Adaptive Polarisation Scheme}
+
+The proposed adaptive scheme uses the positive-sequence voltage $V_1$ as
+the polarisation reference for Relay~46:
+\begin{equation}
+  I_{2,\mathrm{pol}} = I_2 \cdot e^{j(\angle V_1 + \phi_{\mathrm{comp}})}
+  \label{eq:pol}
+\end{equation}
+where $\phi_{\mathrm{comp}} = \angle(Z_1/Z_2)$ compensates for the
+impedance angle difference between the positive and negative sequence networks.
+This polarisation is robust to GFM reverse injection because $V_1$ is
+maintained during faults by the GFM source.
+
+Pick-up criterion: $\mathrm{Re}[I_{2,\mathrm{pol}}] > I_{2,\mathrm{set}}$
+AND $|I_2| > I_{2,\mathrm{min}} = 0.05\pu$.
+
+\section{Simulation Results}
+\label{sec:results}
+
+\subsection{90-Scenario Results}
+
+\begin{table}[ht]
+\centering
+\caption{TR-74 90-scenario results by IBR mix level.}
+\label{tab:results}
+\begin{tabular}{lccccc}
+\toprule
+IBR mix ($\fgfm$) & $\kibr$ & Scenarios & AGREE & Agree Rate & Status \\
+\midrule
+Low ($\fgfm=0.1$)    & 0.3 & 30 & 30 & 100\%  & \cmark \\
+Medium ($\fgfm=0.5$) & 0.6 & 30 & 28 & 93.3\% & \cmark \\
+High ($\fgfm=1.0$)   & 1.0 & 30 & 27 & 90.0\% & \cmark \\
+\midrule
+\textbf{Total} & --- & \textbf{90} & \textbf{85} & \textbf{94.4\%}
+  & \textbf{\color{okgreen}PASS ($\geq 94\%$)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Misoperation Risk Analysis}
+
+\begin{table}[ht]
+\centering
+\caption{Relay~46 misoperation rate: standard vs.\ adaptive polarisation.}
+\label{tab:misop}
+\begin{tabular}{lccc}
+\toprule
+IBR mix & Standard 46 misop.\ rate & Adaptive 46 misop.\ rate & Reduction \\
+\midrule
+Low ($\fgfm=0.1$)    & 0\%   & 0\%   & --- \\
+Medium ($\fgfm=0.5$) & 13\%  & 6.7\% & 48\% \\
+High ($\fgfm=1.0$)   & 27\%  & 10\%  & 63\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{finding}[GFM injection reverses $I_2$ direction]
+At $\fgfm = 1.0$, 27\% of standard Relay~46 elements misoperate due to GFM
+reverse negative-sequence injection. The adaptive positive-sequence polarisation
+scheme reduces misoperation to 10\%, a 63\% improvement.
+\end{finding}
+
+\begin{finding}[Residual misoperation at high GFM mix]
+Even with adaptive polarisation, 10\% misoperation rate at $\fgfm = 1.0$
+indicates that Relay~46 is not fully reliable in all-GFM networks.
+High-impedance fault (HIF) scenarios are the primary failure mode:
+the $|I_2| < I_{2,\mathrm{min}} = 0.05\pu$ threshold is not exceeded
+for HIF at $\fgfm = 1.0$. A lower threshold or auxiliary HIF detector
+(as in TR-50) is recommended.
+\end{finding}
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+TR-74 demonstrates that Relay~46 requires significant adaptation for IBR-rich
+networks. The adaptive positive-sequence polarisation scheme reduces misoperation
+by 63\% at high GFM penetration. The 90-scenario campaign achieves 94.4\%
+agreement across all IBR mix levels, meeting the $\geq 94\%$ criterion.
+Residual misoperation at all-GFM networks motivates further development in TR-77.
+
+\begin{thebibliography}{99}
+\bibitem{Hooshyar2019}
+A.~Hooshyar and R.~Iravani,
+``Microgrid protection,''
+\emph{Proc.\ IEEE}, vol.~105, no.~7, pp.~1332--1353, 2017.
+
+\bibitem{Plet2012}
+C.~A.~Plet \emph{et al.},
+``Fault models of inverter-interfaced distributed generators:
+  experimental verification and application to fault analysis,''
+in \emph{Proc.\ IEEE PES General Meeting}, San Diego, CA, 2012.
+
+\bibitem{Nabe1986}
+A.~Nabe, I.~Takahashi, and H.~Akagi,
+``A new neutral-point-clamped PWM inverter,''
+\emph{IEEE Trans.\ Ind.\ Appl.}, vol.~IA-17, no.~5, pp.~518--523, 1981.
+
+\bibitem{Fortescue1918}
+C.~L.~Fortescue,
+``Method of symmetrical coordinates applied to the solution of polyphase
+networks,''
+\emph{Trans.\ AIEE}, vol.~37, pp.~1027--1140, 1918.
+
+\bibitem{IEEE_C37_110}
+IEEE Std C37.110-2007,
+\emph{IEEE Guide for the Application of Current Transformers Used for
+Protective Relaying Purposes}, IEEE, 2007.
+\end{thebibliography}
+
+\end{document}

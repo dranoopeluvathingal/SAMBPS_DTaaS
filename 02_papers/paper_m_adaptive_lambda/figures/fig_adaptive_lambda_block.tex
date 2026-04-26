@@ -1,0 +1,62 @@
+% fig_adaptive_lambda_block.tex — SAMBPS L3 with adaptive-λ feedback loop
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  blk/.style={draw=thesisblue,thick,fill=lightblue!40,rounded corners=3pt,
+              minimum width=2.6cm,minimum height=0.60cm,align=center},
+  drift/.style={draw=thesisorange,thick,fill=lightorange!25,rounded corners=3pt,
+               minimum width=2.6cm,minimum height=0.60cm,align=center},
+  gate/.style={draw=thesisgreen,thick,fill=lightgreen!25,rounded corners=3pt,
+               minimum width=2.0cm,minimum height=0.60cm,align=center},
+  arr/.style={-{Stealth[length=2mm]},thick},
+  darr/.style={{Stealth[length=2mm]}-{Stealth[length=2mm]},thick},
+]
+
+%% ── Input signals ─────────────────────────────────────────────────────────
+\node[blk] (sv) at (0,0) {IEC 61869-9\\Sampled Values\\$i_{abc}(t)$};
+
+%% ── Zone model (L2) ──────────────────────────────────────────────────────
+\node[blk] (zonemodel) at (3.5,0) {Zone model (L2)\\$\mathbf{r}(\bm{\theta})$\\$\mathbf{J}(\bm{\theta})$};
+
+%% ── Adaptive-λ LM core (L3) ──────────────────────────────────────────────
+\node[blk,minimum width=2.9cm] (lm) at (7.2,0)
+  {LM Estimator (L3)\\$\hat{\bm{\theta}}_k$, $\kappa_n$\\$\lambda(t)$-weighted};
+
+%% ── Drift detector ───────────────────────────────────────────────────────
+\node[drift] (cusum) at (7.2,-1.55)
+  {Drift detector\\CUSUM on $\hat{k}_{\rm ibr}$\\alarm: $S_k > h_D$};
+
+%% ── λ-adaptation law ─────────────────────────────────────────────────────
+\node[drift,minimum width=2.9cm] (lambda) at (3.5,-1.55)
+  {$\lambda$-adaptation law\\$\dot{r}_k \!\to\! \lambda(t) \!\in\! [\lambda_{\min},\lambda_{\max}]$};
+
+%% ── Confidence gate (L4) ─────────────────────────────────────────────────
+\node[gate] (gate) at (10.5,0) {Conf.\ gate (L4)\\$\gamma \geq 0.70$\\$\kappa_n < 30$};
+
+%% ── Output ───────────────────────────────────────────────────────────────
+\node[gate,minimum width=1.8cm] (out) at (10.5,-1.55)
+  {adapt\_trip\\conv\_trip};
+
+%% ── Connections ──────────────────────────────────────────────────────────
+\draw[arr] (sv.east) -- (zonemodel.west);
+\draw[arr] (zonemodel.east) -- node[above,font=\tiny]{$\mathbf{r},\mathbf{J}$} (lm.west);
+\draw[arr] (lm.east) -- (gate.west);
+\draw[arr] (gate.south) -- (out.north);
+
+%% LM → drift detector
+\draw[arr,thesisorange] (lm.south) -- node[right,font=\tiny]{$\hat{k}_{\rm ibr,k}$} (cusum.north);
+
+%% Drift detector → λ adaptation
+\draw[arr,thesisorange] (cusum.west) -- node[below,font=\tiny]{$S_k$, $\dot{r}_k$} (lambda.east);
+
+%% λ adaptation → LM (feedback)
+\draw[arr,thesisorange] (lambda.north) -- node[left,font=\tiny]{$\lambda(t)$} (lm.south |- lambda.north) -- (lm.south);
+
+%% λ value annotation
+\node[draw=thesisorange!50,fill=lightorange!15,rounded corners=2pt,
+      font=\tiny,align=center,inner sep=2pt]
+  at (3.5,-2.55)
+  {$\lambda_{\max}{=}0.995$ (stationary)\\
+   $\lambda_{\min}{=}0.970$ (drift)\\
+   $N_{\rm eff} \in [33,\,200]$ samples};
+
+\end{tikzpicture}

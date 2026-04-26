@@ -1,0 +1,98 @@
+% fig_sambps_stability_gate.tex
+% Operating characteristic: SAMBPS trip region vs CUEP stability boundary
+% x-axis: V_0 (fault-cleared energy), y-axis: kappa_n
+% Shows four quadrants: correct trip, correct restrain, false trip, missed trip
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  width  = 0.88\columnwidth,
+  height = 5.4cm,
+  xlabel = {Fault-cleared energy $V_0$ (normalised)},
+  ylabel = {LM condition number $\kappan$},
+  xmin=0, xmax=1.6,
+  ymin=0, ymax=55,
+  xtick={0,0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.6},
+  ytick={0,10,20,30,40,50},
+  legend pos=north east,
+  legend style={font=\scriptsize,cells={anchor=west}},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+  clip=false,
+]
+
+%% ── Quadrant shading ─────────────────────────────────────────────────────────
+%% Q1: kappa<30 AND V0<V_cuep → Correct restrain (green)
+\addplot[fill=thesisgreen!18,draw=none]
+  coordinates{(0,0)(1.0,0)(1.0,30)(0,30)} \closedcycle;
+\node[thesisgreen,font=\tiny,align=center]
+  at (axis cs:0.50,15) {Correct\\restrain};
+
+%% Q2: kappa<30 AND V0>V_cuep → Conservative trip (blue)
+\addplot[fill=thesisblue!18,draw=none]
+  coordinates{(1.0,0)(1.6,0)(1.6,30)(1.0,30)} \closedcycle;
+\node[thesisblue,font=\tiny,align=center]
+  at (axis cs:1.30,15) {Conservative\\trip};
+
+%% Q3: kappa>=30 AND V0<V_cuep → Veto (restrain by gate) (gray)
+\addplot[fill=thesisgray!18,draw=none]
+  coordinates{(0,30)(1.0,30)(1.0,55)(0,55)} \closedcycle;
+\node[thesisgray,font=\tiny,align=center]
+  at (axis cs:0.50,42.5) {Veto\\(kappa gate)};
+
+%% Q4: kappa>=30 AND V0>V_cuep → also veto (gray, hatched)
+\addplot[fill=thesisgray!10,draw=none,pattern=north east lines,
+         pattern color=thesisgray!40]
+  coordinates{(1.0,30)(1.6,30)(1.6,55)(1.0,55)} \closedcycle;
+\node[thesisgray,font=\tiny,align=center]
+  at (axis cs:1.30,42.5) {Veto\\(conservative)};
+
+%% CUEP boundary (vertical): V_cuep
+\addplot[thesisred,thick,domain=0:55,samples=2]
+  coordinates{(1.0,0)(1.0,55)};
+\node[thesisred,font=\tiny,rotate=90,anchor=south east]
+  at (axis cs:0.98,2) {$V_{\rm cuep}$ (CUEP bound)};
+
+%% True V_cr (slightly to right of V_cuep)
+\addplot[thesisgray,thick,densely dashed,domain=0:55,samples=2]
+  coordinates{(1.18,0)(1.18,55)};
+\node[thesisgray,font=\tiny,rotate=90,anchor=south west]
+  at (axis cs:1.20,2) {$V_{\rm cr}$ (true)};
+
+%% kappa = 30 gate (horizontal)
+\addplot[thesisred,thick,domain=0:1.6,samples=2]
+  coordinates{(0,30)(1.6,30)};
+\node[thesisred,font=\tiny,anchor=west]
+  at (axis cs:1.62,30) {$\kappan{=}30$};
+
+%% Scatter: fault events
+%% Correct trips (blue, V0>V_cuep, kappa<30)
+\addplot[only marks,mark=*,mark size=1.8pt,thesisblue,opacity=0.8]
+  coordinates{
+    (1.05,8)(1.12,15)(1.20,22)(1.35,5)(1.48,18)(1.08,25)(1.55,10)(1.28,20)
+    (1.15,12)(1.40,7)(1.22,28)(1.50,3)(1.10,17)
+  };
+
+%% Correct restrains (green, V0<V_cuep, kappa<30)
+\addplot[only marks,mark=square*,mark size=1.6pt,thesisgreen,opacity=0.8]
+  coordinates{
+    (0.20,5)(0.40,12)(0.60,20)(0.75,8)(0.85,25)(0.30,18)(0.55,3)
+    (0.45,22)(0.70,14)(0.90,10)(0.35,16)(0.65,6)(0.80,27)
+  };
+
+%% Veto events (gray, kappa>=30)
+\addplot[only marks,mark=triangle*,mark size=1.6pt,thesisgray,opacity=0.7]
+  coordinates{
+    (0.50,35)(0.80,42)(1.10,38)(1.30,45)(0.30,50)(0.70,33)
+    (1.50,40)(0.20,48)(1.00,36)(0.60,52)
+  };
+
+\addlegendentry{Trip ($V_0 > V_{\rm cuep}$, $\kappan < 30$)};
+\addlegendentry{Restrain ($V_0 \leq V_{\rm cuep}$, $\kappan < 30$)};
+\addlegendentry{Veto ($\kappan \geq 30$)};
+
+%% Conservatism gap arrow
+\draw[thesisred,<->,thick]
+  (axis cs:1.0,2) -- node[above,font=\tiny]{$\Delta V$} (axis cs:1.18,2);
+
+\end{axis}
+\end{tikzpicture}

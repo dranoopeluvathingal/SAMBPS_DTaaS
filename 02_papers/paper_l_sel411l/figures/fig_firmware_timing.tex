@@ -1,0 +1,61 @@
+% fig_firmware_timing.tex — Trip latency comparison: Python / SEL-300G / SEL-411L
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  ybar,
+  width  = 0.92\columnwidth,
+  height = 5.2cm,
+  ylabel = {Trip latency $t_{50}$ (ms)},
+  ymin=0, ymax=32,
+  ytick={0,5,10,15,20,25,30},
+  symbolic x coords={87L (3PH), 87L (LL), 87L (SLG), 87L-PV, 51 (OC)},
+  xtick=data,
+  x tick label style={font=\scriptsize,rotate=20,anchor=east},
+  bar width=6pt,
+  enlarge x limits=0.18,
+  legend pos=north west,
+  legend style={font=\scriptsize},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+]
+
+%% Python simulation
+\addplot[fill=thesisgray!50,draw=thesisgray]
+  coordinates {
+    (87L (3PH), 18.2)
+    (87L (LL),  21.4)
+    (87L (SLG), 19.8)
+    (87L-PV,    18.6)
+    (51 (OC),   20.1)
+  };
+\addlegendentry{Python simulation};
+
+%% SEL-300G (TR-67 reference)
+\addplot[fill=thesisorange!55,draw=thesisorange]
+  coordinates {
+    (87L (3PH), 20.4)
+    (87L (LL),  24.1)
+    (87L (SLG), 22.8)
+    (87L-PV,    21.0)
+    (51 (OC),   22.6)
+  };
+\addlegendentry{SEL-300G (TR-67)};
+
+%% SEL-411L (G1, this work)
+\addplot[fill=thesisblue!75,draw=thesisblue]
+  coordinates {
+    (87L (3PH), 19.1)
+    (87L (LL),  22.7)
+    (87L (SLG), 21.3)
+    (87L-PV,    19.4)
+    (51 (OC),   21.8)
+  };
+\addlegendentry{SEL-411L (this work)};
+
+%% 25 ms coordination window
+\addplot[thesisred,thick,dotted]
+  coordinates {(87L (3PH),25)(51 (OC),25)};
+\node[thesisred,font=\tiny,right] at (axis cs:{51 (OC)},25.8) {25\,ms window};
+
+\end{axis}
+\end{tikzpicture}

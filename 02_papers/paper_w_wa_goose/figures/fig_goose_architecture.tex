@@ -1,0 +1,73 @@
+% fig_goose_architecture.tex
+% Wide-area GOOSE coordination architecture
+% Three substations (SS1, SS2, SS3) connected via IEC 61850 LAN
+% Each has a local SAMBPS relay; votes aggregate at consensus layer
+\begin{tikzpicture}[
+  >=Stealth,
+  ss/.style={draw=thesisblue,rounded corners=5pt,minimum width=2.8cm,
+             minimum height=2.0cm,fill=thesisblue!10,font=\scriptsize,
+             align=center,thick},
+  relay/.style={draw=thesisorange,rounded corners=3pt,minimum width=2.2cm,
+                minimum height=0.7cm,fill=thesisorange!15,font=\tiny,
+                align=center},
+  consensus/.style={draw=thesisgreen,rounded corners=5pt,
+                    minimum width=3.2cm,minimum height=1.2cm,
+                    fill=thesisgreen!12,font=\scriptsize,align=center,thick},
+  goose/.style={->,thick,thesisred,dashed},
+  trip/.style={->,very thick,thesisred},
+  lbl/.style={font=\tiny,thesisgray},
+]
+
+%% ── Three substations ────────────────────────────────────────────────────────
+\node[ss] (SS1) at (0,0)
+  {\textbf{SS1}\\33\,kV Feeder A\\$\kappan^{(1)}, v_1$};
+
+\node[ss] (SS2) at (4.5,0)
+  {\textbf{SS2}\\33\,kV Feeder B\\$\kappan^{(2)}, v_2$};
+
+\node[ss] (SS3) at (9.0,0)
+  {\textbf{SS3}\\33\,kV Feeder C\\$\kappan^{(3)}, v_3$};
+
+%% ── Local SAMBPS relay inside each SS ───────────────────────────────────────
+\node[relay] (R1) at (0,-0.1) {SAMBPS L5};
+\node[relay] (R2) at (4.5,-0.1) {SAMBPS L5};
+\node[relay] (R3) at (9.0,-0.1) {SAMBPS L5};
+
+%% ── IEC 61850 LAN backbone ───────────────────────────────────────────────────
+\draw[thesisgray,thick,line width=1.2pt]
+  (-1.8,-1.8) -- (10.8,-1.8)
+  node[right,font=\tiny,thesisgray]{IEC\,61850 LAN ($\leq$4\,ms)};
+
+%% ── GOOSE connections from each SS to LAN ───────────────────────────────────
+\draw[goose] (SS1.south) -- ++(0,-0.55)
+  node[lbl,right]{GOOSE $v_1, w_1$};
+\draw[goose] (SS2.south) -- ++(0,-0.55)
+  node[lbl,right]{GOOSE $v_2, w_2$};
+\draw[goose] (SS3.south) -- ++(0,-0.55)
+  node[lbl,right]{GOOSE $v_3, w_3$};
+
+%% ── Consensus node ───────────────────────────────────────────────────────────
+\node[consensus] (CONS) at (4.5,-3.5)
+  {\textbf{Consensus Layer}\\
+   $p_{\rm trip} = \frac{\sum_i w_i v_i}{\sum_i w_i}$\\
+   Trip if $p_{\rm trip} > 0.5$};
+
+\draw[thesisgreen,thick,->] (4.5,-1.8) -- (CONS.north)
+  node[midway,right,font=\tiny,thesisgreen]{aggregate};
+
+%% ── Weight formula ───────────────────────────────────────────────────────────
+\node[font=\tiny,thesisgray,align=left] at (8.5,-3.5)
+  {$w_i = \max\!\left(0,\,1 - \frac{\kappan^{(i)}}{30}\right)$\\[2pt]
+   $v_i \in \{0,1\}$: local vote};
+
+%% ── Trip output ──────────────────────────────────────────────────────────────
+\draw[trip] (CONS.south) -- ++(0,-0.7)
+  node[below,font=\scriptsize,thesisred]{\textbf{TRIP / BLOCK}};
+
+%% ── Fault location annotation ────────────────────────────────────────────────
+\node[draw=thesisred,fill=thesisred!15,rounded corners=2pt,
+      font=\tiny,align=center] at (2.25,1.5)
+  {Fault\\$Z_f$};
+\draw[thesisred,->] (2.25,1.2) -- (1.2,0.15);
+
+\end{tikzpicture}

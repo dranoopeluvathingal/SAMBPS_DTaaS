@@ -1,0 +1,65 @@
+% fig_goose_timeline.tex — SAMBP coordination timing diagram (one 20 ms cycle)
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  arr/.style={-{Stealth[length=2mm]},thick},
+  barr/.style={{Stealth[length=2mm]}-{Stealth[length=2mm]},thesisgray,thin},
+]
+
+%% Time axis
+\draw[thick,->] (0,0) -- (10.8,0) node[right]{$t$ (ms)};
+\foreach \x/\lbl in {0/0,1/2,2/4,3/6,4/8,5/10,6/12,7/14,8/16,9/18,10/20} {
+  \draw (\x,-0.08) -- (\x,0.08);
+  \node[below,font=\tiny] at (\x,0) {\lbl};
+}
+
+%% ── Row 1: Fault inception ───────────────────────────────────────────────
+\node[left,font=\scriptsize\bfseries,thesisblue] at (-0.05,1.1) {A/D};
+\draw[thesisblue,ultra thick] (0,0.8) -- (10,0.8);
+\draw[thesisred,thick,->] (0,0.3) -- (0,0.8)
+  node[above,font=\tiny,thesisred]{Fault $t_0$};
+
+%% ── Row 2: GOOSE receive window ──────────────────────────────────────────
+\node[left,font=\scriptsize\bfseries,thesisgray] at (-0.05,1.9) {GOOSE rx};
+\filldraw[fill=thesisgray!25,draw=thesisgray,thick]
+  (0,1.55) rectangle (1.0,2.15);
+\node[font=\tiny,thesisgray] at (0.5,1.85) {$\leq$4\,ms};
+
+%% ── Row 3: LM estimation (includes sequence decomp) ─────────────────────
+\node[left,font=\scriptsize\bfseries,thesisblue] at (-0.05,2.8) {LM est.};
+\filldraw[fill=lightblue!60,draw=thesisblue,thick]
+  (1.0,2.45) rectangle (5.5,3.15);
+\node[font=\tiny,thesisblue] at (3.25,2.80) {8--11\,ms (3PH)};
+
+%% LL fault overhead annotation
+\filldraw[fill=lightorange!60,draw=thesisorange,thick]
+  (5.5,2.45) rectangle (7.1,3.15);
+\node[font=\tiny,thesisorange] at (6.30,2.80) {+3.2\,ms (LL)};
+
+%% ── Row 4: Stage-2 veto gate ─────────────────────────────────────────────
+\node[left,font=\scriptsize\bfseries,thesisgreen] at (-0.05,3.7) {Veto gate};
+\filldraw[fill=lightgreen!60,draw=thesisgreen,thick]
+  (5.5,3.35) rectangle (7.1,4.05);
+\node[font=\tiny,thesisgreen] at (6.30,3.70) {$\kappa_n$, $f_{\rm int}$};
+
+%% Trip or restrain decision
+\draw[thesisred,ultra thick,->]
+  (7.1,3.70) -- (8.0,3.70)
+  node[right,font=\tiny,thesisred]{TRIP / RESTRAIN};
+
+%% ── Row 5: GOOSE broadcast ───────────────────────────────────────────────
+\node[left,font=\scriptsize\bfseries,thesisorange] at (-0.05,4.55) {GOOSE tx};
+\filldraw[fill=lightorange!40,draw=thesisorange,thick]
+  (7.5,4.20) rectangle (9.5,4.90);
+\node[font=\tiny,thesisorange] at (8.50,4.55) {$\leq$4\,ms};
+
+%% ── Coordination window bracket ─────────────────────────────────────────
+\draw[barr] (0,-0.55) -- (10,-0.55);
+\node[below,font=\tiny,align=center] at (5,-0.55)
+  {20\,ms re-estimation cycle};
+
+%% Critical path annotation
+\draw[barr] (0,-1.10) -- (9.5,-1.10);
+\node[below,font=\tiny,thesisblue,align=center] at (4.75,-1.10)
+  {Critical path: GOOSE\,rx\,(4) + LM\,(11) + Veto\,(2) + GOOSE\,tx\,(4) = 21\,ms $\leq$ 25\,ms window};
+
+\end{tikzpicture}

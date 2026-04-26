@@ -1,0 +1,459 @@
+%% main_report61.tex
+%% SAMBP Technical Report TR-61/2026
+%% Relay 64G Stator Earth Fault Protection: Optimal Sub-harmonic Injection
+%% Frequency under IBR Harmonic Contamination
+%% =========================================================================
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=25mm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage{microtype}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{siunitx}
+\usepackage{cite}
+
+\definecolor{sambpblue}{RGB}{0,70,140}
+\definecolor{darkgreen}{RGB}{0,120,50}
+\definecolor{warningred}{RGB}{180,0,0}
+
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+
+\newcommand{\Ihealthy}{I_{\mathrm{healthy}}}
+\newcommand{\Ifault}{I_{\mathrm{fault}}}
+\newcommand{\Itrip}{I_{\mathrm{trip}}}
+\newcommand{\sigman}{\sigma_n}
+\newcommand{\fopt}{f^*}
+\newcommand{\fsub}{f_{\mathrm{sub}}}
+\newcommand{\fconv}{f_{\mathrm{conv}}}
+\newcommand{\RN}{R_N}
+\newcommand{\CG}{C_G}
+
+\title{%
+  \textbf{\textsf{\color{sambpblue}SAMBP Technical Report TR-61/2026}}\\[6pt]
+  \Large Relay 64G Stator Earth Fault Protection:\\
+  Optimal Sub-harmonic Injection Frequency under\\
+  IBR Harmonic Contamination%
+}
+\author{SAMBP Research Group}
+\date{April 2026 \quad\textbar\quad Chapter 6, \S6.8 \quad\textbar\quad
+      Target: \emph{IEEE Transactions on Industrial Electronics}}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+\tableofcontents
+\clearpage
+
+%% ────────────────────────────────────────────────────────────────────────────
+\section{Background and Problem Statement}
+\label{sec:background}
+%% ────────────────────────────────────────────────────────────────────────────
+
+Stator earth fault protection (Relay 64G) in generators relies on sub-harmonic
+voltage injection at the machine neutral.  A voltage source $V_{\rm inj}$ is
+applied between the neutral and ground via a neutral grounding resistor $\RN$,
+and the return current is monitored.  A fault at any point on the stator
+winding creates a low-impedance conductive path to ground, increasing the
+measured current above a threshold $\Itrip$.
+
+Standard practice uses a fixed injection frequency $\fconv = 20$\,Hz, well
+below the rated 50\,Hz to avoid interference with the fundamental.  However,
+high-penetration inverter-based resources (IBR) generate sub-harmonic
+currents in the range 15--25\,Hz due to:
+\begin{itemize}
+  \item Converter dead-time compensation harmonics,
+  \item LCL-filter resonance under weak-grid conditions,
+  \item GFM low-frequency droop dynamics.
+\end{itemize}
+When the IBR noise peak $\fsub \approx \fconv = 20$\,Hz, the standard relay
+suffers simultaneous \emph{security} and \emph{dependability} failures:
+
+\begin{description}
+  \item[Security failure (false alarm).]
+    IBR noise adds to the measured healthy current $\Ihealthy(\fconv)$.
+    If $\Ihealthy(\fconv) + 2\sigman(\fconv) > \Itrip$, a false trip occurs.
+  \item[Dependability failure (missed detection).]
+    IBR noise subtracts from the fault current measurement.  For high-resistance
+    faults with $\Ifault \approx \Itrip$, noise corrupts the safety margin and
+    causes missed detections.
+\end{description}
+
+This report proposes selecting the injection frequency adaptively:
+\begin{equation}
+  \fopt = \arg\max_{f \in \mathcal{F}} \min\bigl(
+    \underbrace{\Itrip - \Ihealthy(f) - 2\sigman(f)}_{\text{security margin}},\;
+    \underbrace{\Ifault(R_f) - \Itrip - 2\sigman(f)}_{\text{dependability margin}}
+  \bigr)
+  \label{eq:opt}
+\end{equation}
+where $\mathcal{F} = [20, 40]$\,Hz is the permissible injection range (below the
+fundamental, above converter switching noise).
+
+%% ────────────────────────────────────────────────────────────────────────────
+\section{Physical Model}
+\label{sec:model}
+%% ────────────────────────────────────────────────────────────────────────────
+
+\subsection{Healthy winding current}
+\label{sec:healthy}
+
+Without a fault, the injection source drives a displacement current through the
+distributed stator-to-ground capacitance $\CG$:
+\begin{equation}
+  \Ihealthy(f) = \frac{V_{\rm inj} \cdot \omega \CG}{\sqrt{1 + (\omega \CG \RN)^2}},
+  \qquad \omega = 2\pi f.
+  \label{eq:Ihealthy}
+\end{equation}
+This current \emph{increases monotonically with} $f$ (as capacitive reactance
+$X_c = 1/(\omega\CG)$ decreases), eventually exceeding $\Itrip$ and setting a
+hard upper bound on permissible $\fopt$.
+
+\subsection{Fault current}
+\label{sec:fault}
+
+A stator earth fault at winding position $\theta$ (fraction from neutral)
+creates a direct conductive path.  At sub-harmonic frequencies the winding
+impedance from neutral to $\theta$ is negligible, so:
+\begin{equation}
+  \Ifault(R_f) = \frac{V_{\rm inj}}{\RN + R_f},
+  \label{eq:Ifault}
+\end{equation}
+which is \emph{frequency-independent}.  The fault resistance $R_f$ is the
+dominant variable; high-resistance faults ($R_f \to 1/\Itrip - \RN$) define the
+protection sensitivity limit.
+
+\begin{remark}[Position independence]
+  The conductive fault current is independent of winding position $\theta$,
+  providing 100\% winding coverage at all sub-harmonic injection frequencies.
+  This is a key advantage of neutral injection over zero-sequence voltage
+  methods.
+\end{remark}
+
+\subsection{IBR noise model}
+\label{sec:noise}
+
+The IBR sub-harmonic noise at the neutral terminal is modelled as a Gaussian
+spectral peak:
+\begin{equation}
+  \sigman(f) = A_{\rm noise} \cdot \exp\!\left(-\frac{(f - \fsub)^2}{2\sigma_{\rm sub}^2}\right),
+  \label{eq:noise}
+\end{equation}
+with peak frequency $\fsub \in [15, 25]$\,Hz, amplitude $A_{\rm noise}$, and
+bandwidth $\sigma_{\rm sub} = 3$\,Hz.
+
+\subsection{Detection criterion}
+\label{sec:criterion}
+
+Using a $2\sigma$ statistical margin:
+\begin{align}
+  \text{Security:}\quad &  \Ihealthy(f) + 2\sigman(f) < \Itrip
+  \label{eq:security} \\
+  \text{Dependability:}\quad & \Ifault(R_f) - 2\sigman(f) > \Itrip
+  \label{eq:depend}
+\end{align}
+
+%% ────────────────────────────────────────────────────────────────────────────
+\section{Optimal Frequency Proposition}
+\label{sec:proposition}
+%% ────────────────────────────────────────────────────────────────────────────
+
+\begin{proposition}[Optimal frequency bounds]
+  \label{prop:fopt}
+  Let $\fsub \in [15, 25]$\,Hz and $A_{\rm noise} > 0$.  The optimal injection
+  frequency $\fopt$ defined by \eqref{eq:opt} satisfies:
+  \begin{equation}
+    f_{\rm low} < \fopt \leq f_{\rm up}
+    \label{eq:bounds}
+  \end{equation}
+  where $f_{\rm low} = \fsub + c_1 \sigma_{\rm sub}$ (above the noise peak by
+  $c_1 \approx 2$--$3$ bandwidths) and $f_{\rm up}$ is defined by
+  $\Ihealthy(f_{\rm up}) = \Itrip$ (security crossover frequency).  For the
+  parameters in Table~\ref{tab:params}, $f_{\rm up} \approx 35$\,Hz, giving
+  $\fopt \in [25, 35]$\,Hz for $\fsub \in [15, 25]$\,Hz.
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+  For $f < \fsub$: $\sigman(f) > \sigman(\fsub + (f-\fsub)) = \sigman(f')$
+  for the mirror point $f' = 2\fsub - f > \fsub$.  So any $f < \fsub$ has
+  a strictly worse noise level than the corresponding point above $\fsub$,
+  with equal or worse healthy current (since $\Ihealthy$ is monotone).
+  Hence $\fopt > \fsub$.  The upper bound follows directly from
+  $\Ihealthy(f_{\rm up}) = \Itrip$ and the monotonicity of $\Ihealthy$.
+\end{proof}
+
+%% ────────────────────────────────────────────────────────────────────────────
+\section{Validation Methodology}
+\label{sec:validation}
+%% ────────────────────────────────────────────────────────────────────────────
+
+\subsection{System parameters}
+\label{sec:params}
+
+\begin{table}[h]
+\centering
+\caption{TR-61 system parameters}
+\label{tab:params}
+\begin{tabular}{llll}
+  \toprule
+  Parameter & Symbol & Value & Units \\
+  \midrule
+  Stator-to-ground capacitance & $\CG$   & $4.55\times10^{-4}$ & pu$\cdot$s \\
+  Neutral grounding resistor   & $\RN$   & 0.080 & pu \\
+  Injection voltage            & $V_{\rm inj}$ & 1.000 & pu \\
+  Trip threshold impedance     & $Z_{\rm trip}$ & 10.0 & pu \\
+  Trip current threshold       & $\Itrip$ & 0.100 & pu \\
+  Noise bandwidth              & $\sigma_{\rm sub}$ & 3.0 & Hz \\
+  Security crossover freq.     & $f_{\rm up}$  & $\approx$35 & Hz \\
+  \bottomrule
+\end{tabular}
+\end{table}
+
+With these parameters: $\Ihealthy(20\,\mathrm{Hz}) = 0.057$\,pu $\ll \Itrip$;
+$\Ihealthy(35\,\mathrm{Hz}) \approx \Itrip$.  The minimum detectable fault
+resistance is $R_{f,\rm max} = V_{\rm inj}/\Itrip - \RN = 9.92$\,pu.
+
+\subsection{Deterministic scenario matrix}
+
+\begin{center}
+\begin{tabular}{lllll}
+  \toprule
+  ID & Type & $R_f$ (pu) & $\fsub$ (Hz) & $A_{\rm noise}$ (pu) \\
+  \midrule
+  S01 & Security & — & 20.0 & 0.080 \\
+  S02 & Security & — & 22.0 & 0.080 \\
+  S03 & Security & — & 18.0 & 0.080 \\
+  S04 & Security & — & 23.0 & 0.070 \\
+  S05 & Security & — & 20.0 & 0.100 \\
+  S06 & Fault & 6.0 & 20.0 & 0.080 \\
+  S07 & Fault & 7.0 & 20.0 & 0.080 \\
+  S08 & Fault & 7.0 & 22.0 & 0.080 \\
+  S09 & Fault & 6.5 & 18.0 & 0.060 \\
+  S10 & Fault & 7.0 & 20.0 & 0.090 \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+Security scenarios (S01--S05): conventional relay at $\fconv=20$\,Hz false-alarms
+due to $\sigman(\fconv) \approx A_{\rm noise}$.  Optimal relay selects
+$\fopt \approx 27$--$31$\,Hz where $\sigman \approx 0$.
+
+Fault scenarios (S06--S10): high-resistance faults ($R_f \geq 6$\,pu) give
+$\Ifault \leq 0.152$\,pu (margin $\leq 0.052$\,pu over $\Itrip$), erased by
+$2\sigman(20\,\mathrm{Hz}) \geq 0.12$\,pu at conventional frequency.
+
+\subsection{Monte Carlo parameters}
+
+\begin{center}
+\begin{tabular}{lll}
+  \toprule
+  Parameter & Distribution & Range \\
+  \midrule
+  Trials & — & 2\,000 (1\,000 security / 1\,000 fault) \\
+  $\fsub$ & Uniform & [15, 25]\,Hz \\
+  $A_{\rm noise}$ & Uniform & [0.03, 0.09]\,pu \\
+  $R_f$ & Uniform & [0.0, 7.0]\,pu (fault trials) \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+%% ────────────────────────────────────────────────────────────────────────────
+\section{Results}
+\label{sec:results}
+%% ────────────────────────────────────────────────────────────────────────────
+
+\subsection{Deterministic results}
+
+All ten scenarios pass at $\fopt$, with the optimal frequency ranging from
+26.1 to 31.3\,Hz across scenarios:
+
+\begin{center}
+\begin{tabular}{llcccc}
+  \toprule
+  ID & Type & $\fopt$ (Hz) & $2\sigman(\fconv)$ & $2\sigman(\fopt)$
+     & Opt.\ result \\
+  \midrule
+  S01 & SEC & 28.4 & 0.1600 & 0.0031 & \textcolor{darkgreen}{PASS} \\
+  S02 & SEC & 30.4 & 0.1281 & 0.0031 & \textcolor{darkgreen}{PASS} \\
+  S03 & SEC & 26.5 & 0.1281 & 0.0030 & \textcolor{darkgreen}{PASS} \\
+  S04 & SEC & 31.3 & 0.0849 & 0.0031 & \textcolor{darkgreen}{PASS} \\
+  S05 & SEC & 28.7 & 0.2000 & 0.0029 & \textcolor{darkgreen}{PASS} \\
+  S06 & FLT & 28.4 & 0.1600 & 0.0031 & \textcolor{darkgreen}{PASS} \\
+  S07 & FLT & 28.4 & 0.1600 & 0.0031 & \textcolor{darkgreen}{PASS} \\
+  S08 & FLT & 30.4 & 0.1281 & 0.0031 & \textcolor{darkgreen}{PASS} \\
+  S09 & FLT & 26.1 & 0.0961 & 0.0032 & \textcolor{darkgreen}{PASS} \\
+  S10 & FLT & 28.6 & 0.1800 & 0.0030 & \textcolor{darkgreen}{PASS} \\
+  \midrule
+  \multicolumn{5}{l}{Total (optimal)} & 10/10 \\
+  \multicolumn{5}{l}{Total (conventional $\fconv=20$\,Hz)} & 0/10 \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The $50\times$ reduction in noise (from $2\sigman \approx 0.16$ to
+$\approx 0.003$\,pu) is the key mechanism enabling reliable detection at
+the same $\Itrip$ threshold.
+
+\subsection{Monte Carlo results}
+\label{sec:mc_results}
+
+\begin{center}
+\begin{tabular}{lcccc}
+  \toprule
+  Metric & Conventional & Optimal & Target & Status \\
+  \midrule
+  $P_D$ (dependability) & 0.813 & 1.000 & $\geq 0.970$
+    & \textcolor{darkgreen}{\textbf{PASS}} \\
+  $P_{\rm FA}$ (false alarm) & 0.819 & 0.000 & $\leq 0.010$
+    & \textcolor{darkgreen}{\textbf{PASS}} \\
+  $\fopt$ mean & — & 27.2\,Hz & $\in [25, 36]$\,Hz
+    & \textcolor{darkgreen}{\textbf{PASS}} \\
+  $\fopt$ std  & — & 3.3\,Hz  & —
+    & — \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\begin{remark}[False alarm improvement]
+  The conventional relay at 20\,Hz has $P_{\rm FA} = 0.819$ under the sampled
+  noise conditions ($\fsub \sim U[15,25]$\,Hz, $A_{\rm noise} \sim U[0.03,0.09]$
+  pu).  The optimal relay achieves $P_{\rm FA} = 0.000$ --- an $81.9$ percentage
+  point improvement --- because $\fopt$ is always shifted sufficiently far from
+  $\fsub$ that $2\sigman(\fopt) \ll \Itrip - \Ihealthy(\fopt)$.
+\end{remark}
+
+\subsection{Frequency distribution}
+
+The empirical distribution of $\fopt$ across MC trials (mean 27.2\,Hz, std
+3.3\,Hz) confirms that the optimal frequency lies consistently above $\fsub$
+and below the security crossover $f_{\rm up} \approx 35$\,Hz, in line with
+Proposition~\ref{prop:fopt}.
+
+%% ────────────────────────────────────────────────────────────────────────────
+\section{Sensitivity Analysis}
+\label{sec:sensitivity}
+%% ────────────────────────────────────────────────────────────────────────────
+
+\subsection{High-resistance fault detectability}
+
+The maximum detectable fault resistance is
+$R_{f,\rm max} = V_{\rm inj}/\Itrip - \RN = 9.92$\,pu (corresponding to
+$\Ifault = \Itrip$).  For practical IBR networks with $A_{\rm noise} \leq 0.09$\,pu
+and $\fopt \geq 25$\,Hz, the noise at $\fopt$ is $\sigman(\fopt) \leq 0.003$\,pu,
+reducing the effective sensitivity limit to:
+\[
+  R_{f,\rm eff} = V_{\rm inj}/(\Itrip + 2\sigman(\fopt)) - \RN \approx 9.86\;\text{pu}
+\]
+--- a degradation of only 0.6\% compared to the noise-free case.
+
+\subsection{IBR noise bandwidth}
+
+The analysis assumes $\sigma_{\rm sub} = 3$\,Hz.  For wider noise bandwidths
+($\sigma_{\rm sub}$ up to 5\,Hz), the required frequency shift to achieve
+$\sigman(\fopt) \leq 0.003$\,pu increases from $\sim$8\,Hz to $\sim$14\,Hz,
+keeping $\fopt$ within the valid range $[f_{\rm low}, f_{\rm up}]$ for
+$\fsub \leq 22$\,Hz.
+
+%% ────────────────────────────────────────────────────────────────────────────
+\section{Comparison with Existing Methods}
+\label{sec:comparison}
+%% ────────────────────────────────────────────────────────────────────────────
+
+\begin{center}
+\begin{tabular}{p{0.30\textwidth}ccp{0.24\textwidth}}
+  \toprule
+  Method & $P_D$ & $P_{\rm FA}$ & Limitation \\
+  \midrule
+  Standard 64G ($f=20$\,Hz) \cite{IEEE_C37_101}
+    & 0.813 & 0.819 & Fixed $f$ at noise peak \\
+  DSP-filtered 64G \cite{Finney1988}
+    & $\sim$0.90 & $\sim$0.10 & Filter delay; tuned to 20\,Hz only \\
+  Proposed adaptive $\fopt$
+    & 1.000 & 0.000 & Requires online $\fsub$ estimation \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+%% ────────────────────────────────────────────────────────────────────────────
+\section{Implementation Notes}
+\label{sec:impl}
+%% ────────────────────────────────────────────────────────────────────────────
+
+The adaptive injection frequency scheme requires:
+\begin{enumerate}
+  \item \textbf{IBR noise peak estimation}: a sliding-window FFT or MUSIC
+        spectral estimator to track $\hat{f}_{\rm sub}$ in real time.
+        Latency $\leq 100$\,ms is achievable with a 0.5\,s window.
+  \item \textbf{Frequency-agile injection source}: the neutral injection
+        transformer must support $f \in [20, 40]$\,Hz.  Modern DSP-controlled
+        injection units accommodate this range with no hardware change.
+  \item \textbf{Trip threshold recalculation}: $\Itrip$ is fixed; only the
+        injection frequency changes.  The relay logic is otherwise identical to
+        standard 64G.
+\end{enumerate}
+
+%% ────────────────────────────────────────────────────────────────────────────
+\section{Conclusions}
+\label{sec:conclusions}
+%% ────────────────────────────────────────────────────────────────────────────
+
+\begin{enumerate}
+  \item Fixed-frequency (20\,Hz) Relay 64G protection fails catastrophically
+        under IBR sub-harmonic noise: $P_{\rm FA} = 0.819$ and $P_D = 0.813$
+        at conventional settings.
+
+  \item An adaptive injection frequency $\fopt$ that maximises the balanced
+        security/dependability margin eliminates both failure modes:
+        $P_D = 1.000$, $P_{\rm FA} = 0.000$.
+
+  \item The fault current $\Ifault(R_f)$ is frequency-independent (conductive
+        path), so optimal frequency selection reduces only the noise term
+        $2\sigman(\fopt)$, not the signal.  This decoupling enables a clean
+        analytical bound (Proposition~\ref{prop:fopt}).
+
+  \item $\fopt$ lies consistently in $[25, 36]$\,Hz for $\fsub \in [15, 25]$\,Hz,
+        providing a design rule: \emph{inject at least 8\,Hz above the
+        measured IBR noise peak}.
+
+  \item The scheme is backward-compatible with existing 64G relay hardware;
+        only the injection source frequency control requires modification.
+\end{enumerate}
+
+%% ────────────────────────────────────────────────────────────────────────────
+\appendix
+\section{Simulation Files}
+\label{app:files}
+%% ────────────────────────────────────────────────────────────────────────────
+
+\begin{tabular}{p{0.52\textwidth}p{0.42\textwidth}}
+  \toprule
+  File & Description \\
+  \midrule
+  \texttt{relay64g/run\_tr61\_relay64g\_subharm.py}
+    & TR-61 simulation driver: physics model, optimal-$f$ solver, 10-scenario + MC \\
+  \texttt{relay64g/outputs/tr61/tr61\_deterministic.csv}
+    & 10-scenario results (10/10 PASS) \\
+  \texttt{relay64g/outputs/tr61/tr61\_mc\_metrics.csv}
+    & Monte Carlo summary ($P_D$, $P_{\rm FA}$, $\fopt$ statistics) \\
+  \texttt{TR61\_Relay64G\_SubHarmonic/main\_report61.tex}
+    & This document \\
+  \bottomrule
+\end{tabular}
+
+\bibliographystyle{IEEEtran}
+\bibliography{references61}
+
+\end{document}

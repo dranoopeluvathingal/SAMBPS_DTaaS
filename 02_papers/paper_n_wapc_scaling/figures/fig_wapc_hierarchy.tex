@@ -1,0 +1,63 @@
+% fig_wapc_hierarchy.tex — Three-layer hierarchical WAPC architecture
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  lc/.style={draw=thesisblue,thick,fill=lightblue!40,rounded corners=3pt,
+             minimum width=2.2cm,minimum height=0.58cm,align=center},
+  rc/.style={draw=thesisgreen,thick,fill=lightgreen!30,rounded corners=3pt,
+             minimum width=3.2cm,minimum height=0.65cm,align=center},
+  so/.style={draw=thesisorange,thick,fill=lightorange!25,rounded corners=3pt,
+             minimum width=5.0cm,minimum height=0.65cm,align=center},
+  arr/.style={-{Stealth[length=2mm]},thick},
+  darr/.style={{Stealth[length=2mm]}-{Stealth[length=2mm]},thick},
+  wan/.style={draw=thesisgray!60,dashed,thick},
+]
+
+%% ── Layer C: System Operator ─────────────────────────────────────────────
+\node[so] (so) at (5.5, 4.2)
+  {\textbf{Layer C} — System Operator Interface\\
+   Settings archive \quad Alarms \quad SCADA};
+
+%% ── Layer B: Regional Coordinators ──────────────────────────────────────
+\node[rc] (rc1) at (2.0, 2.4)
+  {\textbf{RC-1}\\Region North\\10 substations};
+\node[rc] (rc2) at (5.5, 2.4)
+  {\textbf{RC-2}\\Region Central\\15 substations};
+\node[rc] (rc3) at (9.0, 2.4)
+  {\textbf{RC-3}\\Region South\\12 substations};
+
+%% ── Layer A: Local Substation Coordinators ───────────────────────────────
+\node[lc] (lc1) at (0.5, 0.5) {Sub-A1\\SAMBPS L1–L5};
+\node[lc] (lc2) at (3.0, 0.5) {Sub-A2\\SAMBPS L1–L5};
+\node[lc] (lc3) at (5.5, 0.5) {Sub-B1\\SAMBPS L1–L5};
+\node[lc] (lc4) at (7.4, 0.5) {$\cdots$};
+\node[lc] (lc5) at (9.5, 0.5) {Sub-C5\\SAMBPS L1–L5};
+
+%% ── Connections L A → B ──────────────────────────────────────────────────
+\draw[darr,thesisblue] (lc1.north) -- (rc1.south);
+\draw[darr,thesisblue] (lc2.north) -- (rc1.south);
+\draw[darr,thesisblue] (lc3.north) -- (rc2.south);
+\draw[darr,thesisblue] (lc5.north) -- (rc3.south);
+
+%% Connections L B → C
+\draw[darr,thesisgreen] (rc1.north) -- (so.south);
+\draw[darr,thesisgreen] (rc2.north) -- (so.south);
+\draw[darr,thesisgreen] (rc3.north) -- (so.south);
+
+%% WAN bus between regional coordinators
+\draw[wan] (rc1.east) -- (rc2.west)
+  node[midway,above,font=\tiny,thesisgray]{WA-GOOSE\;$\tau\!\leq\!50$\,ms};
+\draw[wan] (rc2.east) -- (rc3.west)
+  node[midway,above,font=\tiny,thesisgray]{WA-GOOSE};
+
+%% LAN bus annotation under local layer
+\draw[decorate,decoration={brace,amplitude=4pt},thesisgray]
+  (0.5,-0.22) -- (3.2,-0.22)
+  node[midway,below,font=\tiny]{IEC~61850 GOOSE LAN ($\tau\!\leq\!4$\,ms)};
+
+%% Payload annotation
+\node[draw=thesisblue!40,fill=white,rounded corners=2pt,
+      font=\tiny,align=center,inner sep=2pt]
+  at (0.5,1.75)
+  {WA-GOOSE payload:\\$\kappa_n$, $f_{\rm int}$, $\hat{\alpha}$, seq\_type\\every 20\,ms cycle};
+
+\end{tikzpicture}

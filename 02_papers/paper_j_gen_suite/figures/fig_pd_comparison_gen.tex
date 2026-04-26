@@ -1,0 +1,60 @@
+% fig_pd_comparison_gen.tex — P_D bar chart: conventional vs proposed, all six relay functions
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  ybar,
+  width  = 0.95\columnwidth,
+  height = 5.4cm,
+  ylabel = {Detection probability $P_D$},
+  ymin=0, ymax=1.15,
+  ytick={0,0.2,0.4,0.6,0.8,1.0},
+  symbolic x coords={87G,81,87L-PV,40-LOE,78-EAC,64G},
+  xtick=data,
+  x tick label style={font=\scriptsize,rotate=30,anchor=east},
+  bar width=8pt,
+  enlarge x limits=0.15,
+  legend pos=south east,
+  legend style={font=\scriptsize},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+]
+
+%% Conventional P_D
+\addplot[fill=thesisgray!60,draw=thesisgray]
+  coordinates {
+    (87G,    0.72)
+    (81,     0.72)
+    (87L-PV, 0.72)
+    (40-LOE, 0.568)
+    (78-EAC, 0.95)
+    (64G,    0.813)
+  };
+\addlegendentry{Conventional relay};
+
+%% Proposed P_D
+\addplot[fill=thesisblue!80,draw=thesisblue]
+  coordinates {
+    (87G,    1.000)
+    (81,     0.9947)
+    (87L-PV, 0.9984)
+    (40-LOE, 1.000)
+    (78-EAC, 1.000)
+    (64G,    1.000)
+  };
+\addlegendentry{Proposed SAMBP (this work)};
+
+%% Target line
+\addplot[thesisred,thick,dotted,domain=0:6,samples=2]
+  coordinates {(87G,0.970)(64G,0.970)};
+\node[thesisred,font=\tiny] at (axis cs:64G,1.005) {Target ${\geq}0.970$};
+
+%% Contribution labels inside bars
+\node[font=\tiny,thesisorange] at (axis cs:87G, 0.52)    {C10};
+\node[font=\tiny,thesisorange] at (axis cs:81, 0.52)     {C12};
+\node[font=\tiny,thesisorange] at (axis cs:87L-PV, 0.52) {C11};
+\node[font=\tiny,thesisorange] at (axis cs:40-LOE, 0.30) {C14};
+\node[font=\tiny,thesisorange] at (axis cs:78-EAC, 0.52) {C13};
+\node[font=\tiny,thesisorange] at (axis cs:64G, 0.52)    {C15};
+
+\end{axis}
+\end{tikzpicture}

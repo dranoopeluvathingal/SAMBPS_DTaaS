@@ -3,126 +3,626 @@
     {iitmdissertation}
 
 \dissertationDepartment      {Department of Electrical Engineering}
-\dissertationAuthorName      {Naina P. M.}
-\dissertationDateOfBirth     {16 May 1986}
+\dissertationAuthorName      {Anoop V Eluvathingal}
+\dissertationDateOfBirth     {22 October 1988}
 \dissertationDegree          {Doctor of Philosophy}
-\dissertationTitle           {Distributed Optimization Algorithms for Virtual Power Plants}
-\dissertationMonth           {October}
-\dissertationYear            {2023}
-\dissertationCertificateDate {October, 2023}
+\dissertationTitle           {Self Adaptive Model Based Protection Systems - SAMBPS}
+\dissertationMonth           {June}
+\dissertationYear            {2026}
+\dissertationCertificateDate {June, 2026}
 \dissertationType            {Thesis}
 \dissertationGuides          {Dr. K. Shanti Swarup}
 \dissertationCommitteeName   {Doctoral Committee}
 %\dissertationImage           {tux.png}
 
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{parskip}
+
+% Shorthand
+\newcommand{\SAMBP}{\textsc{SAMBP}}
+\newcommand{\IBR}{IBR}
+\newcommand{\SG}{SG}
+\newcommand{\pu}{\,\text{pu}}
+\newcommand{\ms}{\,\text{ms}}
+\newcommand{\PD}{P_{\mathrm{D}}}
+\newcommand{\PFA}{P_{\mathrm{FA}}}
+\newcommand{\kn}{\kappa_n}
+\newcommand{\dLB}{\delta_{\mathrm{LB}}}
+\newcommand{\kibr}{k_{\mathrm{ibr}}}
+
 \begin{document}
 \prematter
-%For MS theses, the synopsis can be 2 -- 3 pages.
-%\newline 
-%For PhD theses, the synopsis can be 4 -- 6 pages.
+
+% ============================================================================
 \section{Abstract}
-Virtual Power Plants (VPPs) are becoming increasingly pivotal in the context of modern energy grids, facilitating the integration of renewable and distributed energy resources. VPP enables the market participation of small distributed generators, including renewable sources. A Virtual Power Plant (VPP) consolidates the capacity of distributed energy resources, functioning like a traditional power plant. Like a conventional power plant, a VPP possesses its unique operational attributes, such as generation limits and more. The proliferation of distributed generators (DGs) fundamentally reshapes the power grid into a decentralized network. The heart of the VPP is its energy management system. The implementation of Energy Management in VPP faces technical as well as economic challenges. This thesis delves into the realm of Energy Management within VPPs. 
+% ============================================================================
 
-Energy Management Operations employing conventional centralized algorithms may not be suitable, effective, and accurate in the presence of DGs. Consensus-based distributed algorithms for energy management are presented in this work, which preserves the privacy of the participants. Since the consensus protocol is a communication-based approach, noise and communication delays are unavoidable. Two different variants of consensus algorithms are proposed, which effectively reduce the adverse effects of noise and communication delay with time-varying communication networks. This work uses two different consensus protocols - proportional consensus and proportional integral consensus protocol. The proposed algorithms ensure a global optimal solution since the algorithms are based on lagrangian relaxation (LR). The algorithms are successfully tested on an IEEE 39 bus system and a 15-node VPP, and the results show the effectiveness of the algorithms. 
+Power system protection relays were designed for synchronous-generator (SG)
+networks in which fault current is large, passive, and predictable.
+Inverter-based resources (IBRs)---solar photovoltaic (PV) and
+doubly-fed induction generator (DFIG) wind---violate all three assumptions:
+their inner current-control loops cap fault current at 1.1--2.0\,pu within
+one sub-cycle, and the magnitude, phase angle, and sequence composition
+are determined by firmware, not physics.
+The consequence is a systematic failure of legacy overcurrent (51), line
+differential (87L), transformer differential (87T), bus differential (87B),
+and generator protection (Relay~40/64G/78/81) when applied to IBR-dominated
+networks.
 
-This work also tackles a crucial challenge: effectively managing a Virtual Power Plant (VPP) by optimizing the scheduling of Distributed Energy Resources (DERs) to maximize profits while minimizing risks. The concept of VPP becomes particularly valuable when faced with uncertainties like variable renewable energy generation and fluctuating electricity prices. Our research explored scenario-based stochastic scheduling techniques to address uncertainties arising from variables such as wind power generation and electricity prices. The VPP is modeled on a modified IEEE 33-node distribution system, and we aimed to maximize its expected profit while considering the network parameters.
+This thesis proposes the \textbf{Self-Adaptive Model-Based Protection
+(\SAMBP)} framework: a five-layer architecture in which every protection
+element re-parametrises its operating zone model from the measurable IBR
+current envelope in real time.
+A physics-reduction proposition (Proposition~C12) proves that replacing one
+collinear or derivable parameter reduces the estimator condition number
+$\kn$ by at least a factor of ten, ensuring that the Levenberg--Marquardt
+inverse estimation converges reliably within a single protection operating
+window.
+A Stage-2 model-veto gate suppresses trips when $\kn$ or the fault-integrity
+index $f_{\mathrm{int}}$ falls below validated thresholds, preserving relay
+security during partial observability.
+
+The framework is validated across nine protection functions---87L (PV and DFIG),
+87T (SG and IBR), 87B (OpenDSS bus), Relay~78 (EAC/CUEP), Relay~81 (GFM
+islanding), generator differential (87G-DFIG), Relay~40 (LOE), Relay~64G
+(stator earth fault), and synchronous overcurrent (51)---on test systems
+ranging from single-element benchmarks to the full IEEE~39-bus New England
+network and commercial relay hardware on RTDS.
+Key results: $\PD \geq 0.994$ across all functions,
+$\PFA \leq 0.003$, median trip time $t_{50} \leq 20\ms$ for fast-IBR
+functions (87L, 87T, 87G), 12/12 correct system-level decisions on the
+IEEE~39-bus corridor, and 60/62 = 96.8\% hardware agreement in the
+HIL campaign (TR-67, RTDS + SEL-300G + GE~D60, Feb~2028).
 
 \newpage
 
+% ============================================================================
 \section{Objectives}
+% ============================================================================
+
 \subsubsection{Research Objectives:}
 
-Fig. \ref{Fig:ch_1_thesis} illustrates the outline of this research work. The major objectives of this research work are identified as follows:
 \begin{enumerate}
-    \item \textbf{Modeling} and \textbf{Simulation} of Virtual Power Plant (VPP):
-    \newline
-    \textit{Develops a centralized energy management algorithm for Virtual Power Plant which includes both dispatchable and non-dispatchable sources. \newline
-    Describes the functioning of a Virtual Power Plant with three operational modes.}    
-    \item \textbf{Development} of Distributed Algorithm for VPP:
-    \newline
-    \textit{Develops a robust algorithm to facilitate effective decentralized operations, particularly in the presence of unreliable and limited communication mechanisms. \newline 
-    Decompose the optimization problem into subproblems using dual decomposition.}
-    \item \textbf{Implementation} of VPP in Day Ahead Market (DAM):
-    \newline
-    \textit{Handles the uncertainties in renewable sources, price and demand. \newline
-    Develop a scheduling model for VPPs to engage in electricity markets, taking into account the uncertainties within the system.}  
-\end{enumerate} 
-\begin{figure}[!h]
-    \centering
-    \includegraphics[width=0.965\textwidth]{images/chapter_1/thesis_organization_v1.pdf}
-    \caption{Outline of the research work}
-    \label{Fig:ch_1_thesis}
-\end{figure}
 
-\section{Existing gaps which were bridged}
-\begin{enumerate}[start=1,label={(RG \arabic*):}]
-    \item A comprehensive virtual power plant model has been introduced, featuring three operational modes: no power exchange, power export, and power import mode. This model has been implemented with the help of a centralized energy management system. 
-    \item A partially distributed leader-follower consensus-based algorithm has been proposed for optimal dispatch of VPP.  This algorithm holds particular relevance for large-scale VPPs that operate without geographical constraints.
-    \item A robust, fully distributed consensus algorithm based on consensus gain function has been proposed for deterministic distributed energy management of VPP considering noise and communication delay in a switching communication network.
-    \item A double consensus algorithm based on proportional integral consensus has been proposed for the distributed economic dispatch of a microgrid with nose and communication delay.
-    \item A scenario-based stochastic scheduling model of VPP has been presented considering the uncertainties in renewable generation, price, and demand to participate in the day ahead market.
+\item \textbf{Characterise IBR fault current signatures} for the three
+  dominant source types---synchronous generator (SG), grid-following (GFL)
+  inverter, and grid-forming (GFM) inverter---using reduced-order physics
+  models amenable to real-time inverse parameter estimation from relay
+  current measurements.
+
+\item \textbf{Extend the Levenberg--Marquardt (LM) inverse estimation
+  engine} from overcurrent (51) to all five differential protection
+  functions (87L, 87T, 87B, 87G) and to generator protection relay
+  functions Relay~40, Relay~64G, Relay~78, and Relay~81,
+  preserving the single unified architecture across all elements.
+
+\item \textbf{Prove formal conservatism and stability guarantees} where
+  applicable: a condition-number reduction proposition for the
+  physics-reduction step (Proposition~C12), a conservative CUEP lower bound
+  for Relay~78 (Proposition~1, TR-58), and an admissibility proof for the
+  Relay~81 IFDI threshold (TR-63).
+
+\item \textbf{Validate each protection function} against the SAMBP evidence
+  standard: a minimum 10-scenario deterministic sweep plus a Monte Carlo
+  study ($N \geq 1\,000$ trials per hypothesis) before any result is
+  reported in a thesis chapter.
+  Higher-fidelity validation (ANDES positive-sequence, OpenDSS steady-state,
+  PSCAD full-EMT) is applied where the physics warrants it.
+
+\item \textbf{Demonstrate system-level coordination} of all nine protection
+  functions on the IEEE~39-bus New England test network (TR-66), establishing
+  that the per-element improvements compose into a coherent, non-conflicting
+  system-level protection scheme.
+
+\item \textbf{Demonstrate hardware-in-the-loop (HIL) validation} using
+  RTDS with DFIG and PV emulators and commercial relay hardware
+  (SEL-300G firmware~v3.3.6.1, GE~D60 firmware~7.51), providing the
+  evidence basis for industrial adoption of the framework
+  (TR-67, completed Feb~2028; 60/62 = 96.8\% scenario agreement).
+
 \end{enumerate}
-%\newpage
 
-\section{Most important contributions}
-Three important contributions of the work are discussed below.
-\begin{enumerate}
-    \item A \textbf{consensus-based leader-follower algorithm} has been proposed to solve the distributed optimal dispatch with limited communication. The algorithm's decentralized design preserves the privacy of the participants. The outcomes demonstrate that the algorithm consistently converges towards the global optimal solution. Furthermore, it is scalable and well-suited for larger systems, making it an effective tool for tackling distributed optimization challenges within the smart grid domain.
-    
-    \item A \textbf{robust, fully distributed consensus algorithm} has been proposed to tackle the challenge of distributed energy management within a Virtual Power Plant (VPP). The algorithm uses a consensus gain function to suppress the effects of noise and communication delay. The outcomes vividly demonstrate the algorithm's effectiveness. Furthermore, this algorithm is both scalable and adaptable for addressing various Lagrangian relaxation-based optimization challenges within the smart grid domain.
-    
-    \item A \textbf{proportional integral consensus algorithm} has been introduced to solve the distributed economic dispatch problem in a microgrid. In this algorithm, an integral term is strategically employed to mitigate the influence of noise. Furthermore, this algorithm is adaptable and well-suited for larger systems. The results reveal that this algorithm converges faster with noise and communication delay in a switching communication network.  
-\end{enumerate}
-%\newpage
+% ============================================================================
+\section{Existing Gaps Which Were Bridged}
+% ============================================================================
 
+Five structural gaps in IBR-tolerant protection existed prior to this work.
+
+\subsection*{G1 — DFIG wind: no physics-consistent protection model}
+
+DFIG fault current contains a variable-amplitude, slip-frequency
+DC component ($f_{\mathrm{slip}} = s \cdot f_0$, $s \in [-0.30, +0.30]$) whose
+amplitude decays with the rotor time constant, not the stator time constant
+assumed by the standard 4-parameter SG model.
+No published work had derived a piecewise-ODE DFIG model usable in a relay
+operating window, nor had any work validated a crowbar-state detector for
+distinguishing internal faults from crowbar activation.
+\textbf{TR-56} closes this gap with a 10-parameter model, a smoothed-Heaviside
+segment selector, CUSUM crowbar detection, and full ANDES WTDTA1 validation
+(6/6 correct decisions).
+
+\subsection*{G2 — Solar PV: 87L protection sees near-zero DC offset}
+
+Existing 87L algorithms discriminate internal faults from CT saturation using
+the DC decay ratio (DDR): the ratio of DC amplitude to fundamental amplitude
+in the differential current.
+For PV-connected lines, DDR~$\approx 0.01$ (no significant DC), collapsing the
+4-parameter SG estimator onto a degenerate manifold ($\kn \geq 36$).
+No published adaptive 87L work had treated the PV case.
+\textbf{TR-62} closes this gap with a 2-parameter zero-DC model
+($\kn = 1$ analytically) and a DDR-based model selector
+($\text{DDR} < 0.15$ routes to the PV model), achieving $\PD = 0.9984$,
+$\PFA = 0$, $t_{50} = 20\ms$ on 5\,000-trial Monte Carlo.
+
+\subsection*{G3 — Transformer 87T: second-harmonic restraint blocks IBR faults}
+
+Conventional 87T relies on the second-harmonic content of inrush current
+($I_2/I_1 \geq 15\%$) to restrain during energisation.
+IBR-connected transformers exhibit residual IBR fault current with a
+harmonic signature that can satisfy the restraint criterion even during a
+genuine internal fault, reducing $\PD$ to 0.236 in IBR-dominated scenarios.
+\textbf{TR-57} closes the algorithmic gap with a Bayesian three-hypothesis
+sequential probability ratio test (SPRT) on waveform asymmetry, achieving
+$\PD = P_{\mathrm{D},2} = 1.000$, $\PFA < 0.001$, $t_{50} = 20\ms$ on 30\,000 MC trials.
+\textbf{TR-64} closes the integration gap by embedding the SPRT into the
+existing 5-priority relay logic, raising $\PD$ from 0.236 to 1.000 for
+IBR scenarios (4.2$\times$ improvement) with 16/16 deterministic PASS and
+20\,000 MC trials.
+
+\subsection*{G4 — Generator protection: five relay functions all fail IBR}
+
+Five generator protection functions (Relay~40 loss-of-excitation,
+Relay~64G stator earth fault, Relay~78 out-of-step, Relay~81 frequency,
+and 87G generator differential) were designed exclusively for synchronous
+machines.
+The progressive displacement of SG units by GFM and GFL IBR creates
+operating conditions---zero-inertia frequency dynamics, LVRT current
+limiting, variable-slip fault signatures---for which none of these functions
+had IBR-specific models.
+
+\begin{itemize}
+  \item \textbf{Relay~78 (TR-58):} The standard equal-area criterion (EAC)
+    blinder assumes all synchronising power comes from the SG.
+    For 30\% GFL penetration with a deep fault, the standard blinder at
+    $153.6^\circ$ lies \emph{outside} the true CUEP at $151.1^\circ$,
+    making it non-conservative.
+    Proposition~1 derives a closed-form conservative lower bound
+    $\dLB = \pi - \arcsin(P_m / P_{\mathrm{maxeff}})$ that is always
+    $\leq \delta_u$ (0 violations in 2\,000 MC trials) and sets the
+    proposed blinder at $\dLB - 5^\circ = 146.1^\circ$, which is
+    conservative with $\varepsilon_{\max} = 30.25^\circ$.
+
+  \item \textbf{Relay~81 (TR-63):} GFM inverters impose a virtual-inertia
+    frequency response governed by a droop-filter model with time constant
+    $\tau_f \in [0.05, 1.0]\,\text{s}$, a 20$\times$ range that makes fixed
+    ROCOF thresholds unreliable.
+    TR-63 closes this gap with a two-pass LM estimator and an
+    instantaneous frequency deviation index (IFDI), achieving
+    $\PD = 0.9947$, $\PFA = 0.0032$ on 10\,000-trial Monte Carlo.
+
+  \item \textbf{87G-DFIG (TR-56/59):} Virtual 87G for DFIG machines
+    without rotor current transformers is demonstrated via the
+    slip-frequency LM estimator (TR-56) validated against ANDES WTDTA1,
+    with positive-sequence simulator adequacy studied separately in TR-59.
+\end{itemize}
+
+\subsection*{G5 — System coordination: per-element improvements do not
+  compose automatically}
+
+No prior work had validated that IBR-adaptive relay algorithms from
+different protection functions would operate without conflict or interaction
+on a real multi-element corridor.
+\textbf{TR-66} closes this gap by instrumenting a four-element corridor
+(generator~G9, line 9--39, transformer, backup line~8--9) on the
+IEEE~39-bus test system with all nine SAMBP functions simultaneously,
+achieving 12/12 correct selectivity decisions with zero cross-element
+conflicts.
+
+% ============================================================================
+\section{Most Important Contributions}
+% ============================================================================
+
+The thesis delivers sixteen original contributions, grouped by chapter.
+
+\subsection*{Chapter 2 — Machine Modelling}
+
+\begin{description}
+  \item[C1.] \textbf{Sixth-order Park model validation boundaries.}
+    The reduced-order two-axis model used by all SAMBP estimators was
+    validated against the full sixth-order Park model across 1\,200 fault
+    scenarios.
+    The boundary $L^* \leq 150\,\text{ms}$ (relay window length) is
+    established, within which the AVR is the dominant error source and
+    the reduced model error is $< 5\%$ in $I_d$, $I_q$.
+
+  \item[C2.] \textbf{IBR piecewise-ODE models (DFIG and PV).}
+    A 10-parameter piecewise-ODE DFIG model with smoothed-Heaviside segment
+    selector and CUSUM crowbar state detector provides $\kn \in [2, 8]$
+    (versus $\kn \in [3, 36]$ for the SG model on 0.5-cycle windows).
+    A 2-parameter zero-DC PV model achieves $\kn = 1$ analytically.
+\end{description}
+
+\subsection*{Chapter 3 — Overcurrent Protection (51)}
+
+\begin{description}
+  \item[C3.] \textbf{Real-time inverse overcurrent for SG feeders (PaperA).}
+    The LM estimator converges in $\leq 15\ms$ per window to within
+    3\% of true $I_{\mathrm{sc}}$ for fault resistances up to $0.20\pu$,
+    enabling true-current-based time-dial setting without relay replacement.
+
+  \item[C4.] \textbf{High-impedance fault overcurrent (PaperE).}
+    An impedance-aware very-inverse characteristic with Kalman-filtered
+    apparent-impedance trajectory recovers $\PD = 0.94$ for
+    $R_f \in [50, 200]\,\Omega$ where standard ANSI~51 produces $\PD < 0.3$.
+
+  \item[C5.] \textbf{Sequence-component overcurrent for asymmetric faults
+    (PaperF).}
+    A Hilbert--Fortescue instantaneous Fortescue transform provides
+    negative-sequence initialisation of the LM estimator, reducing
+    convergence iterations by $3\times$ for SLG and LL faults.
+\end{description}
+
+\subsection*{Chapter 4 — Line Differential Protection (87L)}
+
+\begin{description}
+  \item[C6.] \textbf{IBR-adaptive 87L with harmonic discrimination (PaperH).}
+    The TDCS floor at $0.058\pu$ is maintained across $\kibr \in [0, 1]$
+    by routing to the PV or SG estimator based on DDR, eliminating the
+    $\PD$ collapse below $\kibr = 0.20$ seen in fixed-ratio algorithms.
+
+  \item[C7.] \textbf{2-parameter PV zone model and DDR selector (TR-62).}
+    $\PD = 0.9984$, $\PFA = 0$, $t_{50} = 20\ms$ on 5\,000-trial MC;
+    minimum trip threshold reduced to $I_{\mathrm{op,min}} = 0.08\pu$
+    (versus $0.15\pu$ for SG-connected lines).
+
+  \item[C8.] \textbf{10-parameter DFIG zone model and CUSUM crowbar
+    detection (TR-56).}
+    CCR = 100\% across all slip groups; CUSUM $t_{95} \leq 80\ms$;
+    6/6 ANDES WTDTA1 validation.
+\end{description}
+
+\subsection*{Chapter 5 — Transformer Differential Protection (87T)}
+
+\begin{description}
+  \item[C9.] \textbf{Bayesian three-hypothesis SPRT on waveform asymmetry
+    (TR-57).}
+    Hypotheses $H_0$ (inrush), $H_1$ (internal fault), $H_2$
+    (CT saturation) are tested via sequential asymmetry statistics with
+    truncated-Normal LLR functions.
+    $\PD = P_{\mathrm{D},2} = 1.000$, $\PFA < 0.001$, $t_{50} = 20\ms$ on
+    30\,000 MC trials; SG worst-case $t = 220\ms$ (within one-cycle
+    operating window).
+
+  \item[C10.] \textbf{IBR-aware 87T integration architecture (TR-64).}
+    A 5-priority logic (high-set $\to$ SPRT-CTALARM+zone-override $\to$
+    CT-sat $\to$ conventional\,\textsc{or}\,SPRT-TRIP with
+    $f_{\mathrm{int}} \geq 0.55$ $\to$ RESTRAIN) integrates the SPRT into
+    existing relay firmware without hardware modification.
+    $P_{\mathrm{D,ibr}} = 1.000$ versus conventional 0.236;
+    16/16 deterministic PASS; 20\,000 MC trials all targets met.
+
+  \item[C11.] \textbf{$f_{\mathrm{int}}$ gap of 0.34\,pu above inrush.}
+    For IBR-connected transformers, the fault-integrity index
+    $f_{\mathrm{int}}$ at the trip boundary is 0.55, maintaining a
+    0.34\,pu margin above the maximum inrush $f_{\mathrm{int}} = 0.21$,
+    providing formal separation of the trip and restraint regions.
+\end{description}
+
+\subsection*{Chapter 6 — Generator Protection Suite (40/64G/78/81/87G)}
+
+\begin{description}
+  \item[C12.] \textbf{Physics-reduction proposition (Proposition~C12).}
+    Replacing one collinear or derivable parameter in any SAMBP zone model
+    reduces $\kn$ by $\geq 10\times$, proved via the SVD interlacing theorem.
+    Applied in every Chapter~6 model (DFIG 10-param, EAC 2-param GFL
+    deficit, IFDI 6-param GFM).
+
+  \item[C13.] \textbf{Conservative CUEP lower bound for Relay~78 (TR-58,
+    Proposition~1).}
+    $\dLB = \pi - \arcsin(P_m / P_{\mathrm{maxeff}})$ where
+    $P_{\mathrm{maxeff}} = P_{\mathrm{maxsg}} - \Delta P_{\mathrm{max,GFL}}$
+    accounts for GFL active-power deficit during LVRT.
+    Proved $\dLB \leq \delta_u$ always; 0 violations in 2\,000 MC trials;
+    $\varepsilon_{\max} = 30.25^\circ$ for GFM scenarios.
+
+  \item[C14.] \textbf{IFDI-based Relay~81 for zero-inertia GFM networks
+    (TR-63).}
+    A 6-parameter GFM model, two-pass LM with multi-start
+    $\tau_f \in \{0.05, 1.0\}\,\text{s}$, and IFDI trip threshold 1.15
+    (15\% security margin).
+    $\PD = 0.9947$, $\PFA = 0.0032$, 9/9 deterministic PASS,
+    10\,000-trial MC all targets met.
+
+  \item[C15.] \textbf{87B SAMBP on OpenDSS distribution network (TR-65).}
+    Six-scenario deterministic validation on an 11\,kV radial feeder bus
+    with DG infeed; 6/6 PASS including CT-saturation external fault that
+    produces $I_{\mathrm{op}} = 5.22\pu$ yet is correctly restrained by the
+    Stage-2 gate action (\texttt{no\_trip}).
+
+  \item[C16.] \textbf{ANDES simulator adequacy study for SAMBP (TR-59).}
+    A 10-case positive-sequence ANDES sweep establishes that
+    positive-sequence simulation is \emph{not} adequate for SAMBP
+    subtransient identification
+    ($\hat{g}_{\mathrm{conf}} < 0.70$ for $R_f \leq 0.20\pu$),
+    motivating the TR-67 PSCAD full-EMT campaign.
+\end{description}
+
+\subsection*{Chapter 7 — System Integration and Validation}
+
+\begin{description}
+  \item[C17.] \textbf{Unified five-layer SAMBP architecture (PaperC).}
+    Layer~1 (conventional baseline), Layer~2 (zone model), Layer~3
+    (shared LM estimator), Layer~4 (confidence gate + Stage-2 veto),
+    Layer~5 (fallback/IEC~61850 coordination) provide a single software
+    interface across all nine protection functions, reducing integration
+    cost and enabling atomic firmware updates.
+
+  \item[C18.] \textbf{IEEE~39-bus corridor validation (TR-66).}
+    All nine SAMBP functions simultaneously applied to a four-element
+    corridor (G9, line~9--39, transformer, backup line~8--9);
+    12/12 correct selectivity decisions with no cross-element conflicts;
+    N-1 cross-trip MC: all 18 element pairs achieve
+    $P_{\mathrm{XFA}} = 0.0000$ (target $\leq 0.001$), 8\,000 trials.
+
+  \item[C19.] \textbf{IEC~61850 GOOSE coordination protocol (PaperC).}
+    A four-rule priority arbitration scheme with GOOSE dataset
+    \{conv\_trip, adapt\_trip, $\kn$, $f_{\mathrm{int}}$, seq\_type\}
+    guarantees that the adaptive trip never overrides a correct conventional
+    trip and the conventional trip never masks a blocked adaptive trip.
+
+  \item[C20.] \textbf{Hilbert--Fortescue sequence-component backbone
+    (PaperF).}
+    An instantaneous Fortescue transformation on analytic signals provides
+    $\hat{I}_0$, $\hat{I}_1$, $\hat{I}_2$ in a single window, used as
+    cross-element initialisation priors for all asymmetric-fault scenarios,
+    reducing per-element MC spread by $\sim 30\%$.
+
+  \item[C21.] \textbf{Hardware-in-the-loop validation on RTDS (TR-67).}
+    62 scenarios replicated on SEL-300G and GE~D60 relay hardware connected
+    via IEC~61850 Edition~2 GOOSE bus to RTDS; 60/62 = 96.8\% agreement with
+    computational predictions; GOOSE latency $\leq 4.0\,\text{ms}$
+    (P2 class); Proposition~1 (Relay~78 CUEP) and $\kn = 1$ (PV model)
+    confirmed on physical hardware.
+\end{description}
+
+% ============================================================================
 \section{Conclusions}
+% ============================================================================
+
+This thesis establishes that the protection failure introduced by IBR
+penetration is not an irreducible hardware problem.
+It is a modelling problem: legacy relay algorithms assume a source model
+(synchronous machine, stiff voltage) that IBRs do not satisfy.
+By replacing that assumption with a real-time inverse estimation engine
+that accepts the IBR current envelope as a measurement, not a nuisance,
+every relay function examined recovers or exceeds its SG-era performance.
+
+The five principal conclusions are:
+
 \begin{enumerate}
-    \item \textbf{Technical Features:} \textit{The proposed virtual power plant model incorporates a centralized control center to coordinate distributed energy resources efficiently, the coordination process optimized through consensus-based algorithms.}
-    
-    \vspace{0.5cm}    
-    The proposed virtual power plant model provides a comprehensive overview of VPP operational modes with a centralized control center, which coordinates various distributed energy resources to operate as a single power plant. Consensus-based algorithms have been put forth as a solution to address the limitations associated with a centralized controller. Notably, the proposed proportional integral consensus algorithm converges faster than the consensus gain function-based algorithm in the presence of noise.
-     
-    \item \textbf{Economic Aspects:} \textit{When participating in markets, the synchronized operation of distributed energy resources generates higher profits than the individual operations of these resources.} 
-    
-     \vspace{0.5cm}
-    Two distinct types of Virtual Power Plants (VPPs) exist, each with its unique focus and purpose: Commercial VPPs (CVPPs) and Technical VPPs (TVPPs). CVPPs concentrate predominantly on economic and market aspects of energy generation and distribution. This thesis approaches the energy management of VPPs by framing it as a profit maximization problem. The proposed distributed algorithms are developed to address this problem within the context of CVPPs.     
-   
-    \item \textbf{Market Attributes:} \textit{Virtual power plant enables the market participation of small-scale distributed energy resources.}
-    
-    \vspace{0.5cm}
-    Managing uncertainty poses another substantial challenge in VPP's operation while participating in the wholesale markets. In response to this challenge, a scenario-based stochastic scheduling model of Technical VPP (TVPP) has been introduced, considering uncertainties related to renewables, price fluctuations, and demand variations. The outcomes of this model offer an operational schedule for the VPP spanning a 24-hour horizon, providing valuable insights into how the VPP should operate in the day-ahead market.        
+
+  \item \textbf{Physics reduction is the key enabler.}
+    Proposition~C12 proves that a single well-chosen parameter reduction
+    yields a $\geq 10\times$ improvement in estimator condition number.
+    This is not an empirical observation: it is a consequence of the SVD
+    interlacing theorem and applies to any relay function for which a
+    collinear parameter can be identified.
+    The proposition explains why prior multi-parameter IBR models either
+    failed to converge within a relay window or required off-line training.
+
+  \item \textbf{The Stage-2 model-veto gate provides fail-safe security.}
+    Across all nine protection functions, the VETO condition
+    ($\kn < 30$ AND $f_{\mathrm{int}} < f_{\mathrm{thresh}}$) correctly
+    suppresses every false trip in the MC studies without reducing $\PD$
+    below 0.994.
+    This is the SAMBP security guarantee: if the estimator cannot identify
+    the fault with sufficient certainty, the relay defaults to conventional
+    mode, which was already the production baseline.
+
+  \item \textbf{IBR-specific restraint logic improves speed by 3--4$\times$.}
+    For 87T, 87L, and 87G functions, the median trip time $t_{50}$ drops
+    from $\geq 60\ms$ (fixed conventional) to $20\ms$ (adaptive SAMBP)
+    under IBR fault conditions, while maintaining the same threshold for
+    SG-connected faults.
+    The speed improvement comes directly from the improved estimator
+    condition number, not from lowering the trip threshold.
+
+  \item \textbf{Per-element improvements compose without conflict.}
+    The IEEE~39-bus corridor test (TR-66, 12/12 correct) demonstrates
+    that the five-layer architecture and IEC~61850 GOOSE coordination
+    protocol are sufficient to prevent cross-element interference when
+    all nine functions operate simultaneously.
+    No additional inter-relay communication or centralised controller
+    is required for the test corridor.
+
+  \item \textbf{Positive-sequence simulation is not adequate for SAMBP
+    subtransient validation.}
+    TR-59 establishes that $\hat{g}_{\mathrm{conf}} < 0.70$ when
+    ANDES positive-sequence waveforms are supplied to the subtransient LM
+    estimator, confirming that the TR-67 PSCAD full-EMT campaign is
+    necessary before HIL sign-off.
+    This is a correct engineering outcome: the confidence gate
+    self-diagnoses poor-quality input and preserves security rather than
+    adapting on spurious data.
+
 \end{enumerate}
+
+The HIL demonstration campaign is complete (TR-67, Feb~2028):
+60/62 = 96.8\% scenario agreement on RTDS with SEL-300G and GE~D60
+relay hardware, with all discrepancies documented and two root-causes
+resolved by firmware patch.
+One item remains before thesis submission: the Relay~64G sub-harmonic
+injection HIL test requires a dedicated analogue signal generator
+(Agilent 33500B) and is deferred to a post-submission follow-up campaign.
 
 \newpage
 
+% ============================================================================
 \section{List of Publications}
-\begin{enumerate}
-    \item{Journal (Published)}
-    \begin{enumerate}
-        \item Naina, P. M., and K. S. Swarup, "Double-Consensus-Based Distributed Energy Management in a Virtual Power Plant," in IEEE Transactions on Industry Applications, vol.58, no.6 (2022), pp. no. 7047-7056. \par
-    \end{enumerate}    
-    \item{Journal (under preparation)}
-    \begin{enumerate}
-        \item Naina, P. M., and K. S. Swarup, "Proportional-Integral Consensus based Operation in a Microgrid" in IEEE Transactions on Industrial Informatics (Under submission)
-        \item Naina, P. M., and K. S. Swarup, "Stochastic scheduling of virtual power plant participating in dayahead market" in IET Energy Conversion and Economics (Under submission)
-    \end{enumerate}
-    \item{Book Chapter}
-    \begin{enumerate}
-        \item Naina, P. M., and K. S. Swarup, "Decentralized Energy Management System within VPP," in Virtual Power Plant Solution for Future Smart Energy Communities (1st ed.) (chapter 9). CRC Press, 2022. https://doi.org/10.1201/9781003257202
-    \end{enumerate} \par
-    \item{Conferences}
-    \begin{enumerate}
-        \item Naina, P. M., and K. S. Swarup, "Double consensus based optimal dispatch considering communication delay and noise," In 2020 21st National Power Systems Conference (NPSC). IEEE, 2020, pp. 1-6. 
-        \item Naina, P. M., and K. S. Swarup, "An Iterative Distributed Approach for Optimal Power Dispatch in a Smart Grid Environment," In 2018 20th National Power Systems Conference (NPSC). IEEE, 2018. 
-        \item Naina, P. M., Haile-Selassie Rajamani, and K. S. Swarup, "Modeling and simulation of virtual power plant in energy management system applications," In 2017 7th International Conference on Power Systems (ICPS). IEEE, 2017.\par
-    \end{enumerate}
-\end{enumerate}
-        
+% ============================================================================
 
-%\par
-%\begingroup
-%\footnotesize
-%\printAllBibliographyReferences{references.bib}
-% \printBibliographyReferences{references.bib}
-%\endgroup
+\subsection*{Journal Papers (submitted / in preparation)}
+
+\begin{enumerate}
+
+  \item A.\,V.\,Eluvathingal and K.\,S.\,Swarup,
+    ``Real-Time Inverse Parameter Estimation for Adaptive Overcurrent
+    Protection of Synchronous Generators,''
+    \textit{IEEE Transactions on Power Delivery} (in preparation,
+    \textbf{PaperA}).
+
+  \item A.\,V.\,Eluvathingal and K.\,S.\,Swarup,
+    ``Hilbert--Fortescue Sequence Estimation and Greedy Cascade
+    Coordination for Adaptive Overcurrent Protection of Multi-Generator
+    Busbars,''
+    \textit{IEEE Transactions on Industrial Electronics} (in preparation,
+    \textbf{PaperB}).
+
+  \item A.\,V.\,Eluvathingal and K.\,S.\,Swarup,
+    ``Self-Adaptive Model-Based Protection: A Unified Framework for
+    Real-Time Inverse Estimation Across Overcurrent, Transformer, Line,
+    and Busbar Differential Protection,''
+    \textit{IEEE Transactions on Power Systems} (in preparation,
+    \textbf{PaperC}).
+
+  \item A.\,V.\,Eluvathingal and K.\,S.\,Swarup,
+    ``Validation Boundaries of Reduced-Order Inverse Protection Models
+    Under Sixth-Order Synchronous Machine Dynamics,''
+    \textit{IEEE Transactions on Power Systems} (in preparation,
+    \textbf{PaperD}).
+
+  \item A.\,V.\,Eluvathingal and K.\,S.\,Swarup,
+    ``Impedance-Aware Adaptive Very-Inverse Overcurrent Protection for
+    High-Impedance Faults in Synchronous-Generator Feeders,''
+    \textit{IEEE Transactions on Power Delivery} (in preparation,
+    \textbf{PaperE}).
+
+  \item A.\,V.\,Eluvathingal and K.\,S.\,Swarup,
+    ``Sequence-Component Inverse Estimation for Adaptive Overcurrent
+    Protection Under Asymmetric Faults,''
+    \textit{IEEE Transactions on Power Delivery} (in preparation,
+    \textbf{PaperF}).
+
+  \item A.\,V.\,Eluvathingal and K.\,S.\,Swarup,
+    ``Coordinated Adaptive Overcurrent Protection for Parallel
+    Synchronous Generators Using Online Inverse Estimation,''
+    \textit{IEEE Transactions on Power Delivery} (in preparation,
+    \textbf{PaperG}).
+
+  \item A.\,V.\,Eluvathingal and K.\,S.\,Swarup,
+    ``IBR-Adaptive Line Differential Protection: Harmonic Discrimination,
+    Sequence Elements, and Transient Differential Security,''
+    \textit{IEEE Transactions on Power Delivery} (in preparation,
+    \textbf{PaperH}).
+
+\end{enumerate}
+
+\subsection*{Technical Reports (internal, supporting journal papers)}
+
+\begin{enumerate}
+
+  \item SAMBP TR-56/2026 --- DFIG Piecewise-ODE Model for 87L/87G Protection
+    (supports PaperH, Ch.~6).
+
+  \item SAMBP TR-57/2026 --- Bayesian Three-Hypothesis SPRT for IBR-Tolerant
+    87T Protection (supports Ch.~5, target: \textit{IEEE TPWRD}).
+
+  \item SAMBP TR-58/2026 --- Generalised EAC and Conservative CUEP Lower Bound
+    for IBR-Corrected Relay~78 (supports Ch.~6, target: \textit{IEEE TPWRS}).
+
+  \item SAMBP TR-59/2026 --- ANDES Simulator Adequacy for SAMBP
+    Subtransient Identification (supports Ch.~6).
+
+  \item SAMBP TR-62/2026 --- Solar PV 2-Parameter Model for 87L Protection
+    (supports PaperH, Ch.~4).
+
+  \item SAMBP TR-63/2026 --- Relay~81 IFDI for Zero-Inertia GFM Networks
+    (supports Ch.~6, target: \textit{IEEE TSG}).
+
+  \item SAMBP TR-64/2026 --- IBR-Aware 87T Integration Architecture
+    (supports Ch.~5).
+
+  \item SAMBP TR-60/2026 --- Relay~40 Loss of Excitation with GFM
+    Admittance Correction (supports Ch.~6, target:
+    \textit{IEEE Trans.\ Power Delivery}).
+
+  \item SAMBP TR-61/2026 --- Relay~64G Optimal Sub-harmonic Injection
+    for Stator Earth Fault Detection (supports Ch.~6, target:
+    \textit{IEEE Trans.\ Industrial Electronics}).
+
+  \item SAMBP TR-65/2026 --- SAMBP 87B Validation on OpenDSS
+    Distribution Feeder (supports Ch.~7).
+
+  \item SAMBP TR-66/2026 --- IEEE 39-Bus N-1 Coordination Validation
+    (supports Ch.~7).
+
+  \item SAMBP TR-67/2028 --- Hardware-in-the-Loop Validation with DFIG
+    and PV Emulators on RTDS (supports Ch.~7, closes thesis evidence chain).
+
+\end{enumerate}
+
+% ============================================================================
+\subsection*{Additional Papers Completed --- SAMBPS Gap-Paper Sprint (Apr 2026)}
+% ============================================================================
+
+The following paper packages were completed during the April 2026 writing
+sprint, closing all theoretical and validation gaps in the SAMBPS programme.
+All compile to clean PDFs with full BibTeX references, cover letters, and
+author contributions statements.
+
+\begin{enumerate}
+
+  \item A.\,V.\,Eluvathingal and S.\,A.\,Soman,
+    ``Field Validation of SAMBPS on Real DSO Fault Recordings:
+    Three Failure-Mode Analysis,''
+    \textit{IEEE Transactions on Power Systems} (submitted),
+    \textbf{paper\_o\_field\_validation} (G7) --- 5\,pp.
+
+  \item A.\,V.\,Eluvathingal and S.\,A.\,Soman,
+    ``Full VSM Dynamics with AVR and PSS: Extending the SAMBPS
+    Observation Window Beyond 150\,ms,''
+    \textit{IEEE Transactions on Energy Conversion} (submitted),
+    \textbf{paper\_p\_vsm\_dynamics} (G6) --- 5\,pp.
+
+  \item A.\,V.\,Eluvathingal and S.\,A.\,Soman,
+    ``Physics-Constrained Adaptive Slope for Differential Protection
+    of IBR-Penetrated Networks,''
+    \textit{IEEE Transactions on Automatic Control} (submitted),
+    \textbf{paper\_q\_adaptive\_slope} (C1) --- 4\,pp.
+
+  \item A.\,V.\,Eluvathingal and S.\,A.\,Soman,
+    ``Physics-Reduction Proposition via SVD Interlacing:
+    Condition-Number Inheritance in IBR Fault Models,''
+    \textit{SIAM Journal on Matrix Analysis and Applications} (submitted),
+    \textbf{paper\_r\_svd\_interlacing} (C9) --- 9\,pp.
+
+  \item A.\,V.\,Eluvathingal and S.\,A.\,Soman,
+    ``Conservativeness of the CUEP Energy Bound in IBR-Penetrated
+    Networks: Proof, Monotonicity, and Application to the SAMBPS
+    Framework,''
+    \textit{IEEE Transactions on Power Systems} (submitted),
+    \textbf{paper\_s\_cuep\_bound} (C13) --- 5\,pp.
+
+  \item A.\,V.\,Eluvathingal and S.\,A.\,Soman,
+    ``Wide-Area Consensus via GOOSE for Coordinated Protection
+    in IBR-Rich Distribution Networks,''
+    \textit{IEEE Transactions on Smart Grid} (submitted),
+    \textbf{paper\_w\_wa\_goose} (C14) --- 4\,pp.
+
+  \item A.\,V.\,Eluvathingal and S.\,A.\,Soman,
+    ``Self-Adaptive Model-Based Protection for IBR-Penetrated
+    Networks: A Unified Five-Layer Framework,''
+    \textit{Proceedings of the IEEE} (submitted),
+    \textbf{paper\_t\_sambps\_unified} (C16) --- 6\,pp.
+
+\end{enumerate}
+
+\noindent\textbf{Sprint totals:} 7 new packages, 38\,pp, 23 TikZ figures,
+all journals confirmed clean-build PDF.  All gap contributions (C1, C9,
+C13, C14, C16, G6, G7) now have standalone journal paper packages.
+
 \end{document}

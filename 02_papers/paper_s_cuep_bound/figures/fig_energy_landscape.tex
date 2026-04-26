@@ -1,0 +1,82 @@
+% fig_energy_landscape.tex
+% Energy function cross-section V(theta) along fault-on trajectory
+% Shows: SEP, CUEP, true stability boundary, fault-cleared state,
+%        conservatism gap Delta_V = V_cr - V_cuep
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  width  = 0.92\columnwidth,
+  height = 5.6cm,
+  xlabel = {Angle $\delta$ along fault-on trajectory (rad)},
+  ylabel = {Energy function $V(\delta)$ (pu)},
+  xmin   = 0.0, xmax = 3.4,
+  ymin   = -0.5, ymax = 4.0,
+  xtick  = {0,0.5,1.0,1.5,2.0,2.5,3.0},
+  ytick  = {-0.5,0,0.5,1.0,1.5,2.0,2.5,3.0,3.5},
+  legend pos = north west,
+  legend style={font=\scriptsize,cells={anchor=west}},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+  clip=false,
+]
+
+%% Energy function V(delta): well at SEP, rises to saddle at CUEP
+%% V(d) = -cos(d) - d*sin(d_s) + constant, stylised
+\addplot[thick,thesisblue,mark=none,domain=0.05:3.35,samples=150]
+  { -0.3 + 1.8*(1-cos(deg(x-0.6))) - 0.9*(x-0.6)*sin(deg(0.6)) };
+\addlegendentry{Energy $V(\delta)$ (pure SG, $\kibr{=}0$)};
+
+%% IBR-modified energy: saddle shifts and lowers (IBR current limiting)
+\addplot[thick,thesisorange,densely dashed,mark=none,domain=0.05:3.35,samples=150]
+  { -0.3 + 1.8*(1-cos(deg(x-0.6))) - 0.9*(x-0.6)*sin(deg(0.6))
+    - 0.18*max(0, x-1.5)^2 };
+\addlegendentry{Modified $V_{\rm ibr}(\delta)$ ($\kibr{=}0.45$)};
+
+%% SEP marker
+\draw[thesisgreen,thick] (axis cs:0.6,-0.5) -- (axis cs:0.6,0.12);
+\node[thesisgreen,font=\tiny,anchor=south] at (axis cs:0.6,0.12) {SEP};
+\addplot[only marks,mark=*,mark size=3pt,thesisgreen]
+  coordinates {(0.6,-0.30)};
+
+%% CUEP (pure SG): saddle of blue curve
+\draw[thesisred,thick,dashed] (axis cs:2.62,-0.5) -- (axis cs:2.62,3.62);
+\node[thesisred,font=\tiny,rotate=90,anchor=south east]
+  at (axis cs:2.55,0.2) {CUEP ($\kibr{=}0$)};
+\addplot[only marks,mark=square*,mark size=2.5pt,thesisred]
+  coordinates {(2.62,3.62)};
+
+%% CUEP-IBR: saddle of orange curve (shifted inward, lower energy)
+\draw[thesisorange,thick,dotted] (axis cs:2.38,-0.5) -- (axis cs:2.38,3.14);
+\node[thesisorange,font=\tiny,rotate=90,anchor=south west]
+  at (axis cs:2.43,0.2) {CUEP$_{\rm ibr}$ ($\kibr{=}0.45$)};
+\addplot[only marks,mark=square*,mark size=2.5pt,thesisorange]
+  coordinates {(2.38,3.14)};
+
+%% True stability boundary V_cr (higher than CUEP for SG)
+\draw[thesisgray,thick,dotted] (axis cs:0.0,3.80) -- (axis cs:3.35,3.80);
+\node[thesisgray,font=\tiny,anchor=west] at (axis cs:3.38,3.80)
+  {$V_{\rm cr}$ (true)};
+
+%% V_CUEP level line (pure SG)
+\draw[thesisred,thin,dotted] (axis cs:0.0,3.62) -- (axis cs:3.35,3.62);
+\node[thesisred,font=\tiny,anchor=west] at (axis cs:3.38,3.62)
+  {$V_{\rm cuep}$};
+
+%% Fault-cleared state on SG curve
+\addplot[only marks,mark=triangle*,mark size=3pt,thesisblue]
+  coordinates {(1.45,1.02)};
+\node[thesisblue,font=\tiny,anchor=south west] at (axis cs:1.45,1.08)
+  {Fault cleared ($V_0 < V_{\rm cuep}$: stable)};
+
+%% Conservatism gap annotation
+\draw[thesisgray,<->,thick]
+  (axis cs:3.15,3.62) -- node[right,font=\tiny,align=left]{$\Delta V$\\(conservatism)}
+  (axis cs:3.15,3.80);
+
+%% IBR conservatism gap
+\draw[thesisorange,<->,thick]
+  (axis cs:0.28,3.14) -- node[left,font=\tiny,align=right]{$\Delta V_{\rm ibr}$}
+  (axis cs:0.28,3.62);
+
+\end{axis}
+\end{tikzpicture}

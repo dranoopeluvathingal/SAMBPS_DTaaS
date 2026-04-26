@@ -1,0 +1,69 @@
+% fig_pd_pfa_drift.tex — P_D and P_FA: fixed-λ vs adaptive-λ across four drift scenarios
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  ybar,
+  width  = 0.92\columnwidth,
+  height = 5.2cm,
+  ylabel = {Probability},
+  ymin=0, ymax=1.05,
+  ytick={0,0.2,0.4,0.6,0.8,1.0},
+  symbolic x coords={Solar diurnal, Cloud transient, Wind random walk, Topology step},
+  xtick=data,
+  x tick label style={font=\scriptsize,rotate=18,anchor=east},
+  bar width=5pt,
+  enlarge x limits=0.18,
+  legend pos=north east,
+  legend style={font=\scriptsize,cells={anchor=west}},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+  clip=false,
+]
+
+%% P_D fixed λ = 0.995
+\addplot[fill=thesisgray!50,draw=thesisgray]
+  coordinates {
+    (Solar diurnal,     0.847)
+    (Cloud transient,   0.862)
+    (Wind random walk,  0.831)
+    (Topology step,     0.789)
+  };
+\addlegendentry{$P_D$: fixed $\lambda{=}0.995$};
+
+%% P_D adaptive
+\addplot[fill=thesisblue!70,draw=thesisblue]
+  coordinates {
+    (Solar diurnal,     0.991)
+    (Cloud transient,   0.994)
+    (Wind random walk,  0.988)
+    (Topology step,     0.981)
+  };
+\addlegendentry{$P_D$: adaptive $\lambda(t)$};
+
+%% P_FA fixed λ = 0.995
+\addplot[fill=thesisred!50,draw=thesisred]
+  coordinates {
+    (Solar diurnal,     0.028)
+    (Cloud transient,   0.032)
+    (Wind random walk,  0.041)
+    (Topology step,     0.055)
+  };
+\addlegendentry{$P_{\rm FA}$: fixed $\lambda{=}0.995$};
+
+%% P_FA adaptive (zero for all — small positive marker for visibility)
+\addplot[fill=thesisgreen!60,draw=thesisgreen]
+  coordinates {
+    (Solar diurnal,     0.000)
+    (Cloud transient,   0.000)
+    (Wind random walk,  0.001)
+    (Topology step,     0.002)
+  };
+\addlegendentry{$P_{\rm FA}$: adaptive $\lambda(t)$};
+
+%% P_D target line
+\addplot[thesisblue,thick,dotted]
+  coordinates {(Solar diurnal,0.97)(Topology step,0.97)};
+\node[thesisblue,font=\tiny] at (axis cs:Topology step,1.00) {$P_D$ target};
+
+\end{axis}
+\end{tikzpicture}

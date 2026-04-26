@@ -1,0 +1,98 @@
+% fig_vsm_block.tex — VSM augmented state model: machine + AVR + PSS + grid interface
+\begin{tikzpicture}[
+  >=Stealth,
+  block/.style={draw,fill=thesisblue!12,rounded corners=3pt,
+                minimum width=2.0cm,minimum height=0.85cm,
+                font=\scriptsize,align=center},
+  sum/.style  ={draw,circle,fill=thesisgray!15,
+                inner sep=0pt,minimum size=0.55cm,font=\scriptsize},
+  mblock/.style={draw,fill=thesisorange!18,rounded corners=3pt,
+                 minimum width=2.2cm,minimum height=0.85cm,
+                 font=\scriptsize,align=center},
+  gblock/.style={draw,fill=thesisgreen!18,rounded corners=3pt,
+                 minimum width=2.0cm,minimum height=0.85cm,
+                 font=\scriptsize,align=center},
+  arr/.style  ={->,thick},
+  sarr/.style ={->,thin,gray},
+]
+
+%% ── Machine core (6th-order Park dq) ────────────────────────────────────────
+\node[mblock,minimum width=2.6cm,minimum height=2.0cm]
+  (machine) {6th-order\\Park $dq$\\machine};
+
+%% ── AVR chain ────────────────────────────────────────────────────────────────
+\node[sum] (avrsum) [right=2.4cm of machine,yshift=0.6cm] {$\Sigma$};
+\node[block] (avr1) [right=0.6cm of avrsum] {Amplifier\\$K_A/(1{+}sT_A)$};
+\node[block] (avr2) [right=0.7cm of avr1]   {Exciter\\$K_E/(s T_E)$};
+
+%% ── PSS chain ────────────────────────────────────────────────────────────────
+\node[block] (pss1) [above=0.5cm of avr1]
+  {Washout\\$sT_w/(1{+}sT_w)$};
+\node[block] (pss2) [right=0.7cm of pss1]
+  {Lead--lag\\$(1{+}sT_1)/(1{+}sT_2)$};
+
+%% ── Grid interface ───────────────────────────────────────────────────────────
+\node[gblock] (grid) [below=1.0cm of machine]
+  {PLL / droop\\$\omega$-$V$ interface};
+\node[gblock] (inv)  [right=2.4cm of grid]
+  {VSM virtual\\impedance $Z_v$};
+
+%% ── Measurement block ────────────────────────────────────────────────────────
+\node[block] (meas) [right=2.4cm of machine,yshift=-0.55cm]
+  {Terminal\\measurement\\$V_t,\,I_t,\,\omega$};
+
+%% ── State annotation ─────────────────────────────────────────────────────────
+\node[font=\tiny,thesisblue,align=left,anchor=west]
+  at ([xshift=-0.05cm]machine.east |- machine.south) {};
+
+%% Machine → measurement
+\draw[arr,thesisblue] (machine.east |- meas.west) -- (meas.west);
+
+%% Measurement → AVR sum (+)
+\draw[arr] (meas.north) -- node[right,font=\tiny]{$V_t$}
+  (meas.north |- avrsum.south) -- (avrsum.south);
+
+%% Vref into AVR sum
+\draw[arr] ([xshift=-0.8cm]avrsum.west) -- node[above,font=\tiny]{$V_{\rm ref}$} (avrsum.west);
+
+%% AVR sum → amplifier → exciter
+\draw[arr] (avrsum.east) -- (avr1.west);
+\draw[arr] (avr1.east)   -- (avr2.west);
+
+%% Exciter → machine (Efd)
+\draw[arr,thesisorange] (avr2.east) -| node[right,font=\tiny,xshift=1pt]{$E_{fd}$}
+  ([xshift=1.0cm]avr2.east) |- (machine.north east);
+
+%% PSS: speed deviation → washout → lead-lag → sum at AVR
+\draw[arr] (machine.north) |- node[above,font=\tiny,pos=0.3]{$\Delta\omega$} (pss1.west);
+\draw[arr] (pss1.east) -- (pss2.west);
+\draw[arr,thesisred] (pss2.east) -| node[right,font=\tiny]{$V_{\rm PSS}$}
+  ([xshift=0.35cm]pss2.east) |- (avrsum.north);
+
+%% Grid interface connections
+\draw[arr] (machine.south) -- (grid.north);
+\draw[arr] (grid.east) -- (inv.west);
+\draw[arr,thesisgreen] (inv.east) -- node[above,font=\tiny]{to grid} ++(0.7,0);
+
+%% Measurement → SAMBPS
+\draw[arr,thesisgray,dashed] (meas.east) -- node[above,font=\tiny]{to L1\\estimator}
+  ++(1.2,0);
+
+%% State count annotations
+\node[font=\tiny,thesisblue,align=center,draw=thesisblue!30,
+      fill=white,rounded corners=2pt,inner sep=2pt]
+  at ([yshift=0.3cm]machine.north west) {States:\\$\psi_d,\psi_q,$\\$\psi_F,\psi_D,$\\$\psi_G,\psi_Q$};
+
+\node[font=\tiny,thesisorange,align=center,draw=thesisorange!30,
+      fill=white,rounded corners=2pt,inner sep=2pt]
+  at ([xshift=0.6cm,yshift=-0.2cm]avr2.south) {State: $E_{fd}$};
+
+\node[font=\tiny,thesisred,align=center,draw=thesisred!30,
+      fill=white,rounded corners=2pt,inner sep=2pt]
+  at ([yshift=0.35cm]pss2.north) {States:\\$x_w,\,x_1$};
+
+\node[font=\tiny,thesisgreen,align=center,draw=thesisgreen!30,
+      fill=white,rounded corners=2pt,inner sep=2pt]
+  at ([yshift=-0.35cm]grid.south) {States:\\$\theta_v,\,\delta_v$};
+
+\end{tikzpicture}

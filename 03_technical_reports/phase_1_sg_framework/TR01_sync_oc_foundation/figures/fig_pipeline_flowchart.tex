@@ -60,21 +60,19 @@
 \node[dec,    below=0.6cm of S7] (D1)
   {$\gamma \geq \gamma_{th}$?};
 
-% ---- Right branch (accept) --------------------------------------------------
+% ---- Right branch (accept) — flows downward from diamond -------------------
 \node[proc2,  right=2.0cm of D1] (S8a)
   {\textbf{Accept}\\Map $\hat{\boldsymbol{\theta}}\!\to\!(I_p^*,TMS^*)$\\Bounded update};
 
-\node[proc2,  right=2.0cm of S7] (S8b)
+\node[proc2,  below=0.45cm of S8a] (S8b)
   {\textbf{Adaptive} OC relay\\$t_{trip}^{adapt}$};
 
 % ---- Left branch (reject) ---------------------------------------------------
 \node[proc,   left=2.0cm of D1]  (S8c)
   {\textbf{Reject}\\Retain fixed settings\\$I_p,\;TMS$};
 
-% ---- Merge node + Step 9/10 -------------------------------------------------
-\coordinate (merge) at ($(D1)+(0,-2.0)$);
-
-\node[proc,   below=2.0cm of D1] (S9)
+% ---- Step 9/10 below decision row -------------------------------------------
+\node[proc,   below=3.2cm of D1] (S9)
   {\textbf{Step 9}\\Metrics: RMSE, $R^2$, $\gamma$,\\$\Delta t_{trip}$, security};
 
 \node[proc2,  below=of S9]  (S10)
@@ -95,12 +93,11 @@
 % ---- Decision branches ------------------------------------------------------
 \draw[arr] (D1.east) -- node[lbl, above]{Yes} (S8a.west);
 \draw[arr] (D1.west) -- node[lbl, above]{No}  (S8c.east);
-\draw[arr] (S8a.north) -- (S8b.south);
+\draw[arr] (S8a)     -- (S8b);
 
-% ---- Merge to Step 9 --------------------------------------------------------
-\draw[arr] (S8a.south) -- ++(0,-0.4) -- ($(S9.north east)+(0,0)$);
-\draw[arr] (S8c.south) -- ++(0,-0.6) -| (S9.west);
-\draw[arr] (S8b.south) -- ++(0,-0.4) -| (S9.east);
+% ---- Merge to Step 9 — clean right-angle paths ------------------------------
+\draw[arr] (S8b.south) -- ++(0,-0.5) -| (S9.east);
+\draw[arr] (S8c.south) -- ++(0,-0.5) -| (S9.west);
 
 \draw[arr] (S9)  -- (S10);
 \draw[arr] (S10) -- (E);

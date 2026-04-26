@@ -1,0 +1,67 @@
+% fig_relay64g_fopt.tex — Relay 64G P_D and P_FA vs injection frequency
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  width  = 0.88\columnwidth,
+  height = 5.0cm,
+  xlabel = {Injection frequency $f$ (Hz)},
+  ylabel = {Probability},
+  xmin=15, xmax=40,
+  ymin=0, ymax=1.12,
+  xtick={15,20,25,27,30,35,40},
+  xticklabels={15,20,25,$f^*$,30,35,40},
+  ytick={0,0.2,0.4,0.6,0.8,1.0},
+  legend pos=south east,
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+]
+
+%% P_D (detection probability) — rises then drops above ~35 Hz
+\addplot[thick,thesisblue,mark=*,mark size=2pt,mark options={thesisblue}]
+  coordinates {
+    (15, 0.813)
+    (20, 0.813)
+    (25, 0.970)
+    (27, 1.000)
+    (30, 1.000)
+    (35, 0.990)
+    (40, 0.931)
+  };
+\addlegendentry{$P_D$ (dependability)};
+
+%% P_FA (false alarm rate) — high near 20 Hz IBR noise, drops above
+\addplot[thick,thesisred,mark=square,mark size=2pt,
+         dashed,mark options={thesisred}]
+  coordinates {
+    (15, 0.780)
+    (20, 0.819)
+    (25, 0.180)
+    (27, 0.000)
+    (30, 0.000)
+    (35, 0.000)
+    (40, 0.000)
+  };
+\addlegendentry{$P_{\rm FA}$ (false alarm)};
+
+%% Conventional frequency marker
+\draw[thesisgray,thick,dotted]
+  (axis cs:20,0) -- (axis cs:20,1.12)
+  node[above,font=\tiny,thesisgray]{$f_{\rm conv}$};
+
+%% Optimal frequency marker
+\draw[thesisorange,thick,dotted]
+  (axis cs:27,0) -- (axis cs:27,1.12)
+  node[above,font=\tiny,thesisorange]{$f^*{=}27$\,Hz};
+
+%% IBR noise band annotation
+\node[draw=thesisgray!50,fill=gray!8,rounded corners=2pt,
+      font=\tiny,align=center,inner sep=2pt]
+  at (axis cs:20,0.42)
+  {IBR noise\\$f_{\rm sub}{\in}[15,25]$\,Hz};
+
+%% P_D target line
+\addplot[thesisgreen,thin,dotted,domain=15:40,samples=2] {0.970};
+\node[thesisgreen,font=\tiny,right] at (axis cs:36.5,0.985) {Target};
+
+\end{axis}
+\end{tikzpicture}

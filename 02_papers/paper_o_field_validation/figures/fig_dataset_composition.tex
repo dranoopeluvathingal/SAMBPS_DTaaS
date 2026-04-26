@@ -1,0 +1,50 @@
+% fig_dataset_composition.tex — Dataset: fault type × k_ibr quartile stacked bar
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  ybar stacked,
+  width  = 0.92\columnwidth,
+  height = 5.0cm,
+  ylabel = {Number of recordings},
+  ymin=0, ymax=80,
+  ytick={0,20,40,60,80},
+  symbolic x coords={3PH, LL, SLG, LLG, HIF},
+  xtick=data,
+  x tick label style={font=\small},
+  bar width=14pt,
+  enlarge x limits=0.20,
+  legend pos=north east,
+  legend style={font=\scriptsize,cells={anchor=west}},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+]
+
+%% Q1: k_ibr in [0.12, 0.32)
+\addplot[fill=lightblue!80,draw=thesisblue]
+  coordinates {(3PH,4)(LL,8)(SLG,18)(LLG,5)(HIF,6)};
+\addlegendentry{$\kibr \in [0.12,\,0.32)$};
+
+%% Q2: k_ibr in [0.32, 0.55)
+\addplot[fill=thesisblue!60,draw=thesisblue!80]
+  coordinates {(3PH,6)(LL,12)(SLG,27)(LLG,7)(HIF,7)};
+\addlegendentry{$\kibr \in [0.32,\,0.55)$};
+
+%% Q3: k_ibr in [0.55, 0.72)
+\addplot[fill=thesisorange!60,draw=thesisorange!80]
+  coordinates {(3PH,5)(LL,7)(SLG,18)(LLG,5)(HIF,3)};
+\addlegendentry{$\kibr \in [0.55,\,0.72)$};
+
+%% Q4: k_ibr in [0.72, 0.89]
+\addplot[fill=thesisred!55,draw=thesisred!80]
+  coordinates {(3PH,3)(LL,4)(SLG,9)(LLG,2)(HIF,1)};
+\addlegendentry{$\kibr \in [0.72,\,0.89]$};
+
+%% Total annotations
+\node[font=\tiny,above] at (axis cs:3PH,18)   {18};
+\node[font=\tiny,above] at (axis cs:LL,31)     {31};
+\node[font=\tiny,above] at (axis cs:SLG,72)    {72};
+\node[font=\tiny,above] at (axis cs:LLG,19)    {19};
+\node[font=\tiny,above] at (axis cs:HIF,17)    {17};
+
+\end{axis}
+\end{tikzpicture}

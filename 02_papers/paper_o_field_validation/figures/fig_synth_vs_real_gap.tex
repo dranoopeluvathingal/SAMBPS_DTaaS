@@ -1,0 +1,69 @@
+% fig_synth_vs_real_gap.tex — Accuracy and P_FA: synthetic vs real (before and after correction)
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  ybar,
+  width  = 0.92\columnwidth,
+  height = 5.0cm,
+  ylabel = {Performance metric},
+  ymin=0, ymax=1.05,
+  ytick={0,0.2,0.4,0.6,0.8,1.0},
+  symbolic x coords={Zone acc., PD-3PH, PD-SLG, PD-HIF, PFA},
+  xticklabels={Zone acc., $P_D$ (3PH), $P_D$ (SLG), $P_D$ (HIF), $P_{\rm FA}$},
+  xtick=data,
+  x tick label style={font=\scriptsize,rotate=18,anchor=east},
+  bar width=5pt,
+  enlarge x limits=0.15,
+  legend pos=north east,
+  legend style={font=\scriptsize,cells={anchor=west}},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+  clip=false,
+]
+
+%% Synthetic (MC)
+\addplot[fill=thesisgray!50,draw=thesisgray]
+  coordinates {
+    (Zone acc., 0.982)
+    (PD-3PH,    0.994)
+    (PD-SLG,    0.978)
+    (PD-HIF,    0.941)
+    (PFA,       0.010)
+  };
+\addlegendentry{Synthetic MC (baseline)};
+
+%% Real (no correction)
+\addplot[fill=thesisred!50,draw=thesisred]
+  coordinates {
+    (Zone acc., 0.892)
+    (PD-3PH,    0.944)
+    (PD-SLG,    0.903)
+    (PD-HIF,    0.765)
+    (PFA,       0.021)
+  };
+\addlegendentry{Real field (no correction)};
+
+%% Real (with corrections F1–F3)
+\addplot[fill=thesisblue!65,draw=thesisblue]
+  coordinates {
+    (Zone acc., 0.955)
+    (PD-3PH,    0.981)
+    (PD-SLG,    0.966)
+    (PD-HIF,    0.882)
+    (PFA,       0.014)
+  };
+\addlegendentry{Real field (F1--F3 corrected)};
+
+%% 95% target line
+\addplot[thesisgreen,thick,dotted]
+  coordinates {(Zone acc.,0.95)(PFA,0.95)};
+\node[thesisgreen,font=\tiny] at (axis cs:PFA,0.98) {95\%};
+
+%% Annotation: synthetic-real gap
+\node[draw=thesisred!40,fill=white,rounded corners=2pt,
+      font=\tiny,align=center,inner sep=2pt,text width=1.6cm]
+  at (axis cs:PD-HIF,0.60)
+  {Gap: $-17.6\%$\\HIF worst case};
+
+\end{axis}
+\end{tikzpicture}

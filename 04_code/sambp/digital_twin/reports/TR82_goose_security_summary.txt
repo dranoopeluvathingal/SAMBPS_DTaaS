@@ -1,0 +1,68 @@
+========================================================================
+TR-82  CYBER-RESILIENT GOOSE — DIGITAL TWIN VALIDATION REPORT
+========================================================================
+
+Standard: IEC 61850-8-1 (GOOSE) + IEC 62351-6:2020 (Security)
+
+────────────────────────────────────────────────────────────────────────
+WP 82.1  GOOSE ANOMALY DETECTOR  (integration/goose_anomaly.py)
+────────────────────────────────────────────────────────────────────────
+
+Attack taxonomy and detection method:
+  REPLAY         — message age > 5s OR stnum regression
+  TIMING_FLOOD   — inter-arrival < 0.5 ms
+  SEQUENCE_SKIP  — stnum/sqnum discontinuity rules
+  CONTENT_ANOMALY— Isolation Forest (contamination=0.005) OR
+                   dataset numeric range > 3σ above training bound
+
+Feature vector (5-D):
+  f0: |stnum_delta|               state number change
+  f1: |sqnum_delta - 1|            sqnum deviation from expected +1
+  f2: log(inter_arr/exp_retx + 1)  log-normalised timing
+  f3: Shannon entropy (dataset bytes)
+  f4: log(1 + numeric range of dataset)
+
+False-positive rate (normal traffic, n=263):
+  fp=1, rate=0.38%  (PASS — threshold 1%)
+  Learned max log_range bound: 0.703
+
+Attack detection (post-training):
+  Attack                Detected    Severity
+  ---------------------------------------------
+  REPLAY                YES         CRITICAL
+  TIMING_FLOOD          YES         CRITICAL
+  SEQUENCE_SKIP         YES         HIGH
+  CONTENT_ANOMALY       YES         HIGH
+
+────────────────────────────────────────────────────────────────────────
+WP 82.2  IEC 62351-6 HMAC-SHA256 SECURITY  (integration/goose_security.py)
+────────────────────────────────────────────────────────────────────────
+
+MAC input: gocb_ref ‖ app_id(4B) ‖ stnum(4B) ‖ sqnum(4B) ‖
+           t_msg(8B) ‖ dataset_bytes
+Algorithm: HMAC-SHA256 (256-bit tag)
+Key management: KeyStore with active+pending keys, grace period
+Fallback: local_io_mode asserted after fail_threshold failures
+
+  Scenario                             hmac_valid    alarm
+  -------------------------------------------------------
+  Sign + verify (correct key)          True          OK
+  Tampered dataset (HMAC fail)         False         WARN
+  Unsigned message (no tag)            False         WARN
+
+  local_io_mode after 4 wrong-key failures: True  (fail_count=4)
+
+────────────────────────────────────────────────────────────────────────
+CONCLUSION
+────────────────────────────────────────────────────────────────────────
+
+  10 unit tests PASS.
+  WP 82.1: GOOSE anomaly detector (rule-based + Isolation Forest).
+  False-positive rate: 0.38% (threshold: <1%).
+  All four attack types detected: REPLAY, TIMING_FLOOD,
+  SEQUENCE_SKIP, CONTENT_ANOMALY.
+  WP 82.2: IEC 62351-6 HMAC-SHA256 authentication validated.
+  Key rotation grace period, local_io_mode fallback verified.
+  TR-82 status: COMPLETE
+
+========================================================================

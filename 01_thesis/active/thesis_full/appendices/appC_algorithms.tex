@@ -31,44 +31,15 @@ in the SAMBP framework for reference. Chapter cross-references are given.
 \State \Comment{\textbf{Physics veto}}
 \State $\mathrm{veto} \leftarrow \mathbf{1}[\hat{\kibr} \in [0, 2]] \cdot
          \mathbf{1}[\hat{\alpha} \in [0, 1]] \cdot \mathbf{1}[|\hat{\Zline}| > 0]$
-\State \Comment{\textbf{PINN advisory (from Ch.~\ref{ch:ml})}}
-\State $T_\mathrm{PINN} \leftarrow \mathrm{PINN}(\mathbf{f}; \theta)$ if $\mathrm{veto}$
 \State \Comment{\textbf{Vote logic}}
-\State $T \leftarrow T_1 \cup T_2 \cup T_3 \cup T_4 \cup (T_\mathrm{PINN} \cap \mathrm{veto})$
+\State $T \leftarrow T_1 \cup T_2 \cup T_3 \cup T_4$
 \State \Return $T$
 \end{algorithmic}
 \end{algorithm}
 
-\section{WAPC Centralised Decision Cycle}
-\label{app:alg_wapc}
-
-\begin{algorithm}[htbp]
-\caption{WAPC Centralised Decision Cycle (200~ms cycle)}
-\label{alg:app_wapc}
-\begin{algorithmic}[1]
-\Require PMU synchrophasors $\{V_k, \theta_k\}$; IED status; EMS topology
-\Ensure Settings $\{TMS_i, I_{p,i}\}$; GOOSE coordination signals
-\State Receive PMU frames (50 Hz)
-\State \Comment{\textbf{Fault detection}}
-\If{any $|\Delta V_k| > 0.1$~pu}
-  \State $\hat{L} \leftarrow \arg\max_L [\Delta V_{L,\mathrm{end A}} + \Delta V_{L,\mathrm{end B}}]$
-  \State Run N-1 BFS for tripping $\hat{L}$
-  \If{N-1 secure} issue GOOSE trip to relays on $\hat{L}$
-  \Else\ issue conditional trip + EMS notification
-  \EndIf
-\EndIf
-\State \Comment{\textbf{Settings audit}}
-\State Receive $\hat{\kibr}$ from DT EKF; check CUSUM alarm
-\If{CUSUM alarm}
-  \State Re-run CTI settings engine (Algorithm~\ref{alg:ch9_settings})
-  \State Validate against N-1 contingencies
-  \State Upload new settings via MMS (sequential)
-  \State Rotate HMAC keys via PKI
-  \State Broadcast GOOSE activation
-\EndIf
-\State \Return updated settings, GOOSE signals
-\end{algorithmic}
-\end{algorithm}
+%% Section app:alg_wapc (WAPC Centralised Decision Cycle) belongs to the
+%% wide-area coordination work identified as future work (April 2026 scope).
+%% Removed to match locked chapter scope.
 
 \section{Islanding Detection and Mode-Switch}
 \label{app:alg_island}
@@ -82,7 +53,7 @@ in the SAMBP framework for reference. Chapter cross-references are given.
 \State Estimate $\widehat{ROCOF} \leftarrow (f(t) - f(t - 3/f_0)) / (3/f_0)$
 \State Estimate vector surge $\Delta\theta$ from phase angle difference
 \State Compute neg-seq ratio $V_2/V_1$
-\If{$|ROCOF| > 0.5$~Hz/s \textbf{AND} $|\Delta\theta| > 2°$
+\If{$|ROCOF| > 0.5$~Hz/s \textbf{AND} $|\Delta\theta| > 2^\circ$
    \textbf{OR} $V_2/V_1 > 0.02$}
   \State Set island flag
   \State Broadcast \texttt{GOOSE.mode = ISLAND} (within 4~ms)

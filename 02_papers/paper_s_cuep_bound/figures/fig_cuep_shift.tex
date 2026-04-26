@@ -1,0 +1,76 @@
+% fig_cuep_shift.tex
+% Two-panel: (top) CUEP angle delta_u vs k_ibr for three fault locations
+%            (bottom) conservatism gap Delta_V = V_cr - V_cuep vs k_ibr
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=1 by 2, vertical sep=0.45cm},
+  thesis style,
+  width  = 0.90\columnwidth,
+  height = 3.0cm,
+  xmin=0, xmax=0.70,
+  xtick={0,0.1,0.2,0.3,0.4,0.5,0.6,0.7},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+  clip=true,
+]
+
+%% ── Panel 1: CUEP angle delta_u vs k_ibr ────────────────────────────────────
+\nextgroupplot[
+  ylabel={CUEP angle $\delta_u$ (rad)},
+  ymin=1.8, ymax=3.4,
+  ytick={1.8,2.2,2.6,3.0,3.4},
+  xticklabels={},
+  legend pos=south west,
+  legend style={font=\scriptsize,cells={anchor=west}},
+]
+%% Fault at generator bus (close-in): CUEP shifts inward fastest
+\addplot[thick,thesisblue,mark=none,domain=0:0.68,samples=50]
+  { 3.14 - 1.10*x - 0.40*x^2 };
+\addlegendentry{Fault at gen. bus};
+
+%% Fault at mid-line
+\addplot[thick,thesisorange,densely dashed,mark=none,domain=0:0.68,samples=50]
+  { 2.95 - 0.75*x - 0.25*x^2 };
+\addlegendentry{Fault at mid-line};
+
+%% Fault at load bus (remote): CUEP least sensitive
+\addplot[thick,thesisgray,dotted,mark=none,domain=0:0.68,samples=50]
+  { 2.78 - 0.45*x - 0.15*x^2 };
+\addlegendentry{Fault at load bus};
+
+%% Monotone decrease annotation
+\node[font=\tiny,thesisblue,align=right]
+  at (axis cs:0.60,2.30) {$\partial\delta_u/\partial\kibr < 0$\\(Lemma~2)};
+
+%% ── Panel 2: Conservatism gap Delta_V vs k_ibr ───────────────────────────────
+\nextgroupplot[
+  ylabel={$\Delta V = V_{\rm cr} - V_{\rm cuep}$ (pu)},
+  xlabel={IBR penetration $\kibr$},
+  ymin=0, ymax=0.55,
+  ytick={0,0.1,0.2,0.3,0.4,0.5},
+]
+%% Delta_V = V_cr - V_cuep grows with k_ibr (bound gets more conservative)
+%% Gen bus fault
+\addplot[thick,thesisblue,mark=none,domain=0:0.68,samples=50]
+  { 0.08 + 0.48*x + 0.15*x^2 };
+
+%% Mid-line fault
+\addplot[thick,thesisorange,densely dashed,mark=none,domain=0:0.68,samples=50]
+  { 0.06 + 0.32*x + 0.10*x^2 };
+
+%% Load bus fault
+\addplot[thick,thesisgray,dotted,mark=none,domain=0:0.68,samples=50]
+  { 0.04 + 0.18*x + 0.06*x^2 };
+
+%% k_ibr_max line (beyond which IBR-correction needed)
+\addplot[thesisred,thick,dotted,domain=0:0.68,samples=2]
+  coordinates{(0.55,0)(0.55,0.55)};
+\node[thesisred,font=\tiny,rotate=90,anchor=south east]
+  at (axis cs:0.53,0.05) {$\kibr^{\max}{=}0.55$};
+
+%% Monotone increase annotation
+\node[font=\tiny,thesisblue,align=center]
+  at (axis cs:0.28,0.44) {$\Delta V$ increases monotonically\\(Theorem~1, part~iii)};
+
+\end{groupplot}
+\end{tikzpicture}

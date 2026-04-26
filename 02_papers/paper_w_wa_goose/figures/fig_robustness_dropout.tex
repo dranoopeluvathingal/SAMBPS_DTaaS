@@ -1,0 +1,53 @@
+% fig_robustness_dropout.tex
+% Bar chart: zone accuracy and false-alarm rate vs number of SS dropouts
+% Groups: 0, 1, 2 SS dropped; three bars per group (unweighted, weighted, SAMBPS)
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  ybar,
+  width=\columnwidth,
+  height=5.0cm,
+  ylabel={Performance metric},
+  ymin=0.78, ymax=1.04,
+  ytick={0.80,0.85,0.90,0.95,1.00},
+  yticklabel={\pgfmathprintnumber[fixed,precision=2]{\tick}},
+  symbolic x coords={drop0,drop1,drop2},
+  xticklabels={0 dropouts, 1 dropout, 2 dropouts},
+  xtick=data,
+  x tick label style={font=\scriptsize},
+  bar width=7pt,
+  enlarge x limits=0.25,
+  legend pos=south west,
+  legend style={font=\scriptsize,cells={anchor=west},legend columns=1},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+  clip=false,
+]
+
+%% Unweighted majority vote
+\addplot[fill=thesisgray!50,draw=thesisgray]
+  coordinates{(drop0,0.978)(drop1,0.941)(drop2,0.873)};
+\addlegendentry{Unweighted majority};
+
+%% Weighted consensus (w_i from kappa_n)
+\addplot[fill=thesisblue!60,draw=thesisblue]
+  coordinates{(drop0,0.982)(drop1,0.971)(drop2,0.948)};
+\addlegendentry{Weighted consensus (C14)};
+
+%% 1-FAR proposed
+\addplot[fill=thesisred!50,draw=thesisred]
+  coordinates{(drop0,0.986)(drop1,0.984)(drop2,0.979)};
+\addlegendentry{$1{-}P_{\rm FA}$ (C14)};
+
+%% 95% line
+\addplot[thesisgreen,thick,dotted]
+  coordinates{(drop0,0.95)(drop2,0.95)};
+\node[thesisgreen,font=\tiny,anchor=west] at (axis cs:drop2,0.958) {95\%};
+
+%% Annotation: unweighted falls below 95% at 2 dropouts
+\node[thesisgray,font=\tiny,align=center] at (axis cs:drop2,0.885)
+  {Below\\target};
+\draw[thesisgray,->] (axis cs:drop2,0.895) -- (axis cs:drop2,0.875);
+
+\end{axis}
+\end{tikzpicture}

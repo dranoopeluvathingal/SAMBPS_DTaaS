@@ -1,0 +1,96 @@
+% fig_latency_analysis.tex
+% Stacked bar: GOOSE end-to-end latency breakdown for P1/P2/P3 classes
+% Plus CDF of observed trip latencies from hardware experiment
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=2 by 1, horizontal sep=1.0cm},
+  thesis style,
+]
+
+%% ── Left: Latency breakdown stacked bar ─────────────────────────────────────
+\nextgroupplot[
+  width=0.48\columnwidth,
+  height=5.0cm,
+  ybar stacked,
+  ylabel={Latency (ms)},
+  ymin=0, ymax=12,
+  ytick={0,2,4,6,8,10,12},
+  symbolic x coords={P1,P2,P3},
+  xtick=data,
+  x tick label style={font=\scriptsize},
+  bar width=16pt,
+  enlarge x limits=0.4,
+  legend pos=north west,
+  legend style={font=\tiny,cells={anchor=west}},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+]
+
+%% Processing delay (SAMBPS L5 decision)
+\addplot[fill=thesisblue!60,draw=thesisblue]
+  coordinates{(P1,0.8)(P2,0.8)(P3,0.8)};
+\addlegendentry{L5 decision};
+
+%% GOOSE encoding
+\addplot[fill=thesisorange!60,draw=thesisorange]
+  coordinates{(P1,0.3)(P2,0.3)(P3,0.3)};
+\addlegendentry{GOOSE encode};
+
+%% LAN propagation
+\addplot[fill=thesisgreen!60,draw=thesisgreen]
+  coordinates{(P1,0.5)(P2,1.2)(P3,3.5)};
+\addlegendentry{LAN prop.};
+
+%% Consensus computation
+\addplot[fill=thesisred!50,draw=thesisred]
+  coordinates{(P1,0.2)(P2,0.2)(P3,0.2)};
+\addlegendentry{Consensus};
+
+%% IEC 61850 class limits
+\draw[thesisred,thick,dotted] (axis cs:P1,4.0) -- (axis cs:P3,4.0)
+  node[right,font=\tiny,thesisred]{P1: 4\,ms};
+\draw[thesisblue,thick,dotted] (axis cs:P1,10.0) -- (axis cs:P3,10.0)
+  node[right,font=\tiny,thesisblue]{P2: 10\,ms};
+
+%% ── Right: CDF of observed trip latencies ────────────────────────────────────
+\nextgroupplot[
+  width=0.48\columnwidth,
+  height=5.0cm,
+  ylabel={CDF},
+  xlabel={Trip latency (ms)},
+  xmin=0, xmax=12,
+  ymin=0, ymax=1.05,
+  xtick={0,2,4,6,8,10,12},
+  ytick={0,0.25,0.5,0.75,1.0},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+  legend pos=south east,
+  legend style={font=\tiny,cells={anchor=west}},
+]
+
+%% Hardware lab CDF (P2 class LAN)
+\addplot[thesisblue,thick,mark=none,domain=0:12,samples=100]
+  { (x<1.4) ? 0 : min(1, 0.5*(1+tanh((x-3.8)/0.9))) };
+\addlegendentry{Hardware (P2 LAN)};
+
+%% Simulation CDF (P1 class)
+\addplot[thesisorange,thick,dashed,mark=none,domain=0:12,samples=100]
+  { (x<1.1) ? 0 : min(1, 0.5*(1+tanh((x-2.1)/0.6))) };
+\addlegendentry{Simulation (P1)};
+
+%% P2 limit
+\draw[thesisblue,thin,dotted] (axis cs:10,0) -- (axis cs:10,1.05);
+\node[thesisblue,font=\tiny,rotate=90,anchor=south] at (axis cs:10,0.05)
+  {P2 limit};
+
+%% P1 limit
+\draw[thesisorange,thin,dotted] (axis cs:4,0) -- (axis cs:4,1.05);
+\node[thesisorange,font=\tiny,rotate=90,anchor=south] at (axis cs:4,0.05)
+  {P1 limit};
+
+%% 99th percentile markers
+\draw[thesisblue,thin,<->] (axis cs:0.2,0.99) -- (axis cs:6.1,0.99)
+  node[midway,above,font=\tiny]{P99=6.1\,ms};
+
+\end{groupplot}
+\end{tikzpicture}

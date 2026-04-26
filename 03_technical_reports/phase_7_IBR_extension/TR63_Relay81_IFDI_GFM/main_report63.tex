@@ -1,0 +1,704 @@
+% main_report63.tex
+% SAMBP TR-63/2026 -- Relay 81 IFDI for Zero-Inertia GFM Networks
+% Compile: pdflatex -> bibtex -> pdflatex -> pdflatex
+\documentclass[11pt, a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=25mm]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{booktabs, array, multirow}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc, fit, backgrounds, shapes.geometric}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{parskip}
+\usepackage{natbib}
+\usepackage{pifont}
+\usepackage{listings}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\hypersetup{colorlinks=true, linkcolor=blue!60!black, citecolor=blue!60!black,
+            urlcolor=blue!60!black}
+
+\definecolor{okgreen}{RGB}{0,130,60}
+\definecolor{alertred}{RGB}{180,0,0}
+\definecolor{gfmblue}{RGB}{0,70,160}
+\definecolor{gridgrey}{RGB}{100,100,100}
+
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newtheorem{remark}{Remark}
+
+\newcommand{\pu}{\,\text{pu}}
+\newcommand{\ms}{\,\text{ms}}
+\newcommand{\Hz}{\,\text{Hz}}
+\newcommand{\kn}{\kappa_n}
+\newcommand{\thetaG}{\boldsymbol{\theta}_{\rm GFM}}
+\newcommand{\dfhat}{\widehat{\Delta f}_\infty}
+\newcommand{\taufhat}{\hat{\tau}_f}
+\newcommand{\IFDI}{\mathrm{IFDI}}
+\newcommand{\Wtau}{W_\tau}
+
+\title{\textbf{SAMBP TR-63/2026}\\[4pt]
+       \large Relay 81 Inertia-Free Deviation Index (IFDI)\\
+       for Zero-Physical-Inertia Grid-Forming Networks}
+\author{PhD Candidate\\[2pt]
+        \small Smart Adaptive Multi-Bus Protection Research}
+\date{April 2026}
+
+% ============================================================================
+\begin{document}
+\maketitle
+\tableofcontents
+\vspace{6pt}\hrule\vspace{10pt}
+
+% ============================================================================
+\section{Background and Motivation}
+\label{sec:background}
+
+\subsection{Failure of Conventional Relay 81 in Inverter-Dominated Grids}
+
+Conventional Relay 81 protection (under/over-frequency, 81U/81O) detects
+islanding by monitoring the power system frequency.  When a section of the
+network becomes electrically isolated from the grid, the local
+generation–load imbalance $\Delta P$ drives a frequency excursion that
+crosses the relay threshold.  The relay's implicit physical model is:
+
+\begin{equation}
+  2H_{\rm sys}\,\frac{df}{dt} \;=\; \Delta P - D_{\rm sys}(f - f_0),
+  \label{eq:swing}
+\end{equation}
+where $H_{\rm sys}$ is the aggregate inertia constant of the island,
+$D_{\rm sys}$ the load-frequency damping, and $f_0$ the nominal frequency.
+
+For a grid with synchronous generation, $H_{\rm sys}$ is large (4--10\,s) and
+the initial rate-of-change of frequency (ROCOF) is measurable over
+100--200\,ms windows.  Modern power systems increasingly replace synchronous
+generators with Grid-Forming (GFM) inverters operating in \emph{virtual
+inertia} mode \cite{Milano2018, Rocabert2012}.  Typical GFM settings are $H_v = 0.05$--$0.50\,\text{s}$ and
+$D_v = 15$--$40\,\text{pu/pu}$, giving a virtual time constant
+$\tau_f = 2H_v/D_v = 0.003$--$0.067\,\text{s}$.
+
+The critical consequence is two-fold:
+\begin{enumerate}
+  \item \textbf{Phase 1 — rapid settle:}  The frequency deviation reaches
+    $\approx 99\%$ of its steady-state value $\Delta f_\infty = \Delta P /
+    (D_v f_0)$ within $5\tau_f \approx 15$--$335\,\text{ms}$.  Before the
+    conventional 81U relay has completed a 10-cycle (200\,ms) measurement
+    window, the GFM has already damped the transient.
+
+  \item \textbf{Phase 2 — masked NDZ:}  For small imbalances $|\Delta P| <
+    0.03\,\text{pu}$ the steady-state deviation $|\Delta f_\infty|$ may lie
+    within the conventional dead-band, creating an
+    \emph{effective non-detection zone (NDZ)}.
+\end{enumerate}
+
+\subsection{Grid-Forming Virtual Swing Equation as Null Model}
+
+This TR proposes to reframe Relay 81 for GFM networks using the GFM virtual
+swing equation as the explicit null model for the islanding trajectory.
+Rather than measuring ROCOF alone, the relay fits a 6-parameter trajectory
+model to the PMU frequency time series and extracts $\Delta f_\infty$ (the
+steady-state frequency deviation under islanding) and $\tau_f$ (the virtual
+settling time constant that distinguishes GFM islanding from slow grid
+transients).
+
+\subsection{Scope and Relation to Prior SAMBP TRs}
+
+\begin{itemize}
+  \item \textbf{TR-56} \cite{SAMBP_TR56} introduced the DFIG piecewise-ODE
+    model and two-pass LM estimator pattern that is reused here.
+  \item \textbf{TR-62} \cite{SAMBP_TR62} demonstrated DDR-gated model
+    selection for PV 87L;
+    the $\Wtau$ discriminant in this TR is analogous to DDR but for the
+    frequency domain.
+  \item \textbf{TR-63} (this document) closes the Relay 81 protection gap
+    for zero-physical-inertia GFM islands, contributing to Chapter~6 of the
+    thesis (\emph{IBR-Extended Protection Suite}).
+\end{itemize}
+
+
+% ============================================================================
+\section{Six-Parameter GFM Frequency Trajectory Model}
+\label{sec:model}
+
+\subsection{Model Derivation}
+
+The GFM virtual inertia model is well established in the literature
+\cite{DArco2015, Rocabert2012}.  Linearising the GFM virtual swing equation
+(\ref{eq:swing}) about $f = f_0$
+at the instant of islanding inception $t = 0$ yields:
+\begin{equation}
+  \Delta f(t) \;=\;
+  \underbrace{\Delta f_\infty\bigl(1 - e^{-t/\tau_f}\bigr)}_{\text{monotone settling}}
+  \;+\;
+  \underbrace{A_{\rm osc}\,e^{-t/\tau_{\rm osc}}\cos(\omega_{\rm osc}\,t)}_{\text{inter-GFM oscillation}}
+  \;+\;
+  \underbrace{f_{0,\rm bias}}_{\text{PMU DC offset}},
+  \label{eq:gfm_model}
+\end{equation}
+with parameter vector
+$\thetaG = [\Delta f_\infty,\;\tau_f,\;A_{\rm osc},\;\tau_{\rm osc},\;
+\omega_{\rm osc},\;f_{0,\rm bias}] \in \mathbb{R}^6$.
+
+\paragraph{Physical interpretation of each term.}
+\begin{itemize}
+  \item $\Delta f_\infty = \Delta P_{\rm pu}/D_v \times f_0$\;[Hz]: the
+    steady-state frequency deviation under islanding; zero when grid-connected.
+  \item $\tau_f = 2H_v/D_v$\;[s]: the virtual frequency settling time
+    constant.  For GFM inverters, $\tau_f \in [0.003, 0.067]\,\text{s}$.
+    For grid events (governor response), $\tau_f \gg 1\,\text{s}$.
+  \item $A_{\rm osc}$, $\tau_{\rm osc}$, $\omega_{\rm osc}$: oscillation
+    parameters capturing inter-GFM electromechanical interaction in
+    multi-inverter islands.
+  \item $f_{0,\rm bias}$: PMU or relay measurement DC offset, bounded to
+    $\pm 0.05\,\text{Hz}$.
+\end{itemize}
+
+\subsection{Parameter Bounds}
+
+\begin{table}[h]
+\centering
+\caption{Six-parameter GFM model bounds for the LM estimator.}
+\label{tab:bounds}
+\begin{tabular}{clrrl}
+\toprule
+Idx & Name & Lower & Upper & Physical constraint \\
+\midrule
+0 & $\Delta f_\infty$ [Hz]   & $-5.0$  & $+5.0$   & Grid frequency range \\
+1 & $\tau_f$ [s]             & $0.005$ & $2.0$    & GFM: 3--67\,ms; grid: up to 30\,s \\
+2 & $A_{\rm osc}$ [Hz]       & $0.0$   & $1.5$    & Amplitude non-negative \\
+3 & $\tau_{\rm osc}$ [s]     & $0.05$  & $1.0$    & Oscillation damping \\
+4 & $\omega_{\rm osc}$ [rad/s]& $0.5\pi$& $20\pi$ & 0.25--10\,Hz oscillation \\
+5 & $f_{0,\rm bias}$ [Hz]    & $-0.05$ & $+0.05$  & PMU calibration tolerance \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Note that $\tau_f$ is bounded to $[0.005, 2.0]\,\text{s}$ rather than the
+full physical range of slow transients ($\tau_f \gg 1\,\text{s}$) because
+the $\Wtau$ discriminant (Section~\ref{sec:ifdi}) suppresses IFDI for
+$\tau_f > 0.5\,\text{s}$, making the upper bound on identifiability
+irrelevant for the trip decision.
+
+
+% ============================================================================
+\section{IFDI: Inertia-Free Deviation Index}
+\label{sec:ifdi}
+
+\subsection{Index Definition}
+
+The \textbf{Inertia-Free Deviation Index (IFDI)} combines the estimated
+steady-state frequency deviation $\dfhat$ with a $\tau_f$-consistency weight
+$\Wtau$ that penalises slow-transient interpretations:
+\begin{equation}
+  \IFDI \;=\; \frac{|\dfhat|}{\delta f_{\rm thresh}} \;\times\; \Wtau(\taufhat),
+  \label{eq:ifdi}
+\end{equation}
+
+\begin{equation}
+  \Wtau(\taufhat) \;=\; \frac{1}{1 + \exp\!\left(
+    \dfrac{\taufhat - \tau_{f,\max}}{\sigma_\tau}\right)},
+  \label{eq:wtau}
+\end{equation}
+where $\delta f_{\rm thresh} = 0.035\,\text{Hz}$,
+$\tau_{f,\max} = 0.50\,\text{s}$, and $\sigma_\tau = 0.20\,\text{s}$.
+
+\subsection{Physical Motivation of Each Factor}
+
+\paragraph{Frequency threshold $\delta f_{\rm thresh}$.}
+The minimum $|\Delta f_\infty|$ detectable with $\IFDI > 1.0$ is
+$\delta f_{\rm thresh} \times \Wtau^{-1}$.  For $\Wtau = 1$ (fast GFM
+settling):
+\begin{equation}
+  |\Delta P|_{\min} \;=\; \delta f_{\rm thresh} \times D_v / f_0
+  \;=\; 0.035 \times D_v / 50.
+\end{equation}
+At $D_v = 40\,\text{pu}$ (the most challenging case): $|\Delta P|_{\min} =
+0.028\,\text{pu} = 2.8\%$, which is within the
+$\pm 3\%$ NDZ specification.
+
+\paragraph{$\tau_f$-consistency weight $\Wtau$.}
+The sigmoid discriminant $\Wtau$ serves as the GFM/grid classifier in the
+frequency domain:
+\begin{itemize}
+  \item $\Wtau \to 1$ when $\taufhat \ll \tau_{f,\max} = 0.50\,\text{s}$
+    (fast GFM settling — consistent with islanding).
+  \item $\Wtau \to 0$ when $\taufhat \gg \tau_{f,\max}$ (slow transient —
+    consistent with upstream grid disturbance or governor response).
+\end{itemize}
+This eliminates false tripping on slow grid events even when
+$|\Delta f_\infty|$ is large (the LM correctly identifies a large $\tau_f$).
+
+\subsection{Stage-2 Gate (Condition Number and Residual)}
+
+The raw IFDI score is gated by two quality metrics before a trip decision:
+\begin{equation}
+  \text{TRIP} \iff
+  \IFDI > 1.15
+  \;\wedge\;
+  \kn < 60
+  \;\wedge\;
+  \|r\|_n < 0.05\,\text{Hz},
+  \label{eq:trip_cond}
+\end{equation}
+where $\kn$ is the column-normalised condition number of the Jacobian, and
+$\|r\|_n = \|f_{\rm meas} - \hat{f}_{\rm model}\|/\sqrt{N}$.
+
+\paragraph{IFDI security factor = 1.15.}
+The relay trip threshold is set at $\IFDI_{\rm trip} = 1.15$ (15\% above the
+theoretical minimum $\IFDI = 1.0$).  This security margin is analogous to
+the overcurrent relay pickup ratio in conventional protection design.  It
+reduces false-alarm rate from $P_{\rm FA} = 0.0082$ (at 1.00) to
+$P_{\rm FA} = 0.0032$ (at 1.15) with only marginal sensitivity
+loss ($P_D = 0.9969 \to 0.9947$; both exceed the 0.990 specification).
+
+\paragraph{Condition number gate.}
+High $\kn$ ($>60$) signals that the 6-parameter model is ill-conditioned for
+the measured trajectory.  This occurs when $A_{\rm osc} = 0$ is not
+well-determined (oscillatory signals driving $\tau_{\rm osc}/\omega_{\rm osc}$
+away from their default values), or when the window is too short for the
+chosen $\tau_f$.  The gate RESTRAINs in these cases rather than risk a
+spurious trip.  Note that the condition number computation excludes
+near-zero Jacobian columns (Section~\ref{sec:estimator}).
+
+\paragraph{Residual gate.}
+$\|r\|_n > 0.05\,\text{Hz}$ indicates a poor fit, suggesting the 6-parameter
+model does not adequately describe the measured signal.  This provides an
+additional safety check against model mismatch.
+
+
+% ============================================================================
+\section{Two-Pass Levenberg--Marquardt Estimator}
+\label{sec:estimator}
+
+\subsection{Motivation for Two-Pass Structure}
+
+A review of islanding detection methods for IBR networks is given in
+\cite{Pietzcker2022}; the IFDI approach is distinguished from conventional
+passive methods \cite{Ropp2000, Lopes2006} by its physics-based trajectory
+model that explicitly accounts for GFM virtual inertia.  The LM algorithm
+used is the trust-region-reflective variant \cite{More1978}.
+
+The six-parameter model has high collinearity between the monotone term
+(parameters 0, 1, 5) and the oscillatory term (parameters 2, 3, 4) when
+$A_{\rm osc}$ is small.  Jointly fitting all six parameters with a single LM
+run risks the optimiser allocating part of the monotone residual to the
+oscillatory parameters, biasing $\dfhat$.
+
+The two-pass structure follows the pattern established in TR-56 (crowbar/
+post-crowbar decomposition):
+\begin{description}
+  \item[Pass~1] Fits only the monotone kernel: $[\Delta f_\infty, \tau_f,
+    f_{0,\rm bias}]$ free; $A_{\rm osc} = 0$ fixed (3 free parameters).
+    This gives the primary IFDI trip decision.
+
+  \item[Pass~2] Full 6-parameter refinement, activated only when the
+    Pass-1 residual norm exceeds $0.030\,\text{Hz}$, indicating significant
+    inter-GFM oscillation.  Starting from Pass-1 results, LM frees
+    $A_{\rm osc}$, $\tau_{\rm osc}$, $\omega_{\rm osc}$ to absorb the
+    oscillatory residual.
+\end{description}
+
+\subsection{Multi-Start Strategy for Pass~1}
+
+A single LM initialisation at $\tau_f = 0.10\,\text{s}$ (midrange GFM)
+fails on slow grid transients where the true $\tau_f \gg 0.5\,\text{s}$.
+In this regime, the 500\,ms measurement window captures only the initial
+rise of the exponential, which the LM cannot distinguish from a fast
+exponential with a small $\Delta f_\infty$.
+
+Pass~1 therefore uses two starting points:
+$\tau_{f,0} \in \{0.05\,\text{s},\;1.0\,\text{s}\}$.
+Both are run to convergence and the solution with the lower normalised
+residual is retained.  The $\tau_{f,0} = 1.0\,\text{s}$ start escapes the
+fast-$\tau_f$ local minimum for grid transients, correctly identifying
+$\taufhat \gg 0.5\,\text{s}$ and suppressing IFDI via $\Wtau \to 0$.
+
+\subsection{Active-Column Condition Number}
+
+When $A_{\rm osc} = 0$ (Pass-1 or post-Pass-1 with no oscillation), columns
+3 and 4 of the Jacobian (for $\tau_{\rm osc}$ and $\omega_{\rm osc}$) have
+near-zero norm.  Including these in the SVD would yield $\kn = \infty$
+spuriously.  The condition number computation therefore masks columns with
+$\|J_k\| < 10^{-12}$ before computing the SVD.
+
+\subsection{Algorithm Summary}
+
+\begin{algorithm}[h]
+\caption{Two-pass IFDI estimator for a single relay window.}
+\label{alg:ifdi}
+\begin{algorithmic}[1]
+\Require Time window $\mathbf{t} \in \mathbb{R}^N$, measured $\Delta f_{\rm meas}$,
+         config~$\mathcal{C}$
+\Ensure $\hat{\theta}$, $\IFDI$, $\kn$, \texttt{trip}
+\State $\text{best\_res} \gets \infty$
+\For{$\tau_{f,0} \in \{0.05, 1.0\}$}
+  \State $\mathbf{x}_0 \gets$ \textsc{InitialGuess}$(\mathbf{t}, \Delta f_{\rm meas}, \tau_{f,0})$
+  \State $\text{res}_1 \gets \textsc{LM\_3param}(\mathbf{x}_0[\{0,1,5\}],
+    \mathbf{t}, \Delta f_{\rm meas})$
+  \If{$\|\text{res}_1\|_n < \text{best\_res}$}
+    $\text{best\_res} \gets \|\text{res}_1\|_n$;
+    $\hat{\theta}_{P1} \gets \text{reassemble}(\text{res}_1)$
+  \EndIf
+\EndFor
+\If{$\text{best\_res} > r_{P2}^{\rm trigger} = 0.030\,\text{Hz}$}
+  \State $\hat{\theta} \gets \textsc{LM\_6param}(\hat{\theta}_{P1},
+    \mathbf{t}, \Delta f_{\rm meas})$ \Comment{Pass 2}
+\Else
+  \State $\hat{\theta} \gets \hat{\theta}_{P1}$ \Comment{Pass 1 only}
+\EndIf
+\State $\mathbf{J} \gets \textsc{Jacobian}(\mathbf{t}, \hat{\theta})$;
+  $\kn \gets \textsc{CondNum\_ActiveCols}(\mathbf{J})$
+\State $\|r\|_n \gets \|\Delta f_{\rm meas} - \hat{f}(\mathbf{t}, \hat{\theta})\|
+  / \sqrt{N}$
+\State $\IFDI \gets |\dfhat| / \delta f_{\rm thresh} \times \Wtau(\taufhat)$
+\State \textbf{return} $(\IFDI > 1.15) \wedge (\kn < 60) \wedge (\|r\|_n < 0.05)$
+\end{algorithmic}
+\end{algorithm}
+
+
+% ============================================================================
+\section{Non-Detection Zone Analysis}
+\label{sec:ndz}
+
+\subsection{Structural NDZ Condition}
+
+A structural NDZ exists when $\IFDI_{\rm true} < 1.15$ even with perfect
+estimation ($\dfhat = \Delta f_\infty^{\rm true}$, $\taufhat = \tau_f^{\rm
+true}$, $\Wtau = 1$):
+\begin{equation}
+  \text{Structural NDZ:}\quad
+  |\Delta P|_{\rm pu} < |\Delta P|_{\rm NDZ}
+  = \frac{\IFDI_{\rm trip} \times \delta f_{\rm thresh} \times D_v}{f_0}
+  = \frac{1.15 \times 0.035 \times D_v}{50}.
+\end{equation}
+
+\begin{table}[h]
+\centering
+\caption{Structural NDZ boundary $|\Delta P|_{\rm NDZ}$ as a function of
+         virtual droop $D_v$.}
+\label{tab:ndz}
+\begin{tabular}{cccc}
+\toprule
+$D_v$ [pu/pu] & $\tau_f$ range [ms] & $|\Delta P|_{\rm NDZ}$ [\%] & Spec margin \\
+\midrule
+15  & 3--67   & 1.2\%  & +1.8\%  \\
+20  & 3--50   & 1.6\%  & +1.4\%  \\
+25  & 4--67   & 2.0\%  & +1.0\%  \\
+30  & 3--33   & 2.5\%  & +0.5\%  \\
+40  & 3--25   & 3.2\%  & $-0.2\%$ (structural NDZ at extreme $D_v$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The $D_v = 40$ row shows a structural NDZ of $3.2\%$ — just outside the
+$\pm 3\%$ specification for extreme droop settings.  This is an acknowledged
+limitation: high-$D_v$ GFM inverters ($D_v > 35\,\text{pu}$) require either
+(a) a lower $\IFDI_{\rm trip}$ (accepted, at the cost of higher $P_{\rm FA}$),
+or (b) direct communication-assisted protection rather than a local relay.
+
+\subsection{Statistical NDZ from MC Results}
+
+The Monte Carlo NDZ sweep ($|\Delta P| \in [1\%, 3\%)$, $N = 10\,000$ trials)
+gives $P_D = 0.377$ for the full NDZ range.  This is expected and documented:
+events with $|\Delta P| < 3\%$ are classified as ``ambiguous'' and the relay
+provides partial detection rather than guaranteed trip.
+
+
+% ============================================================================
+\section{Condition Number Analysis}
+\label{sec:kappa}
+
+The identifiability of the 3-parameter monotone model depends on the
+measurement window length and $\tau_f$.  Table~\ref{tab:kappa} shows $\kn$
+computed at the true $(\Delta f_\infty, \tau_f, f_{0,\rm bias})$ for
+representative parameter combinations.
+
+\begin{table}[h]
+\centering
+\caption{Condition number $\kn$ of the 3-parameter monotone LM for varying
+         window length and $\tau_f$ (500\,ms window used in relay).}
+\label{tab:kappa}
+\begin{tabular}{rrrrrr}
+\toprule
+$\tau_f$ [s] & 100\,ms & 200\,ms & 300\,ms & 500\,ms \\
+\midrule
+ 0.020 &  48.8 &  16.3 &  16.1 &  18.5 \\
+ 0.050 & 335.1 & 150.5 &  58.6 &  20.8 \\
+ 0.100 &2934.6 & 129.5 &  38.7 &  24.6 \\
+ 0.500 & 958.6 &  90.5 & 134.7 &  94.7 \\
+ 2.000 &2370.8 & 558.7 & 941.2 & 383.7 \\
+10.000 &10464.8&3235.4 &5528.5 &1927.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Key observations:
+\begin{enumerate}
+  \item For $\tau_f \leq 0.10\,\text{s}$ (GFM range), the 500\,ms window
+    achieves $\kn \leq 25$ — well below the $\kn < 60$ gate.
+  \item For $\tau_f \geq 0.50\,\text{s}$ (grid transient range), $\kn$
+    exceeds 60 at 500\,ms, triggering the Stage-2 gate to RESTRAIN.  This is
+    a \emph{desirable} secondary protection against slow-transient false trips.
+  \item Short windows (100\,ms) are poorly conditioned for all $\tau_f$
+    except the very fastest GFM responses.  The 500\,ms window is the correct
+    choice for balancing detection latency and identifiability.
+\end{enumerate}
+
+
+% ============================================================================
+\section{Python Study Results}
+\label{sec:results}
+
+\subsection{Study Configuration}
+
+\begin{description}
+  \item[Simulation environment]
+    Python 3.12, NumPy 1.26, SciPy 1.12.  All computations performed in
+    double precision.
+  \item[Signal generation]
+    Synthetic PMU output: $f_s = 100\,\text{Hz}$, window $T = 500\,\text{ms}$
+    ($N = 50$ samples).  Additive white Gaussian noise $\sigma_n \in
+    [0.005, 0.020]\,\text{Hz}$ representative of class~P PMU measurement
+    uncertainty.
+  \item[Estimator]
+    Two-pass LM (Algorithm~\ref{alg:ifdi}), $\tau_f$-starts $= \{0.05, 1.0\}\,\text{s}$,
+    $\delta f_{\rm thresh} = 0.035\,\text{Hz}$, $\IFDI_{\rm trip} = 1.15$.
+  \item[MC seed]
+    NumPy \texttt{default\_rng(42)}.  $N_{\rm MC} = 10\,000$ trials per
+    hypothesis class.
+\end{description}
+
+\subsection{Deterministic 9-Scenario Sweep}
+
+\begin{table}[h]
+\centering
+\caption{Deterministic 9-scenario relay performance.  All 9/9 PASS.}
+\label{tab:det63}
+\small
+\begin{tabular}{clccrrrc}
+\toprule
+ID & Label & Exp. & Got & IFDI & $\taufhat$ [s] & $\kn$ & PASS \\
+\midrule
+S1 & Islanding surplus $+10\%\,\Delta P$ & T & T & 5.208 & 0.017 & 18.0 & \checkmark \\
+S2 & Islanding deficit $-15\%\,\Delta P$ & T & T & 8.052 & 0.015 & 17.6 & \checkmark \\
+S3 & NDZ boundary $-2\%\,\Delta P$, $D_v=15$ & T & T & 1.789 & 0.037 & 20.9 & \checkmark \\
+S4 & Grid freq dip ($\tau_f = 10\,\text{s}$)  & R & R & 0.152 & 0.024 & 19.5 & \checkmark \\
+S5 & Local load rejection ($\Delta f_\infty \approx 0$) & R & R & 0.078 & 0.137 & 29.5 & \checkmark \\
+S6 & Grid fault transient (oscillatory) & R & R & 0.925 & 0.091 & 208.0 & \checkmark \\
+S7 & 2-GFM island (inter-inverter osc.) & T & T & 14.43 & 0.033 & 20.8 & \checkmark \\
+S8 & AGC slow ramp ($\tau_f = 30\,\text{s}$) & R & R & 0.097 & 0.739 & 140.7 & \checkmark \\
+S9 & Near-NDZ + high noise (Stage-2 gate)& R & R & 0.867 & 0.029 & 20.4 & \checkmark \\
+\midrule
+\multicolumn{3}{l}{\textbf{Total}} & \multicolumn{5}{r}{\textbf{9/9 PASS}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent T = TRIP; R = RESTRAIN.
+
+Notes on individual scenarios:
+\begin{itemize}
+  \item \textbf{S4 ($\tau_f = 10\,\text{s}$ grid dip):}  Despite $\tau_{f,\rm hat} =
+    0.024\,\text{s}$ (LM finds a local minimum with fast $\tau_f$), $\IFDI = 0.152 < 1.15$
+    because the small $\Delta f_\infty$ estimate ($\approx 0.005\,\text{Hz}$) from the
+    almost-flat 500\,ms window keeps IFDI below threshold.
+
+  \item \textbf{S6 (grid oscillatory transient):}  Correctly RESTRAINed via the
+    condition number gate: $\kn = 208 > 60$ because the oscillatory component
+    confounds the monotone-kernel fit.
+
+  \item \textbf{S8 (AGC slow ramp):}  $\taufhat = 0.739\,\text{s} > \tau_{f,\max}$
+    gives $\Wtau \approx 0.20$, suppressing $\IFDI$ to $0.097 \ll 1.15$.  The
+    $\tau_{f,0} = 1.0\,\text{s}$ multi-start correctly identifies the slow time
+    constant.
+
+  \item \textbf{S9 (near-NDZ + high noise):}  True $\Delta f_\infty = -0.025\,\text{Hz}$;
+    $\delta f_{\rm thresh} = 0.035\,\text{Hz}$; $\IFDI_{\rm true} = 0.71 < 1.15$.
+    RESTRAINed as expected — this is inside the documented NDZ for $D_v = 40\,\text{pu}$.
+\end{itemize}
+
+\subsection{Monte Carlo Validation}
+
+\begin{table}[h]
+\centering
+\caption{Monte Carlo validation results ($N = 10\,000$ trials per hypothesis class).}
+\label{tab:mc63}
+\begin{tabular}{llrrl}
+\toprule
+Hypothesis & Class & $N$ & Metric & Spec / Result \\
+\midrule
+Internal islanding ($|\Delta P| \geq 3\%$)
+  & $P_D$    & 10\,000 & 0.9947 & $\geq 0.990$ \textcolor{okgreen}{\ding{51}} \\
+External grid transient
+  & $P_{\rm FA}$ & 10\,000 & 0.0032 & $\leq 0.005$ \textcolor{okgreen}{\ding{51}} \\
+NDZ boundary ($|\Delta P| \in [1\%, 3\%)$)
+  & $P_D^{\rm NDZ}$ & 10\,000 & 0.377 & Documented \textcolor{okgreen}{\ding{51}} \\
+\midrule
+\multicolumn{4}{l}{\textbf{Overall}} & \textbf{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{MC distribution details.}
+\begin{itemize}
+  \item \textbf{Internal:} $D_v \sim \mathcal{U}(15, 40)$, $H_v \sim
+    \mathcal{U}(0.05, 0.50)$, $|\Delta P| \sim \mathcal{U}(0.03, 0.35)$,
+    $\sigma_n \sim \mathcal{U}(0.005, 0.020)\,\text{Hz}$.
+  \item \textbf{External:} Uniformly sampled from three modes:
+    (a)~pure measurement noise,
+    (b)~slow grid transient ($\tau_f \sim \mathcal{U}(3, 30)\,\text{s}$),
+    (c)~load rejection absorbed by GFM ($\Delta f_\infty \approx 0$,
+    $\tau_f \in [0.05, 0.20]\,\text{s}$).
+\end{itemize}
+
+\paragraph{P\_FA breakdown.}
+The $P_{\rm FA} = 0.0032$ consists of marginal false alarms with
+$\IFDI \in [1.15, 1.6]$.  These originate almost entirely from external
+mode~(c) trials at high noise ($\sigma_n > 0.015\,\text{Hz}$) where the
+measured signal is dominated by noise rather than any deterministic frequency
+deviation.  This is the fundamental noise-floor limitation of the single-window
+LM approach; it cannot be eliminated without multiple window averaging or
+a communication-based cross-check.
+
+
+% ============================================================================
+\section{Comparison with Conventional 81U/81O}
+\label{sec:comparison}
+
+Table~\ref{tab:compare} benchmarks the IFDI relay against a conventional
+81U relay calibrated for the same GFM network.
+
+\begin{table}[h]
+\centering
+\caption{Relay 81 IFDI vs conventional 81U: performance comparison.}
+\label{tab:compare}
+\begin{tabular}{lcc}
+\toprule
+Metric & Conventional 81U & IFDI relay \\
+\midrule
+Physics model & None (threshold only) & GFM virtual swing (Eq.~\ref{eq:gfm_model}) \\
+Measurement & $\Delta f$, ROCOF & $\Delta f_\infty$, $\tau_f$, $\Wtau$ \\
+Window length & 10--20 cycles (200--400\,ms) & 5 cycles (500\,ms PMU) \\
+$P_D$ ($|\Delta P| \geq 3\%$) & $\approx 0.90$ (high-$D_v$ GFM) & \textbf{0.9947} \\
+$P_{\rm FA}$ & $\approx 0.01$--$0.02$ (GFM settling) & \textbf{0.0032} \\
+NDZ for $D_v = 15$\,pu & $\leq \pm 1\%$ & $\leq \pm 1.2\%$ \\
+NDZ for $D_v = 40$\,pu & $\leq \pm 5\%$ & $\leq \pm 3.2\%$ \\
+Grid transient rejection & Fixed frequency band & $\Wtau$ discriminant \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The IFDI relay achieves a $P_D$ improvement of approximately $10\%$ over
+the conventional 81U at high-$D_v$ GFM settings, primarily by identifying
+$\tau_f$ correctly and avoiding the conventional relay's $\Delta f_{\rm max}$
+dead-band that widens as $D_v$ increases.
+
+
+% ============================================================================
+\section{Thesis Chapter Allocation}
+\label{sec:thesis}
+
+\subsection{Contribution to Chapter~6}
+
+TR-63 provides the \textbf{primary technical evidence} for Section~6.4
+(\emph{Frequency Protection for Zero-Inertia GFM Grids}) of the thesis.
+
+\begin{description}
+  \item[§6.4.1 — Problem formulation]  The failure mode of conventional 81U
+    in zero-inertia GFM networks (Section~\ref{sec:background}).
+  \item[§6.4.2 — IFDI model derivation]  GFM virtual swing equation
+    linearisation, 6-parameter model (Section~\ref{sec:model}).
+  \item[§6.4.3 — Estimator design]  Two-pass LM with multi-start and
+    active-column $\kn$ (Section~\ref{sec:estimator}).
+  \item[§6.4.4 — Validation results]  Table~\ref{tab:det63} (9/9 det.)
+    and Table~\ref{tab:mc63} ($P_D = 0.9947$, $P_{\rm FA} = 0.0032$).
+\end{description}
+
+\subsection{Evidence Standard Met}
+
+\begin{itemize}
+  \item[$\checkmark$] Deterministic sweep: 9/9 scenarios PASS (Section~\ref{sec:results}).
+  \item[$\checkmark$] MC $P_D$ target: $0.9947 \geq 0.990$ (Table~\ref{tab:mc63}).
+  \item[$\checkmark$] MC $P_{\rm FA}$ target: $0.0032 \leq 0.005$ (Table~\ref{tab:mc63}).
+  \item[$\checkmark$] NDZ analysis and boundary table (Table~\ref{tab:ndz}).
+  \item[$\checkmark$] Condition number analysis (Table~\ref{tab:kappa}).
+  \item[$\checkmark$] Comparison to conventional 81U (Table~\ref{tab:compare}).
+\end{itemize}
+
+
+% ============================================================================
+\section{Pending Work}
+\label{sec:pending}
+
+\begin{enumerate}
+  \item[$\checkmark$] Physics model derivation (Section~\ref{sec:model}).
+  \item[$\checkmark$] IFDI index and Stage-2 gate design (Section~\ref{sec:ifdi}).
+  \item[$\checkmark$] Two-pass LM estimator with multi-start (Section~\ref{sec:estimator}).
+  \item[$\checkmark$] Deterministic 9-scenario sweep: 9/9 PASS.
+  \item[$\checkmark$] Monte Carlo ($N = 10\,000$ per hypothesis): all targets met.
+  \item[$\square$] Hardware-in-the-loop (HIL) or OPAL-RT validation with
+    real PMU output — recommended for journal submission but out of scope
+    for thesis.
+  \item[$\square$] Multi-GFM island extension: passive islanding with
+    heterogeneous $D_v/H_v$ (e.g., 3-GFM island with oscillatory coupling)
+    — deferred to TR-67 system integration.
+\end{enumerate}
+
+
+% ============================================================================
+\section{File Map}
+\label{sec:filemap}
+
+\begin{table}[h]
+\centering
+\caption{TR-63 file map.}
+\label{tab:filemap}
+\begin{tabular}{p{0.52\textwidth}p{0.40\textwidth}}
+\toprule
+File & Role \\
+\midrule
+\texttt{relay81/models/gfm\_frequency\_model.py}
+  & Forward model, Jacobian, IFDI, $\Wtau$, \texttt{IFDIState} \\
+\texttt{relay81/inverse\_estimation/ifdi\_estimator.py}
+  & Two-pass LM, \texttt{IFDIEstimatorConfig} \\
+\texttt{relay81/run\_tr63\_deterministic\_mc.py}
+  & 9-scenario sweep + 30\,k MC + figure generation \\
+\texttt{relay81/outputs/tr63/tr63\_deterministic.csv}
+  & Deterministic results \\
+\texttt{relay81/outputs/tr63/tr63\_mc\_metrics.csv}
+  & MC summary ($P_D$, $P_{\rm FA}$, NDZ) \\
+\texttt{relay81/outputs/tr63/tr63\_waveforms.png}
+  & Waveform examples (S1--S9) \\
+\texttt{relay81/outputs/tr63/tr63\_ifdi\_hist.png}
+  & IFDI histogram: internal vs external \\
+\texttt{relay81/outputs/tr63/tr63\_ndz.png}
+  & NDZ map in $(\Delta P, D_v)$ space \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+% ============================================================================
+\section*{Acknowledgements}
+
+This technical report is part of the SAMBP PhD research programme.  All
+simulation code, model derivations, and validation results are original
+contributions.  The two-pass LM structure follows the pattern established in
+TR-56 (DFIG crowbar) and the $\Wtau$ discriminant is analogous to the DDR
+gate in TR-62 (PV 87L).
+
+% ============================================================================
+\bibliographystyle{IEEEtranN}
+\bibliography{references63}
+
+\end{document}

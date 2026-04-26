@@ -1,0 +1,71 @@
+% fig_study_system.tex — IBR-connected transformer study network
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  bus/.style={circle,draw=black,thick,fill=gray!15,
+              minimum size=0.55cm,inner sep=0pt},
+  blk/.style={draw=black,thick,fill=white,rounded corners=2pt,
+              minimum width=1.8cm,minimum height=0.55cm,align=center},
+]
+%% Buses
+\node[bus] (BG)  at (0,   0) {G};
+\node[bus] (BA)  at (2.5, 0) {A};
+\node[bus] (BB)  at (5.0, 0) {B};
+\node[bus] (BIBR)at (7.5, 0) {C};
+
+%% SG source
+\node[blk,fill=blue!10,draw=blue!60] (SG) at (-2.0,0) {SG\\$X''_d{=}0.15$};
+\draw[thick] (SG.east) -- (BG.west);
+
+%% TX1: SG-side step-up
+\node[blk,fill=yellow!15,draw=orange!70] (TX1) at (1.25,0)
+  {TX1\\$Z_T{=}0.05$\,pu};
+\draw[thick] (BG.east) -- (TX1.west);
+\draw[thick] (TX1.east) -- (BA.west);
+
+%% Transmission line
+\node[blk,fill=white,draw=black!50,minimum width=1.5cm] (LINE) at (3.75,0)
+  {Line\\$Z_L$};
+\draw[thick] (BA.east) -- (LINE.west);
+\draw[thick] (LINE.east) -- (BB.west);
+
+%% TX2: IBR-connected transformer (protected zone)
+\node[blk,draw=thesisred,fill=red!8,minimum width=1.6cm] (TX2) at (6.25,0)
+  {\textbf{TX2}\\$Z_T{=}0.06$\,pu};
+\draw[thick,thesisred] (BB.east) -- (TX2.west);
+\draw[thick,thesisred] (TX2.east) -- (BIBR.west);
+
+%% IBR
+\node[blk,fill=green!10,draw=green!60!black,minimum width=1.5cm] (IBR)
+  at (9.0,0) {IBR\\$k_{\rm ibr}$};
+\draw[thick] (BIBR.east) -- (IBR.west);
+
+%% CT annotations
+\node[circle,draw,fill=white,minimum size=0.38cm,inner sep=0pt,font=\tiny]
+  (CT1) at (5.4,0) {CT};
+\node[circle,draw,fill=white,minimum size=0.38cm,inner sep=0pt,font=\tiny]
+  (CT2) at (7.1,0) {CT};
+
+%% 87T relay
+\node[draw=thesisred,fill=red!15,rounded corners=2pt,
+      minimum width=1.4cm,minimum height=0.6cm,
+      font=\scriptsize,align=center] (R87T) at (6.25,-1.6)
+  {\textbf{87T}\\SPRT relay};
+\draw[->,thesisred,thick] (CT1.south) |- (R87T.west);
+\draw[->,thesisred,thick] (CT2.south) |- (R87T.east);
+
+%% 87T zone brace
+\draw[thesisred,thick,dashed]
+  (5.3,-0.8) -- (5.3,0.8) -- (7.2,0.8) -- (7.2,-0.8);
+\node[font=\tiny,thesisred] at (6.25,1.05) {87T zone};
+
+%% Fault symbol
+\node[draw=thesisred,fill=red!5,star,star points=6,
+      minimum size=0.5cm,inner sep=0pt,font=\tiny]
+  (F) at (6.25,0.9) {};
+\node[font=\tiny,thesisred,above=0.05cm of F] {$F$ (int.)};
+
+%% Labels
+\node[font=\tiny,below=0.15cm of BA] {Bus A};
+\node[font=\tiny,below=0.15cm of BB] {Bus B};
+\node[font=\tiny,below=0.15cm of BIBR] {Bus C};
+\end{tikzpicture}

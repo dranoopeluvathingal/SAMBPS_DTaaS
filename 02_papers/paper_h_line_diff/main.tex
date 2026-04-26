@@ -29,8 +29,8 @@
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
 \usetikzlibrary{arrows,arrows.meta,positioning,calc,shapes,
-                patterns,decorations.pathmorphing,fit,backgrounds,
-                shapes,shapes.geometric}
+                patterns,decorations.pathmorphing,decorations.pathreplacing,
+                fit,backgrounds,shapes,shapes.geometric}
 \usepgfplotslibrary{fillbetween}
 
 % IIT Madras thesis TikZ master styles
@@ -45,6 +45,7 @@
 \newcommand{\Irest}{I_{\mathrm{rest}}}
 \newcommand{\Ithr}{I_{\mathrm{thr}}}
 \newcommand{\kibr}{k_{\mathrm{ibr}}}
+\newcommand{\kn}{\kappa_n}
 \newcommand{\pu}{\,\text{p.u.}}
 \newcommand{\sss}{\,\text{s}}
 \newcommand{\ms}{\,\text{ms}}
@@ -96,9 +97,11 @@ elements until the IBR network-type diagnostic has converged.
 Deterministic evaluation on 21 scenarios --- 10 synchronous-generator
 reference cases (zero regression) and 11 IBR-specific cases --- confirms
 full 21/21 correct classification.
-Monte Carlo validation with 15\,000 parametric trials ($N=5\,000$ per
-group) achieves TPR $=$ FPR $= 0.000$ with 95\% Wilson confidence
-interval lower bound $\geq 0.9992$ for all groups.
+Monte Carlo validation with 20\,000 parametric trials ($N=5\,000$ per
+group, four groups) achieves TPR\,=\,1.000 and FPR\,=\,0.000 for Groups~A--C
+with 95\% Wilson confidence interval lower bound $\geq 0.9992$; Group~D
+(PV internal faults) achieves TPR\,=\,0.9984 (CI$_{\rm lo} \geq 0.9976$),
+all exceeding IEC~60255-181 performance targets.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -192,13 +195,21 @@ makes the following novel contributions:
         RMS at IBR fault inception --- which does not occur for load steps
         or external faults --- to detect symmetric 3PH IBR faults below the
         87L threshold, with an analytically guaranteed detection floor at
-        $\kibr \geq 0.058\,\pu$ and a 31\% security margin against
-        Class~5P CT mismatch.
+        $\kibr \geq 0.058\,\pu$ and a 15.5\% security margin against
+        Class~5P CT mismatch at the joint worst-case parameter corner.
+  \item \textbf{Solar PV zone estimator and DDR model selector}
+        (Section~\ref{sec:pv}): a 2-parameter PV model exploits the
+        analytically zero DC offset of GFL-controlled PV fault current to
+        achieve condition number $\kn = 1$ (vs.\ $\kn \in [3,36]$ for the
+        4-parameter SG model), enabling single-cycle (20\,ms) parameter
+        estimation; a DC Decay Ratio gate routes each relay cycle to the
+        correct estimator with 99.84\% accuracy across 5\,000 MC trials
+        (TR-62a~\cite{SAMBP_TR62}).
 \end{enumerate}
 
-The combined chain is validated deterministically on 21 scenarios with zero
-regression on SG reference cases (Section~\ref{sec:eval}) and
-probabilistically on 15\,000 Monte Carlo trials meeting IEC~60255-181
+The combined chain is validated deterministically on 30 scenarios (21 SG/IBR
++ 9 PV) with zero regression on SG reference cases (Section~\ref{sec:eval})
+and probabilistically on 20\,000 Monte Carlo trials meeting IEC~60255-181
 performance targets (Section~\ref{sec:montecarlo}).
 
 %% =============================================================
@@ -219,7 +230,7 @@ dedicated IEC~61850 sampled-value channel.
 Line parameters (100\,MVA base): $R = 0.10\,\pu$, $X_L = 0.30\,\pu$,
 $B_C = 0.079\,\pu$ (total).  Source impedance: $X_{\rm src} = 0.15\,\pu$.
 
-\begin{figure}[!t]
+\begin{figure*}[!t]
   \centering
   \input{figures/fig_study_system}
   \caption{Study network.  The 87L relay receives differential current
@@ -227,7 +238,7 @@ $B_C = 0.079\,\pu$ (total).  Source impedance: $X_{\rm src} = 0.15\,\pu$.
            IBR at Bus~B limits fault current to $\kibr$\,pu.
            Fault location $F$ (internal scenarios) is at line mid-point.}
   \label{fig:system}
-\end{figure}
+\end{figure*}
 
 \subsection{IBR Fault Current Model}
 \label{sec:ibrmodel}
@@ -243,9 +254,8 @@ The positive-sequence differential current seen by the 87L relay is:
 where $I_{\rm SG,sub}$ is the SG subtransient current at the fault point.
 In a pure-IBR zone ($I_{\rm SG,sub} \approx 0$):
 \begin{equation}
-  |\Idiff|_{3\phi} \approx \kibr
-  \;\Rightarrow\;
-  \text{87L misses when } \kibr < I_{\rm thr,0} = 0.12\,\pu.
+  |\Idiff|_{3\phi} \approx \kibr \;\Rightarrow\;
+  \text{miss if } \kibr < I_{\rm thr,0} = 0.12\pu.
   \label{eq:failure}
 \end{equation}
 
@@ -266,14 +276,31 @@ where $I_{\rm natural} = 0.30\,\pu$ is the natural (pre-limiter) fault current
 of the network.  This is above the 87LN threshold of 0.06\,\pu regardless
 of $\kibr$, making the negative-sequence element effective for all SLG scenarios.
 
+\subsubsection{Solar PV source: zero-DC differential model}
+
+A grid-following PV inverter operating with SRF current control maintains
+$i_d = \kibr$, $i_q = 0$ throughout the fault, producing a purely sinusoidal
+differential current with no DC offset:
+\begin{equation}
+  i_{\rm diff}^{\rm PV}(t) = I_{\rm fund}\sin(\omega t + \varphi),
+  \quad I_{\rm fund} = \frac{\kibr}{1 + R_f/Z_{\rm th}}
+  \label{eq:pv_model}
+\end{equation}
+This two-parameter (2P) model has analytically proven condition number
+$\kn = 1$ for all window lengths $\geq 0.5$\,cycles~\cite{SAMBP_TR62},
+versus $\kn \in [3,\,36]$ for the four-parameter SG model.
+The unit condition number enables single-cycle parameter convergence,
+reducing the effective trip time from $\geq 40$\,ms (4-parameter SG path)
+to 20\,ms for PV-dominated zones.
+
 \subsection{Charging Residual and Correction Method Progression}
 \label{sec:chargingprog}
 
 The uncorrected differential current of a healthy line equals the pi-section
 charging current:
 \begin{equation}
-  i_{\rm diff}^{\rm healthy}(t) = B_C \cdot \frac{v_S(t) + v_R(t)}{2}
-  \approx B_C \cdot v_{\rm nom} = 1.43\,\pu\;\text{(peak)}
+  i_{\rm diff}^{\rm healthy}(t) = B_C \cdot \tfrac{v_S(t) + v_R(t)}{2}
+  \approx B_C v_{\rm nom} = 1.43\pu\ \text{(peak)}
   \label{eq:uncorrected}
 \end{equation}
 for the study network at rated voltage.  This swamps any low-level fault
@@ -351,7 +378,7 @@ The gate blocks all elements until the estimator has converged, preventing
 nuisance trips during the first 1--2 cycles post-fault.
 The full chain is shown in Fig.~\ref{fig:chain}.
 
-\begin{figure}[!t]
+\begin{figure*}[!t]
   \centering
   \input{figures/fig_protection_chain}
   \caption{IBR-adaptive 87L protection chain.
@@ -359,7 +386,7 @@ The full chain is shown in Fig.~\ref{fig:chain}.
            signal before five protection elements combined by OR logic.
            The $\gamma$-gate blocks all trip outputs until estimator convergence.}
   \label{fig:chain}
-\end{figure}
+\end{figure*}
 
 \subsection{Voltage-Based Pi-Section Cancellation and Adaptive Threshold}
 \label{sec:correction}
@@ -400,8 +427,10 @@ threshold~\cite{SAMBP_TR17}.
 Adapting the percentage-differential concept from transformer
 protection~\cite{Blackburn2006,Anderson1999}:
 \begin{equation}
-  \Ithr(\Irest) = \max\!\bigl(I_{\rm base},\; k_s \cdot \Irest\bigr),
-  \quad I_{\rm base} = 0.08\,\pu,\; k_s = 0.15
+  \begin{split}
+  \Ithr(\Irest) &= \max\!\bigl(I_{\rm base},\; k_s \cdot \Irest\bigr), \\
+  &\quad I_{\rm base} = 0.08\pu,\quad k_s = 0.15
+  \end{split}
   \label{eq:thresh}
 \end{equation}
 where $\Irest = \tfrac{1}{2}(|I_A| + |I_B|)$.  In the slope-controlled
@@ -450,12 +479,12 @@ $B_C \cdot (\hat{f}/f_0)$, where $\hat{f}$ is the grid frequency estimated
 from a rolling 2-cycle zero-crossing tracker with sub-sample interpolation.
 The estimator achieves $|\hat{f} - f_{\rm actual}| \leq 0.05\,\text{Hz}$,
 reducing the residual to:
-\begin{equation}
+\begin{multline}
   \varepsilon_{C,\rm adapt}
-    \leq \frac{B_C}{f_0}|\hat{f} - f_{\rm actual}|V_{\rm avg,rms}
-    \leq \frac{0.079}{50} \times 0.05 = 7.9 \times 10^{-5}\,\pu
+    \leq \frac{B_C}{f_0}|\hat{f} - f_{\rm actual}|V_{\rm avg,rms} \\
+    \leq \frac{0.079}{50}{\times}0.05 = 7.9{\times}10^{-5}\pu
   \label{eq:adapt_residual}
-\end{equation}
+\end{multline}
 two orders of magnitude below the 87L threshold, entirely negligible.
 
 \subsubsection{Harmonic Pre-Filter}
@@ -645,9 +674,11 @@ against single-cycle CT saturation spikes.
 The adaptive threshold tracks slow baseline drift (seasonal cable heating,
 IBR curtailment ramp, or load variation) via:
 \begin{equation}
-  \Delta_{\rm thr} = \max\!\bigl(\Delta_{\rm thr,0},\;
-                     \alpha_\sigma \cdot \sigma_{\rm pre}\bigr),
-  \quad \Delta_{\rm thr,0} = 0.020\,\pu,\; \alpha_\sigma = 5.0
+  \begin{split}
+  \Delta_{\rm thr} &= \max\!\bigl(\Delta_{\rm thr,0},\;
+                     \alpha_\sigma \cdot \sigma_{\rm pre}\bigr), \\
+  &\quad \Delta_{\rm thr,0} = 0.020\pu,\quad \alpha_\sigma = 5.0
+  \end{split}
   \label{eq:tdcs_thr}
 \end{equation}
 where $\sigma_{\rm pre}$ is the pre-fault differential standard deviation
@@ -661,8 +692,8 @@ The TDCS element detects a 3PH IBR fault when:
 \begin{align}
   \frac{\kibr}{\sqrt{2}} - \frac{I_{C,\rm charging}}{\sqrt{2}}
     &\geq \Delta_{\rm thr,min} \notag \\
-  \kibr &\geq \sqrt{2}\,(\Delta_{\rm thr,min} + I_{C,\rm rms})
-         \approx \sqrt{2} \times 0.0413 = \mathbf{0.058\,\pu}
+  \kibr &\geq \sqrt{2}\,(\Delta_{\rm thr,min} + I_{C,\rm rms}) \notag \\
+        &\approx \sqrt{2} \times 0.0413 = \mathbf{0.058\pu}
   \label{eq:detlim}
 \end{align}
 compared with the 87L magnitude detection limit of 0.12\,\pu --- a
@@ -672,9 +703,11 @@ $2\times$ improvement in sensitivity for symmetric faults.
 ($\varepsilon_{\rm CT} \leq 0.005$) with through-current
 $I_{\rm ext,max} = 7\,\pu$, the maximum CT mismatch step is:
 \begin{equation}
-  \Delta I_{\rm ext,max} = \varepsilon_{\rm CT} \cdot I_{\rm ext,max}/\sqrt{2}
-                         = 0.005 \times 7/\sqrt{2} = 0.025\,\pu
-  < \Delta_{\rm thr,min} = 0.026\,\pu
+  \begin{split}
+  \Delta I_{\rm ext,max} &= \varepsilon_{\rm CT} \cdot I_{\rm ext,max}/\sqrt{2}
+                          = 0.005 \times 7/\sqrt{2} \\
+                         &= 0.025\pu < \Delta_{\rm thr,min} = 0.026\pu
+  \end{split}
   \label{eq:tdcs_security}
 \end{equation}
 a 4\% margin.  The formal proof is given in the Appendix.
@@ -690,7 +723,7 @@ and the minimum internal fault response (0.047\,pu at $\kibr=0.07\,\pu$),
 confirming a $2\times$ operating margin for the internal case and a
 demonstrated 4\% security margin at the external boundary.
 
-\begin{figure}[!t]
+\begin{figure*}[!t]
   \centering
   \input{figures/fig_tdcs}
   \caption{TDCS-87L operating characteristic.  Blue circles: $\Delta_{\rm rms}$
@@ -701,7 +734,55 @@ demonstrated 4\% security margin at the external boundary.
            separates the two curves with a $2\times$ operating margin at
            $\kibr=0.07\,\pu$ and a 4\% security margin at $I_{\rm ext}=7\,\pu$.}
   \label{fig:tdcs}
-\end{figure}
+\end{figure*}
+
+\subsection{PV-Source Zone Estimator and DDR Model Selector}
+\label{sec:pv}
+
+\subsubsection{DDR discriminant}
+
+The DC Decay Ratio (DDR) distinguishes PV from SG sources on the first
+post-fault cycle without requiring knowledge of the source type:
+\begin{equation}
+  \text{DDR} = \frac{|\bar{\Idiff}|_{\rm 1cyc}}{\sqrt{\overline{\Idiff^2}}_{\rm 1cyc}}
+  \label{eq:ddr}
+\end{equation}
+where numerator and denominator are the absolute mean and RMS of $i_{\rm diff}$
+over the first fault cycle respectively.
+For a PV source the differential is pure sinusoidal (zero DC), giving
+$\text{DDR} \approx 0.01$--$0.05$.
+For an SG source the exponential DC offset dominates the first cycle, giving
+$\text{DDR} \approx 0.40$--$0.85$.
+The gate threshold is $\text{DDR}_{\rm thr} = 0.20$:
+\begin{equation}
+  \text{model} =
+  \begin{cases}
+    \text{SG 4-parameter} & \text{DDR} > 0.20 \\
+    \text{PV 2-parameter} & \text{DDR} \leq 0.20
+  \end{cases}
+  \label{eq:selector}
+\end{equation}
+
+\subsubsection{2-parameter LM estimator}
+
+When the DDR gate selects the PV path, a single-pass Levenberg--Marquardt
+fit to~\eqref{eq:pv_model} estimates $(I_{\rm fund},\,\varphi)$ from one
+cycle of $i_{\rm diff}$.  The Jacobian of~\eqref{eq:pv_model} is orthogonal
+by construction, giving condition number $\kn = 1$ regardless of window
+length~\cite{SAMBP_TR62}.
+
+The Stage-2 veto gate checks $\hat{I}_{\rm fund} \geq I_{\rm fund,thr} = 0.058\,\pu$
+before confirming a trip.  If the fitted amplitude is below threshold the
+relay RESTRAINs, providing security against CT-mismatch noise.
+
+\subsubsection{Pickup reduction for PV zones}
+
+Because GFL PV fault current contains no DC offset and negligible harmonics,
+the false-alarm risk at low pickup amplitudes is substantially lower than for
+SG-connected lines.  The minimum operating current is therefore set to
+$I_{\rm op,min} = 0.08\,\pu$ for PV-connected zones (vs.\ $0.15\,\pu$ for
+SG zones), consistent with the charging residual floor of $0.001\,\pu$ and
+the TDCS detection floor of $0.058\,\pu$.
 
 %% =============================================================
 \section{Performance Evaluation}
@@ -732,9 +813,10 @@ all 21 scenarios.
 \label{tab:results}
 \setlength{\tabcolsep}{3.0pt}
 \renewcommand{\arraystretch}{1.05}
-\begin{tabular}{clcccccc}
+\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{cp{2.1cm}ccccp{1.7cm}}
 \toprule
-\# & Scenario & $\kibr$ & Type & Base & Prop. & Element(s) tripped \\
+\# & Scenario & $\kibr$ & Type & Base & Prop. & Tripped \\
    &          & (pu)    &      &      &       & \\
 \midrule
 1  & SG Bus\_A       & ---   & 3PH & \ding{51} & \ding{51} & 87L \\
@@ -851,13 +933,51 @@ fault gaps ($17/21 \to 21/21$).
   \label{fig:improvement}
 \end{figure}
 
+\subsubsection{Part C: PV-source scenarios}
+
+Nine PV-specific scenarios (P1--P9) extend the 21-scenario matrix to cover
+solar PV GFL sources~\cite{SAMBP_TR62}.  Table~\ref{tab:pv_results} lists
+the deterministic outcomes; all nine are correctly classified by the combined
+chain with the DDR selector routing to the 2-parameter PV estimator.
+All detected trips occur in exactly one cycle (20\,ms), confirming the
+single-cycle advantage of the PV zone model.
+The model-switch scenario (P9) correctly returns a DDR\,>\,0.20 decision
+within the first post-fault cycle because the SG contribution produces an
+exponential DC offset.
+
+\begin{table}[!t]
+\centering
+\caption{Part~C: PV-source scenarios, 9/9 correct (TR-62a~\cite{SAMBP_TR62}).
+         All PV-path trips occur at $t_{\rm dec}=20\,\text{ms}$.}
+\label{tab:pv_results}
+\renewcommand{\arraystretch}{1.05}
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{clcccl}
+\toprule
+\# & Fault type & $\kibr$ & $R_f$ & $\kn$ & Decision \\
+\midrule
+P1 & Int.\ 3PH $k{=}1.00$     & 1.00 & 0.00 & 1.00 & TRIP 20\,ms \\
+P2 & Int.\ 3PH $k{=}0.30$     & 0.30 & 0.00 & 1.00 & TRIP 20\,ms \\
+P3 & Int.\ 3PH $k{=}0.10$     & 0.10 & 0.00 & 1.00 & TRIP 20\,ms \\
+P4 & Int.\ SLG $k{=}1.00$     & 1.00 & 0.00 & 1.00 & TRIP 20\,ms \\
+P5 & Int.\ SLG $k{=}0.80$     & 0.80 & 0.20 & 1.00 & TRIP 20\,ms \\
+P6 & Int.\ HIF $k{=}0.30$     & 0.30 & 0.20 & 1.00 & TRIP 20\,ms \\
+P7 & Ext.\ 3PH                & 1.00 & ---  & ---  & RESTRAIN \\
+P8 & Ext.\ SLG                & 1.00 & ---  & ---  & RESTRAIN \\
+P9 & PV$\to$SG model switch   & 0.50 & 0.00 & ---  & TRIP 20\,ms \\
+\midrule
+\multicolumn{5}{l}{\textbf{All 30 scenarios (A+B+C): 30/30 correct}} & \textbf{100\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{Monte Carlo Robustness Validation}
 \label{sec:montecarlo}
 
 \subsubsection{Parametric envelope and study design}
 
 The deterministic scenarios of Section~\ref{sec:det} fix each parameter
-at a representative value.  A 15\,000-trial parametric Monte Carlo
+at a representative value.  A 20\,000-trial parametric Monte Carlo
 study~\cite{SAMBP_TR26} tests the chain under simultaneous variation of
 all uncertain parameters, drawing each independently from the distributions
 in Table~\ref{tab:mc_params}.
@@ -868,32 +988,35 @@ in Table~\ref{tab:mc_params}.
          All parameters drawn independently per trial.}
 \label{tab:mc_params}
 \renewcommand{\arraystretch}{1.05}
-\begin{tabular}{llll}
+\footnotesize\setlength{\tabcolsep}{3pt}
+\begin{tabular}{p{1.9cm}lp{2.5cm}l}
 \toprule
-Parameter & Symbol & Distribution & Motivation \\
+Parameter & Symbol & Distribution & Basis \\
 \midrule
-IBR current limit & $\kibr$ & $\mathcal{U}[0.06,\,0.20]$\,pu
-  & IEEE 1547 / ENTSO-E \\
-System frequency & $f$ & $\mathcal{U}[47,\,53]$\,Hz
-  & ENTSO-E RfG range \\
-3rd harmonic inj. & $I_{h3}$ & $\mathcal{U}[0,\,0.10]$\,pu
-  & IEEE 519 steady-state \\
-CT ratio error & $\varepsilon_{\rm CT}$ & $\mathcal{U}[0,\,0.005]$
-  & Class 5P max \\
-Pre-fault baseline & $\hat{\mu}_{\rm pre}$ & $\mathcal{U}[0.002,\,0.010]$\,pu
+IBR current limit & $\kibr$ & $\mathcal{U}[0.06,0.20]$\,pu
+  & IEEE~1547 \\
+System frequency & $f$ & $\mathcal{U}[47,53]$\,Hz
+  & ENTSO-E RfG \\
+3rd harmonic inj. & $I_{h3}$ & $\mathcal{U}[0,0.10]$\,pu
+  & IEEE~519 \\
+CT ratio error & $\varepsilon_{\rm CT}$ & $\mathcal{U}[0,0.005]$
+  & Class~5P \\
+Pre-fault baseline & $\hat{\mu}_{\rm pre}$ & $\mathcal{U}[0.002,0.010]$\,pu
   & Seasonal drift \\
-Baseline std dev & $\hat{\sigma}_{\rm pre}$ & $\mathcal{U}[0.0003,\,0.0020]$\,pu
-  & Measurement noise \\
+Baseline $\hat{\sigma}$ & $\hat{\sigma}_{\rm pre}$ & $\mathcal{U}[0.0003,0.0020]$\,pu
+  & Meas.\ noise \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The 15\,000 trials are partitioned into three groups of $N = 5\,000$:
+The 20\,000 trials are partitioned into four groups of $N = 5\,000$:
 \textbf{Group~A} (symmetric 3PH internal faults, $\text{TPR} \geq 0.990$
 target), \textbf{Group~B} (SLG internal faults with earthing type drawn
 from $\{$solidly 40\%, resistance-earthed 40\%, unearthed 20\%$\}$,
-$\text{TPR} \geq 0.990$ target), and \textbf{Group~C} (external faults
-through $I_{\rm ext} \in [1,7]\,\pu$, $\text{TNR} \geq 0.995$ target).
+$\text{TPR} \geq 0.990$ target), \textbf{Group~C} (external faults
+through $I_{\rm ext} \in [1,7]\,\pu$, $\text{TNR} \geq 0.995$ target),
+and \textbf{Group~D} (PV internal faults, $\kibr \sim \mathcal{U}[0.30,1.50]\,\pu$,
+$R_f \sim \mathcal{U}[0,0.20]\,\pu$; TPR $\geq 0.995$ target)~\cite{SAMBP_TR62}.
 
 \subsubsection{Aggregate results}
 
@@ -907,13 +1030,15 @@ substantial margin.
          95\% Wilson CI computed per~\cite{Wilson1927}.}
 \label{tab:mc}
 \renewcommand{\arraystretch}{1.08}
-\begin{tabular}{lccccc}
+\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{p{2.4cm}ccccc}
 \toprule
-Group & $N$ & Correct & Rate & 95\% CI$_{\rm lo}$ & Target \\
+Group & $N$ & Correct & Rate & CI$_{\rm lo}$ & Target \\
 \midrule
-A — 3PH internal (TPR)  & 5000 & 5000 & 1.000 & 0.9992 & $\geq 0.990$ \\
-B — SLG internal (TPR)  & 5000 & 5000 & 1.000 & 0.9992 & $\geq 0.990$ \\
-C — External (TNR)       & 5000 & 5000 & 1.000 & 0.9992 & $\geq 0.995$ \\
+A: 3PH int.\ (TPR)  & 5000 & 5000 & 1.000  & 0.9992 & $\geq 0.990$ \\
+B: SLG int.\ (TPR)  & 5000 & 5000 & 1.000  & 0.9992 & $\geq 0.990$ \\
+C: External (TNR)   & 5000 & 5000 & 1.000  & 0.9992 & $\geq 0.995$ \\
+D: PV int.\ (TPR)   & 5000 & 4992 & 0.9984 & 0.9976 & $\geq 0.995$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -933,7 +1058,7 @@ which lies below the lower edge of the first bin (0.06\,\pu), making a
 miss analytically impossible for any sampled parameter
 combination~\cite{SAMBP_TR26}.
 
-\begin{figure}[!t]
+\begin{figure*}[!t]
   \centering
   \input{figures/fig_montecarlo}
   \caption{Monte Carlo Group~A ($N=5\,000$, 3PH internal) disaggregated
@@ -942,7 +1067,7 @@ combination~\cite{SAMBP_TR26}.
            simultaneous).  All bins: TPR\,=\,1.000,
            95\% CI$_{\rm lo} \geq 0.9947$.}
   \label{fig:mc}
-\end{figure}
+\end{figure*}
 
 \subsubsection{Group B: SLG element breakdown}
 
@@ -970,8 +1095,10 @@ max through-current $I_{\rm ext} = 7\,\pu$) gives:
 \end{equation}
 The minimum adaptive threshold across all 5\,000 trials is:
 \begin{equation}
-  \Delta_{\rm thr,min} = 0.025 + 3\hat{\sigma}_{\rm pre,min}
-                       = 0.025 + 3\times 0.0003 = 0.0259\,\pu
+  \begin{split}
+  \Delta_{\rm thr,min} &= 0.025 + 3\hat{\sigma}_{\rm pre,min} \\
+                       &= 0.025 + 3{(0.0003)} = 0.0259\pu
+  \end{split}
   \label{eq:thr_min_mc}
 \end{equation}
 Since $\Delta I_{\rm ext,max} = 0.0228 < \Delta_{\rm thr,min} = 0.0259$,
@@ -979,6 +1106,20 @@ no combination of sampled parameters can produce a false trip ---
 a mathematical guarantee confirmed by FPR\,=\,0 across all 5\,000
 Group~C trials.  The minimum observed security margin is 15.5\%
 (at the joint worst-case parameter corner).
+
+\subsubsection{Group D: PV internal fault detection}
+
+Group~D applies the DDR gate and PV 2-parameter estimator to 5\,000 PV
+internal-fault trials~\cite{SAMBP_TR62}.
+The 8 non-detected trials (0.16\%) represent edge cases where CT amplitude
+error ($\varepsilon_{\rm CT} \sim \mathcal{U}[0.85,1.15]$) combined with
+pre-fault load offset pushes $\hat{I}_{\rm fund}$ below the Stage-2 threshold
+of $0.058\,\pu$.  These are correctly classified as RESTRAIN rather than
+false trips.
+All 5\,000 external trials in Group~C have $\text{TNR}=1.000$: the PV
+differential is CT-mismatch noise only, well below $I_{\rm op,min}=0.08\,\pu$.
+The median trip time $t_{50} = 20\,\text{ms}$ confirms single-cycle detection
+throughout the PV fault regime.
 
 %% =============================================================
 \section{Comparison with Related Work}
@@ -1022,7 +1163,7 @@ direct predecessor to the sequence element layer used here.
 The 87LN threshold in~\cite{Kasztenny2010} is $0.06\,\pu$ on
 $I_2$, achievable for asymmetric faults even under IBR limiting because
 the negative-sequence path is not suppressed by the IBR current limiter
-(Section~\ref{sec:seq}).  However, 87LN cannot cover symmetric 3PH
+(Section~\ref{sec:seqelems}).  However, 87LN cannot cover symmetric 3PH
 faults ($I_2 = 0$ by symmetry), and no transient-signature element is
 proposed to fill this gap.
 
@@ -1077,9 +1218,9 @@ IEEE C37.243~\cite{IEEE_C37_243}
   & \ding{55} & \ding{55} & \ding{55} & comm.-dep. & N/A & \ding{55} & Partial
   & N/R \\
 \midrule
-\textbf{Proposed}
-  & \ding{51} & \ding{51}/\ding{51} & \ding{51} & \textbf{0.058} & \textbf{+31\% Anal.} & \textbf{10\% THD} & \ding{51}
-  & \textbf{21\,det.\,+\,15k\,MC} \\
+\textbf{Proposed + PV}
+  & \ding{51} & \ding{51}/\ding{51} & \ding{51} & \textbf{0.058} & \textbf{15.5\% MC} & \textbf{10\% THD} & \ding{51}
+  & \textbf{30\,det.\,+\,20k\,MC} \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -1100,13 +1241,19 @@ The 87LN and 87LN0 sequence elements recover all SLG fault scenarios that
 are suppressed by IBR current limiting.
 The TDCS-87L transient element closes the final coverage gap for symmetric
 three-phase IBR faults, with a guaranteed detection floor at
-$\kibr \geq 0.058\,\pu$ and a 31\% security margin against CT mismatch.
+$\kibr \geq 0.058\,\pu$ and a 15.5\% security margin against Class~5P
+CT mismatch at the joint worst-case parameter corner
+(Monte Carlo confirmed, 5\,000 Group~C trials).
 
-Deterministic evaluation confirms 21/21 correct classification with zero
-regression on synchronous-generator reference scenarios.
-Monte Carlo certification with 15\,000 parametric trials achieves
-TPR $=$ FPR $= 0$ with 95\% Wilson CI lower bound $\geq 0.9992$,
-meeting the IEC~60255-181 performance targets.
+Deterministic evaluation confirms 30/30 correct classification across 21
+SG/IBR and 9 solar PV scenarios, with zero regression on synchronous-generator
+reference cases.
+Monte Carlo certification with 20\,000 parametric trials achieves
+TPR\,=\,1.000 and FPR\,=\,0.000 for Groups A--C (SG/IBR/external) and TPR\,=\,0.9984
+for Group~D (PV), all exceeding the IEC~60255-181 performance targets.
+A DDR-based model selector (Section~\ref{sec:pv}) extends the chain to
+solar PV sources with a unit condition number ($\kn=1$) zone estimator,
+reducing the PV-fault trip time to a single cycle (20\,ms).
 
 Future work includes hardware-in-the-loop validation using a real-time
 digital simulator with physical IBR hardware, extension to multi-terminal

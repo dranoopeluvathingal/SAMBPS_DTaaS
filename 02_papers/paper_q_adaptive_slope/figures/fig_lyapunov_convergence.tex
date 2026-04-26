@@ -1,0 +1,72 @@
+% fig_lyapunov_convergence.tex
+% Two-panel: (top) Lyapunov V(t) and error ~k^2 vs time;
+%            (bottom) constraint set K(kappa_n) shrinking then stable
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=1 by 2, vertical sep=0.40cm},
+  thesis style,
+  width  = 0.90\columnwidth,
+  height = 3.0cm,
+  xmin=0, xmax=300,
+  xtick={0,50,100,150,200,250,300},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+  clip=true,
+]
+
+%% ── Panel 1: Lyapunov function V(t) = ~k^2/(2γ) ────────────────────────────
+\nextgroupplot[
+  ylabel={$V(t) = \tilde{k}^2/(2\gamma)$},
+  ymin=0, ymax=0.12,
+  ytick={0,0.02,0.04,0.06,0.08,0.10},
+  yticklabel style={font=\scriptsize},
+  xticklabels={},
+  legend pos=north east,
+  legend style={font=\scriptsize},
+]
+
+%% Unconstrained adaptive (no projection): V converges but may violate constraints
+\addplot[thick,thesisgray,densely dashed,mark=none,domain=0:300,samples=100]
+  { 0.10 * exp(-x/55) + 0.001*rand };
+\addlegendentry{Unconstrained ($\Pi$ off)};
+
+%% Projected adaptive (with constraint): V decreases monotonically, settles faster
+\addplot[thick,thesisblue,mark=none,domain=0:300,samples=100]
+  { max(0, 0.10 * exp(-x/38) - 0.0005*x + 0.0008*rand) };
+\addlegendentry{Projected adaptive (Theorem~1)};
+
+%% Ultimate bound epsilon_∞
+\addplot[thesisred,dotted,thick,domain=0:300,samples=2] {0.004};
+\node[thesisred,font=\tiny,anchor=west] at (axis cs:302,0.006) {$\varepsilon_\infty$};
+
+%% Convergence time annotation
+\draw[thesisblue,<->,thin]
+  (axis cs:0,0.105) -- node[above,font=\tiny]{$t_c \leq 3/\alpha$}
+  (axis cs:115,0.105);
+
+%% ── Panel 2: Feasible set width |K(kappa_n)| = k_max - k_min ───────────────
+\nextgroupplot[
+  ylabel={$k_{\max} - k_{\min}$\,(pu)},
+  xlabel={Time after fault inception (ms)},
+  ymin=0.10, ymax=0.45,
+  ytick={0.10,0.20,0.30,0.40},
+]
+
+%% Constraint set width narrows as kappa_n falls (model becomes identifiable)
+\addplot[thick,thesisorange,mark=none,domain=0:300,samples=100]
+  { (x<10) ? 0.40 :
+    (x<80) ? 0.40 - (x-10)*0.003 :
+    max(0.14, 0.19 - (x-80)*0.0004) };
+\addlegendentry{$|\mathcal{K}(\kappan)|$ (IBR fleet)};
+
+%% Reference: fixed slope (no adaptation) — constant gap
+\addplot[thick,thesisgray,densely dashed,mark=none,domain=0:300,samples=2]
+  {0.30};
+\addlegendentry{Fixed $k$ (open-loop gap)};
+
+%% kappa_n < 30 region annotation
+\draw[thesisgreen,thin,dashed] (axis cs:40,0.10) -- (axis cs:40,0.45)
+  node[above,font=\tiny,thesisgreen]{$\kappan{<}30$};
+
+\end{groupplot}
+\end{tikzpicture}

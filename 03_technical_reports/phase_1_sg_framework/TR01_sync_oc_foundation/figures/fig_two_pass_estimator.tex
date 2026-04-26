@@ -56,8 +56,9 @@
 \node[lbl, below=0.5cm]  at (\tpre, 0)          {$t_0$};
 \node[lbl, above=0.45cm] at ({\tpre+\twin/2-\ttail/2}, 0)
   {\textcolor{p1C}{\textbf{Pass 1 window}} \\ \scriptsize (full fault interval)};
-\node[lbl, above=0.45cm] at ({\tpre+\twin-\ttail/2}, 0)
-  {\textcolor{p2C}{\textbf{Pass 2}} \\ \scriptsize tail};
+% Pass 2 tail label — above the strip, between strip top and N_tail brace
+\node[lbl] at ({\tpre+\twin-\ttail/2}, 0.68)
+  {\textcolor{p2C}{\textbf{Pass 2 tail}}};
 \node[lbl, below=0.5cm]  at ({\tpre+\twin}, 0)  {$t_c$};
 \node[lbl, above=0.45cm] at ({\tpre+\twin+\tpost/2}, 0)
   {Post-clear};
@@ -70,7 +71,7 @@
 
 \draw[brace, color=p2C]
   ({\tpre+\twin-\ttail}, 0.55) -- ({\tpre+\twin}, 0.55)
-  node[midway, above=8pt, lbl, color=p2C]
+  node[midway, above=20pt, lbl, color=p2C]
   {$N_{tail} = n_{cyc} \times N_s$};
 
 % ============================================================
@@ -81,7 +82,7 @@
 
 % Pass 1 box
 \node[rectangle, rounded corners=3pt, draw=p1C, fill=p1C!10, line width=0.9pt,
-      text width=5.5cm, align=left, font=\footnotesize, inner sep=7pt]
+      text width=6.0cm, align=left, font=\footnotesize, inner sep=7pt]
   (p1box) at ({(\tpre+\twin)/2}, {\bY-0.6})
 {
   \textbf{\textcolor{p1C}{Pass 1 — Full window (Phase-A only)}}\\[3pt]
@@ -92,10 +93,11 @@
   \textbf{Unreliable:} $\hat{I}_{ss},\,\hat{\tau}_{ac}$ (envelope/SS aliasing)
 };
 
-% Arrow Pass1 → Pass2
-\draw[arr, color=gray] (p1box.east) -- ++(0.5, 0)
-  node[right, font=\scriptsize, color=gray, align=left]
-  {lock $\hat{t}_0,\hat{I}_{sub},\hat{\tau}_{dc},\hat{\phi}_a$};
+% Arrow Pass1 → Pass2 — plain arrow, label above outside both boxes
+\draw[arr, color=gray] (p1box.east) -- ++(1.1, 0);
+\node[font=\scriptsize, color=gray, align=center]
+  at ($(p1box.east) + (0.55, 0.35)$)
+  {lock P1\\outputs};
 
 % Pass 2 box
 \node[rectangle, rounded corners=3pt, draw=p2C, fill=p2C!10, line width=0.9pt,
@@ -133,8 +135,8 @@
   node[below, font=\small\bfseries]
   {$\hat{\boldsymbol{\theta}},\;\|\mathbf{r}\|,\;J$  (to confidence scorer)};
 
-% ---- Caption label ----------------------------------------------------------
-\node[font=\small\bfseries, color=black!70] at ({(\tpre+\twin)/2}, {0.9})
+% ---- Caption label — above the upper brace, clear of timeline labels --------
+\node[font=\small\bfseries, color=black!70] at ({(\tpre+\twin)/2}, {2.2})
   {Two-Pass Inverse Estimation Strategy};
 
 \end{tikzpicture}

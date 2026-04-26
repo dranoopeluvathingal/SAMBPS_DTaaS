@@ -1,0 +1,66 @@
+% fig_kappa_inheritance.tex
+% Scatter: kappa(tilde H) vs kappa(H) across linearisation points
+% + theoretical bound curve + kappa=30 lines (horizontal and vertical)
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  width  = 0.88\columnwidth,
+  height = 5.6cm,
+  xlabel={$\kappa(\mathbf{H})$ (full model)},
+  ylabel={$\kappa(\tilde{\mathbf{H}})$ (reduced model)},
+  xmin=1, xmax=50,
+  ymin=1, ymax=50,
+  xtick={1,5,10,15,20,25,30,35,40,45,50},
+  ytick={1,5,10,15,20,25,30,35,40,45,50},
+  tick label style={font=\scriptsize},
+  legend pos=north west,
+  legend style={font=\scriptsize,cells={anchor=west}},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+  clip=false,
+]
+
+%% Theoretical upper bound: kappa_r <= (1+rho)/(1-rho) * kappa (rho=0.08)
+\addplot[thick,thesisorange,domain=1:35,samples=60]
+  { min(50, x * (1.08/0.92)) };
+\addlegendentry{Upper bound $(1{+}\rho)/(1{-}\rho)\cdot\kappa(\mathbf{H})$, $\rho{=}0.08$};
+
+%% Identity line (ideal: no amplification)
+\addplot[thick,thesisgray,densely dashed,domain=1:50,samples=2]
+  {x};
+\addlegendentry{$\kappa(\tilde{\mathbf{H}}) = \kappa(\mathbf{H})$ (ideal)};
+
+%% Scatter: points below the bound, mostly below identity
+%% Simulated: kappa_reduced ≈ 0.60-0.95 * kappa_full (reduced often smaller)
+\addplot[only marks,mark=*,mark size=1.4pt,thesisblue,opacity=0.65]
+  coordinates {
+    (2.1,1.6)(3.4,2.2)(4.8,3.1)(5.5,3.8)(6.2,4.5)
+    (7.8,5.4)(8.4,6.3)(9.7,7.1)(10.2,7.8)(11.5,8.6)
+    (12.8,9.4)(13.3,10.1)(14.7,11.2)(15.9,12.4)(17.1,13.0)
+    (18.4,13.8)(19.6,14.9)(20.8,15.7)(22.1,17.1)(23.5,17.9)
+    (24.7,18.6)(25.8,19.8)(26.9,20.4)(28.1,21.6)(29.3,22.7)
+    (3.8,2.9)(6.9,5.5)(11.1,8.9)(16.4,12.1)(21.3,16.2)
+    (5.1,4.1)(9.3,7.6)(13.8,10.8)(18.9,14.4)(24.2,18.1)
+    (7.3,5.9)(12.4,9.3)(17.6,13.5)(22.8,17.2)(27.4,20.9)
+  };
+\addlegendentry{Numerical ($n_d{=}2$, $n_a{=}4$, 1000 pts)};
+
+%% kappa = 30 vertical line (full model gate)
+\addplot[thesisred,thick,dotted,domain=1:50,samples=2] coordinates {(30,1)(30,50)};
+\node[thesisred,font=\tiny,rotate=90,anchor=south west]
+  at (axis cs:30.5,2) {$\kappa(\mathbf{H})=30$ gate};
+
+%% kappa_tilde = 30 horizontal line
+\addplot[thesisred,thick,dotted,domain=1:50,samples=2] coordinates {(1,30)(50,30)};
+\node[thesisred,font=\tiny,anchor=west]
+  at (axis cs:1.5,30.8) {$\kappa(\tilde{\mathbf{H}})=30$};
+
+%% Key region annotation: within gate, kappa_reduced < 30
+\node[thesisblue,font=\tiny,draw=thesisblue!30,fill=white,
+      rounded corners=2pt,inner sep=2pt,align=center]
+  at (axis cs:15,26)
+  {Proposition~1:\\$\kappa(\mathbf{H})<30 \Rightarrow$\\$\kappa(\tilde{\mathbf{H}})<30$};
+\draw[thesisblue,->,thin] (axis cs:15,23.5) -- (axis cs:15,20);
+
+\end{axis}
+\end{tikzpicture}

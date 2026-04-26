@@ -1,0 +1,35 @@
+========================================================================
+SAMBP TR-08 v2 — Monte Carlo with Pandapower Fault Currents
+N_TRIALS = 500 per scenario  |  seed = 2026
+Perturbation: dI~U(±20%), dDC~U(±30%), dtau~U(±20%), dphi~U(±45 deg)
+========================================================================
+
+Pandapower fault parameters:
+  Location               I_f_3ph    I_f_AG  tau_dc(ms)      X/R    V_pre
+  ------------------------------------------------------------------
+  bus_A                   10.966      6.579       50.03    15.72   0.9921
+  line_mid                 8.775      5.265       50.01    15.71   0.9906
+  bus_B                    7.313      4.388       50.01    15.71   0.9892
+  transformer_hv           7.313      4.388       50.01    15.71   0.9892
+  bus_C_load               4.775      2.865       49.99    15.71   0.9857
+
+Aggregate performance (all scenarios × all relays):
+  Positive trials (should trip) : 9000
+  Negative trials (should NOT)  : 16000
+  Total veto events             : 4000
+  Correct veto rate             : 1.0000
+
+  Metric                                Conv     SAMBP
+  --------------------------------------------------------
+  Sensitivity (TPR)                           1.0000 [0.9996,1.0000]            1.0000 [0.9996,1.0000]
+  False Positive Rate (FPR)                   0.0000 [0.0000,0.0002]            0.0000 [0.0000,0.0002]
+
+Comparison with TR-08 v1 (synthetic analytical waveforms):
+  Metric                              v1 (synth)  v2 (pandapower)
+  ----------------------------------------------------------------
+  Conv Sensitivity                        1.0000           1.0000  (+0.0000)
+  Conv FPR                                0.0625           0.0000  (-0.0625)
+  SAMBP Sensitivity                       0.9006           1.0000  (+0.0994)
+  SAMBP FPR                               0.0625           0.0000  (-0.0625)
+
+========================================================================

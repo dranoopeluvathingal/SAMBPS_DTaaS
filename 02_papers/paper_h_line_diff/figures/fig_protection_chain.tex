@@ -1,57 +1,81 @@
-% fig_protection_chain.tex
-% Combined IBR-adaptive 87L protection chain block diagram
-% TRIP = [87L v 87LN v 87LN0 v TDCS] ^ gamma_gate
-\begin{tikzpicture}[
-  blk/.style={draw,fill=blue!8,rounded corners=3pt,minimum width=2.2cm,
-              minimum height=0.65cm,font=\scriptsize,align=center},
-  gate/.style={draw,fill=orange!12,rounded corners=3pt,minimum width=1.4cm,
-               minimum height=0.65cm,font=\scriptsize,align=center},
-  prep/.style={draw,fill=green!8,rounded corners=3pt,minimum width=2.2cm,
-               minimum height=0.55cm,font=\scriptsize,align=center},
-  orgate/.style={draw,fill=yellow!20,rounded corners=3pt,minimum width=1.2cm,
-                 minimum height=0.55cm,font=\scriptsize,align=center},
-  trip/.style={draw,fill=red!15,rounded corners=3pt,minimum width=1.2cm,
-               minimum height=0.65cm,font=\scriptsize\bfseries,align=center},
-  >=latex,node distance=0.5cm
-]
-% Input pre-processing column
-\node[prep] (pifix)  at (0,3.0)  {Pi-section\\charging cancel};
-\node[prep] (freqad) at (0,2.1)  {Freq-adaptive\\correction (TR-20)};
-\node[prep] (hpre)   at (0,1.2)  {Harmonic\\pre-filter (TR-21)};
-\node[prep] (seqex)  at (0,0.2)  {Sequence\\extraction};
-
-% Protection elements column
-\node[blk] (e87L)   at (3.6,3.2) {87L magnitude\\$|\Delta I_1| \geq I_{\rm thr}$};
-\node[blk] (e87LN)  at (3.6,2.2) {87LN neg-seq\\$|\Delta I_2| \geq 0.06$\,pu};
-\node[blk] (e87LN0) at (3.6,1.2) {87LN0 zero-seq\\$|\Delta I_0| \geq 0.04$\,pu};
-\node[blk] (eTDCS)  at (3.6,0.2) {TDCS-87L transient\\$\Delta I_{\rm rms} \geq \Delta_{\rm thr}$};
-
-% Arrows from pre-proc to elements
-\foreach \s/\t in {pifix/e87L, freqad/e87L, hpre/e87L,
-                   seqex/e87LN, seqex/e87LN0, freqad/eTDCS} {
-  \draw[->,gray!60] (\s.east) -- (\t.west);
+% fig_protection_chain.tex — fragment (\input-able, no standalone wrapper)
+\definecolor{elemBlue}  {RGB}{31,  119, 180}
+\definecolor{gateOrange}{RGB}{214, 100,  14}
+\definecolor{tripRed}   {RGB}{180,  30,  30}
+\tikzset{
+  elem/.style   = {rectangle, rounded corners=3pt, draw=elemBlue, fill=elemBlue!12,
+                   line width=0.9pt, text width=2.6cm, align=center,
+                   minimum height=0.85cm, font=\small},
+  gate/.style   = {rectangle, rounded corners=3pt, draw=#1, fill=#1!12,
+                   line width=0.9pt, text width=1.2cm, align=center,
+                   font=\small\bfseries},
+  arr/.style    = {-{Stealth[length=4.5pt]}, line width=0.85pt, color=gray!70!black},
+  garr/.style   = {-{Stealth[length=4.5pt]}, line width=0.85pt, color=#1},
+  lbl/.style    = {font=\scriptsize, align=center, color=gray!55!black},
 }
+\begin{tikzpicture}[node distance=0.45cm and 1.6cm]
 
-% Adaptive threshold label on 87L
-\node[font=\tiny,gray!60,right=0pt of e87L,yshift=-8pt]
-  {$I_{\rm thr}=\max(0.08,\,0.15 I_{\rm rest})$};
+% ---- Protection element blocks (column 1) -----------------------------------
+\node[elem] (e87L)  {87L\\{\scriptsize\color{gray}Fundamental diff.}};
+\node[elem, below=of e87L]  (e87LN)  {87LN\\{\scriptsize\color{gray}Neg.-seq. diff.}};
+\node[elem, below=of e87LN] (e87LN0) {87LN0\\{\scriptsize\color{gray}Zero-seq. diff.}};
+\node[elem, below=of e87LN0](eTDCS)  {TDCS-87L\\{\scriptsize\color{gray}TDCS scalar}};
 
-% OR gate
-\node[orgate] (orgate) at (6.2,1.7) {OR};
-\foreach \e in {e87L,e87LN,e87LN0,eTDCS} {
-  \draw[->] (\e.east) -- (orgate.west|-\e) -- (orgate.west);
-}
+% ---- OR gate (column 2), centred on the 4 elements -------------------------
+\node[gate=elemBlue, minimum height=4.8cm, text width=1.1cm,
+      right=1.6cm of $(e87L.east)!0.5!(eTDCS.east)$] (OR)
+  {\textbf{OR}\\[4pt]$\bigvee$};
 
-% Confidence gate
-\node[gate] (gamma) at (7.9,1.7) {$\gamma$-gate\\$\gamma \geq 0.80$};
-\draw[->] (orgate.east) -- (gamma.west);
+% ---- AND gate (column 3), centred on OR ------------------------------------
+\node[gate=tripRed, minimum height=1.8cm, text width=1.1cm,
+      right=1.8cm of OR] (AND)
+  {\textbf{AND}\\[4pt]$\bigwedge$};
 
-% Trip output
-\node[trip] (trip) at (9.6,1.7) {TRIP};
-\draw[->,very thick,red!70!black] (gamma.east) -- (trip.west);
+% ---- gamma gate block — directly below AND ----------------------------------
+\node[gate=gateOrange, minimum height=0.9cm, text width=2.4cm,
+      below=1.0cm of AND] (gamma)
+  {$\gamma$-gate\\{\scriptsize IBR confidence}};
 
-% Title labels
-\node[font=\tiny\itshape,gray!70] at (0,3.75)   {Pre-processing};
-\node[font=\tiny\itshape,gray!70] at (3.6,3.75) {Protection elements};
-\node[font=\tiny\itshape,gray!70] at (7.9,3.75) {Trip logic};
+% ---- TRIP output label -------------------------------------------------------
+\node[right=1.4cm of AND, font=\large\bfseries, color=tripRed] (trip) {TRIP};
+
+% ---- Arrows: elements → OR --------------------------------------------------
+\draw[garr=elemBlue] (e87L.east)  -- (e87L.east  -| OR.west);
+\draw[garr=elemBlue] (e87LN.east) -- (e87LN.east -| OR.west);
+\draw[garr=elemBlue] (e87LN0.east)-- (e87LN0.east-| OR.west);
+\draw[garr=elemBlue] (eTDCS.east) -- (eTDCS.east -| OR.west);
+
+% ---- Arrow: OR → AND --------------------------------------------------------
+\draw[garr=elemBlue] (OR.east) -- (AND.west);
+
+% ---- Arrow: gamma → AND (straight up) ----------------------------------------
+\draw[garr=gateOrange] (gamma.north) --
+  node[right, lbl, xshift=2pt]{$\gamma \geq \gamma_{th}$} (AND.south);
+
+% ---- Arrow: AND → TRIP ------------------------------------------------------
+\draw[garr=tripRed, line width=1.2pt]
+  (AND.east) -- (trip.west);
+
+% ---- Gamma threshold annotation ----------------------------------------------
+\node[font=\scriptsize, color=gateOrange!80!black, align=center,
+      anchor=north] at ($(gamma.south) + (0, -0.15)$)
+  {$\gamma_{th} = 0.80$;\enspace $k_{ibr} \geq 0.06$};
+
+% ---- Group box: protection elements -----------------------------------------
+\begin{scope}[on background layer]
+  \node[rectangle, rounded corners=4pt, draw=elemBlue!50, fill=elemBlue!5,
+        dashed, line width=0.7pt,
+        fit=(e87L)(e87LN)(e87LN0)(eTDCS), inner sep=8pt] (elembox) {};
+\end{scope}
+
+% ---- "Protection elements" label — below TDCS box (concrete ref) ------------
+\node[font=\scriptsize\bfseries, color=elemBlue!75!black,
+      anchor=north west] at ($(eTDCS.south west) + (0, -0.22)$)
+  {Protection elements};
+
+% ---- Title — centred above OR gate top, with generous clearance --------------
+\node[font=\small\bfseries, color=black!70,
+      anchor=south] at ($(OR.north) + (0, 0.55)$)
+  {IBR-Adaptive 87L Protection Chain};
+
 \end{tikzpicture}

@@ -88,6 +88,7 @@ def run_andes_tds(
     fault_xf: float = 0.001,
     fault_rf: float = 0.0,
     no_output: bool = True,
+    disable_togglers: bool = False,
 ) -> AndesResult:
     """
     Load an ANDES case, inject a 3-phase Fault device, run PFlow + TDS.
@@ -114,6 +115,11 @@ def run_andes_tds(
 
     # Load without setup so we can inject / override the fault
     ss = andes.load(case_file, setup=False, no_output=no_output)
+
+    # Optionally disable pre-existing Toggler devices (e.g. PVD1 demo cases)
+    if disable_togglers and hasattr(ss, 'Toggler') and ss.Toggler.n > 0:
+        for i in range(ss.Toggler.n):
+            ss.Toggler.u.v[i] = 0.0
 
     if ss.Fault.n == 0:
         # No fault in case file — inject one

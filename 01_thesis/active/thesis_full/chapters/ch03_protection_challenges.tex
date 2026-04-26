@@ -10,7 +10,7 @@ This chapter quantifies the degradation of legacy relay performance when
 the network transitions from synchronous-machine to IBR domination.
 The analysis uses the sequence-domain models of Chapter~\ref{ch:modelling}
 and reveals six distinct failure modes that motivate the solutions proposed
-in Chapters~\ref{ch:line_diff}--\ref{ch:centralised}.
+in Chapters~\ref{ch:line_diff}--\ref{ch:digital_twin}.
 
 \section{Fault Classification and Symmetric Component Analysis}
 \label{sec:ch3_faults}
@@ -28,7 +28,7 @@ relay end~A (source end, impedance $Z_S$) with an IBR at end~B
   \label{eq:ch3_3p_ia}
 \end{equation}
 where $\phasor{V}_\mathrm{pre}$ is the pre-fault Thevenin voltage at the
-fault point (typically $\approx 1\angle 0°$~pu). Because
+fault point (typically $\approx 1\angle 0^\circ$~pu). Because
 $|\phasor{I}_B^\mathrm{IBR}| = I_\mathrm{lim} \ll |\phasor{I}_A^\mathrm{SG}|$,
 the infeed effect for IBR networks is \emph{negative} (the IBR actually
 reduces the total fault current seen by relay~A compared to a purely
@@ -168,10 +168,10 @@ $V_\mathrm{PCC} = 0.5$~pu, giving $i_q^\ast = 2.5$~pu (clipped to
 $I_\mathrm{lim}$). The reactive current injection rotates the apparent
 impedance vector as follows:
 
-Let $\phasor{I}_B = I_B e^{\jj(\phi_A + 90°)}$ (purely reactive, leading).
+Let $\phasor{I}_B = I_B e^{\jj(\phi_A + 90^\circ)}$ (purely reactive, leading).
 Then:
 \begin{align}
-  Z_\mathrm{measured} &= \alpha Z_L + Z_F\left(1 + \frac{I_B}{I_A}e^{\jj 90°}\right)
+  Z_\mathrm{measured} &= \alpha Z_L + Z_F\left(1 + \frac{I_B}{I_A}e^{\jj 90^\circ}\right)
   \nonumber \\
   &= \alpha Z_L + Z_F + \jj Z_F \frac{I_B}{I_A}
   \label{eq:ch3_reactive_overreach}
@@ -274,8 +274,8 @@ and the chapter where the solution is proposed.
 \toprule
 ID & Relay element & Root cause & Failure mode & Solution \\
 \midrule
-F1 & ITOC (51) & $I_\mathrm{fault} < I_\mathrm{pickup}$ & Missed trip & Ch~\ref{ch:centralised} \\
-F2 & ITOC (51) & Low $M$, large $dt/dM$ & Coordination loss & Ch~\ref{ch:centralised} \\
+F1 & ITOC (51) & $I_\mathrm{fault} < I_\mathrm{pickup}$ & Missed trip & Ch~\ref{ch:microgrid} \\
+F2 & ITOC (51) & Low $M$, large $dt/dM$ & Coordination loss & Ch~\ref{ch:microgrid} \\
 F3 & ITOC (51) & IBR constant-current infeed & Sympathetic trip & Ch~\ref{ch:microgrid} \\
 F4 & Distance (21) & Reactive current injection & Overreach & Ch~\ref{ch:distance} \\
 F5 & Distance (21) & Limited IBR infeed & Underreach & Ch~\ref{ch:distance} \\
@@ -293,20 +293,107 @@ F12 & Islanding (81) & Slow frequency change, load balance & Non-detection & Ch~
 \section{Quantitative Impact Assessment}
 \label{sec:ch3_quantitative}
 
-\resultbox[Monte Carlo Sensitivity Study — to be computed from SAMBP simulation]{%
-The following simulation results are pending computation from the
-SAMBP simulation platform (SAMBP TR-37). Expected outputs:
-\begin{itemize}
-\item Figure: OC pickup probability vs.\ $\kibr$ for fleet compositions
-      with IBR penetration 0--100\%.
-\item Figure: 87L sensitivity (ROC curve) vs.\ $k_m$ for fault resistance
-      $R_F \in [0, 50]\,\Omega$.
-\item Table: Distance relay Zone-1 coverage (\%) vs.\ $\kibr$ and
-      line loading (\% nominal).
-\item Table: Sympathetic trip rate (\%) vs.\ bus coupling impedance.
-\end{itemize}
-These results will quantify the severity of each failure mode and set
-the performance targets for Chapters~\ref{ch:line_diff}--\ref{ch:centralised}.}
+% ── Table: Legacy protection miss/false-trip rates ───────────────────────
+\begin{table}[htbp]
+\centering
+\caption{Quantified severity of legacy relay failure modes under IBR infeed.
+         Sources: TR-08~\cite{SAMBP_TR08}, TR-20~\cite{SAMBP_TR20},
+         TR-22~\cite{SAMBP_TR22}, TR-37~\cite{SAMBP_TR37}.}
+\label{tab:ch3_legacy_performance}
+\renewcommand{\arraystretch}{1.08}
+\small
+\begin{tabularx}{\textwidth}{@{}llXcc@{}}
+\toprule
+ID & Relay & IBR condition & Legacy rate & Target (SAMBPS) \\
+\midrule
+F1 & ITOC (51) & $\kibr < 0.50$\,pu (any IBR fault) & 100\% miss & — (87L/87B replace) \\
+F3 & ITOC coord. & Constant-current IBR, close-in ext.\ fault & 18--32\% sym.\ trip & $< 1$\% \\
+F7 & 87L fixed & Pure-IBR infeed (9/9 det.\ scenarios) & 100\% miss & $< 0.1$\% \\
+F8 & 87L fixed & High $\kibr$ + 0.4\% CT ratio error & 8\% false trip & $< 0.1$\% \\
+F4/F5 & Zone-1 (21) & $\kibr < 0.10$\,pu: apparent $Z$ blocked & 100\% miss & $< 3$\% (87L backup) \\
+F9 & 67Q (neg-seq) & Pure-IBR infeed, $I_2 < 0.06$\,pu & 100\% dir.\ loss & 0\% (87LN0+TDCS) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ── Figure 1: Baseline 87L sensitivity by fault-source type ──────────────
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.70\textwidth, height=5.0cm,
+  ybar, bar width=0.90cm,
+  xlabel={Fault source},
+  ylabel={Baseline 87L detection rate (\%)},
+  symbolic x coords={SG-only faults,IBR faults},
+  xtick=data,
+  xticklabel style={font=\small},
+  ymin=0, ymax=120,
+  ytick={0,20,40,60,80,100},
+  yticklabel style={font=\small},
+  grid=major, grid style={gray!25,line width=0.3pt},
+  label style={font=\small},
+  nodes near coords,
+  nodes near coords style={font=\small,/pgf/number format/fixed},
+  enlarge x limits=0.45]
+  \addplot[fill=blue!55,draw=blue!75] coordinates {
+    (SG-only faults, 100)
+    (IBR faults,       0)
+  };
+\end{axis}
+\end{tikzpicture}
+\caption{Baseline fixed-slope 87L detection rate by fault source type
+         (21-scenario deterministic study, TR-20~\cite{SAMBP_TR20}).
+         All ten SG-sourced scenarios are correctly detected (100\%).
+         All nine pure-IBR scenarios are missed (0\%): IBR current limiting
+         suppresses $\Idiff$ below the fixed slope threshold for
+         $\kibr \leq 0.20$\,pu.
+         The combined adaptive chain achieves 21/21 (100\%).}
+\label{fig:ch3_87l_sensitivity}
+\end{figure}
+
+% ── Figure 2: Zone-1 element contribution by k_ibr region ────────────────
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.82\textwidth, height=5.4cm,
+  ybar, bar width=0.55cm,
+  xlabel={$\kibr$ region (p.u.)},
+  ylabel={Zone-1 first-trip contribution (\%)},
+  symbolic x coords={$<$0.10 (Reg.A),0.10--0.20 (Reg.B),
+                     0.20--0.35 (Reg.C),$>$0.35 (Reg.D)},
+  xtick=data,
+  xticklabel style={font=\small},
+  ymin=0, ymax=110,
+  ytick={0,20,40,60,80,100},
+  yticklabel style={font=\small},
+  grid=major, grid style={gray!25,line width=0.3pt},
+  label style={font=\small},
+  nodes near coords,
+  nodes near coords style={font=\small},
+  enlarge x limits=0.12]
+  \addplot[fill=orange!60,draw=orange!80] coordinates {
+    ($<$0.10 (Reg.A),    0)
+    (0.10--0.20 (Reg.B), 25)
+    (0.20--0.35 (Reg.C), 62)
+    ($>$0.35 (Reg.D),    86)
+  };
+\end{axis}
+\end{tikzpicture}
+\caption{Zone-1 first-trip element contribution by $\kibr$ region,
+         derived from TR-37 Monte Carlo reliability study
+         ($N = 4\,000$, overall Zone-1 share 48.9\%~\cite{SAMBP_TR37}).
+         For $\kibr < 0.10$\,pu (Region~A), Zone-1 reach is fully blocked
+         by reactive current injection and IBR-limited fault voltage;
+         coverage is provided entirely by 87L and 67Q.
+         Zone-1 participation recovers as $\kibr$ increases toward SG levels.}
+\label{fig:ch3_zone1_kibr}
+\end{figure}
+
+These results establish the performance floor for legacy protection and
+set the improvement targets addressed in
+Chapters~\ref{ch:line_diff}--\ref{ch:digital_twin}.
 
 \section{Summary}
 \label{sec:ch3_summary}
@@ -328,4 +415,4 @@ and grounded in the sequence-domain IBR models of Chapter~\ref{ch:modelling}:
       driven by IBR ride-through and load-generation balance.
 \end{itemize}
 These twelve failure modes are the target specifications for the SAMBP
-protection algorithms developed in Chapters~\ref{ch:line_diff}--\ref{ch:centralised}.
+protection algorithms developed in Chapters~\ref{ch:line_diff}--\ref{ch:digital_twin}.

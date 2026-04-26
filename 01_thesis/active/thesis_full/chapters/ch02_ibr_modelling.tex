@@ -180,7 +180,7 @@ Similarly, the zero-sequence current $\phasor{I}_0^\mathrm{GFL} = 0$ unless
 a grounding transformer is present, because the converter output is a
 three-wire system. This has critical implications for the 87LN negative-sequence
 differential element (Section~\ref{sec:ch4_87ln}) and ground distance
-relay (Section~\ref{sec:ch5_ground_distance}).
+relay (Chapter~\ref{ch:transformer_diff}).
 
 \section{Grid-Forming Inverter Model}
 \label{sec:ch2_gfm}
@@ -226,7 +226,8 @@ substantially higher than the GFL limit of $[1.1, 1.5]\,I_\mathrm{rated}$.
 \begin{table}[htbp]
 \caption{Fault current characteristics: SG versus GFL versus GFM}
 \label{tab:ch2_fault_comparison}
-\begin{tabularx}{\textwidth}{@{}lp{3cm}p{3cm}p{3cm}X@{}}
+\footnotesize\setlength{\tabcolsep}{4pt}%
+\begin{tabularx}{\textwidth}{@{}p{3.8cm}p{2.7cm}p{2.7cm}p{2.3cm}X@{}}
 \toprule
 Parameter & SG & GFL & GFM (VSM) & Relay impact \\
 \midrule
@@ -241,7 +242,7 @@ Negative-sequence injection & $\propto V_2$ (physical) & Suppressed or by code
 Zero-sequence injection & $\propto V_0$ (physical) & Zero (3-wire)
   & Zero (3-wire)
   & 87LN0; 21G elements \\
-Phase angle control & Fixed (rotor angle) & Commanded $\pm 90°$
+Phase angle control & Fixed (rotor angle) & Commanded $\pm 90^\circ$
   & Virtual rotor angle
   & Directional element \\
 Response time & 5--50~ms (electromechanical) & 2--5~ms (current loop)
@@ -289,7 +290,7 @@ for $t > 150$~ms when AVR dynamics in GFM inverters become significant.
 \section{Sequence Network Model for Protection Analysis}
 \label{sec:ch2_sequence}
 
-For the derivation of relay algorithms (Chapters~\ref{ch:line_diff}--\ref{ch:centralised}),
+For the derivation of relay algorithms (Chapters~\ref{ch:line_diff}--\ref{ch:digital_twin}),
 the IBR is modelled as a sequence-domain controlled current source.
 The positive-, negative-, and zero-sequence components of the injected
 current are:
@@ -354,7 +355,8 @@ Key parameters are given in Table~\ref{tab:ch2_network_params}.
   \caption{SAMBP 10-bus study network. Bus~0 is the grid infeed (slack).
            Buses 1--9 have local IBR generation and load.
            Relays R01--R10 protect the 10 line segments.
-           PMUs at buses 0, 4, 7 provide synchrophasor data to the WAPC.}
+           PMUs at buses 0, 4, 7 provide synchrophasor voltage phasors for
+           system-level validation studies.}
   \label{fig:ch2_study_network}
 \end{figure}
 

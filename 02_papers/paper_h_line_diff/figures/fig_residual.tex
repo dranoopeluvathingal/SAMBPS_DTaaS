@@ -1,61 +1,74 @@
-% fig_residual.tex
-% Charging residual floor and detection threshold for three correction methods
-% Data from TR-13/15: fixed=1.43 pu, pre-fault blind=0.001 pu, voltage=0.001 pu
-% Threshold: 0.20 pu -> 0.12 pu -> 0.08 pu
-% Grouped bar: residual (orange) + threshold (blue) per method, log y-axis
+% fig_residual.tex — fragment (\input-able, no standalone wrapper)
+\pgfplotsset{compat=1.18}
 \begin{tikzpicture}
 \begin{axis}[
-  width=\columnwidth, height=6.0cm,
-  ybar=4pt,
-  bar width=0.42cm,
-  ymode=log,
-  xlabel={Correction method},
-  ylabel={Current magnitude (p.u., log scale)},
-  symbolic x coords={Fixed nominal, Pre-fault blind, Voltage-based},
-  xtick=data,
-  xticklabel style={font=\scriptsize,align=center,text width=2.6cm},
-  ymin=3e-4, ymax=8,
-  ytick={0.001,0.01,0.08,0.12,0.20,1.0,1.43},
-  yticklabels={0.001,0.01,0.08,0.12,0.20,1.0,1.43},
+  width=7.5cm, height=6.0cm,
+  title={Charging Residual Floor vs.\ Detection Threshold},
+  title style={font=\small\bfseries},
+  ybar,
+  bar width=1.0cm,
+  xlabel={Charging current correction method},
+  ylabel={Residual / threshold (pu)},
+  xlabel style={font=\small},
+  ylabel style={font=\small},
+  xtick={1,2,3},
+  xticklabels={%
+    {Fixed\\(no correction)},
+    {Pre-fault\\blind sub.},
+    {Voltage\\model}},
+  xticklabel style={font=\scriptsize, align=center, text width=2.6cm},
+  xmin=0.3, xmax=3.7,
+  ymin=0, ymax=1.80,
+  ytick={0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6},
   yticklabel style={font=\scriptsize},
   grid=both,
-  grid style={gray!20,line width=0.3pt},
-  label style={font=\small},
-  tick label style={font=\scriptsize},
-  legend style={at={(0.97,0.97)},anchor=north east,
-                font=\scriptsize,fill=white,draw=black!40},
-  enlarge x limits=0.28,
-  clip=false]
+  grid style={gray!22, line width=0.3pt},
+  major grid style={gray!40, line width=0.4pt},
+  tick style={draw=none},
+  axis line style={gray!60},
+  legend style={at={(0.98,0.98)}, anchor=north east,
+                font=\scriptsize, draw=gray!60,
+                cells={anchor=west}},
+  clip=false,
+]
 
-  % Residual floor bars (orange)
-  \addplot[fill=orange!55,draw=orange!80] coordinates {
-    (Fixed nominal,    1.43)
-    (Pre-fault blind,  0.001)
-    (Voltage-based,    0.001)
+% ---- Residual floor bars ----------------------------------------------------
+\addplot[fill=red!35, draw=red!60, line width=0.7pt] coordinates {
+  (1, 1.43)
+  (2, 0.001)
+  (3, 0.001)
+};
+\addlegendentry{Residual floor $\|\mathbf{r}_{ch}\|$}
+
+% ---- Detection threshold markers (horizontal segments per bar) ---------------
+\addplot[only marks, mark=-, mark size=9pt,
+         mark options={line width=2.2pt, color=blue!70!black}]
+  coordinates {
+    (1, 0.20)
+    (2, 0.12)
+    (3, 0.08)
   };
-  \addlegendentry{Charging residual $\sigma_{\rm res}$}
+\addlegendentry{Detection threshold $\varepsilon_{th}$}
 
-  % Detection threshold bars (blue)
-  \addplot[fill=blue!40,draw=blue!70] coordinates {
-    (Fixed nominal,   0.20)
-    (Pre-fault blind, 0.12)
-    (Voltage-based,   0.08)
-  };
-  \addlegendentry{Detection threshold $I_{\rm thr}$}
+% ---- "1.43 pu" label just above bar 1 ---------------------------------------
+\node[font=\scriptsize\bfseries, red!70!black, anchor=south, yshift=3pt]
+  at (axis cs:1, 1.43) {1.43\,pu};
 
-  % Improvement annotations
-  \node[font=\tiny,rotate=90,gray!70]
-    at (axis cs:Pre-fault blind, 0.004) {1430$\times$ improvement};
-  \node[font=\tiny,rotate=90,gray!70]
-    at (axis cs:Voltage-based,   0.004) {same floor, no delay};
+% ---- Warning annotation above "1.43 pu" label, outside plot -----------------
+\node[font=\scriptsize, red!70!black, align=center, anchor=south, yshift=22pt]
+  at (axis cs:1, 1.43) {residual $\gg$ threshold\\{\tiny(false-trip risk)}};
 
-  % Noise margin annotations
-  \node[font=\tiny,blue!70,right=2pt]
-    at (axis cs:Fixed nominal,   0.20) {$40\sigma$};
-  \node[font=\tiny,blue!70,right=2pt]
-    at (axis cs:Pre-fault blind, 0.12) {$120\sigma$};
-  \node[font=\tiny,blue!70,right=2pt]
-    at (axis cs:Voltage-based,   0.08) {$80\sigma$};
+% ---- Threshold value labels (right of each marker) --------------------------
+\node[font=\scriptsize, blue!70!black, anchor=west, xshift=8pt]
+  at (axis cs:1, 0.20) {$\varepsilon_{th}{=}0.20$};
+\node[font=\scriptsize, blue!70!black, anchor=west, xshift=8pt]
+  at (axis cs:2, 0.12) {$\varepsilon_{th}{=}0.12$};
+\node[font=\scriptsize, blue!70!black, anchor=west, xshift=8pt]
+  at (axis cs:3, 0.08) {$\varepsilon_{th}{=}0.08$};
+
+% ---- Safe-margin annotation above threshold markers (bars 2 & 3) ------------
+\node[font=\scriptsize, green!50!black, align=center, anchor=south]
+  at (axis cs:2.5, 0.30) {residual $\ll$ threshold\\{\scriptsize(${\approx}\,0.001$\,pu)}};
 
 \end{axis}
 \end{tikzpicture}

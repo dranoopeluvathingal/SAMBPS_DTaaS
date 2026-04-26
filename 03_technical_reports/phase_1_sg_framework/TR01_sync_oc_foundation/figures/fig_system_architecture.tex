@@ -99,20 +99,29 @@
 \draw[garr=adaptPurp] (conf) -- node[above,lbl]{$\gamma \geq \gamma_{th}$} (map);
 \draw[garr=relayRed]  (map) -- (adaptrelay);
 
-% ---- Gate annotation --------------------------------------------------------
-\node[font=\scriptsize, text=orange, above=0pt of conf, xshift=4pt]
-      {$\gamma_{th}=0.70$};
+% ---- Gate annotation — right of conf node, clear of arrow label -------------
+\node[font=\scriptsize, text=orange, anchor=west, right=4pt of conf]
+      {$\gamma_{th}{=}0.70$};
 
 % ---- Group boxes (backgrounds) ----------------------------------------------
 \begin{scope}[on background layer]
-  \node[grpbox=genBlue, fit=(gen)(net)(meas)(detect)(window), inner sep=6pt,
-        label={[font=\scriptsize\bfseries, text=genBlue!80!black]above left:Physical Plant \& Signal Chain}] {};
-  \node[grpbox=adaptPurp, fit=(estim)(conf)(map), inner sep=5pt,
-        label={[font=\scriptsize\bfseries, text=adaptPurp!80!black]below right:Inverse Estimation \& Adaptation}] {};
+  \node[grpbox=genBlue, fit=(gen)(net)(meas)(detect)(window), inner sep=6pt]
+        (physbox) {};
+  \node[grpbox=adaptPurp, fit=(estim)(conf)(map), inner sep=5pt]
+        (adaptbox) {};
 \end{scope}
 
-% ---- Title ------------------------------------------------------------------
-\node[font=\small\bfseries, above=0.25cm of gen, xshift=5cm, text=black!70]
+% ---- Group labels outside boxes (avoid title collision) ---------------------
+\node[font=\scriptsize\bfseries, text=genBlue!80!black,
+      anchor=south west] at (physbox.north west)
+      {Physical Plant \& Signal Chain};
+\node[font=\scriptsize\bfseries, text=adaptPurp!80!black,
+      anchor=north east] at (adaptbox.south east)
+      {Inverse Estimation \& Adaptation};
+
+% ---- Title — centred above entire figure ------------------------------------
+\node[font=\small\bfseries, text=black!70,
+      anchor=south, above=0.5cm of physbox.north]
      {System Architecture: Inverse-Estimation-Based Adaptive Overcurrent Protection};
 
 \end{tikzpicture}

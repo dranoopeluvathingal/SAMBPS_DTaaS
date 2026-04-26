@@ -1,0 +1,53 @@
+% fig_asymmetry_distributions.tex — TN distributions of A_k for H0/H1/H2
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  width  = 0.88\columnwidth,
+  height = 5.4cm,
+  xlabel = {Waveform asymmetry index $A_k$},
+  ylabel = {Probability density},
+  xmin=-1.05, xmax=1.05,
+  ymin=0,     ymax=3.4,
+  xtick={-1,-0.5,0,0.5,1},
+  xticklabels={$-1$,$-0.5$,$0$,$+0.5$,$+1$},
+  ytick={0,0.5,1.0,1.5,2.0,2.5,3.0},
+  legend pos=north center,
+  legend columns=3,
+]
+%% H2: CT saturation — truncated Normal(mu=-0.65, sigma=0.18) on [-1,0]
+\addplot[thick,thesisgray,dashed,domain=-1.0:-0.001,samples=60]
+  {exp(-((x+0.65)^2)/(2*0.18^2)) / (0.18*sqrt(2*pi) * 0.9998)};
+\addlegendentry{$H_2$: CT saturation};
+
+%% H1: IBR internal fault — truncated Normal(mu=0.0, sigma=0.12) on [-1,1]
+\addplot[thick,thesisred,domain=-0.5:0.5,samples=80]
+  {exp(-((x)^2)/(2*0.12^2)) / (0.12*sqrt(2*pi) * 1.0000)};
+\addlegendentry{$H_1$: Internal fault};
+
+%% H0: Inrush — truncated Normal(mu=0.62, sigma=0.15) on [0,1]
+\addplot[thick,thesisblue,domain=0.001:1.0,samples=60]
+  {exp(-((x-0.62)^2)/(2*0.15^2)) / (0.15*sqrt(2*pi) * 0.9998)};
+\addlegendentry{$H_0$: Inrush};
+
+%% Trip boundary annotation
+\draw[thesisred,thick,dotted]
+  (axis cs:0.55,0) -- (axis cs:0.55,3.2)
+  node[above,font=\tiny,thesisred]{$f_{\rm int}{=}0.55$};
+
+%% 0.34 pu gap arrow
+\draw[<->,gray!60,thin]
+  (axis cs:0.21,2.6) -- (axis cs:0.55,2.6)
+  node[midway,above,font=\tiny,gray]{0.34\,pu gap};
+\draw[gray!50,dotted]
+  (axis cs:0.21,0) -- (axis cs:0.21,2.7)
+  node[above,font=\tiny,gray]{$f_{\rm int,max}^{H_0}{=}0.21$};
+
+%% Region shading (restrain left, trip right of boundary)
+\addplot[fill=blue!6,draw=none,forget plot,domain=0.001:0.549,samples=2]
+  {3.4} \closedcycle;
+\addplot[fill=red!6,draw=none,forget plot,domain=0.551:1.0,samples=2]
+  {3.4} \closedcycle;
+\node[font=\tiny,blue!60!black] at (axis cs:-0.5,0.3) {Restrain};
+\node[font=\tiny,red!60!black]  at (axis cs:0.78,0.3) {Trip};
+\end{axis}
+\end{tikzpicture}

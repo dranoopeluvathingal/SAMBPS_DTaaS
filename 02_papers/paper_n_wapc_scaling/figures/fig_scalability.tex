@@ -1,0 +1,66 @@
+% fig_scalability.tex — Communication overhead and consensus time vs N (dual-axis)
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  width  = 0.90\columnwidth,
+  height = 5.0cm,
+  xlabel = {Number of substations $N$},
+  ylabel = {WA-GOOSE overhead (kB / 20\,ms cycle)},
+  y label style={color=thesisblue},
+  tick label style={font=\scriptsize},
+  xmin=5, xmax=55,
+  ymin=0, ymax=42,
+  xtick={10,20,30,40,50},
+  ytick={0,10,20,30,40},
+  axis y line*=left,
+  axis x line*=bottom,
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+  legend style={at={(0.02,0.98)},anchor=north west,font=\scriptsize},
+]
+
+%% Full mesh O(N²): N(N-1)/2 * 5-field * 4 bytes * 2 (Tx+Rx)
+%% For N=10: 45 * 20 bytes = 0.9kB; N=50: 1225 * 20B = 24.5kB
+\addplot[thick,thesisgray,dashed,mark=square*,mark size=2pt,
+         mark options={thesisgray}]
+  coordinates {(10,1.8)(20,7.6)(30,17.4)(40,31.4)(50,49.0)};
+\addlegendentry{Full mesh $\mathcal{O}(N^2)$};
+
+%% Hierarchical O(N log N)
+\addplot[thick,thesisblue,mark=*,mark size=2pt,mark options={thesisblue}]
+  coordinates {(10,0.9)(20,2.2)(30,3.8)(40,5.8)(50,8.1)};
+\addlegendentry{Hierarchical $\mathcal{O}(N\log N)$};
+
+%% Capacity limit annotation
+\draw[thesisred,thick,dotted] (axis cs:5,24) -- (axis cs:55,24)
+  node[right,font=\tiny,thesisred]{WAN cap.\ 40\,Mbps};
+
+\end{axis}
+
+%% Secondary axis: consensus convergence time (right axis)
+\begin{axis}[
+  thesis style,
+  width  = 0.90\columnwidth,
+  height = 5.0cm,
+  ylabel = {Consensus convergence time (ms)},
+  y label style={color=thesisgreen!70!black},
+  xmin=5, xmax=55,
+  ymin=0, ymax=130,
+  xtick={10,20,30,40,50},
+  ytick={0,25,50,75,100,125},
+  yticklabel style={color=thesisgreen!70!black},
+  axis y line*=right,
+  axis x line=none,
+]
+
+\addplot[thick,thesisgreen,mark=triangle*,mark size=2pt,
+         mark options={thesisgreen}]
+  coordinates {(10,45)(20,67)(30,79)(40,88)(50,94)};
+\addlegendentry{Convergence time (ms)};
+
+%% 100ms coordination budget
+\draw[thesisorange,thick,dotted] (axis cs:5,100) -- (axis cs:55,100)
+  node[right,font=\tiny,thesisorange]{100\,ms budget};
+
+\end{axis}
+\end{tikzpicture}

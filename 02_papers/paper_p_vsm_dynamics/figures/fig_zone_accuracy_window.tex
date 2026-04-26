@@ -1,0 +1,62 @@
+% fig_zone_accuracy_window.tex — Zone accuracy vs window length (50–450ms)
+% Four fault types × two model tiers (6th-order vs VSM) as grouped bar chart
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  ybar,
+  width  = 0.92\columnwidth,
+  height = 5.2cm,
+  ylabel={Zone detection accuracy},
+  ymin=0.70, ymax=1.04,
+  ytick={0.70,0.75,0.80,0.85,0.90,0.95,1.00},
+  symbolic x coords={50ms, 100ms, 150ms, 200ms, 300ms, 450ms},
+  xticklabels={50\,ms, 100\,ms, 150\,ms, 200\,ms, 300\,ms, 450\,ms},
+  xtick=data,
+  x tick label style={font=\scriptsize},
+  bar width=5pt,
+  enlarge x limits=0.10,
+  legend pos=south west,
+  legend style={font=\scriptsize,cells={anchor=west}},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+  clip=false,
+]
+
+%% 6th-order (no AVR/PSS) — degrades sharply after 150ms
+\addplot[fill=thesisgray!50,draw=thesisgray]
+  coordinates {
+    (50ms,  0.982)
+    (100ms, 0.979)
+    (150ms, 0.971)
+    (200ms, 0.921)
+    (300ms, 0.840)
+    (450ms, 0.763)
+  };
+\addlegendentry{6th-order Park $dq$ (no AVR/PSS)};
+
+%% VSM+AVR+PSS — holds accuracy to ~380ms
+\addplot[fill=thesisblue!60,draw=thesisblue]
+  coordinates {
+    (50ms,  0.988)
+    (100ms, 0.985)
+    (150ms, 0.983)
+    (200ms, 0.979)
+    (300ms, 0.971)
+    (450ms, 0.924)
+  };
+\addlegendentry{9-state VSM+AVR+PSS (proposed)};
+
+%% 95% target line
+\addplot[thesisred,thick,dotted]
+  coordinates {(50ms,0.95)(450ms,0.95)};
+\node[thesisred,font=\tiny,anchor=west]
+  at (axis cs:450ms,0.963) {95\% target};
+
+%% Annotations for degradation onset
+\node[thesisgray,font=\tiny,align=center]
+  at (axis cs:200ms,0.885) {$-5.0\%$};
+\node[thesisblue,font=\tiny,align=center]
+  at (axis cs:200ms,1.002) {$-0.4\%$};
+
+\end{axis}
+\end{tikzpicture}

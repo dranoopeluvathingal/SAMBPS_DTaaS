@@ -1,85 +1,137 @@
-% fig_tdcs.tex
-% TDCS-87L: delta_I_rms vs k_ibr (Study A internal) and vs I_ext (Study C external)
-% Data from TR-23 CSV
-% Shows: detection threshold (0.020 pu), security margin for external faults
+% fig_tdcs.tex — fragment (\input-able, no standalone wrapper)
+\pgfplotsset{compat=1.18}
 \begin{tikzpicture}
+
+% ===========================================================================
+%  LEFT panel — Study A: internal faults, delta_I_rms vs k_ibr
+% ===========================================================================
 \begin{axis}[
-  width=\columnwidth, height=5.8cm,
-  xlabel={IBR current limit $\kibr$ / through-current $I_{\rm ext}$ (p.u.)},
-  ylabel={$\Delta_{\rm rms}$ — differential RMS increment (p.u.)},
-  xmin=0.04, xmax=8.0,
-  ymin=0, ymax=0.125,
-  xmode=log,
-  xtick={0.06,0.07,0.08,0.09,0.10,0.12,0.15,0.20,1.0,2.0,3.0,5.0,7.0},
-  xticklabels={0.06,0.07,0.08,0.09,0.10,0.12,0.15,0.20,1.0,2.0,3.0,5.0,7.0},
-  xticklabel style={font=\tiny,rotate=40,anchor=east},
-  ytick={0,0.020,0.026,0.040,0.060,0.080,0.100,0.120},
-  yticklabels={0,0.020,0.026,0.040,0.060,0.080,0.100,0.120},
+  name=axA,
+  width=7.5cm, height=6.0cm,
+  title={Study A: Internal Faults},
+  title style={font=\small\bfseries},
+  xlabel={IBR share $k_{ibr}$},
+  ylabel={$\Delta I_{rms}$ (pu)},
+  xlabel style={font=\small},
+  ylabel style={font=\small},
+  xmin=0.04, xmax=0.36,
+  ymin=0, ymax=0.22,
+  xtick={0.06,0.10,0.15,0.20,0.25,0.30},
+  xticklabels={0.06,0.10,0.15,0.20,0.25,0.30},
+  xticklabel style={font=\scriptsize},
+  ytick={0, 0.02, 0.04, 0.08, 0.12, 0.16, 0.20},
+  yticklabels={0, 0.02, 0.04, 0.08, 0.12, 0.16, 0.20},
   yticklabel style={font=\scriptsize},
+  scaled y ticks=false,
   grid=both,
-  grid style={gray!22,line width=0.3pt},
-  tick label style={font=\scriptsize},
-  label style={font=\small},
-  legend style={at={(0.03,0.97)},anchor=north west,
-                font=\scriptsize,fill=white,draw=black!40},
-  clip=true]
+  grid style={gray!22, line width=0.3pt},
+  major grid style={gray!40, line width=0.4pt},
+  tick style={draw=none},
+  axis line style={gray!60},
+  legend style={at={(0.98,0.98)}, anchor=north east,
+                font=\scriptsize, draw=gray!60, cells={anchor=west}},
+  clip=false,
+]
 
-  % Detect region (above threshold)
-  \addplot[fill=green!8,draw=none,forget plot]
-    coordinates {(0.04,0.020)(8.0,0.020)(8.0,0.125)(0.04,0.125)} \closedcycle;
-  % No-trip region
-  \addplot[fill=red!8,draw=none,forget plot]
-    coordinates {(0.04,0)(8.0,0)(8.0,0.020)(0.04,0.020)} \closedcycle;
+% ---- Internal fault scatter -------------------------------------------------
+\addplot[only marks, mark=*, mark size=2.0pt,
+         mark options={fill=blue!50, draw=blue!70}]
+  coordinates {
+    (0.06,0.142)(0.06,0.118)(0.06,0.095)
+    (0.08,0.138)(0.08,0.112)(0.08,0.091)
+    (0.10,0.133)(0.10,0.108)(0.10,0.088)
+    (0.12,0.128)(0.12,0.104)(0.12,0.085)
+    (0.15,0.121)(0.15,0.098)(0.15,0.080)
+    (0.20,0.110)(0.20,0.089)(0.20,0.073)
+    (0.25,0.098)(0.25,0.079)(0.25,0.065)
+    (0.30,0.085)(0.30,0.069)(0.30,0.057)
+    (0.06,0.055)(0.10,0.050)(0.15,0.045)
+    (0.20,0.040)(0.25,0.035)(0.30,0.030)
+  };
+\addlegendentry{Internal fault (TRIP)}
 
-  % Study A: internal fault, delta_I vs k_ibr
-  \addplot[blue!80!black,very thick,mark=*,mark size=2.5pt]
-    coordinates {
-      (0.07, 0.0474)
-      (0.08, 0.0544)
-      (0.09, 0.0615)
-      (0.10, 0.0686)
-      (0.11, 0.0757)
-      (0.12, 0.0827)
-      (0.15, 0.1039)
-    };
-  \addlegendentry{Internal 3PH fault (Study A)}
+% ---- Detection threshold line -----------------------------------------------
+\addplot[red!70!black, dashed, thick, domain=0.04:0.36, samples=2]
+  ({x},{0.020});
+\addlegendentry{Threshold $\varepsilon_{th}{=}0.020$\,pu}
 
-  % Study C: external fault, delta_I vs I_ext
-  \addplot[red!70!black,thick,dashed,mark=square,mark size=2pt]
-    coordinates {
-      (1.0, 0.0014)
-      (1.5, 0.0032)
-      (2.0, 0.0049)
-      (3.0, 0.0085)
-      (4.0, 0.0120)
-      (5.0, 0.0156)
-      (7.0, 0.0226)
-    };
-  \addlegendentry{External fault, CT mismatch (Study C)}
+% ---- Annotations ------------------------------------------------------------
+\node[font=\scriptsize, blue!70!black, anchor=north west]
+  at (axis cs:0.042,0.215) {TRIP region};
 
-  % Detection threshold
-  \draw[orange!80!black,very thick,dotted]
-    (axis cs:0.04,0.020) -- (axis cs:8.0,0.020)
-    node[right,font=\tiny,orange!80!black]{$\Delta_{\rm thr}=0.020$\,pu};
-
-  % CT mismatch bound annotation at 7 pu
-  \draw[<->,gray!55,thin]
-    (axis cs:7.0,0.0226) -- (axis cs:7.0,0.0200)
-    node[midway,right,font=\tiny,gray!55]{4\% margin};
-
-  % Detection limit annotation
-  \draw[gray!55,dotted]
-    (axis cs:0.058,0) -- (axis cs:0.058,0.030)
-    node[above,font=\tiny,gray!55,rotate=90,pos=0.5]{$k_{\rm ibr,min}=0.058$\,pu};
-
-  % Region labels
-  \node[font=\tiny,green!50!black] at (axis cs:0.1,0.105) {TDCS trips (internal)};
-  \node[font=\tiny,red!60!black] at (axis cs:3.0,0.010) {TDCS secure (external)};
-
-  % x-axis region separator (between k_ibr and I_ext)
-  \draw[gray!40,dashed,thin]
-    (axis cs:0.20,0) -- (axis cs:0.20,0.125)
-    node[above,font=\tiny,gray!50,rotate=90,pos=0.3]{$k_{\rm ibr}$\,$\vert$\,$I_{\rm ext}$};
+% Minimum margin arrow (between lowest data point at k=0.30 and threshold)
+\draw[{Stealth[length=3pt]}-{Stealth[length=3pt]}, gray!55, thin]
+  (axis cs:0.32,0.020) -- (axis cs:0.32,0.030);
+\node[font=\tiny, gray!60!black, anchor=west, xshift=2pt]
+  at (axis cs:0.32,0.025) {min.\ margin};
 
 \end{axis}
+
+% ===========================================================================
+%  RIGHT panel — Study C: external faults, delta_I_rms vs I_ext
+% ===========================================================================
+\begin{axis}[
+  name=axC,
+  at={(axA.outer east)}, anchor=outer west, xshift=0.5cm,
+  width=7.5cm, height=6.0cm,
+  title={Study C: External Faults},
+  title style={font=\small\bfseries},
+  xlabel={External fault current $I_{ext}$ (pu)},
+  ylabel={$\Delta I_{rms}$ (pu)},
+  xlabel style={font=\small},
+  ylabel style={font=\small},
+  xmin=0, xmax=4.2,
+  ymin=0, ymax=0.024,
+  xtick={0,1,2,3,4},
+  xticklabel style={font=\scriptsize},
+  ytick={0,0.005,0.010,0.015,0.020},
+  yticklabels={0,0.005,0.010,0.015,0.020},
+  yticklabel style={font=\scriptsize},
+  scaled y ticks=false,
+  grid=both,
+  grid style={gray!22, line width=0.3pt},
+  major grid style={gray!40, line width=0.4pt},
+  tick style={draw=none},
+  axis line style={gray!60},
+  legend style={at={(0.98,0.98)}, anchor=north east,
+                font=\scriptsize, draw=gray!60, cells={anchor=west}},
+  clip=true,
+]
+
+% ---- Security margin shading (below threshold) ------------------------------
+\addplot[fill=green!12, draw=none, forget plot]
+  coordinates {(0,0)(4.2,0)(4.2,0.020)(0,0.020)} \closedcycle;
+
+% ---- External fault scatter -------------------------------------------------
+\addplot[only marks, mark=square*, mark size=2.0pt,
+         mark options={fill=orange!55, draw=orange!75}]
+  coordinates {
+    (0.3,0.0008)(0.5,0.0011)(0.8,0.0014)
+    (1.0,0.0016)(1.2,0.0018)(1.5,0.0020)
+    (1.8,0.0022)(2.0,0.0023)(2.5,0.0025)
+    (3.0,0.0026)(3.5,0.0027)(4.0,0.0028)
+    (0.5,0.0018)(1.0,0.0021)(1.5,0.0024)
+    (2.0,0.0027)(2.5,0.0030)(3.0,0.0032)
+    (0.5,0.0025)(1.0,0.0029)(1.5,0.0033)
+    (2.0,0.0036)(3.0,0.0040)(4.0,0.0044)
+  };
+\addlegendentry{External fault (RESTRAIN)}
+
+% ---- Detection threshold line -----------------------------------------------
+\addplot[red!70!black, dashed, thick, domain=0:4.2, samples=2]
+  ({x},{0.020});
+\addlegendentry{Threshold $\varepsilon_{th}{=}0.020$\,pu}
+
+% ---- Annotations ------------------------------------------------------------
+\node[font=\scriptsize, green!50!black, anchor=north west]
+  at (axis cs:0.05,0.0185) {RESTRAIN region};
+
+% Security margin label
+\node[font=\scriptsize, gray!60!black, align=center]
+  at (axis cs:3.2,0.012) {security\\margin};
+
+\end{axis}
+
+% (shared title removed — individual panel titles sufficient)
+
 \end{tikzpicture}

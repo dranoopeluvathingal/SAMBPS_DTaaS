@@ -85,9 +85,9 @@ def _load(proj: str, subpkg: str, modname: str):
 
 
 # 87B bus differential
-_b_base = _load("sambp_bus_diff", "models",             "bus_diff_baseline")
-_b_est  = _load("sambp_bus_diff", "inverse_estimation", "bus_inverse_estimator")
-_b_gate = _load("sambp_bus_diff", "adaptation",         "bus_confidence_gate")
+_b_base = _load("bus_diff", "models",             "bus_diff_baseline")
+_b_est  = _load("bus_diff", "inverse_estimation", "bus_inverse_estimator")
+_b_gate = _load("bus_diff", "adaptation",         "bus_confidence_gate")
 
 BusDiffRelayConfig           = _b_base.BusDiffRelayConfig
 run_87B_relay                = _b_base.run_87B_relay
@@ -97,9 +97,9 @@ BusGateState                 = _b_gate.BusGateState
 evaluate_87B_confidence_gate = _b_gate.evaluate_87B_confidence_gate
 
 # 87T transformer differential
-_t_base = _load("sambp_transformer_diff", "models",             "transformer_diff_baseline")
-_t_est  = _load("sambp_transformer_diff", "inverse_estimation", "transformer_inverse_estimator")
-_t_gate = _load("sambp_transformer_diff", "adaptation",         "transformer_confidence_gate")
+_t_base = _load("transformer_diff", "models",             "transformer_diff_baseline")
+_t_est  = _load("transformer_diff", "inverse_estimation", "transformer_inverse_estimator")
+_t_gate = _load("transformer_diff", "adaptation",         "transformer_confidence_gate")
 
 TransformerRelayConfig   = _t_base.TransformerRelayConfig
 run_87T_relay            = _t_base.run_87T_relay
@@ -113,9 +113,9 @@ GateState                = _t_gate.GateState
 evaluate_confidence_gate = _t_gate.evaluate_confidence_gate
 
 # 87L line differential
-_l_base = _load("sambp_line_diff", "models",             "line_diff_baseline")
-_l_est  = _load("sambp_line_diff", "inverse_estimation", "line_inverse_estimator")
-_l_gate = _load("sambp_line_diff", "adaptation",         "line_confidence_gate")
+_l_base = _load("line_diff", "models",             "line_diff_baseline")
+_l_est  = _load("line_diff", "inverse_estimation", "line_inverse_estimator")
+_l_gate = _load("line_diff", "adaptation",         "line_confidence_gate")
 
 LineDiffRelayConfig          = _l_base.LineDiffRelayConfig
 run_87L_relay                = _l_base.run_87L_relay

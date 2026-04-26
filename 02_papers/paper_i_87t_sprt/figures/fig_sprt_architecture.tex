@@ -1,0 +1,69 @@
+% fig_sprt_architecture.tex — Five-priority 87T relay integration architecture
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  blk/.style={draw=thesisblue,thick,fill=lightblue!30,rounded corners=3pt,
+              minimum width=2.6cm,minimum height=0.58cm,align=center},
+  decision/.style={draw=thesisorange,thick,fill=lightorange!30,
+                   diamond,aspect=2.0,minimum width=2.6cm,
+                   minimum height=0.7cm,align=center,inner sep=1pt},
+  trip/.style={draw=thesisred,thick,fill=red!15,rounded corners=3pt,
+               minimum width=2.0cm,minimum height=0.55cm,align=center},
+  rest/.style={draw=thesisgray,thick,fill=gray!12,rounded corners=3pt,
+               minimum width=2.0cm,minimum height=0.55cm,align=center},
+  arr/.style={-{Stealth[length=2mm]},thick},
+]
+
+%% Input
+\node[blk] (IN) at (0,0)
+  {Measure $I_{\rm diff}$, $A_k$\\compute $f_{\rm int}$, $\kappa_n$};
+
+%% P1: High-set
+\node[decision] (P1) at (0,-1.5)
+  {$I_{\rm diff} > I_{\rm hs}$?};
+\draw[arr] (IN.south) -- (P1.north);
+
+\node[trip] (T1) at (3.5,-1.5) {P1 TRIP};
+\draw[arr,thesisred] (P1.east) -- node[above,font=\tiny]{Yes} (T1.west);
+
+%% P2: CT-sat hard restrain
+\node[decision] (P2) at (0,-3.0)
+  {CTALARM \&\\$f_{\rm int}<0.3$?};
+\draw[arr] (P1.south) -- node[right,font=\tiny]{No} (P2.north);
+
+\node[rest] (R2) at (3.5,-3.0) {P2 RESTRAIN};
+\draw[arr,thesisgray] (P2.east) -- node[above,font=\tiny]{Yes} (R2.west);
+
+%% P3: Stage-2 veto
+\node[decision] (P3) at (0,-4.5)
+  {$\kappa_n > 30$?};
+\draw[arr] (P2.south) -- node[right,font=\tiny]{No} (P3.north);
+
+\node[rest] (R3) at (3.5,-4.5) {P3 RESTRAIN};
+\draw[arr,thesisgray] (P3.east) -- node[above,font=\tiny]{Yes} (R3.west);
+
+%% P4: SPRT / 2H gate
+\node[decision] (P4) at (0,-6.0)
+  {(SPRT $H_1$ OR\\2H-trip) \& $f_{\rm int}{\geq}0.55$?};
+\draw[arr] (P3.south) -- node[right,font=\tiny]{No} (P4.north);
+
+\node[trip] (T4) at (3.5,-6.0) {P4 TRIP};
+\draw[arr,thesisred] (P4.east) -- node[above,font=\tiny]{Yes} (T4.west);
+
+%% P5: Default restrain
+\node[rest] (R5) at (0,-7.5) {P5 default RESTRAIN};
+\draw[arr] (P4.south) -- node[right,font=\tiny]{No} (R5.north);
+
+%% SPRT accumulator block (side)
+\node[blk,minimum width=2.4cm,draw=thesisorange,fill=lightorange!20]
+  (SPRT) at (-4.2,-4.5)
+  {SPRT\\$S^{(01)}_k$, $S^{(02)}_k$\\Wald boundaries $A$,$B$};
+\draw[arr,thesisorange,dashed] (SPRT.east)
+  -- node[above,font=\tiny]{$H_0/H_1/H_2$} (P4.west);
+\draw[arr,thesisorange,dashed] (IN.west)
+  -- node[left,font=\tiny]{$A_k$} ++(-1.2,0) |- (SPRT.north);
+
+%% CT alarm side
+\draw[arr,thesisgray,dashed] (SPRT.north) -- ++(0,0.9)
+  node[above,font=\tiny,thesisgray]{CTALARM$\to$P2};
+
+\end{tikzpicture}

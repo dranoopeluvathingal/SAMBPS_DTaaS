@@ -1,67 +1,80 @@
-% fig_montecarlo.tex
-% Monte Carlo k_ibr bin TPR (Group A, 3PH internal faults)
-% All 7 bins: 0.06-0.08, 0.08-0.10, 0.10-0.12, 0.12-0.15, 0.15-0.20, 0.20-0.30, >0.30
-% Data from TR-26: all bins TPR=1.000; TDCS primary below 0.12, 87L above
+% fig_montecarlo.tex — fragment (\input-able, no standalone wrapper)
+\pgfplotsset{compat=1.18}
 \begin{tikzpicture}
 \begin{axis}[
-  width=\columnwidth, height=5.4cm,
-  ybar stacked,
-  bar width=0.55cm,
-  xlabel={IBR current limit $k_{\rm ibr}$ bin (p.u.)},
-  ylabel={TPR (detection rate)},
-  symbolic x coords={0.06--0.08,0.08--0.10,0.10--0.12,
-                     0.12--0.15,0.15--0.20,0.20--0.30,$>$0.30},
-  xtick=data,
-  xticklabel style={font=\scriptsize,rotate=30,anchor=east},
-  ymin=0, ymax=1.25,
-  ytick={0,0.2,0.4,0.6,0.8,1.0},
+  width=12cm, height=7.5cm,
+  title={Monte Carlo TPR by $k_{ibr}$ Bin (Group A, 3PH Internal Faults)},
+  title style={font=\small\bfseries},
+  ybar,
+  bar width=1.1cm,
+  xlabel={IBR share $k_{ibr}$ bin},
+  ylabel={True positive rate (TPR)},
+  xlabel style={font=\small},
+  ylabel style={font=\small},
+  xtick={1,2,3,4,5,6,7},
+  xticklabels={%
+    {0.06--0.08},
+    {0.08--0.10},
+    {0.10--0.12},
+    {0.12--0.15},
+    {0.15--0.20},
+    {0.20--0.30},
+    {$>$0.30}},
+  xticklabel style={font=\scriptsize, rotate=30, anchor=north east},
+  xmin=0.3, xmax=7.7,
+  ymin=0, ymax=1.18,
+  ytick={0, 0.2, 0.4, 0.6, 0.8, 1.0},
   yticklabel style={font=\scriptsize},
   grid=both,
-  grid style={gray!25,line width=0.3pt},
-  label style={font=\small},
-  legend style={at={(0.97,0.97)},anchor=north east,
-                font=\scriptsize,fill=white,draw=black!40},
-  enlarge x limits=0.08]
+  grid style={gray!25, line width=0.3pt},
+  tick style={draw=none},
+  axis line style={gray!60},
+  legend style={at={(0.98,0.55)}, anchor=north east,
+                font=\scriptsize, draw=gray!60,
+                cells={anchor=west}},
+]
 
-  % TDCS-only contribution (below threshold 0.12)
-  \addplot[fill=orange!60,draw=orange!80] coordinates {
-    (0.06--0.08, 1.0)
-    (0.08--0.10, 1.0)
-    (0.10--0.12, 1.0)
-    (0.12--0.15, 0.0)
-    (0.15--0.20, 0.0)
-    (0.20--0.30, 0.0)
-    ($>$0.30,    0.0)
-  };
-  \addlegendentry{TDCS-87L primary}
+% ---- TDCS-primary bins (k_ibr < 0.12): bins 1, 2, 3 ------------------------
+\addplot[fill=blue!40, draw=blue!65, line width=0.7pt,
+         forget plot] coordinates {
+  (1, 1.000)
+  (2, 1.000)
+  (3, 1.000)
+};
 
-  % 87L contribution (at/above 0.12 pu)
-  \addplot[fill=blue!50,draw=blue!70] coordinates {
-    (0.06--0.08, 0.0)
-    (0.08--0.10, 0.0)
-    (0.10--0.12, 0.0)
-    (0.12--0.15, 1.0)
-    (0.15--0.20, 1.0)
-    (0.20--0.30, 1.0)
-    ($>$0.30,    1.0)
-  };
-  \addlegendentry{87L magnitude}
+% ---- 87L-primary bins (k_ibr >= 0.12): bins 4, 5, 6, 7 --------------------
+\addplot[fill=orange!50, draw=orange!75, line width=0.7pt,
+         forget plot] coordinates {
+  (4, 1.000)
+  (5, 1.000)
+  (6, 1.000)
+  (7, 1.000)
+};
 
-  % TPR=1.0 target line
-  \draw[red!70!black,very thick,dashed]
-    (axis cs:0.06--0.08,1.0) -- (axis cs:$>$0.30,1.0)
-    node[right,font=\tiny,red!60]{TPR$=1.00$};
+% ---- Legend proxies ---------------------------------------------------------
+\addlegendimage{area legend, fill=blue!40,  draw=blue!65}
+\addlegendentry{TDCS-87L primary ($k_{ibr}<0.12$)}
+\addlegendimage{area legend, fill=orange!50, draw=orange!75}
+\addlegendentry{87L primary ($k_{ibr}\geq 0.12$)}
 
-  % Threshold annotation
-  \draw[gray!55,dotted,thick]
-    (axis cs:0.12--0.15,0) -- (axis cs:0.12--0.15,1.1)
-    node[above,font=\tiny,gray!55]{$k_{\rm ibr}=0.12$\,pu};
+% ---- TPR=1.000 labels above each bar ----------------------------------------
+\node[font=\scriptsize\bfseries, above] at (axis cs:1, 1.000) {1.000};
+\node[font=\scriptsize\bfseries, above] at (axis cs:2, 1.000) {1.000};
+\node[font=\scriptsize\bfseries, above] at (axis cs:3, 1.000) {1.000};
+\node[font=\scriptsize\bfseries, above] at (axis cs:4, 1.000) {1.000};
+\node[font=\scriptsize\bfseries, above] at (axis cs:5, 1.000) {1.000};
+\node[font=\scriptsize\bfseries, above] at (axis cs:6, 1.000) {1.000};
+\node[font=\scriptsize\bfseries, above] at (axis cs:7, 1.000) {1.000};
 
-  % CI annotation
-  \node[draw,fill=white,rounded corners=2pt,inner sep=2pt,
-        font=\tiny,align=center]
-    at (axis cs:0.15--0.20,1.10)
-    {95\% CI $\geq 0.999$\\($N{=}5\,000$ per bin)};
+% ---- Region divider at boundary between bin 3 and bin 4 --------------------
+\draw[gray!60, dashed, line width=0.9pt]
+  (axis cs:3.5, 0) -- (axis cs:3.5, 1.10);
+
+% ---- Region annotation labels -----------------------------------------------
+\node[font=\scriptsize, blue!70!black, align=center]
+  at (axis cs:1.5, 1.13) {TDCS-87L\\primary};
+\node[font=\scriptsize, orange!70!black, align=center]
+  at (axis cs:5.5, 1.13) {87L primary};
 
 \end{axis}
 \end{tikzpicture}

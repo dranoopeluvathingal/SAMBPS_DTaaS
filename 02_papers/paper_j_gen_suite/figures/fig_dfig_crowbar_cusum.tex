@@ -1,0 +1,50 @@
+% fig_dfig_crowbar_cusum.tex — CUSUM crowbar detector response
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  width  = 0.88\columnwidth,
+  height = 4.8cm,
+  xlabel = {Time (ms)},
+  ylabel = {CUSUM statistic $g_k$ (pu)},
+  xmin=0, xmax=120,
+  ymin=0, ymax=5.2,
+  xtick={0,20,40,60,80,100,120},
+  ytick={0,1,2,3,4,5},
+  legend pos=north west,
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+]
+
+%% Pre-crowbar CUSUM (slowly rising — SG-type DC transient)
+\addplot[thick,thesisgray,dashed,domain=0:40,samples=60]
+  {0.08*x};
+\addlegendentry{Pre-crowbar (SG-path, slow rise)};
+
+%% Post-crowbar CUSUM (flat, near zero — DFIG pure AC)
+\addplot[thick,thesisblue,mark=*,mark size=1.5pt,mark options={thesisblue}]
+  coordinates {
+    (40,0.12)(50,0.08)(60,0.15)(70,0.06)(80,0.11)(90,0.09)(100,0.14)(110,0.07)(120,0.10)
+  };
+\addlegendentry{Post-crowbar (DFIG-path, $g_k \approx 0$)};
+
+%% CUSUM threshold line
+\addplot[thesisred,thick,dotted,domain=0:120,samples=2] {3.0};
+\node[thesisred,font=\tiny,right] at (axis cs:62,3.12) {Threshold $h=3.0$};
+
+%% Crowbar activation arrow
+\draw[thesisorange,thick,->]
+  (axis cs:40,2.0) -- (axis cs:40,3.2-0.15)
+  node[above,font=\tiny,thesisorange,align=center]{Crowbar\\fired};
+
+%% Crowbar event marker
+\draw[thesisorange,thick,dashed,line width=0.8pt]
+  (axis cs:40,0) -- (axis cs:40,5.2);
+
+%% Trip decision annotation
+\node[draw=thesisblue!60,fill=white,rounded corners=2pt,
+      font=\tiny,align=center,inner sep=2pt]
+  at (axis cs:90,1.8)
+  {DFIG path active\\$\kappa_n = 2.1 < 30$\\trip confirmed};
+
+\end{axis}
+\end{tikzpicture}

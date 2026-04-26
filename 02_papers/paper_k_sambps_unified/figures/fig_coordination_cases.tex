@@ -1,0 +1,50 @@
+% fig_coordination_cases.tex — Three coordination resolution cases (A, B, C)
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  blk/.style={draw=thesisblue,thick,fill=lightblue!30,rounded corners=3pt,
+              minimum width=2.9cm,minimum height=0.55cm,align=center},
+  outblk/.style={draw=thesisgreen,thick,fill=lightgreen!40,rounded corners=3pt,
+              minimum width=2.2cm,minimum height=0.50cm,align=center},
+  bad/.style={draw=thesisred,thick,fill=red!15,rounded corners=3pt,
+              minimum width=2.2cm,minimum height=0.50cm,align=center},
+  rule/.style={draw=thesisorange,fill=lightorange!30,rounded corners=2pt,
+               minimum width=2.4cm,minimum height=0.45cm,align=center,
+               font=\tiny},
+  arr/.style={-{Stealth[length=2mm]},thick},
+]
+
+%% ── Case A: IBR internal 87T fault at k_ibr=0.85 ───────────────────────
+\node[font=\scriptsize\bfseries,thesisblue] at (2.0,0.4) {Case A: IBR 87T fault ($k_{\rm ibr}{=}0.85$)};
+\node[blk] (A1) at (0.6,-0.45) {Conv.\ 87T BLOCK\\$P_D{=}0.236$};
+\node[blk] (A2) at (3.8,-0.45) {SPRT H1 dec.\\$t{=}20$\,ms};
+\node[rule] (AR) at (2.2,-1.30) {Rule 3: SPRT wins};
+\node[outblk]  (AO) at (2.2,-2.10) {TRIP in 24\,ms};
+\draw[arr,thesisgray] (A1.south) |- (AR.west);
+\draw[arr,thesisblue] (A2.south) |- (AR.east);
+\draw[arr,thesisgreen] (AR.south) -- (AO.north);
+
+%% ── Case B: External through-fault with CT saturation ───────────────────
+\node[font=\scriptsize\bfseries,thesisblue] at (8.0,0.4) {Case B: External fault + CT saturation};
+\node[bad]  (B1) at (6.4,-0.45) {87B TRIP\\(CT sat)};
+\node[blk]  (B2) at (9.6,-0.45) {87T $\kappa_n{=}14$\\$f_{\rm int}{=}0.18$};
+\node[rule] (BR) at (8.0,-1.30) {Rule 2: lowest $\kappa_n$};
+\node[outblk]  (BO) at (8.0,-2.10) {VETO 87B $\to$ RESTRAIN};
+\draw[arr,thesisred] (B1.south) |- (BR.west);
+\draw[arr,thesisblue] (B2.south) |- (BR.east);
+\draw[arr,thesisgreen] (BR.south) -- (BO.north);
+
+%% ── Case C: OOS concurrent with 87L fault ───────────────────────────────
+\node[font=\scriptsize\bfseries,thesisblue] at (13.2,0.4) {Case C: OOS $\parallel$ 87L fault};
+\node[blk] (C1) at (11.6,-0.45) {Relay 78 TRIP\\$\delta{>}146.1^\circ$};
+\node[blk] (C2) at (14.8,-0.45) {87L TRIP\\$I_{\rm diff}{>}I_{\rm bias}$};
+\node[rule] (CR) at (13.2,-1.30) {Non-conflicting zones};
+\node[outblk]  (CO) at (13.2,-2.10) {Both TRIP (independent)};
+\draw[arr,thesisblue] (C1.south) |- (CR.west);
+\draw[arr,thesisblue] (C2.south) |- (CR.east);
+\draw[arr,thesisgreen] (CR.south) -- (CO.north);
+
+%% Vertical separators
+\draw[thesisgray!40,dashed,thin] (5.2,0.6) -- (5.2,-2.5);
+\draw[thesisgray!40,dashed,thin] (11.0,0.6) -- (11.0,-2.5);
+
+\end{tikzpicture}

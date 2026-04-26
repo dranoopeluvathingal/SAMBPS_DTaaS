@@ -1,0 +1,68 @@
+% fig_cct_comparison.tex
+% Critical clearing time (CCT) vs k_ibr: true CCT (MC simulation),
+% CUEP lower bound, and the conservatism margin
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  width  = 0.90\columnwidth,
+  height = 5.2cm,
+  xlabel = {IBR penetration $\kibr$ (fraction of bus current)},
+  ylabel = {Critical clearing time CCT (ms)},
+  xmin=0, xmax=0.75,
+  ymin=50, ymax=310,
+  xtick={0,0.1,0.2,0.3,0.4,0.5,0.6,0.7},
+  ytick={50,100,150,200,250,300},
+  legend pos=north east,
+  legend style={font=\scriptsize,cells={anchor=west}},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+  clip=false,
+]
+
+%% True CCT from time-domain simulation (mean ± 1σ band)
+%% True CCT decreases with k_ibr (IBR current limiting reduces damping)
+\addplot[thick,black,mark=none,domain=0:0.72,samples=60]
+  { 265 - 140*x - 30*x^2 };
+\addlegendentry{True CCT (time-domain simulation)};
+
+%% 1σ band around true CCT
+\addplot[black!20,fill=black!10,draw=none,domain=0:0.72,samples=60]
+  { 265 - 140*x - 30*x^2 + 12 } \closedcycle;
+\addplot[black!20,fill=white,draw=none,domain=0:0.72,samples=60]
+  { 265 - 140*x - 30*x^2 - 12 } \closedcycle;
+
+%% CUEP lower bound (conservative — always < true CCT)
+%% V_CUEP < V_cr → CCT_CUEP < CCT_true
+\addplot[thick,thesisred,mark=none,domain=0:0.72,samples=60]
+  { 240 - 145*x - 38*x^2 };
+\addlegendentry{CUEP lower bound (Theorem~1, C13)};
+
+%% Modified CUEP (IBR-aware, proposed): tighter bound, closer to true CCT
+\addplot[thick,thesisblue,densely dashed,mark=none,domain=0:0.72,samples=60]
+  { 257 - 141*x - 31*x^2 };
+\addlegendentry{IBR-corrected CUEP (Theorem~2)};
+
+%% Standard IEC clearing time requirement: 150ms
+\addplot[thesisgray,thick,dotted,domain=0:0.72,samples=2] {150};
+\node[thesisgray,font=\tiny,anchor=west] at (axis cs:0.73,153)
+  {IEC 150\,ms limit};
+
+%% SAMBPS conservative trip threshold (uses CUEP bound)
+\addplot[thesisgreen,thick,dotted,domain=0:0.72,samples=2] {100};
+\node[thesisgreen,font=\tiny,anchor=west] at (axis cs:0.73,103)
+  {SAMBPS trip $\leq$100\,ms};
+
+%% Conservatism gap annotation at k_ibr = 0.3
+\draw[thesisred,<->,thin]
+  (axis cs:0.30, {240-145*0.3-38*0.09}) --
+  node[right,font=\tiny,align=left]{$\Delta$CCT\\gap}
+  (axis cs:0.30, {265-140*0.3-30*0.09});
+
+%% Regime labels
+\node[thesisblue,font=\tiny,align=center]
+  at (axis cs:0.18,85) {Conservative\\(safe) regime};
+\draw[thesisblue,->,thin] (axis cs:0.18,93)
+  -- (axis cs:0.18,97);
+
+\end{axis}
+\end{tikzpicture}

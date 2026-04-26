@@ -1,0 +1,88 @@
+% fig_sambp_5layer.tex — SAMBP five-layer architecture matrix
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  hdr/.style={draw=thesisblue,thick,fill=thesisblue!90,text=white,
+              minimum height=0.50cm,align=center},
+  shared/.style={draw=thesisblue,thick,fill=lightblue!50,
+                 minimum height=0.50cm,align=center},
+  perfc/.style={draw=thesisgray,thick,fill=gray!12,
+                minimum height=0.50cm,align=center},
+  layerlbl/.style={draw=thesisorange,thick,fill=lightorange!40,
+                   minimum height=0.50cm,align=center,font=\scriptsize\bfseries},
+]
+
+%% Column widths and row heights
+\def\cw{2.55cm}
+\def\rh{0.60cm}
+
+%% Header row
+\node[hdr,minimum width=1.6cm] (L0) at (0,0) {Layer};
+\node[hdr,minimum width=\cw]   (F1) at (2.3,0) {51 / 87B};
+\node[hdr,minimum width=\cw]   (F2) at (4.95,0) {87T (SPRT)};
+\node[hdr,minimum width=\cw]   (F3) at (7.60,0) {87L (IBR)};
+\node[hdr,minimum width=\cw]   (F4) at (10.25,0){Gen.\ Suite};
+
+%% L1 — Conventional baseline
+\node[layerlbl,minimum width=1.6cm,minimum height=\rh] (l1) at (0,-0.75) {L1};
+\node[perfc,minimum width=\cw,minimum height=\rh] at (2.3,-0.75)
+  {Conv.\ relay\\baseline};
+\node[perfc,minimum width=\cw,minimum height=\rh] at (4.95,-0.75)
+  {2H restraint\\baseline};
+\node[perfc,minimum width=\cw,minimum height=\rh] at (7.60,-0.75)
+  {Phase-current\\diff.\ relay};
+\node[perfc,minimum width=\cw,minimum height=\rh] at (10.25,-0.75)
+  {IEEE C37.102\\relay settings};
+
+%% L2 — Zone model (per-function)
+\node[layerlbl,minimum width=1.6cm,minimum height=\rh] at (0,-1.55) {L2};
+\node[perfc,minimum width=\cw,minimum height=\rh] at (2.3,-1.55)
+  {SG 5-param\\($n_{\rm free}{=}5$)};
+\node[perfc,minimum width=\cw,minimum height=\rh] at (4.95,-1.55)
+  {SPRT asymmetry\\$A_k$ index};
+\node[perfc,minimum width=\cw,minimum height=\rh] at (7.60,-1.55)
+  {2-param PV /\\10-param DFIG};
+\node[perfc,minimum width=\cw,minimum height=\rh] at (10.25,-1.55)
+  {Physics-reduced\\per relay};
+
+%% L3 — LM estimator (SHARED)
+\node[layerlbl,minimum width=1.6cm,minimum height=\rh] at (0,-2.35) {L3};
+\node[shared,minimum width=10.7cm,minimum height=\rh,
+      draw=thesisblue,fill=lightblue!60] at (6.275,-2.35)
+  {\textbf{Shared}: Two-pass Levenberg--Marquardt estimator
+   \quad $\kappa_n < 30$ in all functions \quad
+   Hilbert--Fortescue sequence backbone (C18)};
+
+%% L4 — Confidence gate (SHARED)
+\node[layerlbl,minimum width=1.6cm,minimum height=\rh] at (0,-3.15) {L4};
+\node[shared,minimum width=10.7cm,minimum height=\rh,
+      draw=thesisblue,fill=lightblue!60] at (6.275,-3.15)
+  {\textbf{Shared}: Stage-2 veto gate \;
+   VETO $\leftarrow (\kappa_n < 30)$ AND $(f_{\rm int} < f_{\rm thresh})$ \;
+   \quad $\gamma_{\min} = 0.70$ global \quad $f_{\rm thresh}$: 0.60 / 0.60 / 0.50 / 0.55};
+
+%% L5 — Fallback / GOOSE (per-function outputs + shared bus)
+\node[layerlbl,minimum width=1.6cm,minimum height=\rh] at (0,-3.95) {L5};
+\node[perfc,minimum width=\cw,minimum height=\rh] at (2.3,-3.95)
+  {Backup OC\\GOOSE out};
+\node[perfc,minimum width=\cw,minimum height=\rh] at (4.95,-3.95)
+  {SPRT H1/H2\\GOOSE out};
+\node[perfc,minimum width=\cw,minimum height=\rh] at (7.60,-3.95)
+  {DDR selector\\GOOSE out};
+\node[perfc,minimum width=\cw,minimum height=\rh] at (10.25,-3.95)
+  {IEC 61850\\GOOSE out};
+
+%% Shared label annotation
+\draw[thesisblue,thick,<->]
+  (0.81,-2.10) -- (0.81,-3.40)
+  node[midway,left,font=\tiny,thesisblue,text width=0.9cm,align=center]
+    {Shared\\L3--L4};
+
+%% IEC 61850 GOOSE bus at bottom
+\node[draw=thesisorange,fill=lightorange!30,thick,rounded corners=2pt,
+      minimum width=12.5cm,minimum height=0.45cm,font=\scriptsize,align=center]
+  at (6.25,-4.75)
+  {IEC~61850 GOOSE Coordination Bus (C19) — $\kappa_n$, $f_{\rm int}$,
+   \texttt{seq\_type}, \texttt{adapt\_trip}, \texttt{conv\_trip}
+   broadcast at 20\,ms cycle, max latency 4\,ms};
+
+\end{tikzpicture}

@@ -1,0 +1,256 @@
+% main_report81.tex
+% SAMBP Technical Report TR-81/2028
+% GMD/GIC Protection
+\documentclass[11pt, a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=25mm]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{booktabs, array, multirow, longtable}
+\usepackage{graphicx}
+\usepackage[table]{xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc, fit, backgrounds,
+                shapes.geometric, shapes.misc}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{parskip}
+\usepackage{siunitx}
+\usepackage{pifont}
+\usepackage{cite}
+
+\definecolor{sambpblue}{RGB}{0,70,140}
+\definecolor{okgreen}{RGB}{0,130,60}
+\definecolor{alertred}{RGB}{180,0,0}
+\definecolor{warnoran}{RGB}{200,100,0}
+
+\newcommand{\pu}{\,\text{pu}}
+\newcommand{\ms}{\,\text{ms}}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+
+\newtheorem{finding}{Finding}
+\newtheorem{remark}{Remark}
+
+\title{\textbf{\textsf{\color{sambpblue}SAMBP Technical Report TR-81/2028}}\\[6pt]
+  \Large Geomagnetic Disturbance and GIC Protection\\[4pt]
+  \normalsize Lehtinen-Pirjola GIC Flow Model, IEC~60076-7 Transformer
+  Thermal Model, 5-Bus 400\,kV Network: 11 Tests PASS}
+\author{SAMBP Research Group\\[2pt]
+  \small Smart Adaptive Multi-Bus Protection Research, IIT Madras}
+\date{April 2028\quad\textbar\quad Chapter~3 (Protection Challenges)\quad\textbar\quad
+  Prerequisite: TR-67 (HIL)}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\vspace{6pt}\hrule\vspace{10pt}
+
+\section{Background and Objectives}
+\label{sec:background}
+
+\subsection{Motivation}
+
+Geomagnetic Disturbances (GMD) caused by solar storms drive quasi-DC
+Geomagnetically Induced Currents (GIC) through transmission networks.
+GIC saturates power transformers, causing half-cycle saturation, increased
+reactive power demand, harmonic injection, and potentially catastrophic
+thermal damage~\cite{Gaunt2007}. The Quebec 1989 blackout (6 hours, $9\,\text{GW}$
+loss) and the Hydro-Quebec transformer damage are canonical examples.
+
+The SAMBP framework adds GMD/GIC protection as a special protection scheme
+(SPS) separate from the conventional fault-protection functions.
+
+\subsection{Objectives}
+
+\begin{enumerate}
+  \item Implement the Lehtinen-Pirjola (LP) GIC flow model.
+  \item Implement the IEC~60076-7:2018 transformer thermal model with GIC.
+  \item Define alarm levels: NORMAL, ELEVATED, CRITICAL, TRIP.
+  \item Validate on a 5-bus 400\,kV network with 11 unit tests.
+\end{enumerate}
+
+\section{Theory and Methodology}
+\label{sec:theory}
+
+\subsection{Lehtinen-Pirjola GIC Flow Model}
+
+The LP model~\cite{Lehtinen1985} treats the transmission network as a
+resistive circuit driven by the geoelectric field $\mathbf{E}$
+(induced by the time-varying geomagnetic field). The network equations are:
+
+\begin{equation}
+  (\mathbf{Y}_n + \mathbf{Y}_e)\,\mathbf{V} = \mathbf{J}_e
+  \label{eq:lp}
+\end{equation}
+
+\noindent where $\mathbf{Y}_n$ is the network admittance matrix
+(DC resistance of lines and transformer windings),
+$\mathbf{Y}_e$ is the earth admittance matrix (earthing resistances),
+$\mathbf{V}$ is the vector of node voltages,
+and $\mathbf{J}_e = \mathbf{Y}_e^{(ij)} \cdot \int_{ij} \mathbf{E}\,dl$
+is the geoelectric source current vector (line integral of $\mathbf{E}$
+along each transmission line).
+
+The neutral GIC at bus $k$ is:
+$I_{\mathrm{GIC},k} = Y_{e,kk} V_k$ (quasi-DC neutral current through transformer).
+
+\paragraph{3-bus LP benchmark.}
+With $R_{\mathrm{line}} = R_{\mathrm{earth}} = 2\,\Omega$ and
+$E_x = 1\,\text{V/km}$:
+Bus 1: $I_{\mathrm{GIC}} = 25.0\,\text{A}$;
+Bus 2: $25.0\,\text{A}$; Bus 3: $-50.0\,\text{A}$.
+KCL check: $\sum I_{\mathrm{GIC}} = 0.000\,\text{A}$. \cmark
+
+\paragraph{5-bus 400\,kV scaling.}
+GIC scales linearly with E-field intensity:
+$I_{\mathrm{GIC,max}} = 57.7\,\text{A}$ at $E = 1\,\text{V/km}$;
+$= 577\,\text{A}$ at $E = 10\,\text{V/km}$ (extreme solar storm).
+
+\subsection{Transformer Thermal Model}
+
+The IEC~60076-7:2018 thermal model (Thermal Model~1)~\cite{IEC60076}:
+
+\begin{align}
+  \tau_{\mathrm{TO}}\frac{d\Delta\Theta_{\mathrm{TO}}}{dt}
+    &= \Delta\Theta_{\mathrm{TO,R}}
+    \left[\frac{K_{\mathrm{eff}}^2 + R}{1 + R}\right]^{n_{\mathrm{TO}}}
+    - \Delta\Theta_{\mathrm{TO}}
+  \label{eq:topol}\\
+  \tau_{\mathrm{HS}}\frac{d\Delta\Theta_{\mathrm{HS}}}{dt}
+    &= \Delta\Theta_{\mathrm{HS,R}}\,K_{\mathrm{eff}}^{2n_{\mathrm{HS}}}
+    - \Delta\Theta_{\mathrm{HS}}
+  \label{eq:hotspot}
+\end{align}
+
+\noindent where $K_{\mathrm{eff}}$ is the effective load factor incorporating GIC:
+\begin{equation}
+  K_{\mathrm{eff}} = \sqrt{K^2 + \left(\frac{I_{\mathrm{GIC}}}{I_{\mathrm{rated}}}
+    \times k_{\mathrm{gic}}\right)^2}
+  \label{eq:keff}
+\end{equation}
+$k_{\mathrm{gic}}$ is the GIC-to-thermal-equivalent factor
+(typically $0.5$--$1.0$ depending on transformer design).
+
+\subsection{Alarm Levels}
+
+\begin{table}[ht]
+\centering
+\caption{GIC protection alarm levels based on hot-spot temperature.}
+\label{tab:alarms}
+\begin{tabular}{lcc}
+\toprule
+Level & Hot-spot $\Theta_{\mathrm{HS}}$ & Action \\
+\midrule
+NORMAL   & $< 98^\circ$C & None \\
+ELEVATED & $98$--$120^\circ$C & Operator alert, reduce load \\
+CRITICAL & $120$--$140^\circ$C & Automatic load shedding \\
+TRIP     & $\geq 140^\circ$C & Transformer isolation \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Simulation Results}
+\label{sec:results}
+
+\subsection{5-Bus 400\,kV Network: GIC vs E-Field}
+
+\begin{table}[ht]
+\centering
+\caption{GIC levels and alarm status vs.\ E-field intensity
+  (5-bus 400\,kV, $K=1$, $\Theta_{\mathrm{amb}}=25^\circ$C).}
+\label{tab:gic}
+\begin{tabular}{ccccc}
+\toprule
+$E$ (V/km) & Max $I_{\mathrm{GIC}}$ (A) & $\Theta_{\mathrm{HS}}$ ($^\circ$C) & Alarm & Status \\
+\midrule
+0.5 &  28.9 & 91.0  & NORMAL   & \cmark \\
+1.0 &  57.7 & 91.3  & NORMAL   & \cmark \\
+2.0 & 115.5 & 92.3  & NORMAL   & \cmark \\
+5.0 & 288.7 & 107.8 & ELEVATED & \cmark \\
+10.0 & 577.3 & 127.0 & CRITICAL & \cmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{11-Test Pass Summary}
+
+\begin{table}[ht]
+\centering
+\caption{TR-81 unit test results.}
+\label{tab:tests}
+\begin{tabular}{llc}
+\toprule
+Test & Description & Status \\
+\midrule
+T01 & LP model: 3-bus KCL check ($E_x$ component) & \cmark \\
+T02 & LP model: 3-bus KCL check ($E_y$ component) & \cmark \\
+T03 & LP model: linear E-field scaling & \cmark \\
+T04 & LP model: 5-bus 400\,kV validation & \cmark \\
+T05 & Thermal model: steady-state (no GIC) & \cmark \\
+T06 & Thermal model: GIC-augmented $K_{\mathrm{eff}}$ & \cmark \\
+T07 & Alarm: NORMAL level ($I_{\mathrm{GIC}} = 100$\,A) & \cmark \\
+T08 & Alarm: ELEVATED level ($I_{\mathrm{GIC}} = 350$\,A) & \cmark \\
+T09 & Alarm: CRITICAL level ($I_{\mathrm{GIC}} = 500$\,A) & \cmark \\
+T10 & End-to-end pipeline: LP GIC $\to$ thermal model & \cmark \\
+T11 & Euler integration accuracy ($< 5^\circ$C vs analytical) & \cmark \\
+\midrule
+\textbf{Total} & --- & \textbf{11/11 PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{finding}[GIC thermal risk begins at $E > 5$\,V/km]
+For the 5-bus 400\,kV network, the transformer hot-spot temperature
+reaches the ELEVATED alarm threshold at $E = 5\,\text{V/km}$
+($I_{\mathrm{GIC}} = 288.7\,\text{A}$) and CRITICAL at $10\,\text{V/km}$.
+The 1989 Quebec event produced estimated $E \approx 10\,\text{V/km}$
+at some locations, consistent with the observed transformer damage.
+\end{finding}
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+\begin{finding}[LP GIC model: exact KCL verified]
+The Lehtinen-Pirjola GIC solver satisfies KCL ($\sum I_{\mathrm{GIC}} = 0$)
+exactly for all tested E-field configurations, confirming numerical correctness.
+GIC scales linearly with E-field intensity as expected from the linear LP equations.
+\end{finding}
+
+\begin{finding}[IEC 60076-7 thermal model: 11 tests PASS]
+The IEC~60076-7:2018 thermal model with GIC-augmented load factor correctly
+tracks hot-spot temperature with Euler integration error $< 5^\circ$C
+vs.\ the analytical solution.
+\end{finding}
+
+\begin{thebibliography}{99}
+\bibitem{Gaunt2007}
+C.~T.~Gaunt and G.~Coetzee,
+``Transformer failures in regions incorrectly considered to have low GIC-risk,''
+in \emph{Proc.\ IEEE PowerTech}, Lausanne, 2007.
+
+\bibitem{Lehtinen1985}
+M.~Lehtinen and R.~Pirjola,
+``Currents produced in earthed conductor networks by geomagnetically-induced
+electric fields,''
+\emph{Ann.\ Geophys.}, vol.~3, no.~4, pp.~479--484, 1985.
+
+\bibitem{IEC60076}
+IEC~60076-7:2018, \emph{Power Transformers --- Part~7: Loading Guide for
+Mineral-Oil-Immersed Power Transformers}, IEC, Geneva, 2018.
+
+\bibitem{NERC2012}
+NERC, \emph{Special Reliability Assessment: Effects of Geomagnetic
+Disturbances on the Bulk Power System}, Atlanta, GA, 2012.
+
+\bibitem{Boteler2014}
+D.~H.~Boteler and R.~J.~Pirjola,
+``Modelling geomagnetically induced currents,''
+\emph{Space Weather}, vol.~15, no.~1, pp.~258--276, 2017.
+\end{thebibliography}
+
+\end{document}

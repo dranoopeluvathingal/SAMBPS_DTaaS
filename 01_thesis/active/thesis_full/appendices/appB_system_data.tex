@@ -72,7 +72,8 @@ TDCS threshold & $3\sigma$ & Pre-fault training & \ref{sec:ch4_tdcs} \\
 \begin{table}[htbp]
 \caption{EKF tuning parameters}
 \label{tab:app_ekf}
-\begin{tabularx}{\textwidth}{@{}lXXl@{}}
+\small
+\begin{tabularx}{\textwidth}{@{}p{3.8cm}Xll@{}}
 \toprule
 Parameter & Symbol & Value & Description \\
 \midrule
@@ -80,37 +81,12 @@ Process noise: $\kibr$ & $\sigma_{k_\mathrm{ibr}}$ & 0.001 & pu/cycle \\
 Process noise: $\Zline$ & $\sigma_{Z_L}$ & $2\times10^{-4}$ & pu/cycle \\
 Process noise: $\alpha$ & $\sigma_\alpha$ & 0.005 & pu/cycle \\
 Measurement noise: ratio & $\sigma_y$ & 0.005 & pu \\
-Measurement noise: angle & $\sigma_\phi$ & $2°$ & degrees \\
-Initial covariance & $\mathbf{P}_0$ & $\mathrm{diag}[0.1^2, 0.01^2, 0.5^2]$ & pu$^2$ \\
+Measurement noise: angle & $\sigma_\phi$ & $2^\circ$ & degrees \\
+Initial covariance & $\mathbf{P}_0$ & $\mathrm{diag}(0.01,\,10^{-4},\,0.25)$ & pu$^2$ \\
 Update rate & $f_\mathrm{EKF}$ & 50~Hz & (1 power cycle) \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\section{PINN Hyperparameters}
-\label{app:pinn}
-
-\begin{table}[htbp]
-\caption{PINN training hyperparameters}
-\label{tab:app_pinn}
-\begin{tabularx}{\textwidth}{@{}lXl@{}}
-\toprule
-Parameter & Value & Description \\
-\midrule
-Architecture & $[12, 128, 64, 32, 5+3]$ & Input, hidden, output layers \\
-Activation & ReLU & Hidden layers \\
-Output activation & Softmax + Linear & Classification + physics outputs \\
-Optimiser & Adam & $\eta = 10^{-3}$, $\beta_{1,2} = (0.9, 0.999)$ \\
-Batch size & 256 & Training batch \\
-Epochs & 200 & With early stopping (patience 20) \\
-Constraint weights & $\lambda_1=10, \lambda_2=5, \lambda_3=2$ & Physics loss weights \\
-Training samples & 70{,}000 & From 100{,}000 total \\
-Validation samples & 15{,}000 & Early stopping \\
-Test samples & 15{,}000 & Final evaluation \\
-Online learning rate & $10^{-4}$ & Post-deployment \\
-Forgetting factor & $\lambda = 0.99$ & EWC weight decay \\
-CUSUM $\delta$ & 0.5 & Reference value \\
-CUSUM $\theta$ & 5.0 & Alarm threshold \\
-\bottomrule
-\end{tabularx}
-\end{table}
+%% Section app:pinn (PINN hyperparameters) supports Ch.8 which is outside
+%% the locked chapter scope (April 2026). Removed.

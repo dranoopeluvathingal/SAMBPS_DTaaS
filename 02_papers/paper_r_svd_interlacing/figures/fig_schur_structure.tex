@@ -1,0 +1,76 @@
+% fig_schur_structure.tex
+% Block structure of the full Jacobian H and the physics-structured projection P
+% Shows: H partitioned into H_d (dynamic) | H_a (algebraic),
+% the DAE constraint block, and how P maps R^n -> R^r
+\begin{tikzpicture}[
+  >=Stealth,
+  matlabel/.style={font=\scriptsize,align=center},
+  dbox/.style 2 args={draw,rounded corners=2pt,minimum width=#1,minimum height=#2,
+                      fill=thesisblue!15,draw=thesisblue},
+  abox/.style 2 args={draw,rounded corners=2pt,minimum width=#1,minimum height=#2,
+                      fill=thesisorange!18,draw=thesisorange},
+  cbox/.style 2 args={draw,rounded corners=2pt,minimum width=#1,minimum height=#2,
+                      fill=thesisgreen!15,draw=thesisgreen},
+  gbox/.style 2 args={draw,rounded corners=2pt,minimum width=#1,minimum height=#2,
+                      fill=thesisgray!15,draw=thesisgray},
+]
+
+%% ── Full Jacobian H partitioned ──────────────────────────────────────────────
+\node[matlabel] at (0,2.8) {Full Jacobian $\mathbf{H} \in \mathbb{R}^{m \times n}$};
+
+%% H_d block
+\node[dbox={1.8cm}{1.4cm}] (Hd) at (-1.1,1.8) {};
+\node[font=\scriptsize,thesisblue,align=center] at (Hd) {$\mathbf{H}_d$\\$m \times n_d$};
+
+%% H_a block
+\node[abox={1.4cm}{1.4cm}] (Ha) at (0.9,1.8) {};
+\node[font=\scriptsize,thesisorange,align=center] at (Ha) {$\mathbf{H}_a$\\$m \times n_a$};
+
+%% Brace for H
+\draw[decorate,decoration={brace,amplitude=4pt,mirror},thesisgray]
+  (-2.05,1.0) -- (1.7,1.0) node[midway,below=4pt,font=\scriptsize]{$n = n_d + n_a$ columns};
+
+%% ── DAE algebraic constraint ─────────────────────────────────────────────────
+\node[matlabel] at (4.2,2.8) {DAE constraint\\(physics)};
+
+%% Constraint matrix [A_d | A_a]
+\node[dbox={1.2cm}{0.8cm}] (Ad) at (3.4,1.8) {};
+\node[font=\scriptsize,thesisblue] at (Ad) {$\mathbf{A}_d$};
+\node[abox={1.0cm}{0.8cm}] (Aa) at (4.8,1.8) {};
+\node[font=\scriptsize,thesisorange] at (Aa) {$\mathbf{A}_a$};
+
+\node[font=\scriptsize,gray] at (4.1,1.8) {$\mathbf{0} =$};
+\draw[decorate,decoration={brace,amplitude=4pt,mirror},thesisgray]
+  (2.75,1.3) -- (5.35,1.3) node[midway,below=4pt,font=\scriptsize]{eliminates $x_a = -\mathbf{A}_a^{-1}\mathbf{A}_d x_d$};
+
+%% ── Physics-structured projection P ─────────────────────────────────────────
+\node[matlabel] at (0,-0.2) {Physics projection $\mathbf{P} \in \mathbb{R}^{n \times r}$, $\mathbf{P}^\top \mathbf{P} = \mathbf{I}_r$};
+
+\node[dbox={1.8cm}{0.9cm}] (Pd) at (-1.1,-0.9) {};
+\node[font=\scriptsize,thesisblue] at (Pd) {$\mathbf{I}_{n_d}$};
+
+\node[abox={1.4cm}{0.9cm}] (Pa) at (0.9,-0.9) {};
+\node[font=\scriptsize,thesisorange] at (Pa) {$-\mathbf{A}_a^{-1}\mathbf{A}_d$};
+
+\draw[decorate,decoration={brace,amplitude=4pt,mirror},thesisgray]
+  (-2.05,-1.4) -- (1.7,-1.4) node[midway,below=4pt,font=\scriptsize]{$r = n_d$ rows (after orth.)};
+
+%% ── Reduced Jacobian ─────────────────────────────────────────────────────────
+\node[cbox={1.8cm}{1.0cm}] (Htilde) at (4.5,-0.9) {};
+\node[font=\scriptsize,thesisgreen,align=center] at (Htilde)
+  {$\tilde{\mathbf{H}} = \mathbf{H}\mathbf{P}$\\$m \times r$};
+
+\node[matlabel] at (4.5,-0.2) {Reduced Jacobian};
+
+%% ── Arrow: H,P → tilde H ─────────────────────────────────────────────────────
+\draw[->,thick,thesisgreen] (1.7,1.8) -- node[above,font=\tiny]{$\times\,\mathbf{P}$} (3.5,-0.9);
+\draw[->,thick,thesisgreen] (1.7,-0.9) -- (3.5,-0.9);
+
+%% ── SVD interlacing annotation ───────────────────────────────────────────────
+\node[draw=thesisblue!30,fill=white,rounded corners=3pt,
+      font=\tiny,align=center,inner sep=3pt]
+  at (4.5,-2.1)
+  {$\sigma_k(\mathbf{H}) \geq \sigma_k(\tilde{\mathbf{H}}) \geq \sigma_{k+n_a}(\mathbf{H})$\\
+   $k = 1,\ldots,r$\quad (Theorem~1)};
+
+\end{tikzpicture}

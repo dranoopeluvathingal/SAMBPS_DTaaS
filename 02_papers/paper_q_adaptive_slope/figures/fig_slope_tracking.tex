@@ -1,0 +1,100 @@
+% fig_slope_tracking.tex
+% True optimal slope k*(t) vs projected adaptive k(t) vs two fixed baselines
+% plus (inset-style bottom strip) RMSE bar chart
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=1 by 2, vertical sep=0.50cm},
+  thesis style,
+  width=0.90\columnwidth,
+  clip=true,
+]
+
+%% ── Panel 1: Slope tracking (0–400ms) ───────────────────────────────────────
+\nextgroupplot[
+  height=4.8cm,
+  ylabel={Slope $k(t)$ (pu)},
+  xlabel={},
+  xticklabels={},
+  xmin=0, xmax=400,
+  ymin=0.15, ymax=0.80,
+  xtick={0,50,100,150,200,250,300,350,400},
+  ytick={0.2,0.3,0.4,0.5,0.6,0.7,0.8},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+  legend pos=north east,
+  legend style={font=\scriptsize,cells={anchor=west}},
+]
+
+%% True optimal k*(t): starts at 0.55 (IBR-heavy pre-fault), drops during fault
+%% as IBR current limiting kicks in, then recovers
+\addplot[thick,black,mark=none,domain=0:400,samples=120]
+  { (x<5)   ? 0.55 :
+    (x<60)  ? 0.55 - (x-5)*0.0038 :
+    (x<120) ? 0.34 - (x-60)*0.0008 :
+    (x<250) ? 0.29 + (x-120)*0.0012 :
+    min(0.52, 0.29 + (x-120)*0.0012) };
+\addlegendentry{True optimal $k^*(t)$};
+
+%% Projected adaptive k(t): tracks k* with ~20ms lag
+\addplot[thick,thesisblue,mark=none,domain=0:400,samples=120]
+  { (x<5)   ? 0.48 :
+    (x<25)  ? 0.48 + (0.55-0.48)*(1-exp(-(x-5)/8)) :
+    (x<70)  ? 0.55 - (x-25)*0.0035 :
+    (x<130) ? 0.36 - (x-70)*0.0007 :
+    (x<260) ? 0.32 + (x-130)*0.0011 :
+    min(0.51, 0.32 + (x-130)*0.0011) };
+\addlegendentry{Adaptive $k(t)$ (proposed, $\gamma{=}8$)};
+
+%% Fixed k=0.30 (too low for IBR-heavy network)
+\addplot[thick,thesisgray,densely dashed,domain=0:400,samples=2] {0.30};
+\addlegendentry{Fixed $k{=}0.30$};
+
+%% Fixed k=0.60 (too high: misses internal faults)
+\addplot[thick,thesisgray,domain=0:400,samples=2] {0.60};
+\addlegendentry{Fixed $k{=}0.60$};
+
+%% Constraint bounds (shaded)
+\addplot[thesisblue!20,fill=thesisblue!20,draw=none,domain=0:400,samples=120]
+  { (x<60) ? 0.48 : (x<130) ? max(0.20,0.48-(x-60)*0.004) : 0.20 };
+\addplot[thesisblue!20,fill=thesisblue!20,draw=none,domain=0:400,samples=120]
+  { (x<60) ? 0.72 : (x<200) ? max(0.45,0.72-(x-60)*0.003) : 0.45 };
+
+%% Projection active annotation
+\draw[thesisblue,thin,dashed] (axis cs:30,0.15) -- (axis cs:30,0.80)
+  node[above,font=\tiny,thesisblue,align=center]{Projection\\active};
+
+%% ── Panel 2: RMSE comparison (bar) ──────────────────────────────────────────
+\nextgroupplot[
+  height=2.4cm,
+  ybar,
+  ylabel={RMSE (pu)},
+  xlabel={Time after fault inception (ms)},
+  symbolic x coords={0--100ms, 100--200ms, 200--400ms},
+  xticklabels={0--100\,ms, 100--200\,ms, 200--400\,ms},
+  xtick=data,
+  x tick label style={font=\scriptsize},
+  ymin=0, ymax=0.125,
+  ytick={0,0.04,0.08,0.12},
+  bar width=7pt,
+  enlarge x limits=0.25,
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+  legend pos=north east,
+  legend style={font=\scriptsize,cells={anchor=west},
+                legend columns=2},
+  clip=false,
+]
+\addplot[fill=thesisgray!60,draw=thesisgray]
+  coordinates {(0--100ms,0.098)(100--200ms,0.115)(200--400ms,0.109)};
+\addlegendentry{Fixed $k{=}0.30$};
+
+\addplot[fill=thesisgray!30,draw=thesisgray,densely dashed]
+  coordinates {(0--100ms,0.042)(100--200ms,0.088)(200--400ms,0.096)};
+\addlegendentry{Fixed $k{=}0.60$};
+
+\addplot[fill=thesisblue!60,draw=thesisblue]
+  coordinates {(0--100ms,0.031)(100--200ms,0.019)(200--400ms,0.014)};
+\addlegendentry{Adaptive (proposed)};
+
+\end{groupplot}
+\end{tikzpicture}

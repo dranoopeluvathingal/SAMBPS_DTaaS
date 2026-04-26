@@ -1,0 +1,11 @@
+scenario,type,f_conv_hz,f_opt_hz,two_sigma_conv,two_sigma_opt,pass_conv,pass_opt,description
+S01,SEC,20.0,28.4,0.16000,0.00311,0,1,"No fault, f_sub=20 Hz — peak noise at conv freq → conv FA"
+S02,SEC,20.0,30.4,0.12812,0.00310,0,1,"No fault, f_sub=22 Hz — noise above conv freq → conv FA"
+S03,SEC,20.0,26.5,0.12812,0.00298,0,1,"No fault, f_sub=18 Hz — noise below conv freq → conv FA"
+S04,SEC,20.0,31.3,0.08491,0.00311,0,1,"No fault, f_sub=23 Hz — shifted noise → conv FA"
+S05,SEC,20.0,28.7,0.20000,0.00292,0,1,"No fault, f_sub=20 Hz, severe A=0.10 → conv FA"
+S06,FLT,20.0,28.4,0.16000,0.00311,0,1,"Fault Rf=6.0 pu, f_sub=20 Hz — high-Rf, conv miss"
+S07,FLT,20.0,28.4,0.16000,0.00311,0,1,"Fault Rf=7.0 pu, f_sub=20 Hz — near detection limit"
+S08,FLT,20.0,30.4,0.12812,0.00310,0,1,"Fault Rf=7.0 pu, f_sub=22 Hz — shifted noise, conv miss"
+S09,FLT,20.0,26.1,0.09609,0.00323,0,1,"Fault Rf=6.5 pu, f_sub=18 Hz — noise low-side, conv miss"
+S10,FLT,20.0,28.6,0.18000,0.00304,0,1,"Fault Rf=7.0 pu, f_sub=20 Hz, A=0.09 — severe near-miss"

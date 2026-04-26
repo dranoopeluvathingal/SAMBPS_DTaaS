@@ -1,341 +1,784 @@
 %% ch06_microgrid_protection.tex
-%% Chapter 6: Protection of IBR Microgrids
+%% Chapter 6: Generator Protection Suite for IBR-Affected Networks
+%% Source TRs: TR-56 (87G DFIG), TR-58 (Relay 78 EAC), TR-60 (Relay 40 LOE),
+%%             TR-61 (Relay 64G), TR-62 (87L-PV), TR-63 (Relay 81 IFDI)
+%% All six TRs complete April 2026.
+%% Target journals: IEEE TEC / TPWRS / TPWRD / TIE / TSG
 %% ============================================================
-\chapter{Protection of Inverter-Based Microgrids}
-\label{ch:microgrid}
+\chapter{Generator Protection Suite for IBR-Affected Networks}
+\label{ch:generator_suite}
+\label{ch:microgrid}% compatibility alias for prior cross-references
 
+% ── Chapter contributions ─────────────────────────────────────────────────────
+\begin{itemize}
+  \item[\textbf{C9.}] Physics-reduction proposition (Proposition~C9): replacing
+    one collinear or derivable parameter reduces the estimator condition number
+    $\kappa_n$ by $\geq 10\times$, proved via the SVD interlacing theorem.
+    Applied across all six generator-suite zone models.
+
+  \item[\textbf{C10.}] DFIG 10-parameter piecewise-ODE model with CUSUM crowbar
+    detection (TR-56, Section~\ref{sec:ch6_87g}): shared stator transient time
+    constant $\tau_s$ for DC and natural-response components reduces parameter
+    count from 11 to 10 and gives $\kappa_n \in [13, 67]$ vs.\ $\kappa_n \in
+    [3, 36]$ for the SG model.
+    CCR\,=\,100\% across all slip groups; ANDES WTDTA1 6/6 validated.
+
+  \item[\textbf{C11.}] Two-parameter solar PV zone model with $k_{\rm ibr}$-driven
+    DDR model selector (TR-62, Section~\ref{sec:ch6_87l_pv}):
+    analytically proven $\kappa_n = 1$, reducing 87L trip time for PV-fed lines
+    from $\geq 40\,\text{ms}$ to $20\,\text{ms}$;
+    $P_D = 0.9984$, $P_{FA} = 0.0000$ (5\,000-trial MC).
+
+  \item[\textbf{C12.}] IFDI-based Relay~81 for zero-inertia GFM networks
+    (TR-63, Section~\ref{sec:ch6_relay81}): 6-parameter model, two-pass LM,
+    IFDI trip threshold 1.15, achieving $P_D = 0.9947$, $P_{FA} = 0.0032$.
+
+  \item[\textbf{C13.}] Conservative CUEP lower bound for Relay~78 (TR-58,
+    Proposition~1, Section~\ref{sec:ch6_relay78}):
+    $\delta_{\rm LB} = \pi - \arcsin(P_m / P_{\rm maxeff})$,
+    proved $\leq \delta_u$ always (0 violations / 2\,000 MC trials),
+    providing a formal IBR-corrected out-of-step blinder setting.
+
+  \item[\textbf{C14.}] Relay~40 GFM admittance correction (TR-60,
+    Section~\ref{sec:ch6_relay40}): online correction $Y_{\rm corr} =
+    Y_{\rm total} - \widehat{Y}_{\rm GFM}$ eliminates both nuisance trip and
+    masked LOE failure modes; $P_D: 0.568 \to 1.000$, $P_{FA}: 0.038 \to 0.000$.
+
+  \item[\textbf{C15.}] Relay~64G optimal sub-harmonic injection (TR-61,
+    Section~\ref{sec:ch6_relay64g}): adaptive $f^* \in [25, 36]\,\text{Hz}$
+    maximises balanced security-dependability margin; $P_D: 0.813 \to 1.000$,
+    $P_{FA}: 0.819 \to 0.000$ vs.\ conventional 20\,Hz injection.
+\end{itemize}
+
+% ──────────────────────────────────────────────────────────────────────────────
 \section{Introduction}
 \label{sec:ch6_intro}
 
-A microgrid is a controllable cluster of generation (predominantly IBR),
-storage, and load that can operate either connected to the main grid or
-in an islanded autonomous mode. The transition between these operating modes
-is the most safety-critical event in microgrid operation: the protection
-must reconfigure within milliseconds to handle the radical change in fault
-current magnitude and direction.
+Five relay functions form the last line of defence for synchronous machines and
+their IBR equivalents: Relay~40 (loss of excitation), Relay~64G (stator earth
+fault), Relay~78 (out-of-step), Relay~81 (frequency deviation), and the
+generator differential (87G).
+All five were designed for synchronous machines in SG-dominated grids, and all
+five exhibit systematic failures when the generation mix includes grid-following
+(GFL) or grid-forming (GFM) inverter-based resources.
+Section~\ref{sec:ch6_87l_pv} addresses a sixth function: the 87L line
+differential relay on lines served primarily by solar PV inverters, which
+requires a dedicated two-parameter zone model.
 
-This chapter delivers three contributions:
+\begin{description}
+  \item[87G / 87L (DFIG):] DFIG fault current contains a slip-frequency natural
+    response at $f_s = s\,f_0$ ($s \in [-0.30, +0.30]$) after crowbar firing.
+    The standard 4-parameter SG model cannot fit this component, causing the
+    relay to misclassify fault current as load flow or to trip spuriously on the
+    natural response transient.
+    (Section~\ref{sec:ch6_87g}, TR-56.)
+
+  \item[87L (PV):] Grid-following PV inverters produce fault current with no DC
+    exponential component.  The 4-parameter SG model wastes two degrees of
+    freedom fitting noise, delaying trip confirmation by 20--40\,ms and elevating
+    the effective detection threshold.
+    (Section~\ref{sec:ch6_87l_pv}, TR-62.)
+
+  \item[Relay~81 (frequency):] In zero-inertia GFM islands, frequency dynamics
+    are governed by virtual droop with time constant $\tau_f \in [0.05, 1.0]\,\text{s}$
+    — a 20$\times$ range that makes fixed-threshold ROCOF relays unreliable.
+    (Section~\ref{sec:ch6_relay81}, TR-63.)
+
+  \item[Relay~40 (LOE):] GFM IBR with virtual-synchronous-machine control alters
+    the apparent admittance trajectory in ways that both cause nuisance trips
+    (reactive-absorption mode) and mask genuine LOE events (reactive-supply mode).
+    (Section~\ref{sec:ch6_relay40}, TR-60.)
+
+  \item[Relay~78 (OOS):] The equal-area criterion blinder assumes all
+    synchronising power is supplied by the SG.  For $\geq 30\%$ GFL penetration,
+    the standard blinder is non-conservative: it lies outside the true critical
+    unstable equilibrium point (CUEP).
+    (Section~\ref{sec:ch6_relay78}, TR-58.)
+
+  \item[Relay~64G (stator earth fault):] High-penetration IBR generate
+    sub-harmonic currents near $f_{\rm sub} \in [15, 25]\,\text{Hz}$ from
+    converter dead-time and LCL-filter resonance.  When the conventional fixed
+    injection at $f_{\rm conv} = 20\,\text{Hz}$ coincides with $f_{\rm sub}$,
+    the noise-to-signal ratio at the relay input inverts: false alarms exceed
+    99\% and missed detections occur for all high-resistance faults.
+    (Section~\ref{sec:ch6_relay64g}, TR-61.)
+\end{description}
+
+All six relay-function extensions are complete as of April~2026.  Chapter~\ref{ch:system_integration}
+integrates the full nine-element SAMBP suite at the system level.
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Generator Differential for DFIG Machines (87G)}
+\label{sec:ch6_87g}
+
+\subsection{The DFIG Fault Current Challenge}
+\label{sec:ch6_87g_problem}
+
+DFIG wind turbines present a two-regime fault current that no existing relay
+model captures.
+While the rotor-side converter (RSC) remains active (\emph{pre-crowbar}
+phase), the stator current behaves as a current-limited IBR:
+\begin{equation}
+  i_{\rm pre}(t) = k_{\rm ibr}\,\sin(\omega_0 t + \phi_{\rm pre}),
+  \label{eq:ch6_dfig_pre}
+\end{equation}
+with no DC offset and no slip-frequency content.
+
+After crowbar firing at $t = t_{\rm cb}$ the rotor circuit becomes a simple
+$RL$ loop.  The analytical solution for the stator current introduces two
+additional components:
+\begin{equation}
+  i_{\rm post}(t) =
+    I_{\rm fund}\sin(\omega_0 t + \phi_{\rm fund})
+    + I_{\rm nat}\,e^{-t_{\rm rel}/\tau_s}\sin(\omega_s\,t_{\rm rel} + \phi_{\rm nat})
+    + I_{\rm DC}\,e^{-t_{\rm rel}/\tau_s},
+  \label{eq:ch6_dfig_post}
+\end{equation}
+where $t_{\rm rel} = \max(t - t_{\rm cb}, 0)$, $\omega_s = s\,\omega_0$ is the
+slip frequency ($\omega_s \in [9.4, 110]\,\text{rad/s}$ for $s \in [0.03, 0.35]$),
+and $\tau_s = L_s'/(R_s + R_{\rm cb})$ is the stator transient time constant.
+
+\begin{remark}[Physics-based collinearity reduction]
+The DC aperiodic and natural-response components share the same time constant
+$\tau_s$ because both originate from the same stator transient flux-linkage
+initial condition.  This physical constraint reduces the parameter count from
+11 to 10 and guarantees $\kappa_n \in [13, 67]$ for the 10-parameter model,
+versus $\kappa_n \in [3, 36]$ for the SG model (Proposition~C9 applied).
+\end{remark}
+
+\subsection{Full 10-Parameter Piecewise-ODE Model}
+\label{sec:ch6_dfig_model}
+
+The complete DFIG model transitions smoothly between phases using a
+$\sigma_h = 0.5\,\text{ms}$ smoothed Heaviside:
+\begin{equation}
+  i_{\rm diff}(t,\,\boldsymbol{\theta}) =
+    H_r(t)\,i_{\rm pre}(t) + H_\sigma(t)\,i_{\rm post}(t,\,t_{\rm rel}),
+  \label{eq:ch6_dfig_full}
+\end{equation}
+where $H_\sigma(t) = [1 + \exp(-(t - t_{\rm cb})/\sigma_h)]^{-1}$ and
+$H_r = 1 - H_\sigma$.  The transition width (10\%--90\%) is $\approx 1.1\,\text{ms}$
+— below the 1\,ms sample interval — making $\partial i_{\rm diff}/\partial t_{\rm cb}$
+continuous everywhere (required for gradient-based optimisation).
+
+The 10-parameter vector is
+$\boldsymbol{\theta} = [k_{\rm ibr},\,\phi_{\rm pre},\,t_{\rm cb},\,I_{\rm fund},\,
+\phi_{\rm fund},\,I_{\rm nat},\,\phi_{\rm nat},\,\omega_s,\,\tau_s,\,I_{\rm DC}]^\top$.
+
+\subsection{CUSUM Crowbar Detector}
+\label{sec:ch6_cusum}
+
+The crowbar firing time $t_{\rm cb}$ must be detected online from the relay
+current waveform because it is not observable from relay communications.
+A CUSUM detector on the band-power of the slip-frequency component triggers when
+the cumulative sum of slip-frequency amplitude increments exceeds a calibrated
+threshold:
+\begin{equation}
+  g_k = \max(0,\; g_{k-1} + P_k - P_0 - K), \quad \text{alarm if } g_k \geq h,
+  \label{eq:ch6_cusum}
+\end{equation}
+where $P_k$ is the short-time DFT band-power in $[\omega_s - \Delta\omega,\,
+\omega_s + \Delta\omega]$ at sliding window $k$.
+The Wald-optimal parameters are $K = \tfrac{1}{2}(P_{\rm post} - P_{\rm pre})
+\approx 4.5\,P_0$ and $h = 1.5\,K$.
+Two-cycle windows are used to reduce leakage from the 50\,Hz fundamental into
+the slip band: main-lobe width $\approx 50\,\text{Hz}$ with Hanning weighting
+gives $< 1\%$ leakage into $[1.5, 17.5]\,\text{Hz}$.
+
+The CUSUM detector has three properties:
 \begin{itemize}
-\item \textbf{C7}: GFL/GFM dual-mode characterisation for protection
-      coordination (Section~\ref{sec:ch6_characterisation}).
-\item \textbf{C8}: ROCOF-supervised islanding detection with IEC~61850
-      mode-switch achieving isolation within 120~ms
-      (Section~\ref{sec:ch6_islanding}).
-\item \textbf{C9}: Adaptive OC setting-group architecture triggered by
-      GOOSE mode flags (Section~\ref{sec:ch6_adaptiveoc}).
+  \item Detection latency $t_{95} \leq 40\,\text{ms}$ for slip $\geq 6\%$.
+  \item False-positive rate $< 0.1\%$ for pure IBR current (no crowbar).
+  \item Broadband slip coverage: all $|s| \in [0.03, 0.35]$ monitored with no
+    a~priori slip estimate required.
 \end{itemize}
 
-\section{GFL vs.\ GFM: Protection-Relevant Characterisation}
-\label{sec:ch6_characterisation}
+\subsection{Two-Pass Levenberg--Marquardt Estimator}
+\label{sec:ch6_dfig_lm}
 
-\subsection{Operating Mode Definition}
+A physics-initialised two-pass LM estimator fits $\boldsymbol{\theta}$:
 
-\begin{thesisdef}{Grid-Connected Mode}
-The microgrid is synchronised to the main grid. The grid provides the
-voltage reference and limits frequency excursions. IBRs operate in GFL
-mode (PLL-locked current source) unless VSM/GFM firmware is engaged.
-Fault current levels are high because the grid infeed dominates.
-\end{thesisdef}
+\begin{description}
+  \item[Pass 1 — Full window, all 10 parameters:]
+    The initial guess places $t_{\rm cb}^{(0)}$ at the CUSUM alarm time,
+    $k_{\rm ibr}^{(0)}$ from the pre-crowbar RMS, and
+    $I_{\rm nat}^{(0)} = 0.3\,\text{pu}$, $\omega_s^{(0)} = 31.4\,\text{rad/s}$
+    (5\% slip at 50\,Hz).
+    Pass~1 solves all 10 parameters on the complete window
+    (TRF trust-region solver, $\leq 2\,000$ function evaluations).
 
-\begin{thesisdef}{Islanded Mode}
-The microgrid operates autonomously without grid connection. All voltage
-and frequency regulation must be provided by internal IBRs. Only GFM
-inverters (or droop-controlled GFL with synthetic inertia) can maintain
-stable islanded operation. Fault current is limited to $I_\mathrm{lim,GFM}
-\approx 1.5$--$2.5$~pu from GFM units.
-\end{thesisdef}
+  \item[Pass 2 — Tail refinement of $\omega_s$ and $\tau_s$:]
+    The final 3 cycles of the window (the ``tail'') contain primarily the
+    decaying natural response.  Pass~2 fixes the 8 amplitude and phase
+    parameters and refines only $(\omega_s, \tau_s)$ on the tail
+    ($\leq 600$ evaluations), reducing $\kappa_n$ for the slow-parameter
+    sub-problem from $\approx 67$ to $\approx 12$.
+\end{description}
 
-\subsection{Fault Current Comparison}
+The condition number $\kappa_n \in [13, 67]$ across all slip groups tested,
+remaining below $\kappa_{\max} = 80$.  At $s = 3\%$ ($\omega_s = 9.4\,\text{rad/s}$)
+the slip frequency is closest to DC, creating the highest collinearity
+($\kappa_n = 67$); Pass~2 tail refinement is critical in this regime.
 
-Table~\ref{tab:ch6_fault_comparison} compares the fault current levels
-in grid-connected versus islanded mode for the SAMBP microgrid test system.
+\subsection{Validation}
+\label{sec:ch6_87g_val}
 
-\begin{table}[htbp]
-\caption{Fault current levels in microgrid operating modes (33~kV, 10~MVA base)}
-\label{tab:ch6_fault_comparison}
-\begin{tabularx}{\textwidth}{@{}lXXX@{}}
-\toprule
-Fault type & Grid-connected (pu) & Islanded GFL (pu) & Islanded GFM (pu) \\
-\midrule
-3-phase (3P)       & 6.0--10.0 & 1.1--1.5 & 1.5--2.5 \\
-Single LG (SLG)    & 4.0--8.0  & 0.7--1.0 & 1.0--2.0 \\
-Line-to-line (LL)  & 5.0--9.0  & 1.0--1.3 & 1.3--2.2 \\
-High-impedance (HIF) & 0.1--0.5 & 0.05--0.2 & 0.1--0.3 \\
-\bottomrule
-\end{tabularx}
+Validation proceeded in three stages (TR-56):
+
+\begin{description}
+  \item[Deterministic 10-scenario sweep:]
+    Internal 3PH, SLG, and HIF faults and external faults at three slip levels.
+    10/10 PASS; relay correct in all cases including the minimum-slip ($s=3\%$)
+    high-$\kappa_n$ case.
+
+  \item[Monte Carlo ($7 \times 1\,000$ trials per slip group):]
+    CCR\,=\,100\% across all seven slip groups
+    ($s \in \{3\%,6\%,10\%,15\%,20\%,30\%,35\%\}$);
+    $P_{FA} = 0$;
+    CUSUM $t_{95} \leq 80\,\text{ms}$ for all groups.
+
+  \item[ANDES WTDTA1 validation:]
+    IEEE~14-bus extended with a DFIG wind farm (ANDES~v1.9 WTDTA1 device,
+    Bus~8).  Three fault resistances $R_f \in \{0.01, 0.10, 0.50\}\,\text{pu}$,
+    3 external + 3 internal cases.
+    6/6 correct relay decisions; zero false trips on external faults;
+    LM convergence confirmed; monotone $\hat{I}_{\rm sub}$ vs.\ $R_f$
+    consistent with DFIG physics.
+\end{description}
+
+\begin{table}[h]
+  \centering
+  \caption{TR-56 ANDES WTDTA1 validation results — 6-case matrix.}
+  \label{tab:ch6_dfig_andes}
+  \begin{tabular}{llccccc}
+    \toprule
+    Case & Scenario & $R_f$ (pu) & Trip? & $t_{\rm trip}$ (ms) &
+          $\hat{I}_{\rm sub}$ (pu) & CUSUM (ms) \\
+    \midrule
+    \texttt{ext\_R001} & External & 0.01 & \textbf{N} & --- & ---   & ---   \\
+    \texttt{ext\_R010} & External & 0.10 & \textbf{N} & --- & ---   & ---   \\
+    \texttt{ext\_R050} & External & 0.50 & \textbf{N} & --- & ---   & ---   \\
+    \texttt{int\_R001} & Internal & 0.01 & \textbf{Y} & 950 & 0.735 & 55.0  \\
+    \texttt{int\_R010} & Internal & 0.10 & \textbf{Y} & 950 & 0.511 & 58.1  \\
+    \texttt{int\_R050} & Internal & 0.50 & \textbf{Y} & 950 & 0.395 & 152.6 \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
-The fault current reduction from grid-connected to islanded is 4--8$\times$
-for GFL-dominated islands and 3--5$\times$ for GFM-dominated islands.
-This reduction is too large for the protection to accommodate with a
-single setting group.
+\noindent
+The monotone decrease of $\hat{I}_{\rm sub}$ with $R_f$ (0.735 $\to$ 0.395\,pu)
+is physically correct: higher fault resistance reduces fault current magnitude.
+The increasing CUSUM latency at $R_f = 0.50\,\text{pu}$ (152.6\,ms) arises
+from the smaller slip-band power increment when $I_{\rm nat}$ is small.
 
-\subsection{GFL/GFM Transition Dynamics}
+\paragraph{ANDES simulator adequacy (TR-59).}
+A 10-case ANDES positive-sequence sweep confirmed that ANDES is
+\emph{not} adequate for validating the \texttt{sync\_oc} subtransient
+identification algorithm: the confidence score $\hat{\gamma} \in [0.500, 0.582]$
+across all cases, uniformly below the adaptation threshold $\gamma_{\rm th} = 0.70$.
+The root cause is that positive-sequence ANDES enforces symmetric phasors,
+suppressing the negative- and zero-sequence content that the subtransient
+estimator uses for identifiability.
+This is a correct gate behaviour: the confidence threshold correctly withholds
+adaptation when input waveform quality is insufficient.
+Full-EMT validation (PSCAD explicit flux equations) is required for
+\texttt{sync\_oc}, and is deferred to the TR-67 HIL campaign
+(Chapter~\ref{ch:system_integration}).
 
-When the main breaker opens (island detection), GFL inverters must
-transition to GFM mode within $T_\mathrm{switch} \leq 100$~ms to
-maintain island voltage stability. The transition involves:
-\begin{enumerate}
-\item Disabling the PLL (GFL synchronisation reference lost).
-\item Activating the VSM outer loop with virtual inertia $M$ and damping $D$.
-\item Enabling reactive power droop: $Q = Q_0 - k_V(|V| - |V_0|)$.
-\end{enumerate}
-During the transition window $[0, T_\mathrm{switch}]$, the IBR is in
-an undefined state—neither GFL nor GFM. The protection system must
-withstand this transition without false tripping.
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Frequency Protection for Zero-Inertia GFM Islands (Relay~81)}
+\label{sec:ch6_relay81}
 
-The protection challenge is that during this window:
-\begin{itemize}
-\item $\kibr$ changes rapidly from $\kibr^\mathrm{GFL} \leq 1.5$~pu
-      to $\kibr^\mathrm{GFM} \approx 2.0$~pu.
-\item The current angle $\phi$ jumps by up to 90° as the reactive
-      injection priority changes.
-\item The frequency deviates by up to $\pm 2$~Hz before the VSM
-      governor action stabilises it.
-\end{itemize}
+\subsection{Problem: Variable Virtual Inertia Time Constant}
+\label{sec:ch6_relay81_problem}
 
-\section{ROCOF-Supervised Islanding Detection}
-\label{sec:ch6_islanding}
-
-\subsection{Passive Islanding Detection Methods}
-
-IEEE~1547-2018 mandates that all IBRs cease energizing the grid within
-2~s of islanding. Passive islanding detection methods monitor local
-electrical quantities:
-\begin{itemize}
-\item \textbf{Over/Under Voltage (OV/UV):} Detects islanding when
-      $V < 0.88$~pu or $V > 1.10$~pu. Fails when load exactly equals
-      generation (near-unity load balance).
-\item \textbf{Over/Under Frequency (OF/UF):} Detects islanding when
-      $f < 59.3$~Hz or $f > 60.5$~Hz (IEEE~1547). Fails at load balance.
-\item \textbf{ROCOF:} Rate-of-Change-of-Frequency. Detects the
-      characteristic frequency ramp caused by power imbalance at the
-      moment of islanding.
-\end{itemize}
-
-\subsection{ROCOF Theory}
-
-The frequency dynamics after islanding are governed by the combined
-swing equation:
+In a GFM-dominated island, the inertial frequency response is governed by the
+virtual-synchronous-machine droop filter:
 \begin{equation}
-  M_\mathrm{total} \frac{d^2\theta}{dt^2} = P_g - P_l
-  \label{eq:ch6_swing}
+  \hat{f}(s) = f_0 - \frac{\Delta P}{D_v} \cdot \frac{1}{1 + \tau_f s},
+  \label{eq:ch6_gfm_freq}
 \end{equation}
-where $M_\mathrm{total} = \sum_i M_i$ is the total virtual inertia of
-all GFM units, $P_g$ is total generation, and $P_l$ is total load.
-The ROCOF immediately after islanding is:
+where $D_v$ is the droop coefficient, $\Delta P$ the power imbalance, and
+$\tau_f \in [0.05, 1.0]\,\text{s}$ the virtual filter time constant — a
+20$\times$ range across different GFM manufacturers.
+Fixed ROCOF thresholds calibrated at one end of this range produce either
+false trips (too-low $\tau_f$) or missed islanding events (too-high $\tau_f$).
+
+\subsection{IFDI Estimator}
+\label{sec:ch6_relay81_ifdi}
+
+TR-63 proposes a 6-parameter GFM island model
+$\{f_0, D_v, \tau_f, \Delta P, \Delta f_\infty, W_\tau\}$ estimated by a
+two-pass Levenberg--Marquardt procedure with multi-start
+$\tau_f \in \{0.05, 1.0\}\,\text{s}$.
+The instantaneous frequency deviation index (IFDI) is:
 \begin{equation}
-  \left.\frac{df}{dt}\right|_{t=0^+} = \frac{f_0 (P_g - P_l)}{2H_\mathrm{total} S_\mathrm{rated}}
-  \label{eq:ch6_rocof}
+  \mathrm{IFDI} = \frac{|\Delta\hat{f}_\infty|}{0.035} \times W_\tau,
+  \label{eq:ch6_ifdi}
 \end{equation}
-where $H_\mathrm{total}$ is the total virtual inertia constant (seconds)
-and $S_\mathrm{rated}$ is the aggregate rated power. For a 10\% load-generation
-imbalance with $H = 2$~s, $S = 10$~MVA:
+where $\Delta\hat{f}_\infty$ is the estimated steady-state frequency deviation
+and $W_\tau$ is a quality weight penalising uncertain $\tau_f$ estimates.
+The trip threshold IFDI $\geq 1.15$ provides a 15\% security margin above the
+unity normalisation point.
+
+\subsection{Validation}
+\label{sec:ch6_relay81_val}
+
+Nine deterministic scenarios (three islanding events $\times$ three GFM
+penetration levels) produced 9/9 PASS.
+Monte Carlo ($N = 10\,000$ per hypothesis class) confirmed:
+$P_D = 0.9947$, $P_{FA} = 0.0032$, all acceptance criteria met.
+The non-detection zone (NDZ) for $|\Delta P| < 3\%$ produces $P_D = 0.377$
+in the ambiguous region, which is expected and documented: the confidence gate
+classifies events below 3\% as ambiguous and withholds adaptation, preserving
+relay security while correctly identifying genuine islanding events at any
+practically relevant power imbalance.
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Solar PV Line Differential with Two-Parameter Zone Model (87L-PV)}
+\label{sec:ch6_87l_pv}
+
+\subsection{Problem: DC-Free PV Fault Current and Wasted Estimator Degrees of Freedom}
+\label{sec:ch6_pv_problem}
+
+A grid-connected PV inverter with a synchronous-reference-frame (SRF) current
+controller drives $\mathbf{i}_{dq} \to \mathbf{i}_{dq}^*$ with bandwidth
+$\omega_c \approx 300$--$800\,\text{rad/s}$.  This gives a DC-free per-phase
+fault current:
+
+\begin{proposition}[Zero DC Offset in PV Fault Current, TR-62 Proposition~1]
+\label{prop:ch6_pv_zero_dc}
+For a GFL inverter with SRF current controller of bandwidth $\omega_c$, the
+per-phase fault current satisfies
 \begin{equation}
-  \left.\frac{df}{dt}\right|_{t=0^+}
-  = \frac{50 \cdot 0.10 \cdot 10}{2 \cdot 2 \cdot 10} = 1.25\;\mathrm{Hz/s}
-  \label{eq:ch6_rocof_example}
+  i(t) = k_{\rm ibr}\sin(\omega_0 t + \varphi) + O(e^{-\omega_c t}),
+  \label{eq:ch6_pv_current}
 \end{equation}
+with the transient deviation decaying to below $1\%$ of $k_{\rm ibr}$ within
+$t_s = 4.6/\omega_c \leq 15\,\text{ms}$ for $\omega_c \geq 300\,\text{rad/s}$.
+\end{proposition}
 
-\subsection{ROCOF Calculation}
+The critical implication: the 4-parameter SAMBP SG model
+$i_{\rm diff}(t) = I_{\rm fund}\sin(\omega t + \varphi) + I_{\rm DC}\,e^{-t/\tau_{\rm DC}}$
+forces two of its four parameters ($I_{\rm DC}, \tau_{\rm DC}$) to fit noise,
+causing collinearity ($\kappa_n \approx 36$ at a half-cycle window) and
+delaying trip confirmation by 20--40\,ms.
 
-The ROCOF is estimated by fitting a linear frequency trend over a
-sliding window of $N_w$ cycles:
+\subsection{Two-Parameter PV Model}
+\label{sec:ch6_pv_model}
+
+The physically correct zone model for PV-fed lines is:
 \begin{equation}
-  \widehat{\mathrm{ROCOF}}(t) = \frac{f(t) - f(t - N_w/f_0)}{N_w/f_0}
-  \label{eq:ch6_rocof_est}
+  \boxed{i_{\rm diff}^{(\rm PV)}(t) = I_{\rm fund}\sin(\omega t + \varphi), \qquad
+  \boldsymbol{\theta}_{\rm PV} = [I_{\rm fund},\;\varphi] \in \mathbb{R}^2.}
+  \label{eq:ch6_2param}
 \end{equation}
-A window $N_w = 3$ cycles (60~ms at 50~Hz) provides a good trade-off
-between speed and noise rejection.
 
-\subsection{Vector Surge Supplement}
-
-The vector surge element detects the instantaneous phase angle jump
-$\Delta\theta$ at the moment of islanding:
+\begin{proposition}[Unit Condition Number of 2-Parameter Model, TR-62 Proposition~2]
+\label{prop:ch6_kappa1}
+For a window spanning an integer number of periods $T_0$, the normalised
+condition number of the analytical Jacobian of \eqref{eq:ch6_2param} is:
 \begin{equation}
-  \Delta\theta = \arctan\!\left(\frac{\omega_0 P_\mathrm{imbalance}}
-    {2 H_\mathrm{total} S_\mathrm{rated} (df/dt)}\right)
-  \label{eq:ch6_vector_surge}
+  \kappa_n(J_{\rm PV}) = 1.
+  \label{eq:ch6_kappa1}
 \end{equation}
-For $P_\mathrm{imbalance} = 10\%$: $\Delta\theta \approx 3$--$8°$ (too
-small to detect reliably with classical 2° threshold). The vector surge
-element is used only as confirmation, not primary detection.
+\end{proposition}
+\noindent Proof: $J_{\rm PV}^T J_{\rm PV} = (N/2)\,\text{diag}(1, I_f^2)$, which is diagonal;
+column normalisation yields the identity matrix with $\sigma_{\max} = \sigma_{\min} = 1$.
 
-\subsection{Combined ROCOF + Impedance Islanding Criterion}
+The practical consequence is that the Stage-2 confidence gate accepts the
+PV estimator from the first post-inception cycle.  The binding constraint
+becomes $n_{\rm confirm} \geq 2$ cycles for security — giving a minimum trip
+time of $20\,\text{ms}$ at 50\,Hz, versus $\geq 40\,\text{ms}$ for the
+4-parameter SG path.
 
-The proposed islanding detection criterion combines ROCOF, vector surge,
-and negative-sequence voltage ratio:
-\begin{equation}
-  T_\mathrm{island} = \mathbf{1}\!\left[|df/dt| > \gamma_1\right]
-  \;\cap\; \mathbf{1}\!\left[|\Delta\theta| > \gamma_2\right]
-  \;\cup\; \mathbf{1}\!\left[V_2/V_1 > \gamma_3\right]
-  \label{eq:ch6_island_logic}
-\end{equation}
-where:
-\begin{itemize}
-\item $\gamma_1 = 0.5$~Hz/s (ROCOF threshold; below inadvertent ROCOF
-      for grid disturbances).
-\item $\gamma_2 = 2°$ (vector surge threshold).
-\item $\gamma_3 = 0.02$ (negative-sequence voltage ratio threshold;
-      detects unbalanced load after islanding).
-\end{itemize}
-
-\textbf{Non-Detection Zone (NDZ) Analysis:}
-The NDZ is the set of load-generation balance conditions where the
-islanding detector fails. For the ROCOF element:
-\begin{equation}
-  \mathrm{NDZ}_\mathrm{ROCOF} = \left\{(P_g, P_l):\;
-    \left|\frac{f_0(P_g - P_l)}{2H S_r}\right| < \gamma_1 \right\}
-  = \left\{P_\mathrm{imb} < \frac{2H S_r \gamma_1}{f_0}\right\}
-  \label{eq:ch6_ndz}
-\end{equation}
-For $H = 2$~s, $S_r = 10$~MVA, $\gamma_1 = 0.5$~Hz/s:
-NDZ corresponds to $|P_\mathrm{imb}| < 0.4$~MW (4\% of rated). The
-combined criterion reduces the NDZ by additionally monitoring $V_2/V_1$
-and $\Delta\theta$. Simulations show the combined NDZ is $< 1\%$ of
-the $(P_g, P_l)$ operating space.
-
-\subsection{IEC 61850 Mode-Switch Broadcast}
-
-Upon islanding detection, the relay broadcasts a GOOSE mode-switch message
-within $T_\mathrm{GOOSE} \leq 4$~ms:
-\begin{equation}
-  \texttt{GOOSE.mode} = \texttt{ISLAND}
-  \label{eq:ch6_goose_mode}
-\end{equation}
-All IBRs subscribing to this GOOSE message switch from GFL to GFM mode.
-The total mode-switch latency budget is:
-\begin{align}
-  T_\mathrm{total} &= T_\mathrm{detect} + T_\mathrm{GOOSE} + T_\mathrm{switch}
-  \nonumber \\
-  &\leq 60 + 4 + 50 = 114\;\mathrm{ms} < 120\;\mathrm{ms}
-  \label{eq:ch6_latency}
-\end{align}
-where $T_\mathrm{detect} = 60$~ms (3 ROCOF cycles), $T_\mathrm{GOOSE} = 4$~ms,
-and $T_\mathrm{switch} = 50$~ms (GFM activation time). This satisfies
-the 120~ms target and the IEEE~1547-2018 ride-through compliance requirement
-(which requires a 160~ms detection time for normal voltage conditions).
-
-\section{Adaptive OC Setting-Group Architecture}
-\label{sec:ch6_adaptiveoc}
-
-\subsection{Motivation}
-
-The IEC inverse-time overcurrent relay has two setting parameters:
-pickup current $I_\mathrm{pickup}$ and time-multiplier setting $\TMS$.
-In grid-connected mode:
-\begin{equation}
-  I_\mathrm{pickup}^\mathrm{grid} = 1.5\,I_\mathrm{load,max}, \quad
-  \TMS^\mathrm{grid} = 0.15
-  \label{eq:ch6_sg_settings}
-\end{equation}
-In islanded mode, the fault current is 4--8$\times$ lower. The pickup
-threshold must be reduced to remain above load:
-\begin{equation}
-  I_\mathrm{pickup}^\mathrm{island} = 1.25\,I_\mathrm{load,max}, \quad
-  \TMS^\mathrm{island} = 0.05
-  \label{eq:ch6_island_settings}
-\end{equation}
-The transition between these settings must occur within $T_\mathrm{switch}$
-to avoid both missed trips (if settings are too high) and sympathetic
-trips (if settings are too low during the transition window).
-
-\subsection{Setting-Group Pre-Arming Logic}
-
-The setting-group switch is pre-armed when the GOOSE mode-switch signal
-is received, and activates when the fault occurs or at
-$t = T_\mathrm{armed} + 50$~ms (whichever comes first):
-\begin{equation}
-  \texttt{SG.active} = \begin{cases}
-    \texttt{SG2} & \text{if } \texttt{GOOSE.mode = ISLAND} \text{ AND } t > T_\mathrm{armed} + 5\,\mathrm{ms} \\
-    \texttt{SG1} & \text{otherwise (grid-connected)}
-  \end{cases}
-  \label{eq:ch6_sg_logic}
-\end{equation}
-The 5~ms delay prevents the relay from switching to the lower settings
-during the transient portion of the mode-switch event (when fault current
-is temporarily elevated).
-
-\subsection{Bus Differential 87B for Microgrid Busbar}
-
-For the microgrid common busbar, a bus differential (87B) element protects
-against busbar faults that the line OC elements cannot detect:
-\begin{equation}
-  I_\mathrm{bus,diff} = \sum_{k} \phasor{I}_k > k_m^\mathrm{bus} \cdot I_\mathrm{bus,bias}
-  \label{eq:ch6_87b}
-\end{equation}
-The bus differential is immune to the mode transition because it directly
-measures the algebraic sum of all currents entering the busbar—a quantity
-that is zero for any through condition regardless of $\kibr$.
-
-\subsection{Coordination Table: Grid-Connected to Islanded}
-
-Table~\ref{tab:ch6_settings} provides the relay settings for both
-operating modes.
-
-\begin{table}[htbp]
-\caption{Adaptive relay settings for SAMBP microgrid (grid-connected and islanded)}
-\label{tab:ch6_settings}
-\begin{tabularx}{\textwidth}{@{}lXXXl@{}}
-\toprule
-Relay & Setting & Grid-connected & Islanded & Element \\
-\midrule
-R-feeder & $I_\mathrm{pickup}$ & 1.5~pu & 1.25~pu & ITOC~51 \\
-R-feeder & $\TMS$ & 0.15 & 0.05 & ITOC~51 \\
-R-bus & $k_m^\mathrm{bus}$ & 0.30 & 0.20 & 87B \\
-R-bus & $I_{0,\mathrm{bus}}$ & 0.10~pu & 0.05~pu & 87B \\
-R-gen & $I_\mathrm{pickup}^\mathrm{OV}$ & 1.10~pu & 1.20~pu & OV~59 \\
-R-gen & $\TMS^\mathrm{UV}$ & 0.10~s & 0.05~s & UV~27 \\
-\bottomrule
-\end{tabularx}
+\begin{table}[h]
+  \centering
+  \caption{Condition number vs.\ window length for 4-parameter SG and
+           2-parameter PV models.}
+  \label{tab:ch6_kappa_window}
+  \begin{tabular}{lcccc}
+    \toprule
+    Window & $N$ & $\kappa_n$ (4-param SG) & $\kappa_n$ (2-param PV) & Trip delay (SG / PV) \\
+    \midrule
+    0.5 cycle &  10 & 35.9 & 1.00 & 5 cyc / 1 cyc \\
+    1.0 cycle &  20 &  5.4 & 1.00 & 3 cyc / 1 cyc \\
+    2.0 cycles & 40 &  3.3 & 1.00 & 2 cyc / 1 cyc \\
+    3.0 cycles & 60 &  2.9 & 1.00 & 1 cyc / 1 cyc \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
-\section{Microgrid Integration Study}
-\label{sec:ch6_integration}
+\subsection{$k_{\rm ibr}$-Driven Model Selector}
+\label{sec:ch6_pv_selector}
 
-The complete microgrid protection architecture is validated through the
-SAMBP microgrid integration study (SAMBP~TR-42).
-The test system consists of:
+At each relay cycle, the model selector routes the estimation to either the
+2-parameter PV path or the existing 4-parameter SG path using the
+\textbf{DC decay ratio}:
+\begin{equation}
+  \mathrm{DDR} = \frac{I_{\rm DC}}{\max(I_{\rm fund},\,\varepsilon)},
+  \qquad \varepsilon = 10^{-9},
+  \label{eq:ch6_ddr}
+\end{equation}
+from a lightweight Pass-1 fit of the 4-parameter model.
+Physical calibration: PV faults give DDR $\leq 0.05$; DFIG faults
+DDR $\in [0.05, 0.20]$; SG faults DDR $\in [0.30, 1.50]$.
+The PV model is selected when DDR $< 0.15$ (midway between PV and DFIG
+upper limits, providing $3\times$ margin in each direction), subject to an
+exponential veto: if $\Delta_{\rm peak}/I_{\rm fund} \geq 2.0$ (SG-signature
+DC offset detectable in the first quarter-cycle), the selector returns to the
+SG path regardless of DDR.
+
+\subsection{Validation}
+\label{sec:ch6_pv_val}
+
+\begin{table}[h]
+  \centering
+  \caption{TR-62 Monte Carlo results — 2-parameter PV model ($N = 5\,000$ trials).}
+  \label{tab:ch6_pv_mc}
+  \begin{tabular}{lrrll}
+    \toprule
+    Metric & Value & Target & Status \\
+    \midrule
+    $P_D$ (detection, PV internal faults) & 0.9984 & $\geq 0.995$ & PASS \\
+    $P_{FA}$ (false alarm, PV external) & 0.0000 & $\leq 0.001$ & PASS \\
+    $t_{50}$ median trip time & 20\,ms & $\leq 20\,\text{ms}$ & PASS \\
+    $t_{95}$ 95th-percentile trip time & 20\,ms & $\leq 40\,\text{ms}$ & PASS \\
+    DDR accuracy (correct model routing) & 0.9984 & $\geq 0.98$  & PASS \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+All five acceptance criteria are met.  The 8 non-detected trials (0.16\%)
+represent edge cases where CT amplitude error combined with pre-fault load offset
+pushes $\hat{I}_{\rm fund}$ below the Stage-2 threshold of $0.058\,\text{pu}$.
+These are correctly classified as RESTRAIN rather than false alarms.
+
+Three validation streams confirm the model consistently:
 \begin{itemize}
-\item 4 GFL inverters (2~MW each), switchable to GFM.
-\item 1 SG (5~MW), used as synchronous condenser.
-\item 3 feeders with mixed load ($\cos\phi = 0.9$).
-\item IEC~61850 GOOSE network (2~ms round-trip latency).
+  \item \textbf{Analytical} (TR-62 Propositions~1--2): $\kappa_n = 1$ proved;
+    minimum trip time $20\,\text{ms}$ derived.
+  \item \textbf{ANDES PVD1} (TR-62): IEEE~14-bus with 10$\times$PVD1 at Bus~4;
+    6/6 correct relay decisions ($\kappa_n = 1.00$ measured in every internal
+    case), zero false trips on external faults.
+  \item \textbf{Python MC} (TR-62a): 9/9 deterministic PASS, all 5-metric MC
+    targets met.
 \end{itemize}
 
-\resultbox[Microgrid Integration Study Results — SAMBP TR-42]{%
-Expected results from 500 simulation trials (100 per fault type):
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Loss of Excitation Protection with GFM Admittance Correction (Relay~40)}
+\label{sec:ch6_relay40}
 
-\textbf{Key metrics:}
+\subsection{Failure Modes under GFM-IBR Reactive Injection}
+\label{sec:ch6_loe_fm}
+
+Standard Relay~40 detects loss of excitation (LOE) by monitoring the imaginary
+part of the generator admittance $Y_{\rm SG}(t) = G_{\rm sg} + jB_{\rm sg}(t)$
+and tripping when $B_{\rm sg}$ crosses a threshold $B_{\rm trip}$ for a
+persistence interval $T_{\rm delay}$.
+In high-penetration GFM networks two failure modes arise:
+
+\begin{description}
+  \item[FM1 — Nuisance trip (security).]
+    A GFM unit in reactive-\emph{absorption} mode contributes $jB_{\rm GFM} > 0$
+    to the terminal bus.  The measured total admittance
+    $Y_{\rm total} = Y_{\rm SG} + Y_{\rm GFM}$ may cross $B_{\rm trip}$ while
+    the generator is healthy ($B_{\rm sg} < B_{\rm trip}$).
+
+  \item[FM2 — Masked LOE (dependability).]
+    A GFM unit in reactive-\emph{supply} mode contributes $jB_{\rm GFM} < 0$.
+    The composite $\Im(Y_{\rm total}) = B_{\rm sg} - |B_{\rm GFM}|$ remains
+    below $B_{\rm trip}$ even when $B_{\rm sg} > B_{\rm trip}$, concealing a
+    genuine LOE event.
+\end{description}
+
+\subsection{GFM Admittance Correction}
+\label{sec:ch6_loe_correction}
+
+The correction applies an online GFM admittance estimate to the relay input:
+\begin{equation}
+  Y_{\rm corrected}(t) = Y_{\rm total}(t) - \widehat{Y}_{\rm GFM}(t),
+  \label{eq:ch6_ycorr}
+\end{equation}
+where $\widehat{Y}_{\rm GFM}$ is obtained from PMU-grade measurements at the
+GFM point of connection ($\sigma_\varepsilon \leq 0.03\,\text{pu}$).
+The relay evaluates $B_{\rm trip}$ on $\Im(Y_{\rm corrected})$ rather than
+$\Im(Y_{\rm total})$.
+
+\begin{proposition}[TR-60 Proposition~1 — FM1 correction]
+  \label{prop:ch6_fm1}
+  Under reactive-absorption GFM operation, the corrected relay is secure
+  (no false trip) provided the estimation error $|\varepsilon|$ satisfies
+  $|\varepsilon| < B_{\rm trip} - B_{\rm sg,0}$.
+\end{proposition}
+
+\begin{proposition}[TR-60 Proposition~2 — FM2 correction]
+  \label{prop:ch6_fm2}
+  Under reactive-supply GFM operation masking a genuine LOE, the corrected
+  relay trips provided $|\varepsilon| < B_{\rm sg} - B_{\rm trip}$.
+\end{proposition}
+
+Both conditions are satisfied with PMU accuracy
+($3\sigma = 0.09\,\text{pu}$) given margins
+$B_{\rm trip} - B_{\rm sg,0} = 0.25\,\text{pu}$ and
+$B_{\rm sg} - B_{\rm trip} \approx 0.40\,\text{pu}$ (factor $> 3.4\times$
+headroom for PMU errors).
+
+\subsection{Validation Results}
+\label{sec:ch6_loe_results}
+
+TR-60 validates the correction on a 10-scenario matrix (S01--S05 security,
+S06--S10 dependability) and a 2\,000-trial Monte Carlo.
+
+\begin{table}[h]
+  \centering
+  \caption{TR-60 Monte Carlo results — Relay 40 LOE with GFM admittance correction.}
+  \label{tab:ch6_loe_mc}
+  \begin{tabular}{lcccc}
+    \toprule
+    Metric & Uncorrected & Corrected & Target & Status \\
+    \midrule
+    $P_D$ (dependability) & 0.568 & 1.000 & $\geq 0.970$ & PASS \\
+    $P_{\rm FA}$ (false alarm) & 0.038 & 0.000 & $\leq 0.010$ & PASS \\
+    Deterministic (10 scenarios) & 4/10 & 10/10 & 10/10 & PASS \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The $+43.2$\,pp improvement in dependability and elimination of false alarms
+demonstrate that the GFM admittance correction fully restores Relay~40
+performance in the presence of GFM reactive injection up to
+$B_{\rm GFM,max} = 0.80\,\text{pu}$.
+The $t_{50}$ trip time under LOE is $3\,786\,\text{ms}$ (governed by the
+$T_{\rm delay} = 3\,\text{s}$ persistence interval, unchanged from the
+conventional relay setting).
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Out-of-Step Protection for IBR-Affected Generators (Relay~78)}
+\label{sec:ch6_relay78}
+
+\subsection{The IBR Synchronising Deficit Problem}
+\label{sec:ch6_relay78_problem}
+
+The classical equal-area criterion (EAC) determines the critical unstable
+equilibrium point (CUEP) $\delta_u$ as the rotor angle at which the
+decelerating area first equals the accelerating area during a fault.
+For a single-machine infinite-bus (SMIB) system with no IBR,
+$\delta_u = \pi - \delta_0$ where $\delta_0 = \arcsin(P_m/P_{\rm maxsg})$.
+The conventional Relay~78 blinder is set at this angle.
+
+When GFL IBR constitutes a fraction $k_{\rm gfl}$ of the total generation,
+the post-fault synchronising power is reduced by the GFL active-power deficit
+during low-voltage ride-through (LVRT):
+\begin{equation}
+  \Delta P_{\rm max,GFL} = \max\bigl(0,\;
+    P_{\rm GFL,pre} - V_{\rm min} \cdot I_{\rm max,GFL} \cdot \cos\phi_{\rm LVRT}\bigr).
+  \label{eq:ch6_gfl_deficit}
+\end{equation}
+The effective maximum post-fault power becomes
+$P_{\rm maxeff} = P_{\rm maxsg} - \Delta P_{\rm max,GFL}$,
+reducing $\delta_u$ below $\pi - \delta_0$.
+The conventional blinder at $\pi - \delta_0$ therefore lies \emph{outside}
+the true CUEP and is non-conservative.
+
+\subsection{Conservative CUEP Lower Bound (Proposition~1)}
+\label{sec:ch6_relay78_prop}
+
+\begin{proposition}[Conservative CUEP Lower Bound, TR-58 Proposition~1]
+\label{prop:ch6_cuep}
+Let $P_{\rm maxeff} = P_{\rm maxsg} - \Delta P_{\rm max,GFL}$ as in
+\eqref{eq:ch6_gfl_deficit}.  The closed-form lower bound
+\begin{equation}
+  \delta_{\rm LB} = \pi - \arcsin\!\left(\frac{P_m}{P_{\rm maxeff}}\right)
+  \label{eq:ch6_delta_lb}
+\end{equation}
+satisfies $\delta_{\rm LB} \leq \delta_u$ for all physically realisable
+GFL and GFM operating conditions.
+\end{proposition}
+
+\noindent Proof outline (TR-58 Appendix): the post-fault energy function
+$V(\delta) = \int_{\delta_0}^{\delta}(P_m - P_e(\delta'))\,\mathrm{d}\delta'$
+evaluated at $\delta_{\rm LB}$ is strictly positive (conservative) under the
+GFL deficit model.
+For GFM scenarios, the virtual synchronising torque $K_v(\delta - \delta_0)$
+causes the true CUEP to approach $\pi$ (increasing conservatism gap);
+$\delta_{\rm LB}$ remains conservative with $\varepsilon_{\rm max} = 30.25^\circ$.
+
+The proposed blinder is set at $\delta_{\rm blinder} = \delta_{\rm LB} - 5^\circ$
+(5° security margin).
+
+\subsection{Validation}
+\label{sec:ch6_relay78_val}
+
+Ten deterministic scenarios (S01--S10) spanning pure-SG, GFM-dominant,
+GFL-dominant, mixed, and SLG fault cases were simulated using the swing
+equation with RK45 integration (TR-58).  All 10/10 PASS for the proposed
+blinder.
+
+The key geometric check (scenario S05, 30\% GFL, deep fault):
 \begin{itemize}
-\item Islanding detection time: mean 68~ms, P99 112~ms $< 120$~ms target.
-\item Mode-switch success rate: 98.6\% within $T_\mathrm{switch}$;
-      1.4\% late due to GOOSE packet loss (recovered within 20~ms).
-\item Setting-group activation latency: mean 6.2~ms post-GOOSE receipt.
-\item False islanding detection rate: 0.2\% (2 events in 1000 disturbance trials).
-\item 87B bus differential: 100\% trip rate for busbar faults; 0 false trips.
+  \item Standard blinder at $153.6^\circ$ lies \emph{outside} the true
+    CUEP at $151.1^\circ$ — non-conservative ($+2.5^\circ$ error).
+  \item Proposed blinder at $146.1^\circ$ lies \emph{inside} the CUEP
+    — conservative ($\varepsilon = 5.0^\circ$).
 \end{itemize}
 
-\textbf{Figure placeholder:} Frequency trajectory during islanding event
-showing ROCOF detection, GOOSE broadcast, GFM activation, and frequency
-stabilisation to new steady state.}
+Monte Carlo validation (2\,000 trials, clearly-stable / clearly-unstable
+partition) confirmed:
+\begin{itemize}
+  \item $P_{\rm conserv} = P(\delta_{\rm LB} \leq \delta_u) = 1.000\,000$
+    (zero violations).
+  \item $\varepsilon_{\rm max} = 30.25^\circ$ (GFM scenarios, $K_v > 0$).
+  \item $P_D = 1.000$, $P_{FA} = 0.000$, $t_{50} = 470\,\text{ms}$.
+\end{itemize}
 
-\section{Summary}
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Stator Earth Fault with Optimal Sub-harmonic Injection (Relay~64G)}
+\label{sec:ch6_relay64g}
+
+\subsection{Problem: IBR Sub-harmonic Noise Corrupts Fixed 20\,Hz Injection}
+\label{sec:ch6_64g_problem}
+
+Relay~64G injects a sub-harmonic voltage at the machine neutral (conventional:
+$f_{\rm conv} = 20\,\text{Hz}$) and measures the return current through the
+stator-to-ground capacitance $C_G$ and fault resistance $R_f$.
+
+Without fault, only a capacitive displacement current flows:
+\begin{equation}
+  I_{\rm healthy}(f) = \frac{V_{\rm inj} \cdot \omega C_G}{\sqrt{1 + (\omega C_G R_N)^2}},
+  \label{eq:ch6_Ihealthy}
+\end{equation}
+which \emph{increases with} $f$ as $X_c = 1/(\omega C_G)$ decreases.
+
+With a stator earth fault, the winding impedance from neutral to the fault point
+is negligible at sub-harmonic frequencies, giving a \emph{frequency-independent}
+fault current:
+\begin{equation}
+  I_{\rm fault}(R_f) = \frac{V_{\rm inj}}{R_N + R_f}.
+  \label{eq:ch6_Ifault}
+\end{equation}
+
+High-penetration IBR generate sub-harmonic currents near
+$f_{\rm sub} \in [15, 25]\,\text{Hz}$ from converter dead-time, LCL-filter
+resonance, and GFM droop dynamics.  When $f_{\rm sub} \approx f_{\rm conv} = 20\,\text{Hz}$:
+the noise standard deviation $\sigma_n(20\,\text{Hz})$ is maximal,
+causing false alarms ($P_{FA} = 0.819$, measured for the conventional relay)
+and missed high-resistance fault detections.
+
+\subsection{Optimal Injection Frequency}
+\label{sec:ch6_64g_fopt}
+
+The optimal frequency $f^*$ maximises the balanced margin between security
+and dependability:
+\begin{equation}
+  f^* = \arg\max_{f \in [20,40]\,\text{Hz}}
+  \min\!\Bigl(
+    \underbrace{I_{\rm trip} - I_{\rm healthy}(f) - 2\sigma_n(f)}_{\text{security margin}},\;
+    \underbrace{I_{\rm fault}(R_f) - I_{\rm trip} - 2\sigma_n(f)}_{\text{dependability margin}}
+  \Bigr).
+  \label{eq:ch6_fopt}
+\end{equation}
+
+\begin{proposition}[TR-61 — Optimal frequency bounds]
+  \label{prop:ch6_fopt}
+  For $f_{\rm sub} \in [15, 25]\,\text{Hz}$ and $A_{\rm noise} > 0$, the optimal
+  injection frequency satisfies $f^* \in (f_{\rm sub}, f_{\rm up})$ where
+  $f_{\rm up}$ is defined by $I_{\rm healthy}(f_{\rm up}) = I_{\rm trip}$
+  (security crossover, $\approx 35\,\text{Hz}$).  In practice $f^* \in [25, 36]\,\text{Hz}$.
+\end{proposition}
+
+\noindent
+The key insight: $I_{\rm fault}$ is \emph{frequency-independent}
+(Equation~\eqref{eq:ch6_Ifault}).  Selecting $f^* \gg f_{\rm sub}$ reduces
+$\sigma_n(f^*)$ to near-zero without affecting the fault signal, yielding a
+$50\times$ noise reduction for $f^* - f_{\rm sub} \geq 8\,\text{Hz}$.
+
+\subsection{Validation Results}
+\label{sec:ch6_64g_results}
+
+TR-61 validates the adaptive injection scheme on a 10-scenario deterministic
+matrix and a 2\,000-trial Monte Carlo.
+
+\begin{table}[h]
+  \centering
+  \caption{TR-61 Monte Carlo results — Relay 64G optimal sub-harmonic injection.}
+  \label{tab:ch6_64g_mc}
+  \small
+  \begin{tabular}{lcccc}
+    \toprule
+    Metric & Conv.\ (20\,Hz) & Optimal ($f^*$) & Target & Status \\
+    \midrule
+    $P_D$ (dependability) & 0.813 & 1.000 & $\geq 0.970$ & PASS \\
+    $P_{\rm FA}$ (false alarm) & 0.819 & 0.000 & $\leq 0.010$ & PASS \\
+    $f^*$ mean & 20.0\,Hz & 27.2\,Hz & $\in [25,36]\,\text{Hz}$ & PASS \\
+    Deterministic (10 scenarios) & 0/10 & 10/10 & 10/10 & PASS \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The conventional relay at 20\,Hz fails catastrophically ($P_{\rm FA} = 0.819$)
+when IBR noise peaks near the injection frequency.
+The adaptive relay achieves perfect performance by injecting at
+$f^* \approx 27\,\text{Hz}$ — consistently $\geq 8\,\text{Hz}$ above the
+noise peak $f_{\rm sub}$, consistent with Proposition~\ref{prop:ch6_fopt}.
+The noise reduction factor $\sigma_n(27\,\text{Hz})/\sigma_n(20\,\text{Hz})
+\approx 1/50$ is the primary mechanism for both the security and dependability
+improvements.
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Chapter Summary}
 \label{sec:ch6_summary}
 
-This chapter has developed the protection architecture for IBR microgrids:
+This chapter extended the SAMBP framework to the six generator and PV line
+protection functions.  All six are validated as of April~2026:
+
+\begin{table}[h]
+  \centering
+  \caption{Generator-suite validation summary (all TRs complete April~2026).}
+  \label{tab:ch6_summary}
+  \small
+  \begin{tabular}{llcccl}
+    \toprule
+    Section & Function & Det.\ PASS & $P_D$ & $P_{\rm FA}$ & Source \\
+    \midrule
+    \S\ref{sec:ch6_87g}     & 87G DFIG       & 10/10 & 1.000$^a$         & 0.000 & TR-56 \\
+    \S\ref{sec:ch6_relay81} & Relay 81 IFDI  &  9/9  & 0.9947            & 0.0032 & TR-63 \\
+    \S\ref{sec:ch6_87l_pv}  & 87L-PV 2-param &  9/9  & 0.9984            & 0.0000 & TR-62 \\
+    \S\ref{sec:ch6_relay40} & Relay 40 LOE   & 10/10 & 1.000             & 0.000 & TR-60 \\
+    \S\ref{sec:ch6_relay78} & Relay 78 EAC   & 10/10 & 1.000$^b$         & 0.000 & TR-58 \\
+    \S\ref{sec:ch6_relay64g}& Relay 64G 64G  & 10/10 & 1.000             & 0.000 & TR-61 \\
+    \bottomrule
+    \multicolumn{6}{l}{\scriptsize $^a$CCR\,=\,100\% across all 7 slip groups (7\,000 MC trials).}\\
+    \multicolumn{6}{l}{\scriptsize $^b$Analytical guarantee: Proposition~\ref{prop:ch6_cuep} proves $\delta_{\rm LB} \leq \delta_u$
+    always; 0 violations / 2\,000 MC.}\\
+  \end{tabular}
+\end{table}
+
+Three technical themes unify the six extensions:
+
 \begin{enumerate}
-\item \textbf{GFL/GFM characterisation (C7):} Fault current levels are
-      4--8$\times$ lower in islanded mode, necessitating dual setting groups.
-      Table~\ref{tab:ch6_fault_comparison} provides quantitative data for
-      setting group design.
-\item \textbf{ROCOF islanding detection (C8):} The combined ROCOF +
-      vector surge + negative-sequence criterion achieves NDZ $< 1\%$
-      and total isolation within 114~ms, within the 120~ms target and
-      compliant with IEEE~1547-2018.
-\item \textbf{Adaptive OC setting-group (C9):} The pre-arming logic
-      switches from grid-connected to islanded settings within 5~ms of
-      GOOSE receipt, eliminating the mode-transition blind spot.
-\item \textbf{Bus differential 87B:} Mode-invariant busbar protection
-      provides 100\% coverage for busbar faults at any $\kibr$.
+  \item \textbf{Physics-based model reduction.}  Each zone model exploits a
+    physical constraint to reduce parameters: the shared $\tau_s$ in the
+    DFIG model (§\ref{sec:ch6_87g}), the absence of DC in PV current
+    (§\ref{sec:ch6_87l_pv}), and the frequency-independence of $I_{\rm fault}$
+    in Relay~64G (§\ref{sec:ch6_relay64g}).  In each case the reduction lowers
+    $\kappa_n$ and either accelerates convergence or eliminates false-alarm risk.
+
+  \item \textbf{Analytical conservatism guarantees.}  Relay~78 achieves a
+    zero-violation conservatism guarantee (Proposition~\ref{prop:ch6_cuep})
+    rather than a probabilistic performance statement.  This is the strongest
+    form of SAMBP contribution: from Monte Carlo validation to formal proof.
+    Relay~40 Propositions~\ref{prop:ch6_fm1}--\ref{prop:ch6_fm2} provide
+    analogous explicit error-budget conditions on PMU accuracy.
+
+  \item \textbf{Online compensation of IBR network state.}  Three relay
+    functions require real-time IBR state awareness: Relay~40 uses PMU-measured
+    $\widehat{Y}_{\rm GFM}$; Relay~78 uses $\Delta P_{\rm max,GFL}$ from the
+    LVRT model; Relay~64G adapts $f^*$ online using the spectral estimate of
+    $f_{\rm sub}$.  All three are compatible with the IEC~61850 GOOSE
+    broadcast already deployed in Chapter~\ref{ch:system_integration}.
 \end{enumerate}
+
+Chapter~\ref{ch:system_integration} integrates all nine SAMBP protection
+functions at the system level using the IEEE~39-bus test network and the
+N-1 cross-trip coordination study (TR-66, complete April~2026).

@@ -1,0 +1,77 @@
+% fig_slope_characteristic.tex
+% Percentage-restrain plane: fixed slopes vs adaptive envelope + fault scatter
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  width  = 0.90\columnwidth,
+  height = 5.6cm,
+  xlabel = {Bias current $I_{\rm bias}$ (pu)},
+  ylabel = {Differential current $I_{\rm diff}$ (pu)},
+  xmin=0, xmax=3.0,
+  ymin=0, ymax=2.2,
+  xtick={0,0.5,1.0,1.5,2.0,2.5,3.0},
+  ytick={0,0.5,1.0,1.5,2.0},
+  legend pos=north west,
+  legend style={font=\scriptsize,cells={anchor=west}},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+  clip=false,
+]
+
+%% ── Shaded trip region for adaptive slope (bounded envelope) ─────────────────
+\addplot[thesisblue!15,fill=thesisblue!15,draw=none,domain=0:3,samples=2]
+  {2.2} \closedcycle;
+\addplot[white,fill=white,draw=none,domain=0:3,samples=2]
+  {0.20 + 0.38*x} \closedcycle;  % lower envelope k_min=0.38
+
+%% ── Fixed slope k=0.30 (zone 1, legacy) ─────────────────────────────────────
+\addplot[thick,thesisgray,densely dashed,domain=0:3,samples=2]
+  {0.30*x};
+\addlegendentry{Fixed $k{=}0.30$ (legacy)};
+
+%% ── Fixed slope k=0.60 (zone 2 / conservative) ──────────────────────────────
+\addplot[thick,thesisgray,domain=0:3,samples=2]
+  {0.60*x};
+\addlegendentry{Fixed $k{=}0.60$ (conservative)};
+
+%% ── Adaptive lower bound k_min(kappa_n) ─────────────────────────────────────
+\addplot[thick,thesisblue,domain=0:3,samples=2]
+  {0.20 + 0.38*x};
+\addlegendentry{Adaptive $k(t)$: lower bound $k_{\min}(\kappan)$};
+
+%% ── Adaptive upper bound k_max ───────────────────────────────────────────────
+\addplot[thick,thesisblue,densely dotted,domain=0:3,samples=2]
+  {0.20 + 0.62*x};
+\addlegendentry{Adaptive $k(t)$: upper bound $k_{\max}$};
+
+%% ── Fault scatter: internal faults (should trip) ─────────────────────────────
+\addplot[only marks,mark=*,mark size=1.6pt,thesisred,opacity=0.7]
+  coordinates {
+    (0.45,0.80)(0.60,1.05)(0.80,1.20)(1.00,1.55)(1.20,1.40)
+    (0.30,0.65)(1.50,1.70)(0.70,0.90)(0.55,0.78)(1.10,1.30)
+    (0.90,1.10)(1.30,1.50)(0.40,0.70)(1.60,1.80)(0.65,0.88)
+  };
+\addlegendentry{Internal fault (trip)};
+
+%% ── External fault scatter (should restrain) ─────────────────────────────────
+\addplot[only marks,mark=square*,mark size=1.4pt,thesisgreen,opacity=0.7]
+  coordinates {
+    (1.80,0.25)(2.10,0.30)(2.50,0.28)(1.60,0.22)(2.80,0.32)
+    (2.20,0.18)(1.90,0.27)(2.60,0.24)(2.40,0.35)(3.00,0.20)
+    (1.70,0.19)(2.90,0.38)(2.30,0.26)(1.85,0.23)(2.70,0.31)
+  };
+\addlegendentry{External fault (restrain)};
+
+%% ── Problem zone: missed trips with k=0.60 ───────────────────────────────────
+\node[thesisgray,font=\tiny,align=center,draw=thesisgray!30,
+      fill=white,rounded corners=2pt,inner sep=2pt]
+  at (axis cs:0.70,0.52) {Missed trip\\$k{=}0.60$};
+\draw[thesisgray,->,thin] (axis cs:0.70,0.60) -- (axis cs:0.70,0.90);
+
+%% ── Physics-feasible set annotation ─────────────────────────────────────────
+\node[thesisblue,font=\tiny,align=center]
+  at (axis cs:2.2,1.58) {Physics-feasible\\trip region};
+\draw[thesisblue,->,thin] (axis cs:2.2,1.46) -- (axis cs:2.2,1.20);
+
+\end{axis}
+\end{tikzpicture}

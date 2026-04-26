@@ -1,0 +1,96 @@
+% fig_sel411l_scenario_matrix.tex — Scenario outcome matrix: pass/fail heatmap
+\begin{tikzpicture}[
+  every node/.style={font=\tiny},
+  cell/.style={minimum width=1.05cm,minimum height=0.50cm,align=center},
+  pass/.style={cell,fill=thesisgreen!50,draw=thesisgreen!80,thick},
+  fail/.style={cell,fill=thesisred!40,draw=thesisred!60,thick},
+  na/.style={cell,fill=gray!12,draw=gray!30},
+  hdr/.style={cell,fill=thesisblue!80,text=white,draw=thesisblue,thick,font=\tiny\bfseries},
+  rhdr/.style={cell,minimum width=2.2cm,fill=thesisblue!15,draw=thesisblue!40,
+               thick,align=right,font=\tiny},
+]
+
+%% Column headers (scenario groups)
+\node[hdr,minimum width=2.2cm] at (0,0) {Scenario group};
+\node[hdr] at (2.7,0)  {3PH\\int.};
+\node[hdr] at (3.8,0)  {LL\\int.};
+\node[hdr] at (4.9,0)  {SLG\\int.};
+\node[hdr] at (6.0,0)  {CT\\sat.};
+\node[hdr] at (7.1,0)  {Chan.\\loss};
+\node[hdr] at (8.2,0)  {PV\\k=1};
+\node[hdr] at (9.3,0)  {SG\\ext.};
+\node[hdr] at (10.4,0) {Agree};
+
+%% Row: 87L core
+\node[rhdr] at (0,-0.6) {87L (SG core)};
+\node[pass] at (2.7,-0.6)  {P};
+\node[pass] at (3.8,-0.6)  {P};
+\node[pass] at (4.9,-0.6)  {P};
+\node[pass] at (6.0,-0.6)  {P};
+\node[pass] at (7.1,-0.6)  {P};
+\node[na]   at (8.2,-0.6)  {--};
+\node[pass] at (9.3,-0.6)  {P};
+\node[pass] at (10.4,-0.6) {6/6};
+
+%% Row: 87L-PV
+\node[rhdr] at (0,-1.15) {87L-PV (TR-62)};
+\node[pass] at (2.7,-1.15) {P};
+\node[pass] at (3.8,-1.15) {P};
+\node[pass] at (4.9,-1.15) {P};
+\node[na]   at (6.0,-1.15) {--};
+\node[na]   at (7.1,-1.15) {--};
+\node[pass] at (8.2,-1.15) {P};
+\node[pass] at (9.3,-1.15) {P};
+\node[pass] at (10.4,-1.15) {6/6};
+
+%% Row: 51 OC
+\node[rhdr] at (0,-1.70) {51 OC (SyncOC)};
+\node[pass] at (2.7,-1.70) {P};
+\node[pass] at (3.8,-1.70) {P};
+\node[pass] at (4.9,-1.70) {P};
+\node[na]   at (6.0,-1.70) {--};
+\node[na]   at (7.1,-1.70) {--};
+\node[na]   at (8.2,-1.70) {--};
+\node[pass] at (9.3,-1.70) {P};
+\node[pass] at (10.4,-1.70) {4/4};
+
+%% Row: 87T-SPRT
+\node[rhdr] at (0,-2.25) {87T SPRT (TR-64)};
+\node[pass] at (2.7,-2.25) {P};
+\node[na]   at (3.8,-2.25) {--};
+\node[na]   at (4.9,-2.25) {--};
+\node[pass] at (6.0,-2.25) {P};
+\node[na]   at (7.1,-2.25) {--};
+\node[na]   at (8.2,-2.25) {--};
+\node[pass] at (9.3,-2.25) {P};
+\node[pass] at (10.4,-2.25) {3/3};
+
+%% Row: IBR stress tests (new)
+\node[rhdr] at (0,-2.80) {IBR stress (new)};
+\node[pass] at (2.7,-2.80) {P};
+\node[fail] at (3.8,-2.80) {D3};
+\node[pass] at (4.9,-2.80) {P};
+\node[pass] at (6.0,-2.80) {P};
+\node[pass] at (7.1,-2.80) {P};
+\node[pass] at (8.2,-2.80) {P};
+\node[pass] at (9.3,-2.80) {P};
+\node[pass] at (10.4,-2.80) {6/7};
+
+%% Row: N-1 simultaneous
+\node[rhdr] at (0,-3.35) {N-1 simultaneous};
+\node[pass] at (2.7,-3.35) {P};
+\node[pass] at (3.8,-3.35) {P};
+\node[pass] at (4.9,-3.35) {P};
+\node[pass] at (6.0,-3.35) {P};
+\node[pass] at (7.1,-3.35) {P};
+\node[na]   at (8.2,-3.35) {--};
+\node[fail] at (9.3,-3.35) {D4};
+\node[pass] at (10.4,-3.35) {5/6};
+
+%% Total row
+\node[rhdr,fill=thesisblue!25] at (0,-3.90) {Total (48 scenarios)};
+\node[cell,fill=thesisblue!20,draw=thesisblue!40,minimum width=8.25cm,
+      font=\tiny\bfseries] at (6.55,-3.90)
+  {46/48 pass (95.8\%) \quad D3: firmware confirm-timer minimum \quad D4: GOOSE latency +0.3\,ms (documented, resolved)};
+
+\end{tikzpicture}

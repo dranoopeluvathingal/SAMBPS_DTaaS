@@ -47,7 +47,9 @@
 
 % Pre-fault region label
 \draw[dashed, gray!50, line width=0.6pt] (\t0, -\Th-0.3) -- (\t0, \Th+0.5);
-\node[ann, above] at (\t0/2, \Th+0.4) {Pre-fault\\(load current)};
+% Pre-fault label: shifted left of the dashed line to avoid y-axis overlap
+\node[ann, above, anchor=north east] at (\t0-0.1, \Th+0.5)
+  {Pre-fault\\(load current)};
 \node[ann, above] at ({(\t0+\Tw)/2}, \Th+0.4) {Fault window};
 
 % --- Pre-fault sinusoid (small amplitude load current) -----------------------
@@ -86,16 +88,17 @@
 \draw[wave, color=envC, dashed, opacity=0.8]
   plot[domain=0:{(\Tw-\t0)}, samples=80, smooth]
   ({\t0+\x}, {-(\Iss + (\Isub-\Iss)*exp(-\x/\tauac))});
-\node[lbl, color=envC, right] at ({\t0+0.2}, {\Isub+0.25})
+% Envelope label: on the left slope of the curve, below the main equation box
+\node[lbl, color=envC, anchor=north west] at ({\t0+0.10}, {1.9})
   {$I_{ss}{+}(I_{sub}{-}I_{ss})e^{-t_{rel}/\tau_{ac}}$};
 
 % DC offset  i_dc(t) = I_dc * exp(-t/tau_dc),  I_dc = -I_sub*sin(phi) = -I_sub
 \draw[wave, color=dcC, line width=1.2pt]
   plot[domain=0:{(\Tw-\t0)}, samples=80, smooth]
   ({\t0+\x}, {-\Isub * exp(-\x/\taudc)});
-\node[lbl, color=dcC, right] at ({5.5}, {-3.1})
+\node[lbl, color=dcC, anchor=south west] at ({4.2}, {-\Isub*0.42})
   {$I_{dc}\,e^{-t_{rel}/\tau_{dc}}$};
-\node[ann, color=dcC] at ({5.8}, {-2.6})
+\node[ann, color=dcC, anchor=north west] at ({4.2}, {-\Isub*0.42-0.05})
   {$I_{dc}{=}{-}I_{sub}\sin\phi_a$};
 
 % Total current (AC + DC)
@@ -122,25 +125,26 @@
   node[midway, below=6pt, ann, color=dcC!80!black]
   {$\tau_{dc}$\\(DC decay)};
 
-% Fault inception marker
-\draw[{Stealth[length=4pt]}-{Stealth[length=4pt]},
-      color=orange, line width=0.7pt]
-  (\t0, {-\Th-0.05}) -- (\t0, {-\Th-0.05});
-\fill[orange] (\t0, 0) circle (2pt);
-\node[ann, color=orange, below right=2pt and 1pt of {(\t0,0)}]
+% Fault inception marker — dot on time axis, label in pre-fault blank area
+\fill[orange] (\t0, 0) circle (2.5pt);
+\node[ann, color=orange, anchor=south east] at ({\t0-0.1}, {-0.2})
   {$t_0$: fault inception\\$i_a(t_0)=0$ (continuity)};
 
-% ---- Model equation box -----------------------------------------------------
+% ---- Model equation box — compact, top-right, only the main formula ----------
 \node[draw=gray!60, fill=white, rounded corners=3pt, inner sep=6pt,
-      align=left, font=\footnotesize] at (6.8, 3.5)
+      align=left, font=\footnotesize, anchor=north east] at (\Tw+0.1, \Th+0.7)
 {$i_k(t) = \underbrace{\bigl[I_{ss} + (I_{sub}{-}I_{ss})e^{-t_{rel}/\tau_{ac}}\bigr]}_{\text{AC envelope}}\!\!\sin(\omega t + \phi_k)$\\[4pt]
-$\quad\quad\quad +\;\underbrace{I_{dc,k}\,e^{-t_{rel}/\tau_{dc}}}_{\text{DC offset}},\quad t\geq t_0$\\[4pt]
-$I_{dc,k} = -I_{sub}\sin\phi_k$\quad (continuity cond.)\\
+$\quad\quad\quad +\;\underbrace{I_{dc,k}\,e^{-t_{rel}/\tau_{dc}}}_{\text{DC offset}},\quad t\geq t_0$};
+
+% ---- Continuity conditions — separate small box below equation box ----------
+\node[draw=gray!40, fill=white, rounded corners=2pt, inner sep=5pt,
+      align=left, font=\footnotesize, anchor=north east] at (\Tw+0.1, 2.8)
+{$I_{dc,k} = -I_{sub}\sin\phi_k$\quad (continuity cond.)\\
 $\phi_b = \phi_a - 2\pi/3,\quad\phi_c = \phi_a + 2\pi/3$};
 
-% ---- Legend -----------------------------------------------------------------
+% ---- Legend — lower right, clear of braces and waveform troughs -------------
 \node[draw=gray!50, fill=white, rounded corners=2pt, inner sep=4pt,
-      align=left, font=\scriptsize] at (1.5, -3.5)
+      align=left, font=\scriptsize, anchor=south east] at (\Tw+0.1, -\Th+0.2)
 {
   \textcolor{acssC}{\rule{0.8cm}{1.5pt}}\ AC steady-state\\
   \textcolor{envC}{\makebox[0.8cm]{\dotfill}}\ Envelope\\

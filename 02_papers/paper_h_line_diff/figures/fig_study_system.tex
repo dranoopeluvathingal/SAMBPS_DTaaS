@@ -1,52 +1,107 @@
-% fig_study_system.tex
-% Study system: Gen -- Z_src -- Bus_A -- Z_line -- Bus_B -- Z_tr -- Bus_C
-% IBR connected at Bus_B; measurement points CT_A (left) and CT_B (right)
-\begin{tikzpicture}[
-  bus/.style={draw,fill=gray!20,minimum width=0.35cm,minimum height=2.0cm},
-  comp/.style={draw,fill=white,rounded corners=2pt,minimum width=1.2cm,
-               minimum height=0.55cm,font=\scriptsize,align=center},
-  lbl/.style={font=\tiny,align=center},
-  >=latex
-]
-% Buses
-\node[bus] (busA) at (0,0)   {};
-\node[bus] (busB) at (5.0,0) {};
-\node[bus] (busC) at (8.5,0) {};
-\node[lbl,above=2pt] at (busA.north) {Bus A};
-\node[lbl,above=2pt] at (busB.north) {Bus B};
-\node[lbl,above=2pt] at (busC.north) {Bus C};
+% fig_study_system.tex — fragment (\input-able, no standalone wrapper)
+\definecolor{busColor} {RGB}{ 30,  30,  30}
+\definecolor{genColor} {RGB}{ 31, 119, 180}
+\definecolor{ibrColor} {RGB}{ 44, 160,  44}
+\definecolor{lineColor}{RGB}{ 80,  80,  80}
+\definecolor{ctColor}  {RGB}{180,  30,  30}
+\definecolor{zColor}   {RGB}{100,  60, 160}
+\definecolor{relColor} {RGB}{180,  30,  30}
+\tikzset{
+  bus/.style      = {line width=3pt, color=busColor, line cap=round},
+  zbox/.style     = {rectangle, rounded corners=2pt,
+                     draw=#1, fill=#1!12, text=#1,
+                     line width=0.8pt, font=\small, inner sep=4pt, align=center},
+  ctcirc/.style   = {circle, draw=ctColor, fill=ctColor!15,
+                     line width=0.9pt, inner sep=0pt, minimum size=14pt,
+                     font=\tiny\bfseries, text=ctColor},
+  lbl/.style      = {font=\scriptsize, align=center, color=gray!55!black},
+  mainline/.style = {line width=1.2pt, color=lineColor},
+  brace/.style    = {decorate,
+                     decoration={brace, amplitude=5pt, raise=3pt},
+                     line width=0.8pt},
+}
+\begin{tikzpicture}
 
-% Generator
-\node[comp,left=1.4cm of busA] (gen) {SG\\$X''_d$};
-\draw[-] (gen.east) -- node[above,font=\tiny]{$Z_{\rm src}$} (busA.west|-gen);
+\def\yM{0}
+\def\busH{0.55}
 
-% Transmission line with CT markers
-\draw[-] (busA.east|-{(0,0)}) -- node[pos=0.15,above,font=\tiny]{CT$_A$}
-         node[pos=0.15,fill=white,circle,draw,inner sep=1pt]{}
-         node[midway,above,font=\tiny]{$Z_{\rm line}$}
-         node[pos=0.85,above,font=\tiny]{CT$_B$}
-         node[pos=0.85,fill=white,circle,draw,inner sep=1pt]{}
-         (busB.west|-{(0,0)});
+% x positions
+\def\xGen{0}
+\def\xBusA{2.0}
+\def\xCTA{3.0}
+\def\xCTB{5.8}
+\def\xBusB{6.8}
+\def\xBusC{9.0}
 
-% 87L relay box (below line)
-\node[comp,below=0.7cm of {(2.5,0)}] (relay) {87L\\relay};
-\draw[dashed,->] (2.5,-0.03) -- (relay.north);
+% ---- Generator --------------------------------------------------------------
+\draw[genColor, line width=1.1pt] (\xGen,\yM) circle (0.40cm);
+\node[font=\small\bfseries, text=genColor] at (\xGen,\yM) {G};
+\node[lbl, above=0.50cm] at (\xGen,\yM) {Gen};
 
-% Transformer
-\node[comp] (tr) at (6.75,0) {$Z_{\rm tr}$\\Tr};
-\draw[-] (busB.east|-{(0,0)}) -- (tr.west|-{(0,0)});
-\draw[-] (tr.east|-{(0,0)}) -- (busC.west|-{(0,0)});
+% ---- Main horizontal conductor ----------------------------------------------
+\draw[mainline] ({\xGen+0.40},\yM) -- (\xBusA,\yM);
+\draw[mainline] (\xBusA,\yM) -- ({\xCTA-0.07},\yM);
+\draw[mainline] ({\xCTA+0.07},\yM) -- ({\xCTB-0.07},\yM);
+\draw[mainline] ({\xCTB+0.07},\yM) -- (\xBusB,\yM);
+\draw[mainline] (\xBusB,\yM) -- (\xBusC,\yM);
+\draw[mainline] (\xBusC,\yM) -- ({\xBusC+0.6},\yM);
+\node[font=\small, text=gray!60, anchor=west] at ({\xBusC+0.6},\yM) {\ldots};
 
-% IBR source at Bus B (below)
-\node[comp,below=1.2cm of busB] (ibr) {IBR\\$k_{\rm ibr}$\,pu};
-\draw[->] (ibr.north) -- node[right,font=\tiny]{$I_{\rm ibr}$} (busB.south);
+% ---- Z_src (above line between Gen and Bus_A) --------------------------------
+\node[zbox=zColor] (zsrc) at ({(\xGen+0.40+\xBusA)/2}, {\yM+0.70}) {$Z_{src}$};
+\draw[zColor!50, thin, dashed] (zsrc.south) -- ({(\xGen+0.40+\xBusA)/2},\yM);
 
-% Load at Bus C
-\node[comp,right=0.6cm of busC] (load) {Load};
-\draw[-] (busC.east|-{(0,0)}) -- (load.west|-{(0,0)});
+% ---- Bus_A ------------------------------------------------------------------
+\draw[bus] (\xBusA,{\yM-\busH}) -- (\xBusA,{\yM+\busH});
+\node[lbl, above=0.65cm] at (\xBusA,\yM) {\textbf{Bus A}};
 
-% Fault location marker
-\draw[red!70!black,very thick,dashed]
-  (2.5,0.3) -- (2.5,-0.3)
-  node[below,font=\tiny,red!70!black]{$F$};
+% ---- CT_A -------------------------------------------------------------------
+\node[ctcirc] (cta) at (\xCTA,\yM) {CT};
+\node[lbl, below=0.22cm] at (\xCTA,\yM) {CT$_A$};
+
+% ---- CT_B -------------------------------------------------------------------
+\node[ctcirc] (ctb) at (\xCTB,\yM) {CT};
+\node[lbl, below=0.22cm] at (\xCTB,\yM) {CT$_B$};
+
+% ---- Z_line label: brace above protected segment + label --------------------
+\draw[brace, color=lineColor]
+  (\xCTA,{\yM+0.20}) -- (\xCTB,{\yM+0.20});
+\node[font=\small, text=lineColor, anchor=south]
+  at ({(\xCTA+\xCTB)/2},{\yM+0.55})
+  {$Z_{line}$\enspace\textemdash\enspace 87L protected};
+
+% ---- Bus_B ------------------------------------------------------------------
+\draw[bus] (\xBusB,{\yM-\busH}) -- (\xBusB,{\yM+\busH});
+\node[lbl, above=0.65cm] at (\xBusB,\yM) {\textbf{Bus B}};
+
+% ---- IBR branch (downward from Bus_B) ----------------------------------------
+\draw[mainline, draw=ibrColor] (\xBusB,{\yM-\busH}) -- (\xBusB,{-1.5});
+\node[zbox=ibrColor, text width=1.9cm] at (\xBusB,{-2.05})
+  {\textbf{IBR}\\{\scriptsize(PV / wind)}};
+\node[lbl, right=4pt] at (\xBusB,{-1.0}) {\color{ibrColor}$k_{ibr}$};
+
+% ---- Z_tr (above line between Bus_B and Bus_C) --------------------------------
+\node[zbox=zColor] (ztr) at ({(\xBusB+\xBusC)/2},{\yM+0.70}) {$Z_{tr}$};
+\draw[zColor!50, thin, dashed] (ztr.south) -- ({(\xBusB+\xBusC)/2},\yM);
+
+% ---- Bus_C ------------------------------------------------------------------
+\draw[bus] (\xBusC,{\yM-\busH}) -- (\xBusC,{\yM+\busH});
+\node[lbl, above=0.65cm] at (\xBusC,\yM) {\textbf{Bus C}};
+
+% ---- 87L Relay box below protected line -------------------------------------
+\node[rectangle, rounded corners=3pt,
+      draw=relColor!80, fill=relColor!10, text=relColor,
+      line width=0.9pt, font=\small\bfseries, inner sep=6pt]
+  (relay) at ({(\xCTA+\xCTB)/2},{-1.0}) {87L Relay};
+% Dashed links from CTs to relay
+\draw[relColor!50, thin, dashed]
+  (cta.south) -- ++(0,-0.25) -| (relay.west);
+\draw[relColor!50, thin, dashed]
+  (ctb.south) -- ++(0,-0.25) -| (relay.east);
+
+% ---- Title ------------------------------------------------------------------
+\node[font=\small\bfseries, text=black!70, anchor=south]
+  at ({(\xGen+\xBusC)/2},{1.45})
+  {Study System: IBR-Penetrated Network with 87L Line Protection};
+
 \end{tikzpicture}

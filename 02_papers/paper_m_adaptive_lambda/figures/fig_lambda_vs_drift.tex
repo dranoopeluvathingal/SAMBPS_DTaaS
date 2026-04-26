@@ -1,0 +1,52 @@
+% fig_lambda_vs_drift.tex — λ(t) adaptation law: λ vs drift rate ṙ_k
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  width  = 0.90\columnwidth,
+  height = 4.8cm,
+  xlabel = {Estimated drift rate $\dot{r}_k$ (pu / 20\,ms cycle)},
+  ylabel = {Forgetting factor $\lambda(t)$},
+  xmin=0, xmax=0.025,
+  ymin=0.965, ymax=1.000,
+  xtick={0,0.005,0.010,0.015,0.020,0.025},
+  ytick={0.970,0.975,0.980,0.985,0.990,0.995},
+  yticklabel style={/pgf/number format/fixed,
+                    /pgf/number format/precision=3},
+  legend pos=south west,
+  legend style={font=\scriptsize},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+]
+
+%% Adaptive λ curve (logistic)
+\addplot[thick,thesisblue,domain=0:0.025,samples=80]
+  { 0.995 - (0.995-0.970) / (1 + exp(-200*(x-0.010))) };
+\addlegendentry{Adaptive $\lambda(t)$ (proposed)};
+
+%% Fixed λ = 0.995 reference
+\addplot[thesisgray,thick,dashed,domain=0:0.025,samples=2] {0.995};
+\addlegendentry{Fixed $\lambda=0.995$ (baseline)};
+
+%% Fixed λ = 0.985 reference
+\addplot[thesisred,thick,dotted,domain=0:0.025,samples=2] {0.985};
+\addlegendentry{Fixed $\lambda=0.985$};
+
+%% Operating regions
+\fill[thesisgreen!15,opacity=0.6]
+  (axis cs:0,0.965) rectangle (axis cs:0.006,1.000);
+\fill[thesisorange!15,opacity=0.6]
+  (axis cs:0.014,0.965) rectangle (axis cs:0.025,1.000);
+
+\node[thesisgreen!70!black,font=\tiny,align=center] at (axis cs:0.003,0.9675)
+  {Station-\\ary};
+\node[thesisorange!80!black,font=\tiny,align=center] at (axis cs:0.0195,0.9675)
+  {Drift};
+
+%% λ_min / λ_max annotations
+\draw[thesisblue,thin,dashed] (axis cs:0,0.970) -- (axis cs:0.025,0.970)
+  node[right,font=\tiny]{$\lambda_{\min}$};
+\draw[thesisblue,thin,dashed] (axis cs:0,0.995) -- (axis cs:0.025,0.995)
+  node[right,font=\tiny]{$\lambda_{\max}$};
+
+\end{axis}
+\end{tikzpicture}

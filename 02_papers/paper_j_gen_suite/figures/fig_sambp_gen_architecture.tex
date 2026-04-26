@@ -1,0 +1,59 @@
+% fig_sambp_gen_architecture.tex — SAMBP generator-suite framework overview
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+  blk/.style={draw=thesisblue,thick,fill=lightblue!30,rounded corners=3pt,
+              minimum width=2.4cm,minimum height=0.55cm,align=center},
+  rly/.style={draw=thesisgreen,thick,fill=lightgreen!30,rounded corners=3pt,
+              minimum width=2.3cm,minimum height=0.50cm,align=center},
+  prop/.style={draw=thesisorange,thick,fill=lightorange!20,rounded corners=3pt,
+               minimum width=2.8cm,minimum height=0.55cm,align=center},
+  arr/.style={-{Stealth[length=2mm]},thick},
+]
+
+%% Physics-Reduction Proposition box (C9)
+\node[prop,minimum width=5.6cm] (C9) at (0,0)
+  {Physics-Reduction Proposition (C9)\\
+   SVD interlacing: $\kappa_n$ reduced ${\geq}10{\times}$ per eliminated parameter};
+
+%% Three model-reduction instances
+\node[blk] (DFIG) at (-4.2,-1.5)
+  {DFIG shared $\tau_s$\\(10$\to$6 free params)};
+\node[blk] (PV) at (0,-1.5)
+  {PV zero-DC\\(4$\to$2 params, $\kappa_n{=}1$)};
+\node[blk] (R64) at (4.2,-1.5)
+  {Relay~64G $I_f{\perp}f$\\(freq.-independent)};
+
+\draw[arr,thesisblue] (C9.south) -- ++(-4.2,-0.42) -- (DFIG.north);
+\draw[arr,thesisblue] (C9.south) -- (PV.north);
+\draw[arr,thesisblue] (C9.south) -- ++(4.2,-0.42) -- (R64.north);
+
+%% Six relay functions
+\node[rly] (87G) at (-4.8,-3.0)
+  {87G DFIG (C10)\\CCR\,=\,100\%};
+\node[rly] (R81) at (-1.8,-3.0)
+  {Relay 81 IFDI (C12)\\$P_D\!=\!0.9947$};
+\node[rly] (87L) at (1.2,-3.0)
+  {87L-PV (C11)\\$P_D\!=\!0.9984$};
+\node[rly] (R40) at (4.2,-3.0)
+  {Relay 40 LOE (C14)\\$P_D\!:\!0.568{\to}1.000$};
+
+%% Two more relay functions below
+\node[rly] (R78) at (-1.8,-4.3)
+  {Relay 78 EAC (C13)\\$P_{\rm conserv}{=}1.000$};
+\node[rly] (R64G) at (1.5,-4.3)
+  {Relay 64G (C15)\\$P_D\!:\!0.813{\to}1.000$};
+
+\draw[arr,thesisgreen] (DFIG.south) -- (87G.north);
+\draw[arr,thesisgreen] (DFIG.south) -- (R81.north);
+\draw[arr,thesisgreen] (PV.south) -- (87L.north);
+\draw[arr,thesisgreen] (R64.south) -- (R40.north);
+\draw[arr,thesisgreen] (PV.south) -- (R78.north);
+\draw[arr,thesisgreen] (R64.south) -- (R64G.north);
+
+%% IEC 61850 GOOSE annotation
+\node[draw=thesisgray,fill=gray!8,rounded corners=2pt,
+      font=\tiny,align=center,inner sep=3pt]
+  at (0,-5.3)
+  {All six functions: IEC~61850 GOOSE compatible $\cdot$ 30\,000+ MC trials total};
+
+\end{tikzpicture}

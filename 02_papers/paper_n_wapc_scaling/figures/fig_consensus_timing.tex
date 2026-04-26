@@ -1,0 +1,63 @@
+% fig_consensus_timing.tex — Timing diagram: staggered WA-GOOSE arrivals and consensus window
+\begin{tikzpicture}[
+  every node/.style={font=\tiny},
+  arr/.style={-{Stealth[length=1.5mm]},thick},
+]
+
+%% Timeline axis
+\draw[thick,->] (0,0) -- (11.5,0) node[right,font=\scriptsize]{Time (ms)};
+
+%% Tick marks
+\foreach \x/\lbl in {0/0,1/10,2/20,3/30,4/40,5/50,6/60,7/70,8/80,9/90,10/100}{
+  \draw (\x,-0.10) -- (\x,0.10);
+  \node[below] at (\x,-0.10) {\lbl};
+}
+
+%% Fault inception
+\draw[thesisred,very thick] (0,-0.4) -- (0,3.6)
+  node[above,thesisred,font=\scriptsize\bfseries]{Fault};
+
+%% Sub-A1: local estimate ready at 20ms, WA-GOOSE tx at 22ms, arrives RC at 25ms (τ=3ms)
+\draw[thesisblue,thick,->] (2.0,3.0) -- (2.5,3.0)
+  node[right]{Sub-A1 LM (20\,ms)};
+\draw[thesisblue,dashed,->] (2.2,3.0) -- (2.5,2.5)
+  node[right]{WA-GOOSE tx ($\tau{=}3$\,ms)};
+
+%% Sub-A2: local at 20ms, tx at 22ms, arrives at 35ms (τ=13ms)
+\draw[thesisorange,thick,->] (2.0,2.3) -- (3.5,2.3)
+  node[right]{Sub-A2 ($\tau{=}13$\,ms)};
+
+%% Sub-B1: local at 20ms, tx at 22ms, arrives at 48ms (τ=26ms)
+\draw[thesisgreen,thick,->] (2.0,1.6) -- (4.8,1.6)
+  node[right]{Sub-B1 ($\tau{=}26$\,ms)};
+
+%% Sub-B2: local at 20ms, arrives at 67ms (τ=45ms)
+\draw[thesisgray,thick,->] (2.0,0.9) -- (6.7,0.9)
+  node[right]{Sub-B2 ($\tau{=}45$\,ms)};
+
+%% Consensus window: 50ms to 100ms (T_consensus = 50ms)
+\fill[thesisblue!15,opacity=0.6] (5.0,-0.4) rectangle (10.0,3.6);
+\draw[thesisblue,thick,dotted] (5.0,-0.4) -- (5.0,3.6)
+  node[above,thesisblue]{$t_{\rm gate}{=}50$\,ms};
+\draw[thesisblue,thick,dotted] (10.0,-0.4) -- (10.0,3.6)
+  node[above,thesisblue]{$t_{\rm decision}{=}100$\,ms};
+\node[thesisblue,font=\tiny] at (7.5,3.3) {Consensus window ($T_c{=}50$\,ms)};
+
+%% RC weighted consensus output
+\draw[thesisred,very thick,->] (10.0,2.0) -- (10.8,2.0)
+  node[right,font=\scriptsize,thesisred,align=left]{RC decision\\$\hat{Z}_{\rm fault}$, $\Delta\bm{\theta}^\ast$};
+
+%% Labels
+\node[left,font=\scriptsize] at (0,3.0) {Sub-A1};
+\node[left,font=\scriptsize] at (0,2.3) {Sub-A2};
+\node[left,font=\scriptsize] at (0,1.6) {Sub-B1};
+\node[left,font=\scriptsize] at (0,0.9) {Sub-B2};
+
+%% Annotation: all τ < T_c/2 = 25ms
+\node[draw=thesisgray!50,fill=white,rounded corners=2pt,
+      font=\tiny,align=center,inner sep=2pt]
+  at (3.5,-0.9)
+  {Prop.~1: all $\tau_s \leq \tau_{\max}{=}50$\,ms\\
+   $<T_c$ guarantees consensus};
+
+\end{tikzpicture}

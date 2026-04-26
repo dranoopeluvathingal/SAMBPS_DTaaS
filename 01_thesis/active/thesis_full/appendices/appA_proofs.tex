@@ -76,20 +76,23 @@ The partial derivatives are:
 \begin{align}
   \frac{\partial h_1}{\partial \kibr} &= \frac{I_r |Z_S + \alpha \Zline|}{|V_0|}
   \\[4pt]
-  \frac{\partial h_1}{\partial \Zline} &= \frac{\kibr I_r \alpha}{|V_0|}
-    \cdot \frac{\mathrm{Re}[(Z_S + \alpha\Zline) \cdot (\partial\Zline/\partial|\Zline|)]}{|Z_S + \alpha\Zline|}
-  = \frac{\kibr I_r \alpha \,\mathrm{Re}[e^{\jj\angle\Zline}
-    e^{-\jj\angle(Z_S+\alpha\Zline)}]}{|V_0|}
+  \frac{\partial h_1}{\partial \Zline} &=
+    \frac{\kibr I_r \alpha \,\mathrm{Re}\bigl[e^{\jj\angle\Zline}\,
+    e^{-\jj\phi_{S\alpha}}\bigr]}{|V_0|}
   \\[4pt]
   \frac{\partial h_1}{\partial \alpha} &= \frac{\kibr I_r |\Zline|}{|V_0|}
     \cdot \frac{\mathrm{Re}[(Z_S + \alpha\Zline)\cdot e^{-\jj\angle\Zline}]}{|Z_S + \alpha\Zline|}
   \\[4pt]
   \frac{\partial h_2}{\partial \kibr} &= 0
   \\[4pt]
-  \frac{\partial h_2}{\partial \Zline} &= -\frac{\mathrm{Im}[\alpha e^{-\jj\angle(Z_S+\alpha\Zline)}]}{|Z_S+\alpha\Zline|}
+  \frac{\partial h_2}{\partial \Zline} &=
+    -\frac{\mathrm{Im}\bigl[\alpha\, e^{-\jj\phi_{S\alpha}}\bigr]}{|Z_S+\alpha\Zline|}
   \\[4pt]
-  \frac{\partial h_2}{\partial \alpha} &= -\frac{\mathrm{Im}[\Zline e^{-\jj\angle(Z_S+\alpha\Zline)}]}{|Z_S+\alpha\Zline|}
+  \frac{\partial h_2}{\partial \alpha} &=
+    -\frac{\mathrm{Im}\bigl[\Zline\, e^{-\jj\phi_{S\alpha}}\bigr]}{|Z_S+\alpha\Zline|}
 \end{align}
+where $\phi_{S\alpha} \triangleq \angle(Z_S+\alpha\Zline)$ is the argument
+of the series impedance to the fault.
 
 These 6 elements form the $2\times 3$ Jacobian $\mathbf{H}$.
 
@@ -116,29 +119,6 @@ For all other operating points, $\det(\mathbf{H}^\top\mathbf{H}) > 0$
 and rank $= 3$. $\qquad\square$
 \end{proof}
 
-\section{Proof A.5: WAPC Localisation Correctness}
-\label{proof:wapc_localise}
-
-\begin{proof}
-By definition of the voltage dip model (Equation~\ref{eq:ch9_dip_model}),
-the dip at bus~$k$ is a monotonically decreasing function of the electrical
-distance $d_k^\mathrm{fault}$. For the faulted line $L_{i^\ast j^\ast}$,
-the endpoint buses $i^\ast$ and $j^\ast$ are connected to the fault point
-by distances $\alpha|Z_{i^\ast j^\ast}|$ and $(1-\alpha)|Z_{i^\ast j^\ast}|$
-respectively—the shortest possible distances to the fault.
-
-For any other line $L_{ij}$ ($(i,j) \neq (i^\ast, j^\ast)$), the
-endpoint buses must reach the fault via at least one additional network
-edge, so:
-\[
-  d_i^\mathrm{fault} > \alpha |Z_{i^\ast j^\ast}|,
-  \quad
-  d_j^\mathrm{fault} > (1-\alpha)|Z_{i^\ast j^\ast}|
-  \quad \forall (i,j) \neq (i^\ast, j^\ast)
-\]
-Therefore $\Delta V_i + \Delta V_j < \Delta V_{i^\ast} + \Delta V_{j^\ast}$
-in the noise-free case. With noise $\sigma_V$, the condition holds with
-probability $\Phi((\Delta V_{i^\ast} + \Delta V_{j^\ast}
-- \Delta V_i - \Delta V_j)/(\sqrt{2}\sigma_V))$, which approaches 1
-as $\sigma_V \to 0$. $\qquad\square$
-\end{proof}
+%% Proof A.5 (WAPC PMU fault localisation) supports the wide-area coordination
+%% work identified as a future-work direction (April 2026 scope lock).
+%% Removed to match locked chapter scope (Ch.2--7 + Ch.10 only).

@@ -386,7 +386,10 @@ def interpret_theta_dfig(
 
     slip          = omega_slip / (2 * np.pi * freq_hz)
     crowbar_fired = I_nat > I_nat_thresh
-    is_internal   = I_fund >= I_fund_thresh
+    # Trip if either post-crowbar fundamental OR pre-crowbar IBR injection exceeds
+    # threshold.  k_ibr is always well-identified from the pre-crowbar segment even
+    # when the LM drifts t_cb to a boundary (making I_fund unconstrained).
+    is_internal   = (I_fund >= I_fund_thresh) or (k_ibr >= I_fund_thresh)
 
     kn_conf    = float(np.clip(1.0 - (kappa_n - 1) / max(kappa_max - 1, 1), 0, 1))
     res_conf   = float(np.exp(-residual_norm))

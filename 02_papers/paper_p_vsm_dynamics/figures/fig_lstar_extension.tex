@@ -1,0 +1,61 @@
+% fig_lstar_extension.tex — Validity window L* for three model tiers
+% Shows zone accuracy vs estimation window [20ms – 500ms]
+% Three curves: 2nd-order (Stage-1), 6th-order, 9-state VSM+AVR+PSS
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  width  = 0.92\columnwidth,
+  height = 5.2cm,
+  xlabel = {Estimation window $L^*$ (ms)},
+  ylabel = {Zone detection accuracy},
+  xmin=20, xmax=500,
+  ymin=0.72, ymax=1.02,
+  xtick={50,100,150,200,250,300,350,400,450,500},
+  ytick={0.75,0.80,0.85,0.90,0.95,1.00},
+  yticklabel={\pgfmathprintnumber[fixed,precision=2]{\tick}},
+  legend pos=south west,
+  legend style={font=\scriptsize,cells={anchor=west}},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+  clip=false,
+]
+
+%% 95% accuracy target
+\addplot[thesisred,thick,dotted,domain=20:500,samples=2] {0.95};
+\node[thesisred,font=\tiny,anchor=west] at (axis cs:500,0.953) {95\%};
+
+%% Curve 1: 2nd-order Stage-1 (Park dq without AVR/PSS) — drops sharply >80ms
+\addplot[thick,thesisgray,densely dashed,mark=none,domain=20:500,samples=80]
+  { max(0.740, 0.985 - 0.00012*(x-20)^1.35) };
+\addlegendentry{2nd-order Stage-1 ($L^*_{\rm max}\approx 80$\,ms)};
+
+%% Curve 2: 6th-order (paper D result) — holds to ~150ms, then degrades
+\addplot[thick,thesisorange,mark=none,domain=20:500,samples=80]
+  { max(0.755, 0.991 - 0.000045*(x-20)^1.55) };
+\addlegendentry{6th-order Park $dq$ ($L^*_{\rm max}\approx 150$\,ms)};
+
+%% Curve 3: 9-state VSM+AVR+PSS — holds >95% out to ~380ms
+\addplot[thick,thesisblue,mark=none,domain=20:500,samples=80]
+  { max(0.800, 0.996 - 0.0000085*(x-20)^1.80) };
+\addlegendentry{9-state VSM+AVR+PSS ($L^*_{\rm max}\approx 380$\,ms)};
+
+%% Validity boundary markers
+%% 2nd-order
+\draw[thesisgray,thin,dashed] (axis cs:80,0.72) -- (axis cs:80,1.01)
+  node[above,font=\tiny,thesisgray]{80\,ms};
+
+%% 6th-order
+\draw[thesisorange,thin,dashed] (axis cs:150,0.72) -- (axis cs:150,1.01)
+  node[above,font=\tiny,thesisorange]{150\,ms};
+
+%% 9-state VSM
+\draw[thesisblue,thin,dashed] (axis cs:380,0.72) -- (axis cs:380,1.01)
+  node[above,font=\tiny,thesisblue]{380\,ms};
+
+%% Extension arrow annotation
+\draw[thesisblue,<->,thick]
+  (axis cs:155,0.795) -- (axis cs:375,0.795)
+  node[midway,below,font=\tiny,align=center]{$+230$\,ms\\extension};
+
+\end{axis}
+\end{tikzpicture}

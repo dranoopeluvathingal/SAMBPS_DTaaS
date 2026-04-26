@@ -1,0 +1,113 @@
+% fig_contribution_map.tex
+% Grid: 5 layers (rows) x selected contributions (columns)
+% Filled cells = contribution belongs to that layer; colour = type
+\begin{tikzpicture}[
+  cell/.style={draw=gray!30,minimum width=0.88cm,minimum height=0.60cm,
+               inner sep=0pt,font=\tiny},
+  filled/.style={cell,rounded corners=2pt},
+  hdr/.style={font=\scriptsize\bfseries,align=center},
+]
+
+%% Column headers: contributions
+\def\cols{C1,C2,C3,C9,C13,C14,C16,G1,G2,G4,G6,G7}
+\def\numcols{12}
+
+%% Draw column headers
+\foreach \c/\i in {
+  C1/0, C2/1, C3/2, C9/3, C13/4, C14/5, C16/6,
+  G1/7, G2/8, G4/9, G6/10, G7/11
+}{
+  \node[hdr] at (0.44+\i*0.88, 0.9) {\c};
+}
+
+%% Row headers: layers
+\foreach \l/\i in {
+  {L5: Decision}/0,
+  {L4: Stability}/1,
+  {L3: Adaptive}/2,
+  {L2: LM Estim.}/3,
+  {L1: Signal}/4
+}{
+  \node[font=\scriptsize,anchor=east] at (-0.05, -\i*0.60+0.0) {\l};
+}
+
+%% Draw all cells (empty background)
+\foreach \r in {0,1,2,3,4}{
+  \foreach \c in {0,1,2,3,4,5,6,7,8,9,10,11}{
+    \node[cell] at (0.44+\c*0.88, -\r*0.60) {};
+  }
+}
+
+%% Filled cells — each (col, row): col=contrib index, row=layer (0=L5..4=L1)
+%% Colours: blue=theory, orange=adaptive, green=validation, red=stability, gray=arch
+
+%% C1 (adaptive slope) → L3 (primary), L2 (uses κ_n), L5 (trip condition)
+\node[filled,fill=thesisorange!55,draw=thesisorange] at (0.44+0*0.88, -2*0.60) {L3};
+\node[filled,fill=thesisorange!25,draw=thesisorange!50] at (0.44+0*0.88, -1*0.60) {L4};
+\node[filled,fill=thesisorange!25,draw=thesisorange!50] at (0.44+0*0.88, 0*0.60) {L5};
+
+%% C2 (adaptive λ) → L3
+\node[filled,fill=thesisorange!55,draw=thesisorange] at (0.44+1*0.88, -2*0.60) {L3};
+\node[filled,fill=thesisorange!25,draw=thesisorange!50] at (0.44+1*0.88, -3*0.60) {L2};
+
+%% C3 (87L neg-seq estimator) → L2
+\node[filled,fill=thesisblue!55,draw=thesisblue] at (0.44+2*0.88, -3*0.60) {L2};
+\node[filled,fill=thesisblue!25,draw=thesisblue!50] at (0.44+2*0.88, -2*0.60) {L3};
+
+%% C9 (SVD interlacing) → L2 (κ_n), L4 (gate)
+\node[filled,fill=thesisred!55,draw=thesisred] at (0.44+3*0.88, -3*0.60) {L2};
+\node[filled,fill=thesisred!55,draw=thesisred] at (0.44+3*0.88, -1*0.60) {L4};
+\node[filled,fill=thesisred!25,draw=thesisred!50] at (0.44+3*0.88, 0*0.60) {L5};
+
+%% C13 (CUEP bound) → L4 (primary), L5 (decision)
+\node[filled,fill=thesisred!55,draw=thesisred] at (0.44+4*0.88, -1*0.60) {L4};
+\node[filled,fill=thesisred!25,draw=thesisred!50] at (0.44+4*0.88, 0*0.60) {L5};
+
+%% C14 (WA consensus) → L5
+\node[filled,fill=thesisgray!55,draw=thesisgray] at (0.44+5*0.88, 0*0.60) {L5};
+\node[filled,fill=thesisgray!25,draw=thesisgray!50] at (0.44+5*0.88, -1*0.60) {L4};
+
+%% C16 (unified architecture) → all layers
+\foreach \r in {0,1,2,3,4}{
+  \node[filled,fill=thesisblue!30,draw=thesisblue!60]
+    at (0.44+6*0.88, -\r*0.60) {all};
+}
+
+%% G1 (SEL-411L) → validation across L2–L5
+\node[filled,fill=thesisgreen!50,draw=thesisgreen] at (0.44+7*0.88, -3*0.60) {};
+\node[filled,fill=thesisgreen!50,draw=thesisgreen] at (0.44+7*0.88, -2*0.60) {};
+\node[filled,fill=thesisgreen!50,draw=thesisgreen] at (0.44+7*0.88, 0*0.60) {};
+
+%% G2 (adaptive λ field) → L3 validation
+\node[filled,fill=thesisgreen!50,draw=thesisgreen] at (0.44+8*0.88, -2*0.60) {};
+\node[filled,fill=thesisgreen!50,draw=thesisgreen] at (0.44+8*0.88, -1*0.60) {};
+
+%% G4 (WAPC scaling) → L5 validation
+\node[filled,fill=thesisgreen!50,draw=thesisgreen] at (0.44+9*0.88, 0*0.60) {};
+\node[filled,fill=thesisgreen!50,draw=thesisgreen] at (0.44+9*0.88, -1*0.60) {};
+
+%% G6 (VSM dynamics) → L2 validation
+\node[filled,fill=thesisgreen!50,draw=thesisgreen] at (0.44+10*0.88, -3*0.60) {};
+\node[filled,fill=thesisgreen!50,draw=thesisgreen] at (0.44+10*0.88, -4*0.60) {};
+
+%% G7 (field validation) → all layers
+\foreach \r in {0,1,2,3,4}{
+  \node[filled,fill=thesisgreen!65,draw=thesisgreen]
+    at (0.44+11*0.88, -\r*0.60) {};
+}
+
+%% Legend
+\node[filled,fill=thesisorange!55,draw=thesisorange,minimum width=0.4cm]
+  at (0.0, -3.3) {};
+\node[font=\tiny,anchor=west] at (0.25,-3.3) {Adaptive law};
+\node[filled,fill=thesisred!55,draw=thesisred,minimum width=0.4cm]
+  at (2.5,-3.3) {};
+\node[font=\tiny,anchor=west] at (2.75,-3.3) {Stability/gate};
+\node[filled,fill=thesisgreen!60,draw=thesisgreen,minimum width=0.4cm]
+  at (5.0,-3.3) {};
+\node[font=\tiny,anchor=west] at (5.25,-3.3) {Validation};
+\node[filled,fill=thesisblue!30,draw=thesisblue!60,minimum width=0.4cm]
+  at (7.6,-3.3) {};
+\node[font=\tiny,anchor=west] at (7.85,-3.3) {Architecture};
+
+\end{tikzpicture}

@@ -216,8 +216,33 @@ def estimate_dfig_parameters(
     x0 = initial_guess_dfig(t_window, i_diff_meas, cfg.freq_hz,
                             t_cb_est=t_cb_hint)
 
-    # Step 3: Pass 1 — all 10 parameters, full window
-    res1     = _pass1(t_window, i_diff_meas, x0, cfg)
+    # Step 3: Pass 1 — all 10 parameters, full window.
+    # When a hardware crowbar hint is available, pin t_cb within ±1 ms of
+    # the hint so the Heaviside partition is stable and k_ibr / I_fund remain
+    # separately identifiable from the pre- and post-crowbar segments.
+    _hw_hint = t_cb_hint is not None and (
+        cusum_result is None or not cusum_result.alarm
+    )
+    if _hw_hint:
+        # Build per-call bounds with t_cb pinned to hardware hint ±1 ms
+        _TOL = 1e-3          # 1 ms half-window around hardware signal
+        _lb = LOWER_BOUNDS.copy()
+        _ub = UPPER_BOUNDS.copy()
+        _lb[2] = max(float(t_cb_hint) - _TOL, LOWER_BOUNDS[2])
+        _ub[2] = min(float(t_cb_hint) + _TOL, UPPER_BOUNDS[2])
+        # Clamp x0[2] inside the new bounds
+        x0[2]  = float(np.clip(x0[2], _lb[2], _ub[2]))
+
+        res1 = least_squares(
+            _residual, x0, jac=_jac,
+            bounds=(_lb, _ub),
+            method="trf",
+            ftol=cfg.ftol_p1, xtol=cfg.xtol_p1, gtol=cfg.gtol_p1,
+            max_nfev=cfg.max_nfev_p1,
+            args=(t_window, i_diff_meas, cfg.freq_hz),
+        )
+    else:
+        res1 = _pass1(t_window, i_diff_meas, x0, cfg)
     theta_p1 = res1.x
 
     # Step 4: Pass 2 — omega_slip and tau_s, post-crowbar tail window

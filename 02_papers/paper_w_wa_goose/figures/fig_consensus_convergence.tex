@@ -1,0 +1,91 @@
+% fig_consensus_convergence.tex
+% Two-panel: p_trip evolution over time; vote breakdown per SS
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=1 by 2, vertical sep=0.5cm},
+  thesis style,
+  width=\columnwidth,
+  xmin=0, xmax=80,
+  xtick={0,10,20,30,40,50,60,70,80},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+]
+
+%% ── Panel 1: p_trip trajectory ───────────────────────────────────────────────
+\nextgroupplot[
+  height=3.4cm,
+  ylabel={$p_{\rm trip}$ (consensus)},
+  ymin=0, ymax=1.1,
+  ytick={0,0.25,0.5,0.75,1.0},
+  xticklabels={},
+  legend pos=north west,
+  legend style={font=\scriptsize,cells={anchor=west}},
+]
+
+%% p_trip with 3 substations — rises after κ_n gate opens at ~35ms
+\addplot[thick,thesisblue,mark=none,domain=0:80,samples=100]
+  { (x<35) ? 0 :
+    (x<50) ? min(1, 0.72*(x-35)/15) :
+    0.72 + 0.12*min(1,(x-50)/10) };
+\addlegendentry{$p_{\rm trip}$ (3 SS)};
+
+%% p_trip with 2 substations (SS2 dropout scenario)
+\addplot[thick,thesisorange,dashed,mark=none,domain=0:80,samples=100]
+  { (x<35) ? 0 :
+    (x<55) ? min(1, 0.55*(x-35)/20) :
+    0.55 + 0.1*min(1,(x-55)/10) };
+\addlegendentry{$p_{\rm trip}$ (SS2 dropout)};
+
+%% Decision threshold
+\addplot[thesisred,thick,dotted,domain=0:80,samples=2] {0.5};
+\node[thesisred,font=\tiny,anchor=west] at (axis cs:81,0.52) {0.5};
+
+%% κ_n gate opens
+\draw[thesisgray,thin,dashed] (axis cs:35,0) -- (axis cs:35,1.1)
+  node[above,font=\tiny,thesisgray,align=center]{gate\\open};
+
+%% Trip issued
+\draw[thesisgreen,thin,dashed] (axis cs:52,0) -- (axis cs:52,1.1)
+  node[above,font=\tiny,thesisgreen,align=center]{TRIP\\issued};
+
+%% ── Panel 2: Per-substation vote and weight ──────────────────────────────────
+\nextgroupplot[
+  height=3.0cm,
+  ylabel={Vote / weight},
+  xlabel={Time post-fault (ms)},
+  ymin=0, ymax=1.2,
+  ytick={0,0.25,0.5,0.75,1.0},
+  legend pos=north west,
+  legend style={font=\tiny,cells={anchor=west},legend columns=2},
+]
+
+%% SS1 weight (κ_n^(1) decays fastest — feeder nearest fault)
+\addplot[thesisblue,thick,mark=none,domain=0:80,samples=100]
+  { (x<5) ? 0 : min(1, 0.033*(x-5)) };
+\addlegendentry{$w_1$ (SS1)};
+
+%% SS2 weight
+\addplot[thesisorange,thick,mark=none,domain=0:80,samples=100]
+  { (x<15) ? 0 : min(0.85, 0.028*(x-15)) };
+\addlegendentry{$w_2$ (SS2)};
+
+%% SS3 weight (furthest — slowest κ_n decay)
+\addplot[thesisgreen,thick,mark=none,domain=0:80,samples=100]
+  { (x<25) ? 0 : min(0.70, 0.022*(x-25)) };
+\addlegendentry{$w_3$ (SS3)};
+
+%% Binary vote v1 (steps to 1 when local differential criterion met)
+\addplot[thesisblue,very thick,densely dotted,mark=none]
+  coordinates{(0,0)(34.9,0)(35,1)(80,1)};
+\addlegendentry{$v_1$};
+
+%% Binary vote v2
+\addplot[thesisorange,very thick,densely dotted,mark=none]
+  coordinates{(0,0)(39.9,0)(40,1)(80,1)};
+\addlegendentry{$v_2$};
+
+%% κ_n gate
+\draw[thesisgray,thin,dashed] (axis cs:35,0) -- (axis cs:35,1.2);
+
+\end{groupplot}
+\end{tikzpicture}

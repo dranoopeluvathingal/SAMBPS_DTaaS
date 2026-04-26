@@ -1,0 +1,68 @@
+% fig_pd_comparison.tex — P_D vs k_ibr: conventional vs TR-64
+\begin{tikzpicture}
+\begin{axis}[
+  thesis style,
+  width  = 0.88\columnwidth,
+  height = 5.2cm,
+  xlabel = {IBR current ratio $k_{\rm ibr}$ (pu)},
+  ylabel = {Detection probability $P_D$},
+  xmin=0, xmax=1.1,
+  ymin=0, ymax=1.12,
+  xtick={0,0.2,0.4,0.6,0.7,0.8,1.0},
+  ytick={0,0.2,0.4,0.6,0.8,1.0},
+  yticklabels={0,0.2,0.4,0.6,0.8,1.0},
+  legend pos=south west,
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+]
+%% Conventional 87T (2nd-harmonic restraint)
+\addplot[thick,thesisgray,dashed,mark=square,mark size=2.5pt,
+  mark options={thesisgray}]
+  coordinates {
+    (0.0,  0.990)
+    (0.2,  0.980)
+    (0.4,  0.960)
+    (0.5,  0.900)
+    (0.6,  0.710)
+    (0.7,  0.480)
+    (0.8,  0.310)
+    (0.9,  0.260)
+    (1.0,  0.236)
+  };
+\addlegendentry{Conventional 87T (2nd-harmonic)};
+
+%% TR-64 SPRT (proposed)
+\addplot[thick,thesisblue,mark=*,mark size=2.5pt,
+  mark options={thesisblue}]
+  coordinates {
+    (0.0,  1.000)
+    (0.2,  1.000)
+    (0.4,  1.000)
+    (0.5,  1.000)
+    (0.6,  1.000)
+    (0.7,  1.000)
+    (0.8,  1.000)
+    (0.9,  1.000)
+    (1.0,  1.000)
+  };
+\addlegendentry{Proposed SPRT + $f_{\rm int}$ (TR-64)};
+
+%% IBR threshold annotation
+\draw[thesisorange,thick,dotted]
+  (axis cs:0.70,0) -- (axis cs:0.70,1.12)
+  node[above,font=\tiny,thesisorange]{$k_{\rm ibr}{=}0.70$};
+
+%% Failure annotation
+\node[draw=thesisgray!60,fill=white,rounded corners=2pt,
+      font=\tiny,align=center,inner sep=2pt]
+  at (axis cs:0.85,0.55)
+  {Conventional:\\ $P_D{=}0.236$\\ at $k_{\rm ibr}{=}1.0$};
+\draw[->,gray!60,thin] (axis cs:0.85,0.40) -- (axis cs:0.98,0.24);
+
+%% Improvement arrow
+\draw[<->,thesisblue!60,thin]
+  (axis cs:1.02,0.236) -- (axis cs:1.02,1.000)
+  node[midway,right,font=\tiny,thesisblue]{$4.2{\times}$};
+
+\end{axis}
+\end{tikzpicture}

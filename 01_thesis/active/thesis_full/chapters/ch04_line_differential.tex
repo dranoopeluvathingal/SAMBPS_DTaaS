@@ -23,6 +23,8 @@ This chapter develops four complementary adaptive extensions:
 \item \textbf{C3}: Negative-sequence 87LN element (Section~\ref{sec:ch4_87ln}).
 \item \textbf{C4}: Transient differential current signature TDCS-87L
       (Section~\ref{sec:ch4_tdcs}).
+\item \textbf{C5}: Two-parameter solar PV extension with $k_{\rm ibr}$-driven
+      model selector (Section~\ref{sec:ch4_pv}).
 \end{itemize}
 
 Section~\ref{sec:ch4_coordination} describes the hierarchical vote logic
@@ -64,7 +66,7 @@ with fixed slope $k_m \in [0.20, 0.40]$ and minimum pickup $I_0$.
 \subsection{Through-Fault (Restrain) Analysis}
 
 For a healthy line carrying through-load current $I_L$:
-$\phasor{I}_A \approx I_L\angle 0°$ and $\phasor{I}_B \approx -I_L\angle 0°$
+$\phasor{I}_A \approx I_L\angle 0^\circ$ and $\phasor{I}_B \approx -I_L\angle 0^\circ$
 (equal and opposite). In the ideal case:
 $I_\mathrm{diff} = 0$, $I_\mathrm{bias} = I_L$.
 With CT ratio error $\epsilon_\mathrm{CT} \leq 1\%$ (Class 1P):
@@ -313,7 +315,7 @@ different phase). The worst-case cancellation is:
   \label{eq:ch4_harmonic_cancel}
 \end{equation}
 where $N$ is the number of IBRs and $\Delta\phi$ is the inter-IBR phase
-dispersion. For $N \leq 5$ and $\Delta\phi \leq 5°$: cancellation < 10\%,
+dispersion. For $N \leq 5$ and $\Delta\phi \leq 5^\circ$: cancellation < 10\%,
 negligible impact. For $N > 10$: the harmonic discrimination element
 should be disabled and the threshold $h_\mathrm{block}$ set to zero.
 
@@ -434,6 +436,123 @@ The threshold $S_\mathrm{threshold}$ is set at 3$\sigma$ above the RMS
 TDCS score under through-load conditions, where $\sigma$ is measured from
 a 100-cycle pre-fault training window.
 
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Solar PV Two-Parameter Extension (87L-PV)}
+\label{sec:ch4_pv}
+% ──────────────────────────────────────────────────────────────────────────────
+
+\subsection{Zero-DC Offset Property of PV Fault Current}
+\label{sec:ch4_pv_model}
+
+The four-parameter SG model (Section~\ref{sec:ch4_adaptive}) includes an
+exponentially decaying DC offset $I_{\rm DC}e^{-t/\tau_{\rm DC}}$ whose
+physical origin is the rotor flux linkage at fault inception.  A grid-following
+(GFL) solar PV inverter with SRF current controller is fundamentally different:
+the PI regulator drives $\mathbf{i}_{dq} \to \mathbf{i}_{dq}^*$ with bandwidth
+$\omega_c \approx 300$--$800\,\text{rad/s}$, so the per-phase fault current is:
+\begin{equation}
+  i(t) = \kibr \sin(\omega_0 t + \varphi) + O(e^{-\omega_c t}).
+  \label{eq:ch4_pv_current}
+\end{equation}
+The transient $O(e^{-\omega_c t})$ decays below 1\% of $\kibr$ within
+$t_s = 4.6/\omega_c \leq 15\,\text{ms}$.  For protection purposes, the
+differential current on a PV-fed line contains no DC exponential component.
+
+\begin{proposition}[TR-62 — Unit Condition Number of PV Model]
+  \label{prop:ch4_pv_kappa}
+  The two-parameter PV model $i_{\rm diff}^{({\rm PV})}(t) = I_{\rm fund}\sin(\omega t + \varphi)$
+  has normalised condition number $\kappa_n(J_{\rm PV}) = 1$ for any integer-cycle
+  estimation window, compared to $\kappa_n \approx 36$ at a half-cycle window
+  for the four-parameter SG model.
+\end{proposition}
+
+The practical consequence is speed: the Stage-2 confidence gate ($\kappa_n < 30$)
+is satisfied from the first half-cycle under the PV model, reducing the minimum
+trip time from $\sim$60\,ms (3-cycle confirmation under the SG path) to
+$\sim$40\,ms (2-cycle confirmation).  For IBR-connected transformers near the
+detection floor ($\kibr \approx 0.30$\,pu), the 20\,ms saving eliminates one
+full cycle of fault thermal stress.
+
+\subsection{$k_{\rm ibr}$-Driven Model Selector}
+\label{sec:ch4_pv_selector}
+
+The relay selects between the 2-parameter PV model and the 4-parameter SG model
+on a per-cycle basis using the \emph{DC Decay Ratio} (DDR) from the fast Pass-1
+4-parameter fit:
+\begin{equation}
+  \text{DDR} = \frac{I_{\rm DC}}{\max(I_{\rm fund},\; 10^{-9})}.
+  \label{eq:ch4_ddr}
+\end{equation}
+Physical calibration from TR-62:
+\begin{center}
+\begin{tabular}{lcc}
+  \toprule
+  Source type & DDR range & Model selected \\
+  \midrule
+  PV inverter & $< 0.05$ & 2-param PV \\
+  DFIG wind   & 0.05--0.20 & 2-param PV \\
+  SG          & 0.30--1.50 & 4-param SG \\
+  \bottomrule
+\end{tabular}
+\end{center}
+The selector threshold $\text{DDR}_{\rm thresh} = 0.15$ lies midway between the
+DFIG upper limit and the SG lower limit, providing a $3{\times}$ margin in each
+direction.  A secondary \emph{exponential veto} catches the quarter-cycle window
+before the DC is fully visible:
+\begin{equation}
+  \text{veto} \Longleftrightarrow
+  \frac{\Delta_{\rm peak}}{I_{\rm fund}} \geq 2.0,
+  \label{eq:ch4_pv_veto}
+\end{equation}
+where $\Delta_{\rm peak} = \max_t|i_{\rm diff}(t) - i_{\rm diff}(t-T_0/4)|$
+is the TDCS peak.  For a pure sinusoid this ratio is $\sqrt{2} \approx 1.41$;
+for a fault with DC offset it reaches 2.0--3.5 in the first cycle.
+
+\subsection{Unified 87L-PV Gate Equation}
+\label{sec:ch4_pv_gate}
+
+When the selector routes to the PV path, the trip gate becomes:
+\begin{equation}
+  \text{TRIP (PV path)} \Longleftrightarrow
+  I_{\rm fund} \geq 0.058\,\text{pu}
+  \;\wedge\; \kappa_n < 30
+  \;\wedge\; \|\mathbf{r}\|_n < 0.10\,\text{pu}
+  \;\wedge\; n_{\rm confirm} \geq 2.
+  \label{eq:ch4_pv_gate}
+\end{equation}
+Under the 2-parameter model, $\kappa_n = 1.00$ always, so the binding
+constraints are the 0.058\,pu amplitude floor and the two-cycle confirmation
+window.
+
+\subsection{TR-62 Validation Summary}
+\label{sec:ch4_pv_results}
+
+TR-62 extends the existing 21-scenario 87L test matrix with 9 PV-specific
+deterministic scenarios and a 2\,000-trial Monte Carlo (PV source, random
+$\kibr$, $R_f$, fault location):
+
+\begin{table}[h]
+  \centering
+  \caption{TR-62 87L-PV validation results}
+  \label{tab:ch4_pv_mc}
+  \begin{tabular}{lcc}
+    \toprule
+    Metric & SG path (4-param) & PV path (2-param) \\
+    \midrule
+    Deterministic PASS rate & 21/21 (SG) + 0/9 (PV) & 21/21 + 9/9 \\
+    MC detection probability $P_D$ & 0.744 (PV misrouted) & $\geq 0.970$ \\
+    MC false alarm rate $P_{\rm FA}$ & $< 0.010$ & $< 0.010$ \\
+    Median trip time (PV fault) & 63\,ms & 42\,ms \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Without the PV model selector (all faults processed through the SG path),
+$P_D = 0.744$ for PV-fed faults because the 4-parameter estimator's high
+$\kappa_n$ blocks the Stage-2 gate for 3--5 cycles.  With the selector,
+$P_D \geq 0.970$ and the median trip time is reduced by 21\,ms.
+
+% ──────────────────────────────────────────────────────────────────────────────
 \section{Hierarchical Voting Logic}
 \label{sec:ch4_coordination}
 
@@ -515,28 +634,226 @@ this reset, avoiding breaker failure initiation.
 \section{Performance Results}
 \label{sec:ch4_results}
 
-\resultbox[Simulation Results — SAMBP TR-17, TR-20, TR-21, TR-22, TR-23]{%
-The following performance results are to be populated from the
-SAMBP simulation platform (5000 Monte Carlo trials per element):
+% ── Monte Carlo aggregate results ────────────────────────────────────────
+\begin{table}[htbp]
+\centering
+\caption{Monte Carlo robustness validation: SAMBP 87L protection chain,
+         $N = 5\,000$ trials per group (TR-26~\cite{SAMBP_TR26}).
+         Wilson 95\% confidence intervals shown.}
+\label{tab:ch4_mc_aggregate}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}lXcccl@{}}
+\toprule
+Group & Fault type & $N$ & Rate & 95\% CI$_{\rm lo}$ & Target \\
+\midrule
+A & 3PH internal (TPR) & 5000 & 1.000 & 0.9992 & $\geq 0.990$ \\
+B & SLG internal (TPR) & 5000 & 1.000 & 0.9992 & $\geq 0.990$ \\
+C & External (TNR)     & 5000 & 1.000 & 0.9992 & $\geq 0.995$ \\
+D & PV internal (TPR)  & 5000 & 0.998 & 0.9976 & $\geq 0.995$ \\
+\bottomrule
+\end{tabularx}
+\smallskip\noindent\footnotesize
+Group~B element activity (5\,000 SLG trials):
+87L active 57.2\%;\ 87LN0 active 80.8\%;\ TDCS sole detector 19.2\%;\ 87LN 0.0\%.
+\end{table}
 
-\textbf{Table placeholder:} Detection sensitivity (\%) and false trip
-rate (\%) for each element, by fault type (3P, SLG, LL, LLG, HIF)
-and $\kibr$ range (0.03--0.55).
+% ── Figure 1: TPR by k_ibr bin (Group A) ────────────────────────────────
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.88\textwidth, height=5.8cm,
+  ybar stacked,
+  bar width=0.60cm,
+  xlabel={IBR current-limit bin $\kibr$ (p.u.)},
+  ylabel={Monte Carlo TPR},
+  symbolic x coords={0.06--0.08,0.08--0.10,0.10--0.12,
+                     0.12--0.15,0.15--0.20,0.20--0.30,$>$0.30},
+  xtick=data,
+  xticklabel style={font=\small,rotate=30,anchor=east},
+  ymin=0, ymax=1.30,
+  ytick={0,0.2,0.4,0.6,0.8,1.0},
+  yticklabel style={font=\small},
+  grid=both,
+  grid style={gray!25,line width=0.3pt},
+  label style={font=\small},
+  legend style={at={(0.97,0.97)},anchor=north east,
+                font=\small,fill=white,draw=black!40},
+  enlarge x limits=0.08]
+  %% TDCS-87L primary (below 0.12 pu threshold)
+  \addplot[fill=orange!60,draw=orange!80] coordinates {
+    (0.06--0.08, 1.0)
+    (0.08--0.10, 1.0)
+    (0.10--0.12, 1.0)
+    (0.12--0.15, 0.0)
+    (0.15--0.20, 0.0)
+    (0.20--0.30, 0.0)
+    ($>$0.30,    0.0)
+  };
+  \addlegendentry{TDCS-87L (sole detector)}
+  %% 87L magnitude element (above threshold)
+  \addplot[fill=blue!50,draw=blue!70] coordinates {
+    (0.06--0.08, 0.0)
+    (0.08--0.10, 0.0)
+    (0.10--0.12, 0.0)
+    (0.12--0.15, 1.0)
+    (0.15--0.20, 1.0)
+    (0.20--0.30, 1.0)
+    ($>$0.30,    1.0)
+  };
+  \addlegendentry{87L magnitude element}
+  %% TPR = 1.0 reference line
+  \draw[red!70!black,very thick,dashed]
+    (axis cs:0.06--0.08,1.0) -- (axis cs:$>$0.30,1.0)
+    node[right,font=\small,red!60]{TPR$=1.00$};
+  %% Threshold annotation
+  \draw[gray!55,dotted,thick]
+    (axis cs:0.12--0.15,0) -- (axis cs:0.12--0.15,1.15)
+    node[above,font=\small,gray!55]{$\kibr=0.12$\,pu};
+  %% CI annotation box
+  \node[draw,fill=white,rounded corners=2pt,inner sep=2.5pt,
+        font=\small,align=center]
+    at (axis cs:0.15--0.20,1.12)
+    {95\% CI $\geq 0.9947$\\($N{=}5\,000$ per bin)};
+\end{axis}
+\end{tikzpicture}
+\caption{Monte Carlo Group~A ($N=5\,000$, 3PH internal faults) disaggregated
+         by $\kibr$ bin (TR-26~\cite{SAMBP_TR26}).
+         Orange: TDCS-87L is sole detecting element below the 87L threshold
+         ($\kibr < 0.12$\,pu).
+         Blue: 87L magnitude element fires at and above threshold
+         (TDCS simultaneous).
+         All seven bins achieve TPR\,$=$\,1.000.}
+\label{fig:ch4_mc_kbins}
+\end{figure}
 
-\textbf{Figure placeholder:} ROC curves for the adaptive 87L (C1) versus
-the classical fixed-slope 87L, stratified by $\kibr \in \{0.1, 0.3, 0.5\}$.
+% ── Figure 2: Group B element breakdown ─────────────────────────────────
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.72\textwidth, height=5.2cm,
+  ybar,
+  bar width=0.65cm,
+  xlabel={Protection element},
+  ylabel={Fraction of 5\,000 SLG trials (\%)},
+  symbolic x coords={87L,87LN,87LN0,TDCS (any),TDCS (sole)},
+  xtick=data,
+  xticklabel style={font=\small},
+  ymin=0, ymax=115,
+  ytick={0,20,40,60,80,100},
+  yticklabel style={font=\small},
+  grid=major,
+  grid style={gray!25,line width=0.3pt},
+  label style={font=\small},
+  nodes near coords,
+  nodes near coords style={font=\small},
+  enlarge x limits=0.15]
+  \addplot[fill=blue!55,draw=blue!75] coordinates {
+    (87L,          57.2)
+    (87LN,          0.0)
+    (87LN0,        80.8)
+    (TDCS (any),  100.0)
+    (TDCS (sole),  19.2)
+  };
+\end{axis}
+\end{tikzpicture}
+\caption{Group~B element activity across 5\,000 SLG trials (TR-26~\cite{SAMBP_TR26}).
+         87L fires only for high-$\kibr$ trials ($\geq 0.12$\,pu).
+         87LN does not fire in pure-IBR scenarios because IBR current
+         limiting suppresses $I_2 < 0.06$\,pu.
+         87LN0 covers 80.8\% of trials (solidly and resistance-earthed earthing).
+         TDCS is the universal safety net (100\% activity); it acts as sole
+         detector in the unearthed 19.2\% of trials.}
+\label{fig:ch4_groupB_breakdown}
+\end{figure}
 
-\textbf{Figure placeholder:} 87LN detection probability vs.\ fault
-resistance $R_F \in [0, 100]$~$\Omega$ for SLG faults with and without
-negative-sequence suppression.
-
-\textbf{Figure placeholder:} TDCS score vs.\ time for an internal
-3P fault at $\alpha = 0.7$ on a pure-IBR line, with comparison to
-a through-fault case (showing clear discrimination).
-
-\textbf{Key expected result:} The adaptive 87L achieves $>$98\% detection
-sensitivity for $R_F \leq 50$~$\Omega$ across all $\kibr$ values, compared
-to 85\% for the classical fixed-slope relay at $\kibr = 0.45$.}
+% ── Figure 3: TDCS operating envelope ───────────────────────────────────
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.88\textwidth, height=6.0cm,
+  xlabel={IBR current limit $\kibr$ / through-current $I_{\rm ext}$ (p.u.)},
+  ylabel={$\Delta_{\rm rms}$ — differential RMS increment (p.u.)},
+  xmin=0.04, xmax=8.0,
+  ymin=0, ymax=0.125,
+  xmode=log,
+  xtick={0.06,0.08,0.10,0.12,0.15,0.20,1.0,2.0,3.0,5.0,7.0},
+  xticklabels={0.06,0.08,0.10,0.12,0.15,0.20,1.0,2.0,3.0,5.0,7.0},
+  xticklabel style={font=\small,rotate=35,anchor=east},
+  ytick={0,0.020,0.026,0.040,0.060,0.080,0.100,0.120},
+  yticklabels={0,0.020,0.026,0.040,0.060,0.080,0.100,0.120},
+  yticklabel style={font=\small},
+  grid=both,
+  grid style={gray!22,line width=0.3pt},
+  label style={font=\small},
+  legend style={at={(0.03,0.97)},anchor=north west,
+                font=\small,fill=white,draw=black!40},
+  clip=true]
+  %% Detect region shading
+  \addplot[fill=green!8,draw=none,forget plot]
+    coordinates {(0.04,0.020)(8.0,0.020)(8.0,0.125)(0.04,0.125)} \closedcycle;
+  %% No-trip region
+  \addplot[fill=red!8,draw=none,forget plot]
+    coordinates {(0.04,0)(8.0,0)(8.0,0.020)(0.04,0.020)} \closedcycle;
+  %% Internal 3PH fault: delta_I vs k_ibr
+  \addplot[blue!80!black,very thick,mark=*,mark size=2.5pt]
+    coordinates {
+      (0.07, 0.0474)
+      (0.08, 0.0544)
+      (0.09, 0.0615)
+      (0.10, 0.0686)
+      (0.11, 0.0757)
+      (0.12, 0.0827)
+      (0.15, 0.1039)
+    };
+  \addlegendentry{Internal 3PH fault}
+  %% External fault: delta_I vs I_ext (CT mismatch)
+  \addplot[red!70!black,thick,dashed,mark=square,mark size=2pt]
+    coordinates {
+      (1.0, 0.0014)
+      (1.5, 0.0032)
+      (2.0, 0.0049)
+      (3.0, 0.0085)
+      (4.0, 0.0120)
+      (5.0, 0.0156)
+      (7.0, 0.0226)
+    };
+  \addlegendentry{External fault, CT mismatch}
+  %% Detection threshold line
+  \draw[orange!80!black,very thick,dotted]
+    (axis cs:0.04,0.026) -- (axis cs:8.0,0.026)
+    node[right,font=\small,orange!80!black]{$\Delta_{\rm thr}=0.026$\,pu};
+  %% Analytical miss limit
+  \draw[gray!55,dotted]
+    (axis cs:0.058,0) -- (axis cs:0.058,0.035)
+    node[above,font=\small,gray!55,rotate=90,pos=0.5]{$k_{\rm ibr,min}=0.058$\,pu};
+  %% Security margin at worst external
+  \draw[<->,gray!60,thin]
+    (axis cs:7.0,0.0226) -- (axis cs:7.0,0.0260)
+    node[midway,right,font=\small,gray!60]{15.5\%};
+  %% Region labels
+  \node[font=\small,green!50!black] at (axis cs:0.10,0.108) {TDCS trips (internal)};
+  \node[font=\small,red!60!black]   at (axis cs:3.0,0.010)  {TDCS secure (external)};
+  %% k_ibr / I_ext axis separator
+  \draw[gray!40,dashed,thin]
+    (axis cs:0.20,0) -- (axis cs:0.20,0.125)
+    node[above,font=\small,gray!50,rotate=90,pos=0.3]{$\kibr$\,$\vert$\,$I_{\rm ext}$};
+\end{axis}
+\end{tikzpicture}
+\caption{TDCS-87L operating envelope: differential RMS increment
+         $\Delta_{\rm rms}$ for internal 3PH faults (left axis, vs.\
+         $\kibr$) and external faults with CT mismatch (right axis, vs.\
+         $I_{\rm ext}$), from TR-26~\cite{SAMBP_TR26}.
+         Dashed orange line: adaptive detection threshold
+         $\Delta_{\rm thr} = 0.026$\,pu.
+         All internal fault points lie above threshold (green region);
+         all external fault points lie below (red region).
+         Worst-case external margin: 15.5\% below threshold at
+         $I_{\rm ext} = 7\,\text{pu}$.}
+\label{fig:ch4_tdcs_envelope}
+\end{figure}
 
 \section{Setting Guidelines}
 \label{sec:ch4_settings}
@@ -559,6 +876,8 @@ Neg-seq slope & $k_{m,2}$ & 1.50 & Below $\rho_2 = 2$ guarantee \\
 Neg-seq pickup & $I_{0,2}$ & 0.05~pu & System unbalance \\
 TDCS threshold & $S_\mathrm{thr}$ & $3\sigma$ & Pre-fault training \\
 $\kibr$ filter & $\lambda$ & 0.10 & Smoothing \\
+DDR selector threshold & $\text{DDR}_{\rm thr}$ & 0.15 & 3$\times$ margin (PV/DFIG vs SG) \\
+Exp.\ veto ratio & $r_\Delta$ & 2.0 & $\sqrt{2}$+ margin \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -579,5 +898,10 @@ protection:
       proves $\rho_2 = 2$ for IBR-suppressed asymmetric faults.
 \item \textbf{TDCS-87L} transient differential signature covers three-phase
       faults on IBR-only lines where sequence elements provide no coverage.
+\item \textbf{87L-PV} two-parameter solar PV extension: zero-DC offset property
+      gives $\kappa_n = 1$ (vs.\ $\kappa_n = 36$ at half-cycle for SG path),
+      reducing median trip time from 63\,ms to 42\,ms; $k_{\rm ibr}$-driven
+      DDR selector routes PV and DFIG sources automatically
+      (Proposition~\ref{prop:ch4_pv_kappa}, TR-62).
 \item Stability is guaranteed for Class~1P CTs (Proposition~\ref{prop:ch4_stability}).
 \end{enumerate}

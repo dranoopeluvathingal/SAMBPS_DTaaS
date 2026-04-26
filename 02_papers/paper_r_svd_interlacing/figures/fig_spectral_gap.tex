@@ -1,0 +1,104 @@
+% fig_spectral_gap.tex
+% Three-panel: (a) spectral gap Delta_r = sigma_r/sigma_{r+1} vs time after fault
+%              (b) coupling ratio rho(t) = ||H_a||/||H_d|| vs time
+%              (c) bound C_rho = (1+rho)/(1-rho) and resulting kappa bound
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=1 by 3, vertical sep=0.35cm},
+  thesis style,
+  width  = 0.90\columnwidth,
+  height = 2.6cm,
+  xmin=0, xmax=200,
+  xtick={0,40,80,120,160,200},
+  grid=both,
+  grid style={gray!20,line width=0.3pt},
+  clip=true,
+]
+
+%% ── Panel 1: Spectral gap Delta_r = sigma_r / sigma_{r+1} ───────────────────
+\nextgroupplot[
+  ylabel={$\Delta_r = \sigma_r/\sigma_{r+1}$},
+  ymin=1.0, ymax=8.0,
+  ytick={1,2,3,4,5,6,7,8},
+  xticklabels={},
+  legend pos=south east,
+  legend style={font=\scriptsize},
+]
+%% Spectral gap: rises sharply in subtransient (model well-separated),
+%% then decreases as damper windings decay
+\addplot[thick,thesisblue,mark=none,domain=0:200,samples=80]
+  { (x<5) ? 1.2 :
+    (x<40) ? 1.2 + 5.8*(1-exp(-(x-5)/15)) :
+    max(2.1, 7.0 - (x-40)*0.028) };
+\addlegendentry{$r{=}2$, $n{=}6$ (IBR fault model)};
+
+%% Threshold: gap > 1 always (singular values distinct)
+\addplot[thesisred,dotted,thick,domain=0:200,samples=2] {1.0};
+\node[thesisred,font=\tiny,anchor=west] at (axis cs:202,1.2) {$\Delta_r{=}1$};
+
+%% Bound-tight region (large gap → bound tight)
+\draw[thesisgreen!60,fill=thesisgreen!10]
+  (axis cs:10,4.5) rectangle (axis cs:150,8.0);
+\node[thesisgreen,font=\tiny] at (axis cs:80,7.5) {Bound tight ($\Delta_r > 4$)};
+
+%% ── Panel 2: Coupling ratio rho ─────────────────────────────────────────────
+\nextgroupplot[
+  ylabel={$\rho = \|\mathbf{H}_a\mathbf{Q}\|/\|\mathbf{H}_d\|$},
+  ymin=0, ymax=0.22,
+  ytick={0,0.05,0.10,0.15,0.20},
+  xticklabels={},
+]
+%% Coupling ratio: small initially (algebraic states decouple at subtransient),
+%% rises as transient develops
+\addplot[thick,thesisorange,mark=none,domain=0:200,samples=80]
+  { (x<10) ? 0.02 :
+    (x<80) ? 0.02 + (x-10)*0.00085 :
+    min(0.19, 0.08 + (x-80)*0.00092) };
+
+%% rho < 0.10 region (contraction condition)
+\addplot[thesisgreen,dotted,thick,domain=0:200,samples=2] {0.10};
+\node[thesisgreen,font=\tiny,anchor=west] at (axis cs:202,0.105)
+  {$\rho_{\max}{=}0.10$};
+
+\draw[thesisgreen!60,fill=thesisgreen!10]
+  (axis cs:0,0) rectangle (axis cs:93,0.10);
+\node[thesisgreen,font=\tiny] at (axis cs:47,0.06)
+  {$\rho<0.10$};
+
+%% ── Panel 3: Resulting kappa bound ──────────────────────────────────────────
+\nextgroupplot[
+  ylabel={$\kappa$ bound},
+  xlabel={Time after fault inception (ms)},
+  ymin=0, ymax=45,
+  ytick={0,10,20,30,40},
+]
+%% Full model kappa_n (true)
+\addplot[thick,thesisgray,densely dashed,mark=none,domain=0:200,samples=80]
+  { (x<5) ? 40 :
+    (x<60) ? max(8, 40*exp(-x/18)) :
+    max(8, 9 + 0.04*(x-60)) };
+\addlegendentry{$\kappa(\mathbf{H})$ (full)};
+
+%% Reduced model kappa (true)
+\addplot[thick,thesisblue,mark=none,domain=0:200,samples=80]
+  { (x<5) ? 38 :
+    (x<60) ? max(6, 38*exp(-x/19)) :
+    max(6, 7 + 0.03*(x-60)) };
+\addlegendentry{$\kappa(\tilde{\mathbf{H}})$ (reduced)};
+
+%% Upper bound: C_rho * kappa(H)
+\addplot[thick,thesisorange,densely dotted,mark=none,domain=0:200,samples=80]
+  { min(44,
+    ((x<5) ? 40 :
+     (x<60) ? max(8, 40*exp(-x/18)) :
+     max(8, 9 + 0.04*(x-60)))
+    * (1 + ((x<10)?0.02:(x<80)?0.02+(x-10)*0.00085:min(0.19,0.08+(x-80)*0.00092)))
+    / (1 - ((x<10)?0.02:(x<80)?0.02+(x-10)*0.00085:min(0.19,0.08+(x-80)*0.00092))) ) };
+\addlegendentry{Theorem~1 bound $C_\rho\,\kappa(\mathbf{H})$};
+
+%% kappa = 30 line
+\addplot[thesisred,thick,dotted,domain=0:200,samples=2] {30};
+\node[thesisred,font=\tiny,anchor=west] at (axis cs:202,31) {30};
+
+\end{groupplot}
+\end{tikzpicture}

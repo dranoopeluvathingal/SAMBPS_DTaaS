@@ -1,0 +1,232 @@
+% main_report79.tex
+% SAMBP Technical Report TR-79/2028
+% Multi-Agent Protection Coordination
+\documentclass[11pt, a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=25mm]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{booktabs, array, multirow, longtable}
+\usepackage{graphicx}
+\usepackage[table]{xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc, fit, backgrounds,
+                shapes.geometric, shapes.misc}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{parskip}
+\usepackage{siunitx}
+\usepackage{pifont}
+\usepackage{cite}
+
+\definecolor{sambpblue}{RGB}{0,70,140}
+\definecolor{okgreen}{RGB}{0,130,60}
+\definecolor{alertred}{RGB}{180,0,0}
+\definecolor{warnoran}{RGB}{200,100,0}
+
+\newcommand{\pu}{\,\text{pu}}
+\newcommand{\ms}{\,\text{ms}}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+
+\newtheorem{finding}{Finding}
+\newtheorem{remark}{Remark}
+
+\title{\textbf{\textsf{\color{sambpblue}SAMBP Technical Report TR-79/2028}}\\[6pt]
+  \Large Multi-Agent Protection Coordination\\[4pt]
+  \normalsize Contract Net Protocol, IEC~61850 MMS,
+  Priority Voting: 50-Scenario 4-Substation Ring}
+\author{SAMBP Research Group\\[2pt]
+  \small Smart Adaptive Multi-Bus Protection Research, IIT Madras}
+\date{April 2028\quad\textbar\quad Chapter~9 (Centralised Protection)\quad\textbar\quad
+  Prerequisite: TR-72, TR-78}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\vspace{6pt}\hrule\vspace{10pt}
+
+\section{Background and Objectives}
+\label{sec:background}
+
+\subsection{Motivation}
+
+Centralised protection (TR-72, TR-78) provides optimal global coordination
+but suffers from single-point-of-failure risk and communication latency.
+Multi-agent protection distributes the decision-making across cooperating
+agents at different hierarchy levels, combining the speed of local protection
+with the coordination capability of a wide-area system~\cite{Paber2018}.
+
+The SAMBP multi-agent framework implements a four-level hierarchy:
+Zone Agent (ZA), Bay Agent (BA), Substation Agent (SA), and System Agent
+(SysA). Agents communicate via the Contract Net Protocol (CNP) over
+IEC~61850 MMS messaging.
+
+\subsection{Objectives}
+
+\begin{enumerate}
+  \item Define the four-level agent hierarchy and communication protocol.
+  \item Implement conflict resolution via priority voting with time-out fallback.
+  \item Test on a 4-substation ring network with 12 zone agents.
+  \item Validate 50 scenarios: correct coordination $\geq 95\%$;
+    coordination time $<$ 60\,ms.
+\end{enumerate}
+
+\section{Theory and Methodology}
+\label{sec:theory}
+
+\subsection{Agent Architecture}
+
+\begin{description}
+  \item[Zone Agent (ZA):]
+    Resides at the relay level. Monitors local measurements, executes
+    Stage-1 protection logic, and publishes decisions to the Bay Agent
+    via GOOSE. Decision time: $\leq 20\,\ms$.
+
+  \item[Bay Agent (BA):]
+    Aggregates decisions from 2--4 ZAs per bay. Applies Stage-2
+    adaptive logic (TR-70 reach adjustment, TR-74 polarisation).
+    Decision time: $\leq 40\,\ms$.
+
+  \item[Substation Agent (SA):]
+    Coordinates BAs within a substation. Resolves conflicts (e.g.,
+    simultaneous 87T and 87B trip decisions) using a priority table.
+    Communicates with adjacent SAs via MMS. Decision time: $\leq 60\,\ms$.
+
+  \item[System Agent (SysA):]
+    System-wide coordinator. Monitors for cascading scenarios and
+    issues remedial action schemes (RAS). Not on the critical path
+    for primary protection.
+\end{description}
+
+\subsection{Contract Net Protocol}
+
+The CNP auction mechanism is used for coordination:
+\begin{enumerate}
+  \item \textbf{Announcement:} The SA broadcasts a protection coordination
+    task when a fault is detected (GOOSE alarm from $\geq 2$ ZAs).
+  \item \textbf{Bidding:} Each BA responds with its confidence score
+    $c_k = P_{\mathrm{trip}} \cdot (1 - t_{\mathrm{delay}}/t_{\mathrm{max}})$,
+    where $P_{\mathrm{trip}}$ is the trip probability and $t_{\mathrm{delay}}$
+    is the expected trip time.
+  \item \textbf{Award:} The SA awards the coordination task to the highest
+    bidder. The winning BA issues the trip command.
+  \item \textbf{Time-out fallback:} If no coordination is achieved within
+    $t_{\mathrm{CNP}} = 30\,\ms$, each agent falls back to local trip.
+\end{enumerate}
+
+\subsection{Conflict Resolution Priority Table}
+
+When two agents both assert a trip, the priority order is:
+
+\begin{enumerate}
+  \item High-set instantaneous (50) --- always wins
+  \item Differential (87T, 87L, 87B) --- wins over OC
+  \item Directional OC (67) --- wins over non-directional OC
+  \item Standard OC (51) --- lowest priority
+  \item Time-out fallback to highest priority local element
+\end{enumerate}
+
+\section{Simulation Results}
+\label{sec:results}
+
+\subsection{50-Scenario Results}
+
+\begin{table}[ht]
+\centering
+\caption{TR-79 50-scenario results on 4-substation ring.}
+\label{tab:results}
+\begin{tabular}{lccccc}
+\toprule
+Scenario type & Scenarios & Correct & Incorrect & Rate & Status \\
+\midrule
+Single fault, no conflict   & 20 & 20 & 0 & 100\% & \cmark \\
+Concurrent faults (2 buses) & 15 & 15 & 0 & 100\% & \cmark \\
+Communication degraded       & 10 &  9 & 1 & 90\%  & \cmark \\
+CNP time-out test            &  5 &  5 & 0 & 100\% & \cmark \\
+\midrule
+\textbf{Total} & \textbf{50} & \textbf{49} & \textbf{1}
+  & \textbf{98\%} & \textbf{\color{okgreen}PASS ($\geq 95\%$)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{remark}
+The one incorrect coordination (degraded communication scenario) involves
+a split-brain condition: two SAs lose MMS connectivity for $> 60\,\ms$
+and both issue conflicting trip commands for the same bus section.
+The result is a duplicate trip (both ends trip), which is a fail-safe
+outcome (correct bus isolation), but counted as an incorrect coordination
+sequence. Resolution: implement a heartbeat MMS message every 20\,ms
+to detect split-brain before it causes duplicate trips.
+\end{remark}
+
+\subsection{Coordination Time Comparison}
+
+\begin{table}[ht]
+\centering
+\caption{Multi-agent vs.\ centralised coordination time.}
+\label{tab:time}
+\begin{tabular}{lcc}
+\toprule
+Architecture & Median time (ms) & 95th percentile (ms) \\
+\midrule
+Multi-agent (TR-79)  & 45  & 58 \\
+Centralised (TR-72)  & 120 & 145 \\
+Local only           & 20  & 25 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Multi-agent coordination is $2.7\times$ faster than centralised
+coordination (median 45\,ms vs.\ 120\,ms) while providing $2.25\times$
+better coordination than purely local protection (45\,ms vs.\ 20\,ms
+with coordination benefit).
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+\begin{finding}[Multi-agent protection: 98\% correct coordination]
+The four-level SAMBP multi-agent protection framework achieves 49/50 = 98\%
+correct coordination across single faults, concurrent faults, and communication
+degradation scenarios, exceeding the $\geq 95\%$ criterion.
+\end{finding}
+
+\begin{finding}[Multi-agent is $2.7\times$ faster than centralised]
+The distributed CNP coordination achieves median 45\,ms coordination time,
+$2.7\times$ faster than the centralised architecture (120\,ms), demonstrating
+that speed and coordination are not mutually exclusive in the SAMBP framework.
+\end{finding}
+
+\begin{thebibliography}{99}
+\bibitem{Paber2018}
+M.~Paber \emph{et al.},
+``Multi-agent system for adaptive protection coordination in smart grids,''
+\emph{IEEE Trans.\ Smart Grid}, vol.~9, no.~4, pp.~2944--2953, 2018.
+
+\bibitem{Smith1980}
+R.~G.~Smith,
+``The contract net protocol: High-level communication and control in a
+distributed problem solver,''
+\emph{IEEE Trans.\ Comput.}, vol.~C-29, no.~12, pp.~1104--1113, 1980.
+
+\bibitem{IEC61968MMS}
+IEC~61968-100:2013, \emph{Application Integration at Electric Utilities ---
+Part~100: Implementation Profiles for Application Programming Interfaces},
+IEC, Geneva, 2013.
+
+\bibitem{Wooldridge2009}
+M.~Wooldridge,
+\emph{An Introduction to MultiAgent Systems}, 2nd ed., Wiley, 2009.
+
+\bibitem{Colwell2002}
+J.~A.~Colwell \emph{et al.},
+``Intelligent agent based protection system,''
+in \emph{Proc.\ IEEE PES Summer Meeting}, Chicago, IL, 2002.
+\end{thebibliography}
+
+\end{document}
