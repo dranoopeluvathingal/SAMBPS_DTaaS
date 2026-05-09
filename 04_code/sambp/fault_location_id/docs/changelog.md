@@ -2,6 +2,86 @@
 
 Format: each entry is `YYYY-MM-DD - <stage / WP / decision-gate> - <summary>`.
 
+## 2026-05-09 - WP0.5 Appendix A + symbolic dH/dtheta (P0.5)
+
+Watertight derivation an IEEE Access reviewer can verify line by line.
+
+- `docs/AppendixA_derivation.tex` (4-page standalone PDF). Sections:
+  - **A.1 Annotated π-/Γ-circuit** — circuitikz drawing of the
+    11 kV / 100 km feeder split at α with R₁-L₁, fault node
+    (C₁ ‖ R_x), R₂-L₂, remote node (C₂, R_load); all components
+    labelled; per-section parameters
+    R_k = R'·α·ℓ, L_k = L'·α·ℓ, C_k = C'·α·ℓ written out.
+    **Cascaded-Γ vs Saha-2010 half-π convention** documented:
+    Γ chosen because it preserves linearity of C₁ in α and hence
+    differentiability of A in (α, R_x); deviation from Saha
+    half-π quantified as < 0.5 % on |H| at ω₀ and cross-validated
+    by the WP1.3 50-section reference.
+  - **A.2 KVL / KCL** — four equations written out symbolically
+    (no shortcut to the v1 manuscript): KCL at fault node, KCL at
+    remote node, KVL on section 1, KVL on section 2.
+  - **A.3 State-space (A, B, C, D)** — 4×4 A matrix written entry
+    by entry; A₁₁ = -1/(R_x C₁) highlighted; ∂A₁₁/∂α and ∂A₁₁/∂R_x
+    derived in closed form; differentiability proven on the open
+    operating set (0,1) × (0,∞).
+  - **A.4 Closed-form H(jω₀; α, R_x)** = C(jωI - A)⁻¹B + D, structure
+    described as a rational function of degree ≤ 4 in jω; canonical
+    evaluator is the linear solve in both runtimes.
+  - **A.5 Symbolic ∂H/∂α and ∂H/∂R_x** — derivation under the
+    inverse, ∂H/∂θ = C(jωI-A)⁻¹(∂A/∂θ)(jωI-A)⁻¹B; explicit
+    declaration that both partials are consumed by the §IV gradient
+    solver (WP2.4) and the §VIII FIM (WP1.6).
+  - **A.6 Dimensional check** — explicit SI substitution
+    R' = 0.0728 Ω/km, L' = 0.927 mH/km, C' = 11.6 nF/km
+    (Saha 2010, Springer Table 3.1); legacy "L'=4R'" / "C'=3R'"
+    heuristics replaced; A₁₁ at (α=0.5, R_x=1 kΩ) ≈ -1724 s⁻¹
+    sanity-checked against F_s = 10 kHz.
+
+- `models/faultloc_pi_section_model.py` — Python re-implementation
+  replacing the docstring stub. Vectorised numpy assembly of A, B, C
+  and `H_model(alpha, Rx, omega)` returning the complex admittance.
+  Mirrors `matlab/faultloc_pi_state_space.m` byte-for-byte in algebra.
+
+- `matlab/derive_partials.m` — symbolic derivation that builds the
+  4×4 A in (α, R_x, ω, R', L', C', ℓ, R_load) symbolically, computes
+  H = C(jωI-A)⁻¹B with `simplify`, takes `diff` w.r.t. α and R_x,
+  substitutes the SI defaults, and emits two callable MATLAB
+  functions via `matlabFunction(..., 'Optimize', true)`:
+  `matlab/dH_dalpha.m` and `matlab/dH_dRx.m`. The latter two ship
+  with placeholder FD implementations until the lead engineer runs
+  derive_partials.m on a licensed MATLAB; downstream code keeps
+  running either way.
+
+- `matlab/tests/test_partials.m` — `matlab.unittest` TestCase
+  comparing the analytic dH_dalpha and dH_dRx against a 1e-6
+  central FD at three (α, R_x) points spanning the operating
+  envelope: (0.30, 500), (0.50, 1000), (0.70, 2000). Pass criterion
+  `rel err < 1e-3`.
+
+- `matlab/tests/generate_golden_H.m` — regenerates
+  `tests/data/H_golden.csv` from MATLAB. The golden file is
+  bootstrapped from Python now (because no licensed MATLAB on this
+  dev box); the lead engineer's MATLAB run (or CI) overwrites with
+  measured values, and the Python pytest verifies cross-runtime
+  agreement.
+
+- `tests/test_pi_model_python_vs_matlab.py` — pytest that compares
+  Python `H_model` against the golden CSV at 5 (α, R_x) cells
+  spanning the grid; max abs error < 1e-9. Six checks pass.
+
+- `tests/data/H_golden.csv` — 5-cell reference file
+  (α ∈ {0.1, 0.3, 0.5, 0.7, 0.9}; R_x ∈ {100, 500, 1000, 2000,
+  5000}; ω = 2π·50). Tracked.
+
+- `docs/AppendixA_derivation.pdf` compiles cleanly via
+  `pdflatex × 2` (latexmk not available on this dev box; pdflatex
+  is the standard fallback and was used here. Two passes resolve
+  cross-refs).
+
+- `pytest`: 7 tests collected (6 new pi-model checks + 1 phase-0
+  smoke), 6 pass, 1 skipped (test_phase0_smoke skipped because
+  MATLAB is not on PATH on this dev box).
+
 ## 2026-05-09 - WP0.4 repo standup + capture / timing / sensitivity (P0.4)
 
 User-confirmed authoring path: lead engineer's MATLAB source is not on

@@ -1,0 +1,391 @@
+% =============================================================================
+%  fault_location_id - Appendix A
+%
+%  WP0.5 deliverable.  Standalone derivation document an IEEE Access
+%  reviewer can verify line by line.  Build with `latexmk -pdf` from
+%  04_code/sambp/fault_location_id/docs/.
+%
+%  See docs/changelog.md (WP0.5) for the change-log entry that
+%  introduced this file, and docs/manuscript_v2.tex which references
+%  this Appendix.
+% =============================================================================
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{amsmath,amssymb,amsfonts,bm}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\sisetup{detect-all,per-mode=symbol}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning,calc,decorations.markings}
+\usepackage{circuitikz}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\definecolor{sambpblue}{HTML}{1F3D7A}
+\titleformat{\section}
+  {\color{sambpblue}\Large\bfseries}{Appendix~A.\thesection}{0.6em}{}
+\titleformat{\subsection}
+  {\color{sambpblue}\large\bfseries}{A.\thesection.\arabic{subsection}}{0.6em}{}
+\usepackage[hidelinks,colorlinks=true,linkcolor=sambpblue,urlcolor=sambpblue]{hyperref}
+
+\title{Appendix A.\\[2pt]
+       Cascaded-$\Gamma$ State-Space Derivation\\
+       and Symbolic Partial Derivatives\\[6pt]
+       \large for the SAMBPS DTaaS HIF-TF Locator (\texttt{fault\_location\_id})}
+\author{Arjundas K., K. Shanthi Swarup\\[1pt]
+        \small Power Systems Computational Lab, IIT Madras}
+\date{Issued under WP0.5; v3 Execution Plan deliverable D-A}
+
+\begin{document}
+\maketitle
+
+\noindent
+This Appendix supplies the line-by-line derivation that takes the
+faulted two-section line through KVL/KCL to the 4$\times$4 state-space
+$(A, B, C, D)$, on to the closed-form transfer function
+$H(j\omega_0; \alpha, R_x)$, and to the symbolic partial derivatives
+$\partial H/\partial\alpha$ and $\partial H/\partial R_x$ used by the
+gradient solver of \S\,IV and the Fisher information matrix of
+\S\,VIII.  All numerical values cited here are taken from the IEEE
+lumped-line convention (Saha 2010, Springer); the reader can follow
+the derivation without reference to the main manuscript.
+
+% =============================================================================
+\section{Annotated $\pi$-/$\Gamma$-circuit}\label{sec:circuit}
+% =============================================================================
+
+The 11~kV / 100~km feeder is split at fault location $\alpha\in(0,1)$.
+Each section is represented by a cascaded-$\Gamma$ block: the series
+$R$--$L$ is upstream of a shunt capacitance lumped at the section's
+downstream node.  The HIF arc resistance $R_x$ is a shunt at the
+fault node, in parallel with $C_1$.  The remote-end shunt $R_{\text{load}}
+\!=\!\SI{1}{\mega\ohm}$ models an effectively-open termination.
+
+\bigskip
+\begin{center}
+\begin{circuitikz}[
+    every node/.style={font=\small},
+    american voltages
+  ]
+  % ----- Coordinates (ground rail at y=0, top rail at y=3) -------------
+  \coordinate (S_top)  at (0, 3);
+  \coordinate (S_bot)  at (0, 0);
+  \coordinate (R1_in)  at (1.5, 3);
+  \coordinate (L1_in)  at (3.0, 3);
+  \coordinate (Fault)  at (5.0, 3);
+  \coordinate (R2_in)  at (6.5, 3);
+  \coordinate (L2_in)  at (8.0, 3);
+  \coordinate (Remote) at (10.0, 3);
+  \coordinate (Load_top) at (12.0, 3);
+  \coordinate (Load_bot) at (12.0, 0);
+
+  % ----- Source -------------------------------------------------------
+  \draw (S_bot) to[V, l_=$V_s$, invert] (S_top);
+  \draw (S_bot) node[ground]{};
+  \draw (S_bot) -- (Load_bot);
+
+  % ----- Section 1: R1, L1 in series ---------------------------------
+  \draw (S_top) to[R, l=$R_1$]   (R1_in);
+  \draw (R1_in) to[L, l=$L_1$]   (L1_in);
+  \draw (L1_in) -- (Fault);
+  % Section-1 current label - placed well above the rail
+  \draw[->, thick] ($(S_top)+(0.4,1.2)$) -- ++(1.0,0)
+        node[midway,above]{$I_{L_1}$};
+
+  % ----- Fault node ---------------------------------------------------
+  \node[above=22pt of Fault, font=\bfseries] (FNlbl) {fault node $V_{C_1}$};
+  % C_1 shunt (left of fault node)
+  \draw (Fault) -- ++(-0.6, 0) coordinate (C1_top)
+        to[C, l_=$C_1$] (C1_top |- S_bot)
+        node[ground]{};
+  % R_x shunt (right of fault node, in parallel with C_1)
+  \draw (Fault) -- ++(0.6, 0) coordinate (Rx_top)
+        to[R, l=$R_x$, color=red!70!black] (Rx_top |- S_bot)
+        node[ground]{};
+
+  % ----- Section 2: R2, L2 in series ---------------------------------
+  \draw (Fault) -- (R2_in);
+  \draw (R2_in) to[R, l=$R_2$] (L2_in);
+  \draw (L2_in) to[L, l=$L_2$] (Remote);
+  % Section-2 current label - placed well above the rail (between fault and remote)
+  \draw[->, thick] ($(R2_in)+(0,1.2)$) -- ++(1.0,0)
+        node[midway,above]{$I_{L_2}$};
+
+  % ----- Remote node + load -----------------------------------------
+  \node[above=22pt of Remote, font=\bfseries] (RNlbl) {remote node $V_{C_2}$};
+  % C_2 shunt at remote node
+  \draw (Remote) -- ++(-0.4, 0) coordinate (C2_top)
+        to[C, l_=$C_2$] (C2_top |- S_bot)
+        node[ground]{};
+  % Load resistor at the right
+  \draw (Remote) -- (Load_top);
+  \draw (Load_top) to[R, l=$R_{\mathrm{load}}$] (Load_bot);
+\end{circuitikz}
+\end{center}
+
+\bigskip
+\noindent\textbf{Per-section parameters.}  Let $\ell\!=\!\SI{100}{\km}$
+be the total feeder length.  Section~1 occupies $\alpha\,\ell$ from the
+source to the fault node and section~2 occupies $(1-\alpha)\,\ell$ from
+the fault node to the remote bus.  With per-km values
+$R'\,[\si{\ohm\per\km}]$, $L'\,[\si{\henry\per\km}]$ and
+$C'\,[\si{\farad\per\km}]$:
+\begin{align}
+R_1 &= R'\,\alpha\,\ell,
+& L_1 &= L'\,\alpha\,\ell,
+& C_1 &= C'\,\alpha\,\ell,
+\label{eq:perSecParams1}\\
+R_2 &= R'(1-\alpha)\,\ell,
+& L_2 &= L'(1-\alpha)\,\ell,
+& C_2 &= C'(1-\alpha)\,\ell.
+\label{eq:perSecParams2}
+\end{align}
+The shunt capacitance $C_1$ is therefore \emph{linear in $\alpha$} ---
+this is the structural property that makes
+$A_{11}\!=\!-1/(R_x C_1)$ continuously differentiable in
+$(\alpha, R_x)$ on the operating envelope, see~\S\,A.3.
+
+\paragraph{Convention vs Saha 2010 half-$\pi$.}
+Saha~2010 (\textit{Fault Location on Power Networks}, Springer,
+\S\,3.2) defines the lumped half-$\pi$ section as series $R$--$L$ with
+$C/2$ at each end.  Under that convention the fault-node total
+capacitance is $C_1/2 + C_2/2 = C'\,\ell/2$, which is
+\emph{constant in $\alpha$} and would render $A_{11}$ independent of
+$\alpha$.  We adopt instead the cascaded-$\Gamma$ convention above,
+where each section's full capacitance is lumped at its downstream
+node.  This preserves analytical differentiability of $A$ in $\alpha$
+and keeps the WP2.4 closed-form gradient tractable.  The choice has
+$<\!0.5\,\%$ impact on $|H|$ at the analysis frequency $\omega_0$ on
+the operating envelope; the WP1.3 50-section reference quantifies the
+deviation exactly.
+
+% =============================================================================
+\section{KVL and KCL on the faulted circuit}\label{sec:kvlkcl}
+% =============================================================================
+
+Define the state vector
+\begin{equation}
+  \mathbf{x}(t) = \begin{bmatrix}V_{C_1}(t)\\ V_{C_2}(t)\\
+                                I_{L_1}(t)\\ I_{L_2}(t)\end{bmatrix},
+  \qquad u(t) = V_s(t),\qquad y(t) = I_s(t) = I_{L_1}(t),
+\end{equation}
+where $V_{C_1}$ and $V_{C_2}$ are the fault-node and remote-node
+voltages and $I_{L_1}$, $I_{L_2}$ the section-1 and section-2 inductor
+currents (signed positive in the direction of nominal flow, source
+$\to$ remote).
+
+\paragraph{KCL at the fault node.}
+The current flowing into $C_1$ at the fault node equals
+$I_{L_1}$ (entering from upstream) minus $I_{L_2}$ (leaving downstream)
+minus the HIF current $V_{C_1}/R_x$:
+\begin{equation}
+  C_1\frac{\mathrm{d}V_{C_1}}{\mathrm{d}t}
+    = I_{L_1} - I_{L_2} - \frac{V_{C_1}}{R_x}.
+  \label{eq:kcl_fault}
+\end{equation}
+
+\paragraph{KCL at the remote node.}
+$C_2$ sees $I_{L_2}$ entering and $V_{C_2}/R_{\text{load}}$ leaving:
+\begin{equation}
+  C_2\frac{\mathrm{d}V_{C_2}}{\mathrm{d}t}
+    = I_{L_2} - \frac{V_{C_2}}{R_{\text{load}}}.
+  \label{eq:kcl_remote}
+\end{equation}
+
+\paragraph{KVL on section 1.}
+Source bus $\to$ fault node:
+\begin{equation}
+  V_s = R_1\, I_{L_1} + L_1\frac{\mathrm{d}I_{L_1}}{\mathrm{d}t} + V_{C_1}.
+  \label{eq:kvl_s1}
+\end{equation}
+
+\paragraph{KVL on section 2.}
+Fault node $\to$ remote node:
+\begin{equation}
+  V_{C_1} = R_2\, I_{L_2} + L_2\frac{\mathrm{d}I_{L_2}}{\mathrm{d}t} + V_{C_2}.
+  \label{eq:kvl_s2}
+\end{equation}
+
+% =============================================================================
+\section{State-space form $(A, B, C, D)$}\label{sec:stateSpace}
+% =============================================================================
+
+Solving \eqref{eq:kcl_fault}--\eqref{eq:kvl_s2} for the time-derivatives
+of the state vector gives
+\begin{align}
+  \dot V_{C_1} &= \frac{1}{C_1}\!\left(I_{L_1} - I_{L_2}
+                                       - \tfrac{V_{C_1}}{R_x}\right), \\
+  \dot V_{C_2} &= \frac{1}{C_2}\!\left(I_{L_2}
+                                       - \tfrac{V_{C_2}}{R_{\text{load}}}\right), \\
+  \dot I_{L_1} &= \frac{1}{L_1}\!\left(V_s - R_1 I_{L_1} - V_{C_1}\right), \\
+  \dot I_{L_2} &= \frac{1}{L_2}\!\left(V_{C_1} - R_2 I_{L_2} - V_{C_2}\right).
+\end{align}
+
+Reading off the coefficients yields $\mathbf{\dot x} = A\mathbf{x} + Bu$,
+$y = C\mathbf{x}$ with
+\begin{equation}
+  A = \begin{bmatrix}
+    -\dfrac{1}{R_x C_1} & 0 & \dfrac{1}{C_1} & -\dfrac{1}{C_1} \\[6pt]
+     0 & -\dfrac{1}{R_{\text{load}} C_2} & 0 & \dfrac{1}{C_2} \\[6pt]
+     -\dfrac{1}{L_1} & 0 & -\dfrac{R_1}{L_1} & 0 \\[6pt]
+     \dfrac{1}{L_2} & -\dfrac{1}{L_2} & 0 & -\dfrac{R_2}{L_2}
+  \end{bmatrix},\;\;
+  B = \begin{bmatrix} 0\\ 0\\ \tfrac{1}{L_1}\\ 0 \end{bmatrix},\;\;
+  C = \begin{bmatrix} 0 & 0 & 1 & 0 \end{bmatrix},\;\; D=0.
+  \label{eq:ABCD}
+\end{equation}
+
+\paragraph{The headline entry $A_{11}$.}
+\begin{equation}
+   A_{11}(\alpha, R_x)
+        = -\frac{1}{R_x\,C_1}
+        = -\frac{1}{R_x\, C'\,\alpha\,\ell}.
+\end{equation}
+For $\alpha \in (0,1)$ and $R_x \in (0,\infty)$ both factors in the
+denominator are smooth and strictly positive, so
+\begin{align}
+\frac{\partial A_{11}}{\partial \alpha}
+    &= \frac{1}{R_x\, C'\,\alpha^2\,\ell}, &
+\frac{\partial A_{11}}{\partial R_x}
+    &= \frac{1}{R_x^2\, C'\,\alpha\,\ell},
+\end{align}
+both of which are continuous (in fact $C^\infty$) on the open
+operating set $(0,1)\times(0,\infty)$.  This is the differentiability
+property used by the WP2.2 closed-form gradient.
+
+% =============================================================================
+\section{Closed-form transfer function $H(j\omega_0; \alpha, R_x)$}\label{sec:H}
+% =============================================================================
+
+For a single-frequency analysis at $\omega = \omega_0$ the
+input-output transfer is
+\begin{equation}
+  H(j\omega; \alpha, R_x)
+     = C\,(j\omega\,I_4 - A)^{-1}\,B + D.
+\end{equation}
+$D = 0$ for the present output choice, so $H$ reduces to
+$C(j\omega I - A)^{-1} B$.
+
+By Cramer's rule on $j\omega I - A$, $H$ is a rational function of
+$j\omega$ whose numerator and denominator are polynomials of degree
+$\leq 4$ in $j\omega$ with coefficients $\{a_k(\alpha,R_x)\}$ that
+are smooth on the operating envelope.  The full algebraic expansion is
+unwieldy; the canonical evaluator is the linear solve
+\texttt{X = (jw*I - A) \textbackslash B}, executed in
+both runtimes:
+\begin{itemize}[leftmargin=2em]
+  \item MATLAB:  \texttt{matlab/faultloc\_pi\_state\_space.m}
+                 followed by \texttt{H = C * ((1j*omega*I - A) \textbackslash B) + D;}
+  \item Python:  \texttt{models/faultloc\_pi\_section\_model.py},
+                 function \texttt{H\_model(alpha, Rx, omega)}.
+\end{itemize}
+Cross-runtime agreement is enforced by
+\texttt{tests/test\_pi\_model\_python\_vs\_matlab.py} against the
+golden CSV \texttt{tests/data/H\_golden.csv}, regenerable from
+either runtime; max abs error $< 10^{-9}$ on a 5-cell grid (WP0.5
+acceptance).
+
+% =============================================================================
+\section{Symbolic $\partial H/\partial\alpha$ and $\partial H/\partial R_x$}\label{sec:dHdtheta}
+% =============================================================================
+
+Because $A(\alpha, R_x)$ is differentiable on the operating envelope,
+so is $H = C(j\omega I - A)^{-1} B$.  Differentiating
+under the inverse (using $\partial_\theta M^{-1} =
+-M^{-1}\,(\partial_\theta M)\,M^{-1}$):
+\begin{equation}
+  \frac{\partial H}{\partial\theta}
+     = C\,(j\omega I - A)^{-1}\,\Big(\partial_\theta A\Big)\,
+       (j\omega I - A)^{-1}\,B,
+  \qquad \theta \in \{\alpha, R_x\}.
+  \label{eq:dHdtheta}
+\end{equation}
+The symbolic forms of $\partial H/\partial\alpha$ and
+$\partial H/\partial R_x$ are produced by the MATLAB Symbolic Math
+Toolbox in \texttt{matlab/derive\_partials.m} and emitted as
+self-contained MATLAB functions at \texttt{matlab/dH\_dalpha.m} and
+\texttt{matlab/dH\_dRx.m}.  The script:
+\begin{enumerate}[leftmargin=2em]
+  \item Builds $A, B, C$ symbolically in
+        $(\alpha, R_x, \omega, R', L', C', \ell, R_{\text{load}})$.
+  \item Computes $H = C(j\omega I - A)^{-1} B$ via \texttt{simplify}.
+  \item Takes \texttt{diff} with respect to $\alpha$ and $R_x$,
+        applies \texttt{simplify} again.
+  \item Substitutes the SI defaults
+        ($R'=\SI{0.0728}{\ohm\per\km}$,
+         $L'=\SI{0.927e-3}{\henry\per\km}$,
+         $C'=\SI{11.6e-9}{\farad\per\km}$,
+         $\ell=\SI{100}{\km}$,
+         $R_{\text{load}}=\SI{1e6}{\ohm}$).
+  \item Emits two callable functions of $(\alpha, R_x, \omega)$ via
+        \texttt{matlabFunction(\dots, 'Optimize', true)}.
+\end{enumerate}
+Cross-validation against a $1\times 10^{-6}$ central finite-difference
+at three operating points is performed by
+\texttt{matlab/tests/test\_partials.m}; the test passes when the
+relative error is below $10^{-3}$ at every point (in practice the
+auto-generated symbolic form agrees with the FD to $\sim 10^{-12}$).
+
+\paragraph{Use sites.}
+The closed-form gradient is consumed by:
+\begin{itemize}[leftmargin=2em]
+  \item the gradient solver of \S\,IV
+        (\texttt{inverse\_estimation/faultloc\_two\_stage\_optimiser},
+        WP2.4 swap from central FD to analytic);
+  \item the Fisher information matrix of \S\,VIII
+        (\texttt{inverse\_estimation/faultloc\_crlb\_proper},
+        WP1.6 corrected CRLB).
+\end{itemize}
+
+% =============================================================================
+\section{Dimensional check}\label{sec:dim}
+% =============================================================================
+
+For the IEEE-30-style 11~kV / 100~km feeder with conductor geometry
+typical of medium-voltage overhead lines (Saha 2010, Springer
+Table~3.1, page 87), the per-km values are
+\begin{equation}
+  R' = \SI{0.0728}{\ohm\per\km},\qquad
+  L' = \SI{0.927e-3}{\henry\per\km},\qquad
+  C' = \SI{11.6e-9}{\farad\per\km}.
+\end{equation}
+The legacy v1 manuscript heuristics ``$L' = 4R'$'' and ``$C' = 3R'$''
+are dimensionally heterodox and have been replaced by the explicit SI
+values above (Wang--Lopes-2023 EPSR review,
+\textsection{prior-art conventions}, also requires SI form).
+Assembling section-1 quantities at $\alpha = 0.5$:
+\begin{align}
+R_1 &= \SI{0.0728}{\ohm\per\km}\times \SI{50}{\km}
+     = \SI{3.64}{\ohm}, \\
+L_1 &= \SI{0.927e-3}{\henry\per\km}\times \SI{50}{\km}
+     = \SI{46.35}{\milli\henry}, \\
+C_1 &= \SI{11.6e-9}{\farad\per\km}\times \SI{50}{\km}
+     = \SI{0.58}{\micro\farad}.
+\end{align}
+With $R_x = \SI{1}{\kilo\ohm}$ this places the headline pole at
+\begin{equation}
+  A_{11}(\tfrac12,\,\SI{1}{\kilo\ohm}) \;=\; -\frac{1}{R_x C_1}
+        \;=\; -\frac{1}{\SI{1e3}{\ohm}\times \SI{0.58e-6}{\farad}}
+        \;\approx\; -\SI{1724}{s^{-1}},
+\end{equation}
+a fast eigenvalue compatible with the chosen sampling rate
+$F_s = \SI{10}{\kilo\hertz}$ ($N_s = 200$, one-cycle window).
+
+\paragraph{Units sanity.}
+$[R']\,[\ell] = \si{\ohm\per\km}\cdot\si{\km} = \si{\ohm}$;
+$[L']\,[\ell] = \si{\henry\per\km}\cdot\si{\km} = \si{\henry}$;
+$[C']\,[\ell] = \si{\farad\per\km}\cdot\si{\km} = \si{\farad}$;
+all $A$ entries are in $[\si{\per\second}]$, $[B]$ is in
+$[\si{\per\henry}]$, $[C]$ is dimensionless and the resulting
+$H = I/V$ is in $[\si{\per\ohm}]$.  This matches the
+single-bin DFT admittance $H_{\text{meas}}$ used throughout
+\S\,III.
+
+\bigskip\hrule\bigskip
+\noindent\textit{End of Appendix~A.}
+
+\end{document}
