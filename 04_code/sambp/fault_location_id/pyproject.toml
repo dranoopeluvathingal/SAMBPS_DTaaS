@@ -31,6 +31,7 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering",
 ]
 dependencies = [
@@ -40,6 +41,8 @@ dependencies = [
   "pandas>=2.0",
   "sympy>=1.12",
   "pyyaml>=6.0",
+  "tqdm>=4.66",
+  "mpmath>=1.3",
 ]
 
 [project.optional-dependencies]
@@ -55,16 +58,18 @@ Homepage = "https://github.com/SAMBPS-DTaaS/HIF-TF-Locator"
 Documentation = "docs/FaultLocationIdentification_ExecutionPlan.pdf"
 Source = "https://github.com/SAMBPS-DTaaS/HIF-TF-Locator"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = [
-  "models*",
-  "inverse_estimation*",
-  "adaptation*",
-  "evaluation*",
-  "tests*",
+[tool.setuptools]
+# Map the sub-project root directory to the importable package
+# `sambp_fault_location_id` so that `import sambp_fault_location_id` works
+# after `pip install -e .`.
+package-dir = { "sambp_fault_location_id" = "." }
+packages = [
+  "sambp_fault_location_id",
+  "sambp_fault_location_id.models",
+  "sambp_fault_location_id.inverse_estimation",
+  "sambp_fault_location_id.adaptation",
+  "sambp_fault_location_id.evaluation",
 ]
-exclude = ["outputs*", "docs*", ".github*"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
