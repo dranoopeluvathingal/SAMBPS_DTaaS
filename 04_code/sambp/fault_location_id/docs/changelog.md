@@ -2,6 +2,52 @@
 
 Format: each entry is `YYYY-MM-DD - <stage / WP / decision-gate> - <summary>`.
 
+## 2026-05-09 - WP0.3 references expansion + DOI check (P0.3)
+
+- `docs/references.bib` created with **44 entries** (target ≥ 35),
+  grouped by literature stream:
+  - **Stream A** — impedance / admittance / transfer-function (7
+    entries: Iurinic-Bretas, Orozco-Henao, Penaloza, Saha 2010 book,
+    Lopes 2023 distributed-parameter, Nunes 2019, Nunes 2017).
+  - **Stream B** — signal processing / morphology / wavelet, ML / DL
+    (7 entries).
+  - **Stream C** — μ-PMU / TW / two-ended / eigenvalue / HIL
+    (12 entries).
+  - **Stream D** — arc models (5 entries).
+  - **Stream E** — CRLB / identifiability / standards / wildfire
+    (13 entries, including the three artefacts cited from §I after
+    P0.2: `PSRC1996D15`, `NREL2023TP5R0080746`, `CPUC2018SB901`,
+    plus `BlackSaturday2009RoyalCommission` and `CampFire2018PGE`).
+- **Refs [2] / [10] de-duplicated.** A single canonical
+  `@article{Nunes2019IJEPES,...}` entry serves both citation calls.
+  A separate `@inproceedings{Nunes2017Proc,...}` is added in case
+  the v1 manuscript intended a second Nunes citation; if so, future
+  migration of v1 body content uses the proceedings key explicitly.
+  `manuscript_v2.tex` §III placeholder now contains a single
+  `\cite{Nunes2019IJEPES}` to demonstrate the de-dup is wired up,
+  and the `\bibliography{references}` line is no longer commented.
+- `tools/verify_dois.py` added. Parses `references.bib`, hits
+  `https://doi.org/<doi>` (HEAD with 5 s timeout, falls back to GET
+  on 405), follows redirects, accepts {200,301,302,303,307,308}, and
+  writes `docs/references_doi_check.csv`. Exit codes:
+  `0` all DOIs resolve / no DOIs to check, `1` any DOI returned 4xx
+  or 5xx, `2` infrastructure / network failure (distinguished from
+  DOI rot so CI surfaces it differently). Missing-DOI entries are
+  not failures.
+- `pyproject.toml` runtime deps gain `requests>=2.31`;
+  `requirements.lock` refreshed.
+- `.github/workflows/ci.yml` adds a `doi-watch` job that runs the
+  verifier on a weekly cron (Sun 03:17 UTC) and uploads the CSV
+  report as a workflow artefact. Job is also triggered on direct
+  push to `references.bib` or `verify_dois.py`, and via
+  `workflow_dispatch`.
+- DOI coverage policy. Only DOIs with high confidence are populated
+  in this commit (3 / 44 entries: `AucoinRussell1987TPWRD`,
+  `RGATv2_2025_arXiv`, `CNRS_2024_IEEE34`). The remaining entries
+  carry no `doi` field and are reported as `no-doi` in the CSV;
+  filling them in is a maintenance task for the lead engineer
+  (no DOI-rot risk on entries that have no DOI to rot).
+
 ## 2026-05-09 - WP0.2 prior-art restructure + motivation (P0.2)
 
 - `docs/manuscript_v2.tex` §I (Introduction) restructured. Closes

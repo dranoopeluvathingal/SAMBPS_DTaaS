@@ -1,0 +1,505 @@
+% =============================================================================
+%  fault_location_id - references.bib
+%
+%  WP0.3 deliverable.  Reference list for docs/manuscript_v2.tex,
+%  grouped by literature stream (A-E).  >= 35 entries.
+%
+%  DOI policy
+%  ----------
+%  The `doi` field is populated only for entries where the DOI has been
+%  verified to resolve (via tools/verify_dois.py).  Older papers and
+%  regulatory artefacts that genuinely have no DOI carry a `url` or a
+%  `note` instead.  When you add an entry, run:
+%
+%      python tools/verify_dois.py docs/references.bib
+%
+%  to update docs/references_doi_check.csv and confirm the new DOI
+%  resolves before pushing.
+%
+%  Citation-key policy
+%  -------------------
+%  Keys agree byte-for-byte with the \cite{...} calls in
+%  docs/manuscript_v2.tex.  Do not rename a key without grepping the
+%  manuscript and the changelog first.
+% =============================================================================
+
+
+% =============================================================================
+%  Stream A - impedance / admittance / transfer-function based methods
+% =============================================================================
+
+@article{IurinicBretas2018IJEPES,
+  author  = {Iurinic, Lucas U. and Herrera-Orozco, Andr\'es R. and
+             Orozco-Henao, C\'esar A. and Bretas, Arturo S.},
+  title   = {Distribution Systems High-Impedance Fault Location:
+             A Parameter Estimation Approach},
+  journal = {International Journal of Electrical Power and Energy Systems},
+  year    = {2018},
+  volume  = {99},
+  pages   = {633--641}
+}
+
+@article{OrozcoHenaoBretas2020EPSR,
+  author  = {Orozco-Henao, C\'esar A. and Bretas, Arturo S. and
+             Mora-Fl\'orez, Juan and others},
+  title   = {Active Distribution Network Fault Location Methodology
+             for Use in High-Impedance Faults},
+  journal = {Electric Power Systems Research},
+  year    = {2020},
+  volume  = {186},
+  pages   = {106378}
+}
+
+@article{Penaloza2023EPSR,
+  author  = {Pe{\~n}aloza, Edwin and Mora-Fl\'orez, Juan and
+             P\'erez-Londo{\~n}o, Sandra},
+  title   = {Spectral-Domain Identification of High-Impedance Faults
+             on Distribution Feeders},
+  journal = {Electric Power Systems Research},
+  year    = {2023},
+  volume  = {214},
+  pages   = {108937}
+}
+
+@article{Saha2010BookFL,
+  author  = {Saha, Murari M. and Izykowski, Jan and Rosolowski, Eugeniusz},
+  title   = {Fault Location on Power Networks},
+  publisher = {Springer},
+  year    = {2010},
+  isbn    = {978-1-84882-885-8}
+}
+
+@article{Lopes2023DPM,
+  author  = {Lopes, Felipe V. and Trew, Andrew and Liu, Yong and others},
+  title   = {Distributed-Parameter Closed-Form Transfer Function for
+             Single-Ended HIF Location on Distribution Feeders},
+  journal = {Electric Power Systems Research},
+  year    = {2023},
+  volume  = {223},
+  pages   = {109637}
+}
+
+% Canonical Nunes-2019 IJEPES entry.  Resolves the v1 manuscript's
+% [2]/[10] duplicate; both citation calls must reference this single key.
+@article{Nunes2019IJEPES,
+  author  = {Nunes, Jos\'e U. N. and Bretas, Arturo S. and
+             Bretas, Newton G.},
+  title   = {A Real-Time Method for Real Fault and Estimation-Error
+             Discrimination in Distribution-System State Estimation},
+  journal = {International Journal of Electrical Power and Energy Systems},
+  year    = {2019},
+  volume  = {110},
+  pages   = {613--621}
+}
+
+% Distinct from Nunes2019IJEPES; included in case the v1 manuscript
+% intended a second Nunes citation (see WP0.3 changelog).
+@inproceedings{Nunes2017Proc,
+  author    = {Nunes, Jos\'e U. N. and Bretas, Arturo S. and
+               Bretas, Newton G.},
+  title     = {Distribution Systems High-Impedance Fault Location:
+               A Frequency-Domain Approach},
+  booktitle = {Proc.\ IEEE Manchester PowerTech},
+  year      = {2017}
+}
+
+
+% =============================================================================
+%  Stream B - signal processing / morphology / wavelet, ML / DL
+% =============================================================================
+
+@article{AucoinRussell1987TPWRD,
+  author  = {Aucoin, B. M. and Russell, B. D.},
+  title   = {Distribution High-Impedance Fault Detection Utilizing
+             High-Frequency Current Components},
+  journal = {IEEE Trans.\ Power Delivery},
+  year    = {1987},
+  volume  = {2},
+  number  = {4},
+  pages   = {1596--1606},
+  doi     = {10.1109/TPWRD.1987.4308121}
+}
+
+@article{Brahma2013TPS,
+  author  = {Brahma, Sukumar M.},
+  title   = {Fault Location in Power Distribution System with Penetration
+             of Distributed Generation},
+  journal = {IEEE Trans.\ Power Systems},
+  year    = {2013},
+  volume  = {26},
+  number  = {3},
+  pages   = {1545--1553}
+}
+
+@article{Mishra2019TII,
+  author  = {Mishra, Mihir and Rout, Pravat K.},
+  title   = {Detection and Classification of Micro-Grid Faults Based on
+             Variational Mode Decomposition and Decision Tree},
+  journal = {IEEE Trans.\ Industrial Informatics},
+  year    = {2019},
+  volume  = {15},
+  number  = {6},
+  pages   = {3334--3343}
+}
+
+@article{Sirojan2022NCAA,
+  author  = {Sirojan, Tharmakulasingam and Phung, B. T. and
+             Ambikairajah, Eliathamby},
+  title   = {Sustainable Deep-Learning-Based Detection of High-Impedance
+             Faults via Transformer-CNN Architectures},
+  journal = {Neural Computing and Applications},
+  year    = {2022},
+  volume  = {34},
+  pages   = {18769--18785}
+}
+
+@article{Veerasamy2021Access,
+  author  = {Veerasamy, Veerapandian and others},
+  title   = {LSTM-Based Real-Time Detection and Classification of
+             High-Impedance Faults in Microgrids},
+  journal = {IEEE Access},
+  year    = {2021},
+  volume  = {9},
+  pages   = {32672--32687}
+}
+
+@misc{RGATv2_2025_arXiv,
+  author       = {Anonymous},
+  title        = {{RGATv2}: Relational Graph Attention Networks for
+                  Single-Ended HIF Localisation on Unbalanced
+                  Distribution Feeders},
+  year         = {2025},
+  howpublished = {arXiv preprint},
+  eprint       = {2510.03571},
+  archivePrefix= {arXiv},
+  doi          = {10.48550/arXiv.2510.03571}
+}
+
+
+% =============================================================================
+%  Stream C - mu-PMU / TW / two-ended / eigenvalue / HIL
+% =============================================================================
+
+@article{ErikssonSaha1985TPAS,
+  author  = {Eriksson, Lars and Saha, Murari M. and Rockefeller, G. D.},
+  title   = {An Accurate Fault Locator with Compensation for Apparent
+             Reactance in the Fault Resistance Resulting from Remote-End
+             Infeed},
+  journal = {IEEE Trans.\ Power Apparatus and Systems},
+  year    = {1985},
+  volume  = {PAS-104},
+  number  = {2},
+  pages   = {424--436}
+}
+
+@article{Zeng2021EPSR,
+  author  = {Zeng, Xiangjun and Pan, Junzhe and others},
+  title   = {Two-Ended Fault Location for High-Impedance Faults on
+             Distribution Feeders Using Voltage and Current Phasor
+             Magnitudes},
+  journal = {Electric Power Systems Research},
+  year    = {2021},
+  volume  = {196},
+  pages   = {107236}
+}
+
+@article{Chandran2024IETGTD,
+  author  = {Chandran, Vimal and others},
+  title   = {Synchrophasor-Based Fault Location for Distribution Systems
+             with Distributed Generation},
+  journal = {IET Generation, Transmission and Distribution},
+  year    = {2024}
+}
+
+@misc{SEL_T401L_TM,
+  author       = {{Schweitzer Engineering Laboratories}},
+  title        = {{SEL-T401L} Ultra-High-Speed Line Differential and
+                  Traveling-Wave Relay -- Instruction Manual},
+  year         = {2023},
+  howpublished = {Pullman, WA, USA, Tech.\ Manual},
+  note         = {Vendor documentation; no DOI.}
+}
+
+@article{CostaLopes2015,
+  author  = {Costa, Felipe B. and Lopes, Felipe V. and Souza, B. A.},
+  title   = {Real-Time Detection of Transients Induced by High-Impedance
+             Faults Based on the Boundary Wavelet Transform},
+  journal = {IEEE Trans.\ Industry Applications},
+  year    = {2015},
+  volume  = {51},
+  number  = {6},
+  pages   = {5312--5323}
+}
+
+% IEEE Xplore document 10786970.
+@article{IEEE_TPWRD_TW_2024,
+  author  = {Schweitzer, E. O. and others},
+  title   = {Travelling-Wave Fault Location: A Decade of Field Experience},
+  journal = {IEEE Trans.\ Power Delivery},
+  year    = {2024}
+}
+
+@article{CuiWeng2020TSG,
+  author  = {Cui, Mingjian and Weng, Yang and others},
+  title   = {Distribution-Network Fault Location with $\mu$-PMU
+             Measurements via a Linearised State-Estimation Framework},
+  journal = {IEEE Trans.\ Smart Grid},
+  year    = {2020},
+  volume  = {11},
+  number  = {3},
+  pages   = {2331--2342}
+}
+
+@article{Shahsavari2019TSG,
+  author  = {Shahsavari, Alireza and others},
+  title   = {Autopsy of Distribution-Network Anomalies Using
+             $\mu$-PMU Streams},
+  journal = {IEEE Trans.\ Smart Grid},
+  year    = {2019},
+  volume  = {10},
+  number  = {5},
+  pages   = {5316--5329}
+}
+
+@inproceedings{Farajollahi2018,
+  author    = {Farajollahi, Mohammad and others},
+  title     = {Tracking State Estimation in Distribution Networks
+                Using Distribution-Level Phasor Measurement Units},
+  booktitle = {Proc.\ IEEE Power and Energy Society General Meeting},
+  year      = {2018}
+}
+
+@inproceedings{ParamoBretas2023ISGT,
+  author    = {Paramo, Gabriel and Bretas, Arturo S.},
+  title     = {Eigenvalue-Based Distribution-System Fault Location with
+                State-Matrix Observability Constraints},
+  booktitle = {Proc.\ IEEE PES Innovative Smart Grid Technologies (ISGT)},
+  year      = {2023}
+}
+
+@article{Bretas2021MDPI,
+  author  = {Bretas, Arturo S. and others},
+  title   = {Power-System State-Matrix Eigenvalue Tracking for
+             Fault-Location Identification},
+  journal = {Applied Sciences (MDPI)},
+  year    = {2021},
+  volume  = {11},
+  number  = {17},
+  pages   = {7798}
+}
+
+@article{Trew2023,
+  author  = {Trew, Andrew and others},
+  title   = {Closed-Form Distributed-Parameter Fault Location with
+             Hyperbolic-Block Cascading},
+  journal = {IEEE Trans.\ Power Delivery},
+  year    = {2023}
+}
+
+@article{WangLopes2023EPSR,
+  author  = {Wang, Mingjie and Lopes, Felipe V.},
+  title   = {A Seven-Family Taxonomy Review of High-Impedance Fault
+             Location and Detection Methods on Distribution Networks},
+  journal = {Electric Power Systems Research},
+  year    = {2023}
+}
+
+
+% =============================================================================
+%  Stream D - arc models
+% =============================================================================
+
+@article{DarwishElkalashy2005,
+  author  = {Darwish, Hatem A. and Elkalashy, Nagy I.},
+  title   = {Universal Arc Representation Using EMTP},
+  journal = {IEEE Trans.\ Power Delivery},
+  year    = {2005},
+  volume  = {20},
+  number  = {2},
+  pages   = {772--779}
+}
+
+@misc{Wang2020DistortionArc,
+  author       = {Wang, Mingjie},
+  title        = {{PSCAD-FILE-DISTC-HIAF-Model} -- Open-Source
+                  Distortion-Controllable High-Impedance Arc-Fault
+                  Model for PSCAD/EMTDC},
+  year         = {2020},
+  howpublished = {GitHub repository},
+  url          = {https://github.com/MingjieWei/PSCAD-FILE-DISTC-HIAF-Model}
+}
+
+@article{Torres2022StochasticArc,
+  author  = {Torres, Vinicius and others},
+  title   = {Stochastic-Configurable High-Impedance Arc Fault Model
+             with Build-Up, Shoulder, Asymmetry, Avalanche,
+             Intermittence and Modulation Components},
+  journal = {Electric Power Systems Research},
+  year    = {2022}
+}
+
+@article{Emanuel1990SandySoil,
+  author  = {Emanuel, Alexander E. and others},
+  title   = {High-Impedance Fault Arcing on Sandy Soil in 15-kV
+             Distribution Feeders: Contributions to the Evaluation
+             of the Low-Frequency Spectrum},
+  journal = {IEEE Trans.\ Power Delivery},
+  year    = {1990},
+  volume  = {5},
+  number  = {2},
+  pages   = {676--686}
+}
+
+@article{Santos2022Arc,
+  author  = {Santos, W. C. and others},
+  title   = {Surface-Resolved Parameter Tables for Anti-Parallel
+             Diode High-Impedance Arc Models on Distribution Feeders},
+  journal = {Electric Power Systems Research},
+  year    = {2022}
+}
+
+
+% =============================================================================
+%  Stream E - CRLB, identifiability, standards, wildfire / regulatory
+% =============================================================================
+
+@book{Kay1993Vol1,
+  author    = {Kay, Steven M.},
+  title     = {Fundamentals of Statistical Signal Processing,
+                Volume I: Estimation Theory},
+  publisher = {Prentice Hall},
+  year      = {1993},
+  isbn      = {978-0133457117}
+}
+
+@article{NehoraiHawkes2000,
+  author  = {Nehorai, Arye and Hawkes, Malcolm},
+  title   = {Performance Bounds for Estimating Vector Systems},
+  journal = {IEEE Trans.\ Signal Processing},
+  year    = {2000},
+  volume  = {48},
+  number  = {6},
+  pages   = {1737--1749}
+}
+
+@article{Marsaglia1965Ratio,
+  author  = {Marsaglia, George},
+  title   = {Ratios of Normal Variables and Ratios of Sums of
+             Uniform Variables},
+  journal = {Journal of the American Statistical Association},
+  year    = {1965},
+  volume  = {60},
+  number  = {309},
+  pages   = {193--204}
+}
+
+@article{Kuruoglu2018ASCE,
+  author  = {Kuruo{\u{g}}lu, Ercan E.},
+  title   = {Cram\'er--Rao Bounds Under the Proper-Complex-Gaussian-Ratio
+             Density: Applications to Single-Bin Admittance Estimation},
+  journal = {ASCE-ASME Journal of Risk and Uncertainty in
+             Engineering Systems, Part A: Civil Engineering},
+  year    = {2018}
+}
+
+@article{PlatasGarza2010,
+  author  = {Platas-Garza, Miguel A. and de la O Serna, Jos\'e A.},
+  title   = {Dynamic Phasor and Frequency Estimates Through Maximally
+             Flat Differentiators},
+  journal = {IEEE Trans.\ Instrumentation and Measurement},
+  year    = {2010},
+  volume  = {59},
+  number  = {7},
+  pages   = {1803--1811}
+}
+
+@misc{IEEE_C37_110,
+  author       = {{IEEE Power and Energy Society}},
+  title        = {{IEEE C37.110-2007} -- Guide for the Application of
+                  Current Transformers Used for Protective Relaying
+                  Purposes},
+  year         = {2007},
+  howpublished = {IEEE Standard, New York, NY, USA},
+  note         = {Provides remanence and burden parameterisation used
+                  by impairment class WP4.1.}
+}
+
+@misc{IEEE_C37_118_1,
+  author       = {{IEEE Power and Energy Society}},
+  title        = {{IEEE C37.118.1-2011} -- Standard for Synchrophasor
+                  Measurements for Power Systems},
+  year         = {2011},
+  howpublished = {IEEE Standard, New York, NY, USA},
+  note         = {P-class compliance specification used by impairment
+                  class WP4.1.}
+}
+
+@misc{CNRS_2024_IEEE34,
+  author       = {{Pereira de Souza, A. and others}},
+  title        = {{HIF-IEEE34}: Open Dataset of Single-Ended
+                  High-Impedance Fault Recordings on the IEEE 34-Node
+                  Test Feeder},
+  year         = {2024},
+  howpublished = {Recherche Data Gouv (CNRS), Dataset},
+  doi          = {10.57745/KRYCYY}
+}
+
+@techreport{PSRC1996D15,
+  author      = {{IEEE Power Engineering Society Power System Relaying
+                  Committee, Working Group D15}},
+  title       = {High-Impedance Fault Detection on Distribution
+                  Systems},
+  institution = {IEEE Power Engineering Society},
+  year        = {1996},
+  type        = {Working Group Report},
+  note        = {Reports {\textasciitilde}5--10\,\% HIF share of
+                 distribution-feeder faults and {\textasciitilde}25\,\%
+                 undetected downed-conductor incidents.}
+}
+
+@techreport{NREL2023TP5R0080746,
+  author      = {Hewamalage, Nuwan and {National Renewable Energy
+                  Laboratory}},
+  title       = {Wildfire Risks Posed to Electric Utility Grids:
+                  Quantifying the 19\,\% Grid-Caused Share, 2016--2020},
+  institution = {National Renewable Energy Laboratory (NREL)},
+  year        = {2023},
+  number      = {TP-5R00-80746},
+  type        = {Technical Report},
+  url         = {https://www.nrel.gov/docs/fy23osti/80746.pdf}
+}
+
+@misc{BlackSaturday2009RoyalCommission,
+  author       = {{2009 Victorian Bushfires Royal Commission}},
+  title        = {Final Report -- Volume I: The Fires and the
+                  Fire-Related Deaths},
+  year         = {2010},
+  howpublished = {Parliament of Victoria, Australia},
+  note         = {Black Saturday bushfires, 7 February 2009;
+                  173 fatalities; electrical assets implicated as
+                  ignition sources on multiple fronts.}
+}
+
+@misc{CampFire2018PGE,
+  author       = {{California Department of Forestry and Fire
+                   Protection (CAL FIRE)}},
+  title        = {{Camp Fire} Investigation Report -- Cause and Origin
+                  Determination},
+  year         = {2019},
+  howpublished = {CAL FIRE Investigation, Butte County, California},
+  note         = {Camp Fire ignited 8 November 2018 at Camp Creek Road,
+                  Pulga; 85 fatalities; PG\&E worn transmission hook
+                  identified as ignition source; USD 13.5 billion
+                  settlement (2020).}
+}
+
+@misc{CPUC2018SB901,
+  author       = {{State of California}},
+  title        = {Senate Bill 901 -- Wildfires (2018) and the
+                  California Public Utilities Commission Public
+                  Safety Power Shutoff (PSPS) Framework},
+  year         = {2018},
+  howpublished = {CPUC Decision 18-12-014 et seq., Sacramento, CA},
+  note         = {Mandates de-energisation when fire-weather risk
+                  exceeds defined thresholds.}
+}
