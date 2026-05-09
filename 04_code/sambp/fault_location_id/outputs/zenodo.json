@@ -1,0 +1,57 @@
+{
+  "title": "fault_location_id v0.2.0-phase0 - Single-Ended Joint Estimation of HIF Location and Arc Resistance via Power-Frequency Admittance Identification with Dual-Channel Noise Modelling",
+  "version": "0.2.0-phase0",
+  "description": "Phase-0 reproducibility release of the SAMBPS DTaaS HIF transfer-function locator. Includes the camera-ready manuscript (v2), the watertight Appendix-A derivation (cascaded-Gamma state-space, KVL/KCL, closed-form H, symbolic dH/dtheta), the references.bib (44 entries across streams A-E), the canonical MATLAB and Python implementations of the two-section pi-model and two-stage joint estimator, the 720-case dataset builder, the global-optimum capture and timing study, the 9-cell hyperparameter sensitivity sweep, the cross-runtime golden-file test, and the GitHub Actions CI infrastructure (Python 3.10/3.11/3.12 matrix, optional MATLAB job, weekly DOI-rot watch).",
+  "upload_type": "software",
+  "license": "MIT",
+  "access_right": "open",
+  "creators": [
+    {
+      "name": "Arjundas K.",
+      "affiliation": "Power Systems Computational Lab, Department of Electrical Engineering, Indian Institute of Technology Madras"
+    },
+    {
+      "name": "Swarup, K. Shanthi",
+      "affiliation": "Power Systems Computational Lab, Department of Electrical Engineering, Indian Institute of Technology Madras"
+    },
+    {
+      "name": "Eluvathingal, Anoop",
+      "affiliation": "SAMBPS Digital Twin Labs"
+    }
+  ],
+  "keywords": [
+    "high-impedance-fault",
+    "fault-location",
+    "transfer-function-identification",
+    "Cramer-Rao-lower-bound",
+    "power-system-protection",
+    "SAMBPS",
+    "digital-twin",
+    "IEEE Access"
+  ],
+  "communities": [
+    {"identifier": "sambps-dtaas"}
+  ],
+  "related_identifiers": [
+    {
+      "relation": "isSupplementTo",
+      "identifier": "IEEE-Access-submission-pending",
+      "scheme": "other",
+      "resource_type": "publication-article"
+    },
+    {
+      "relation": "isDocumentedBy",
+      "identifier": "https://github.com/SAMBPS-DTaaS/HIF-TF-Locator/blob/v0.2.0-phase0/docs/AppendixA_derivation.pdf",
+      "scheme": "url",
+      "resource_type": "publication-other"
+    }
+  ],
+  "notes": "ORCID iDs intentionally omitted at v0.2.0-phase0; will be filled in at v0.3.0 (Phase-1 close).",
+  "_todo": {
+    "before_publish": [
+      "Replace 'IEEE-Access-submission-pending' with the actual IEEE Access manuscript ID once allocated.",
+      "Add `orcid` field to each creator once ORCID iDs are on file.",
+      "Confirm `communities.identifier` value with SAMBPS DTaaS Zenodo community admin."
+    ]
+  }
+}

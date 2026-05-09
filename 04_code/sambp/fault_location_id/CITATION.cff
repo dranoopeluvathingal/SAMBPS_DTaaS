@@ -1,0 +1,71 @@
+# Citation File Format - https://citation-file-format.github.io/
+#
+# GitHub renders a "Cite this repository" widget from this file.
+# ORCID iDs intentionally omitted at v0.2.0-phase0 (skipped by PI
+# during the D0 prep, see docs/D0_review_pack.md §6); add them as
+# `orcid: https://orcid.org/0000-0000-0000-0000` once on file.
+
+cff-version: 1.2.0
+title: >-
+  fault_location_id - Single-Ended Joint Estimation of HIF Location
+  and Arc Resistance via Power-Frequency Admittance Identification
+  with Dual-Channel Noise Modelling
+message: >-
+  If you use this software, please cite the IEEE Access submission
+  (preferred-citation) and this repository.
+type: software
+authors:
+  - given-names: Arjundas
+    family-names: K.
+    affiliation: >-
+      Power Systems Computational Lab, Department of Electrical
+      Engineering, Indian Institute of Technology Madras
+    email: arjundas@iitm.ac.in
+  - given-names: K. Shanthi
+    family-names: Swarup
+    affiliation: >-
+      Power Systems Computational Lab, Department of Electrical
+      Engineering, Indian Institute of Technology Madras
+    email: swarup@ee.iitm.ac.in
+  - given-names: Anoop
+    family-names: Eluvathingal
+    affiliation: SAMBPS Digital Twin Labs
+    email: anoop@sambps.dtaas
+repository-code: "https://github.com/SAMBPS-DTaaS/HIF-TF-Locator"
+url: "https://github.com/SAMBPS-DTaaS/HIF-TF-Locator"
+abstract: >-
+  Single-ended joint estimator of HIF location alpha and arc
+  resistance R_x that fits a state-space transfer function H_model
+  to the power-frequency single-bin DFT admittance via a two-stage
+  optimiser, under independent dual-channel additive white Gaussian
+  noise.  Phase-0 release: editorial baseline + reproducibility
+  scaffolding (manuscript v2, references.bib, Appendix A,
+  optimiser, build_dataset, capture / timing / sensitivity
+  artefacts, MATLAB + Python cross-runtime tests).
+keywords:
+  - high-impedance-fault
+  - fault-location
+  - transfer-function-identification
+  - Cramer-Rao-lower-bound
+  - power-system-protection
+  - SAMBPS
+  - digital-twin
+license: MIT
+version: 0.2.0-phase0
+date-released: "2026-05-29"
+preferred-citation:
+  type: article
+  authors:
+    - given-names: Arjundas
+      family-names: K.
+    - given-names: K. Shanthi
+      family-names: Swarup
+  title: >-
+    Single-Ended Joint Estimation of HIF Location and Arc Resistance
+    via Power-Frequency Admittance Identification with Dual-Channel
+    Noise Modelling
+  journal: IEEE Access
+  year: 2026
+  notes: >-
+    Submitted under SAMBPS DTaaS R&D programme; reproducibility
+    code released under MIT.

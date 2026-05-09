@@ -3,7 +3,12 @@
 # Targets follow the v3 execution plan WBS phases.  Each `phase{N}` target
 # runs the corresponding `run_faultloc_phase{N}_*.py` script.
 
+# Prefer the project venv when present (created by `make setup`).
+ifeq ($(wildcard .venv/bin/python),)
 PYTHON ?= python3
+else
+PYTHON ?= .venv/bin/python
+endif
 PIP    ?= $(PYTHON) -m pip
 
 .PHONY: help setup test lint format clean matlab-smoke \

@@ -2,6 +2,62 @@
 
 Format: each entry is `YYYY-MM-DD - <stage / WP / decision-gate> - <summary>`.
 
+## 2026-05-09 - WP0.6 / D0 - integrate, sign off, stage release (P0.6)
+
+Phase-0 closeout. Six artefacts staged for release tag `v0.2.0-phase0`.
+
+- `docs/manuscript_v2.pdf` rebuilt and committed (4 pages, 263 KB,
+  IEEE Access journal class, bibliography resolved via bibtex pass).
+  Acceptance verification: 191-word abstract (<= 250 cap),
+  6 headline-number macros each reused 3-6x, 7-row taxonomy table in
+  §I, 44 entries in references.bib, 4 figure floats with axis labels
+  carrying units, Appendix A (4-page standalone PDF) shipped as
+  supplementary material.
+- `docs/D0_review_pack.md` authored per Execution Plan §8.1
+  decision-gate template: phase summary, 13-row acceptance-test
+  table (one row per T-A1 sub-criterion + ruff/pytest/DOI/MATLAB
+  rows), risk-register update, KPI snapshot for K11/K12/K13/K14/K15,
+  decision recommendation (conditional approval to Phase 1).
+- `Makefile` PYTHON variable now prefers `.venv/bin/python` when the
+  venv exists; falls back to system `python3`.  Fixes the
+  `make test`/`make lint` regression where the system interpreter
+  could not import the editable-installed package.
+- `CITATION.cff` (Citation File Format 1.2.0) with three creators,
+  IEEE Access preferred-citation, MIT licence, repository URL.
+  ORCIDs intentionally omitted at this release (PI choice during
+  D0 prep) and flagged for backfill at v0.3.0.
+- `outputs/zenodo.json` Zenodo metadata: title, version, three
+  creators, MIT licence, communities `sambps-dtaas`, related
+  identifiers (`isSupplementTo` IEEE Access submission, `isDocumentedBy`
+  Appendix A on GitHub).  `_todo` block lists three pre-publish
+  follow-ups (IEEE Access submission ID swap, ORCID fields,
+  community identifier confirmation).
+- `outputs/fault_location_id_v0.2.0.zip` built from `docs/`,
+  `matlab/`, `models/`, `tests/` (53 files, 1.1 MB; aux files,
+  __pycache__, venv, outputs/ excluded).  Gitignored by the
+  monorepo-level `**/*.zip` rule - regenerated at release time
+  via the build command in this changelog entry.
+- Test gate: `make test` -> 6 passed + 1 skipped (test_phase0_smoke
+  skipped, MATLAB not on dev-box PATH); `make lint` -> ruff clean.
+  `make matlab-smoke` cannot run on this dev box (no MATLAB);
+  exercised in CI MATLAB job.
+
+Gate-blocker outcome: 1 *FAIL* (DOI coverage 3 / 35) + 1
+*CONDITIONAL PASS* (public-repo flip awaiting PI signoff) +
+1 *GATED* (MATLAB smoke runs in CI).  Recommend conditional
+approval to Phase 1 with the three follow-on items in
+D0_review_pack.md §5.
+
+Build commands captured for reproducibility:
+
+    pdflatex manuscript_v2.tex && bibtex manuscript_v2 && \
+        pdflatex manuscript_v2.tex && pdflatex manuscript_v2.tex
+    pdflatex AppendixA_derivation.tex (x 2)
+    zip -r outputs/fault_location_id_v0.2.0.zip docs/ matlab/ \
+        models/ tests/ -x '*.aux' '*.log' '*.out' '*.bbl' '*.blg' \
+        -x '**/__pycache__/*' '**/.pytest_cache/*' \
+        -x 'outputs/*' '.venv/*'
+
 ## 2026-05-09 - WP0.5 Appendix A + symbolic dH/dtheta (P0.5)
 
 Watertight derivation an IEEE Access reviewer can verify line by line.
