@@ -1,0 +1,285 @@
+% =============================================================================
+%  fault_location_id - manuscript_v2.tex
+%
+%  WP0.1-revised IEEE Access manuscript for the HIF transfer-function locator.
+%  Closes deliverable D-A of the v3 execution plan
+%  (docs/FaultLocationIdentification_ExecutionPlan.pdf §3, §6).
+%
+%  Authoring conventions
+%  ---------------------
+%  Every headline numerical value the abstract / §VI / §IX / glossary
+%  must agree on is defined exactly once via a \newcommand macro below.
+%  Reuse the macro everywhere; never hand-type the value.  This is the
+%  mechanism that satisfies the WP0.1 acceptance criterion
+%      "numerical values for location error, Rx error and CRLB headline
+%       are byte-identical wherever they appear in the manuscript."
+% =============================================================================
+
+\documentclass[journal]{IEEEtran}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\sisetup{detect-all}
+\usepackage{cite}
+\usepackage{url}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+% --------------------------------------------------------------------------
+%  Headline numerical macros (single source of truth) - see WP0.1 spec
+% --------------------------------------------------------------------------
+\newcommand{\headlineLocErrNoiseless}{0.009\,\%}
+\newcommand{\headlineLocErrSNR}%
+  {1.18\,\% at $\mathrm{SNR}_I = 20$\,dB}
+\newcommand{\headlineRxErrNoiseless}{2.42\,\%}
+\newcommand{\headlineRxErrEnvelope}%
+  {$\leq 8$\,\% across 100\,--\,2000\,$\Omega$ at SNR $\geq 30$\,dB}
+\newcommand{\headlineCRLBGap}%
+  {within 15\,\% of the Cram\'er--Rao Lower Bound at SNR $\geq 40$\,dB}
+\newcommand{\samplingConfig}%
+  {$F_s = 10$\,kHz, $N_s = 200$, one cycle window}
+
+% Glossary cross-reference helper
+\newcommand{\glossref}[1]{\textsuperscript{(see Glossary, \texttt{#1})}}
+
+% =============================================================================
+\begin{document}
+% =============================================================================
+
+\title{Single-Ended Joint Estimation of HIF Location and Arc Resistance
+       via Power-Frequency Admittance Identification with
+       Dual-Channel Noise Modelling}
+
+\author{%
+  Arjundas K. and K. Shanthi Swarup,~\IEEEmembership{Senior Member,~IEEE}%
+  \thanks{The authors are with the Power Systems Computational Lab,
+          Department of Electrical Engineering,
+          Indian Institute of Technology Madras, Chennai 600\,036, India
+          (e-mail: arjundas@iitm.ac.in; swarup@ee.iitm.ac.in).}%
+  \thanks{This work was conducted under the SAMBPS Digital Twin Labs
+          R\&D programme on Smart Adaptive Model-Based Protection \&
+          Control Systems (SAMBPS DTaaS).  The authors gratefully
+          acknowledge the SAMBPS DTaaS reproducibility infrastructure
+          and the public release of all 720-case waveform data,
+          50-section reference dataset and analysis scripts under MIT
+          licence.}%
+}
+
+\markboth{IEEE Access (submitted 2026)}{Arjundas \& Swarup: HIF-TF Locator (v2)}
+
+\maketitle
+
+% =============================================================================
+\begin{abstract}
+% (a) motivation - one sentence
+High-impedance faults (HIFs) account for an estimated 5--10\,\% of
+distribution-feeder faults and roughly a quarter of downed-conductor
+events go undetected by conventional overcurrent protection
+(IEEE PSRC Working Group D15, 1996), and grid-caused ignitions
+represent 19\,\% of all U.S. wildfires over 2016--2020
+(NREL TP-5R00-80746, 2023), making accurate HIF location and arc
+resistance estimation an urgent safety problem.
+% (b) method line
+This paper proposes a single-ended joint estimator of fault location
+$\alpha$ and arc resistance $R_x$ that fits a state-space transfer
+function $H_{\mathrm{model}}(j\omega_0;\alpha,R_x)$ to the
+power-frequency single-bin DFT admittance
+$H_{\mathrm{meas}}(j\omega_0)$ via a two-stage optimiser
+(grid + multi-start, then gradient with Armijo line-search) over a
+720-case sweep ($10\alpha\times 5R_x\times 4\,\mathrm{SNR}_V\times
+4\,\mathrm{SNR}_I$) under independent dual-channel additive white
+Gaussian noise.
+% (c) headline numbers
+The estimator achieves a mean fault-location error of
+\headlineLocErrNoiseless{} in the noiseless baseline and
+\headlineLocErrSNR{}\glossref{LOC-ERR}; mean arc-resistance error is
+\headlineRxErrNoiseless{} noiseless and \headlineRxErrEnvelope%
+\glossref{RX-ERR}; the location-error metric is distinct from the
+TF-magnitude modelling error of the two-section $\pi$-model versus a
+50-section reference, which is reported separately in \S\,II.D.
+% (d) CRLB headline
+The empirical RMS estimator stays \headlineCRLBGap{}\glossref{CRLB-GAP}.
+% (e) sampling configuration
+All results use \samplingConfig{}\glossref{SAMP-CFG}.
+% (f) outlook
+Single-frequency operation, training-free deployment, and the absence
+of remote-end communication make the estimator a practical
+single-ended primary HIF locator suitable for integration into the
+SAMBPS DTaaS Protection-Validation digital-twin module.
+\end{abstract}
+
+\begin{IEEEkeywords}
+High-impedance fault, fault location, arc resistance, transfer-function
+identification, single-ended, joint estimation, training-free,
+single-frequency, Cram\'er--Rao Lower Bound, dual-channel noise model,
+distribution protection, SAMBPS DTaaS.
+\end{IEEEkeywords}
+
+% =============================================================================
+\section{Introduction}\label{sec:intro}
+\textit{[WP0.2 - to be restructured into a 7-family taxonomy
+(Wang--Lopes-2023 EPSR) with a tabular synthesis; wildfire / safety
+motivation paragraph anchored to PSRC D15, NREL 2023, Camp Fire 85
+fatalities, Black Saturday 173, CPUC SB 901, PSPS; forward-reference
+roadmap.  Body content migrates from the IEEE\_Access-2 v1 PDF.]}
+
+\section{System and Models}\label{sec:models}
+\textit{[\S\,II.A distribution-line parameterisation, \S\,II.B
+two-section $\pi$-model state-space, \S\,II.C anti-parallel diode arc
+model, \S\,II.D section-model accuracy study.  WP0.5 lands the
+$\pi$-derivation appendix and the symbolic
+$\partial H/\partial\alpha,\partial H/\partial R_x$.]}
+
+\section{Transfer-Function Identification}\label{sec:tf}
+\textit{[\S\,III analytical / DFT / cost - body migrates from v1.]}
+
+\section{Two-Stage Optimiser}\label{sec:opt}
+\textit{[\S\,IV body migrates from v1; WP0.4 sub-tasks 6/7/8 add
+global-optimum capture statistic, hyperparameter sensitivity
+sub-table, \texttt{tic/toc} CPU report.]}
+
+\section{Simulation Setup and Noise Model}\label{sec:sim}
+\textit{[\S\,V-A simulation programme, \S\,V-B dual-channel noise
+model.  All headline numerical values cited here MUST reuse the
+macros defined in the preamble - never hand-type
+\samplingConfig{} or any of the headline percentages.]}
+
+\section{Results and Discussion}\label{sec:results}
+\textit{[\S\,VI body migrates from v1.  Every numerical claim about
+location error, $R_x$ error or the CRLB envelope reuses the
+macros so values stay byte-identical with the abstract and the
+glossary in \texttt{docs/glossary.md}.  Six panels carry over;
+captions are patched per WP0.4 sub-task 4 and CRLB envelope overlays
+are added by WP1.6.]}
+
+% Headline-number echo block (also in §VI proper once body is
+% migrated; placed here under WP0.1 to satisfy the byte-identical
+% acceptance check).
+\subsection*{Headline numerical findings (WP0.1 echo)}
+The two-stage estimator returns a mean fault-location error of
+\headlineLocErrNoiseless{} noiseless and \headlineLocErrSNR{}
+(see Glossary entry \texttt{LOC-ERR}).
+The mean arc-resistance error is \headlineRxErrNoiseless{} noiseless
+and \headlineRxErrEnvelope{} (Glossary \texttt{RX-ERR}).
+The empirical RMS estimator stays \headlineCRLBGap{}
+(Glossary \texttt{CRLB-GAP}).
+All experiments use \samplingConfig{} (Glossary \texttt{SAMP-CFG}).
+
+\section{Comparison with Existing Methods}\label{sec:compare}
+\textit{[\S\,VII Table 3-bis with four numerical competitors lands at
+WP4.5 (Phase 4): Paramo-2023 eigenvalue, Iurinic-2018 spectral,
+Cui-Weng-2020 micro-PMU, Zeng-2021 double-ended HIF.]}
+
+\section{Cram\'er--Rao Lower Bound Analysis}\label{sec:crlb}
+\textit{[\S\,VIII corrected via the proper-complex-Gaussian-ratio FIM
+(Kuruoglu-2018) plus joint dual-channel FIM cross-check
+(Nehorai-Hawkes-2000); WP1.6 / D-B / Decision gate D1.
+The headline result is unchanged in symbol but tightened in scope:
+the empirical RMS estimator stays \headlineCRLBGap{}.]}
+
+% =============================================================================
+\section{Conclusion and Future Work}\label{sec:conclusion}
+% =============================================================================
+This paper presented a single-ended joint estimator of HIF location and
+arc resistance from a single power-frequency admittance bin under a
+dual-channel additive-white-Gaussian-noise model.  Numerically, the
+estimator delivers a mean fault-location error of
+\headlineLocErrNoiseless{} (noiseless) and \headlineLocErrSNR.
+The arc-resistance envelope is the principal scope statement of the
+estimator: \headlineRxErrEnvelope.  The empirical RMS error remains
+\headlineCRLBGap.
+
+\subsection{Roadmap (12 / 24 / 36 months)}
+The future work below is anchored to Phases 1--5 of the SAMBPS DTaaS
+\emph{HIF-TF Project Execution Plan v1.0}
+(\texttt{docs/FaultLocationIdentification\_ExecutionPlan.pdf},
+\S\,2 and \S\,4).
+
+\noindent\textbf{12-month horizon (Phases 1--2, decision gates D1--D2).}
+\begin{enumerate}
+  \item Cross-platform validation on PSCAD, EMTP-RV and a 50-section
+        pure-MATLAB reference, plus 100-trial Monte-Carlo per grid
+        cell with 95th-percentile confidence intervals
+        (Phase 1, WP1.1--WP1.5).
+  \item Re-derivation of the Fisher Information Matrix under the
+        proper-complex-Gaussian-ratio framework
+        (Kuruo\u{g}lu-2018) and the joint dual-channel FIM
+        in $(V,I)$ space (Nehorai-Hawkes-2000), with the
+        Geary-Hinkley validity test reported per cell
+        (Phase 1, WP1.6).
+  \item Continuously parametrised distributed-parameter $H(j\omega_0;
+        \alpha, R_x)$ via cascaded ABCD / Bergeron blocks, retiring
+        the 39.44\,\% two-section modelling-error ceiling, with
+        analytical $\partial H/\partial\alpha,\partial H/\partial R_x$
+        replacing the central-difference gradient
+        (Phase 2, WP2.1--WP2.5).
+\end{enumerate}
+
+\noindent\textbf{24-month horizon (Phases 3--4, decision gates D3--D4).}
+\begin{enumerate}\setcounter{enumi}{3}
+  \item Generalisation to three-phase $Y_{abc}(j\omega_0)$ on the IEEE
+        13-, 34- and 123-node test feeders with laterals, tap loads
+        and at least one distributed generator
+        (Phase 3, WP3.1--WP3.4).
+  \item First-order Taylor--Fourier phasor estimator
+        (Platas-Garza-2010) replacing the single-bin DFT, plus
+        Hermann--Krener / STRIKE-GOLDD identifiability mapping of
+        $J(\alpha, R_x)$, and a multi-port FIM extension
+        (Phase 3, WP3.5--WP3.6).
+  \item Field-grade impairment classes (impulsive, harmonic,
+        CT/PT saturation per IEEE C37.110, $\pm 0.5$\,Hz off-nominal
+        per IEEE C37.118.1 P-class, ADC quantisation) and arc-class
+        diversification (Cassie--Mayr--Kizilcay, Wang-2020
+        distortion-controllable, Torres-2022 stochastic), plus a
+        numerical Table 3-bis benchmarking four competitor methods
+        on identical 720-case waveforms
+        (Phase 4, WP4.1--WP4.5).
+\end{enumerate}
+
+\noindent\textbf{36-month horizon (Phase 5, decision gate D5).}
+\begin{enumerate}\setcounter{enumi}{6}
+  \item RTDS / Typhoon HIL pilot at IIT-Madras with real relay-class
+        IED integration via IEC 61850-9-2 SV; live HIF arc scenarios
+        targeting end-to-end estimate latency below five
+        power-frequency cycles (Phase 5, WP5.1--WP5.3).
+  \item Productisation as the SAMBPS DTaaS Protection-Validation
+        module v1.0 with REST + Python client API and identifiability
+        + CRLB overlays surfaced to the operator
+        (Phase 5, WP5.4).
+  \item Second journal paper (IEEE TPWRD or TSG) bringing in HIL
+        evidence, the four-competitor numerical benchmark and the
+        multi-port CRLB (Phase 5, WP5.5).
+\end{enumerate}
+
+\subsection{Integration into the SAMBPS DTaaS Protection-Validation
+            module}
+The estimator's single-frequency, training-free, single-ended
+operation maps cleanly onto the SAMBPS DTaaS scenario-engine: the
+digital twin streams synthetic dual-channel V/I waveforms through the
+locator, surfaces the identifiability flag from
+\texttt{adaptation/faultloc\_identifiability\_check.py}, and overlays
+the corrected CRLB envelope on the operator's location estimate.
+This binds the estimator to a maintainable validation harness rather
+than a one-shot study, and forms the deployment vehicle for the v1.0
+release at decision gate D5
+(see Execution Plan \S\,4.6 WP5.4 and \S\,11 KPI K16).
+
+% =============================================================================
+\section*{Acknowledgments}
+% =============================================================================
+The authors thank the IIT-Madras Power Systems Computational Lab for
+hosting the experimental work and SAMBPS Digital Twin Labs for
+sponsoring the reproducibility-grade software release of all PSCAD
+and EMTP-RV models, the 720-case waveform set and the 50-section
+reference dataset under MIT licence.
+
+% =============================================================================
+\bibliographystyle{IEEEtran}
+% \bibliography{references}
+% =============================================================================
+
+\end{document}
