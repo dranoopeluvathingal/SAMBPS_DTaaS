@@ -1,0 +1,1137 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=22mm,top=24mm,bottom=24mm]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{seqsplit}
+\setlength{\emergencystretch}{4em}
+\sloppy
+\hbadness=10000
+\hfuzz=4pt
+% Wrap long filenames with breakable points
+\newcommand{\fpath}[1]{\texttt{\seqsplit{#1}}}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{parskip}
+\usepackage[hidelinks,colorlinks=true,linkcolor=sambpblue,urlcolor=sambpblue]{hyperref}
+
+% --- Colour palette mirroring the SAMBPS DTaaS execution manual ----------
+\definecolor{sambpblue}{HTML}{1F3D7A}
+\definecolor{sambplight}{HTML}{D9E2F3}
+\definecolor{sambpgrey}{HTML}{4A4A4A}
+\definecolor{sambpaccent}{HTML}{F39200}
+
+% --- Headings ---------------------------------------------------------------
+\titleformat{\section}
+  {\color{sambpblue}\Large\bfseries}{\thesection.}{0.6em}{}
+\titleformat{\subsection}
+  {\color{sambpblue}\large\bfseries}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}
+  {\color{sambpgrey}\normalsize\bfseries}{\thesubsubsection}{0.6em}{}
+
+% --- Headers / footers ------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\fancyhead[L]{\footnotesize\color{sambpblue}\textbf{SAMBPS DTaaS}\ \textendash\ Fault Location Identification}
+\fancyhead[R]{\footnotesize\color{sambpgrey}Project Execution Plan v1.0}
+\fancyfoot[L]{\footnotesize Anoop Eluvathingal -- Chief Scientist \& CEO, SAMBPS DTaaS}
+\fancyfoot[R]{\footnotesize\thepage}
+
+% --- Custom column types ----------------------------------------------------
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+\setlist[itemize]{leftmargin=*,topsep=2pt,itemsep=1pt}
+\setlist[enumerate]{leftmargin=*,topsep=2pt,itemsep=1pt}
+
+\begin{document}
+
+% ===========================================================================
+% Cover
+% ===========================================================================
+\begin{titlepage}
+\thispagestyle{empty}
+\noindent\colorbox{sambpblue}{\parbox{\dimexpr\textwidth-2\fboxsep\relax}{%
+  \vspace{0.6cm}
+  \color{white}\Large\textbf{SAMBPS DTaaS}\\[2pt]
+  \color{sambplight}\normalsize Smart Adaptive Model-Based Protection \& Control Systems\\[1.2cm]
+  \color{white}\Huge\textbf{Fault Location Identification}\\[6pt]
+  \color{sambplight}\Large Project Execution Plan v1.0\\[6pt]
+  \color{white}\large HIF transfer-function locator -- 48-week, 252-PD operating plan
+  \vspace{0.4cm}
+}}
+
+\vspace{1.6cm}
+
+\noindent{\large\textbf{Subject under execution}}\\[3pt]
+\noindent
+Single-ended joint estimation of HIF location $\alpha$ and arc resistance $R_x$
+via power-frequency admittance identification with dual-channel noise modelling
+(IEEE Access manuscript, Arjundas K.\ \& K.\ Shanthi Swarup, 2026).
+
+\vspace{0.7cm}
+
+\noindent{\large\textbf{Reference baseline}}\\[3pt]
+\noindent
+\texttt{HIF\_TF\_Execution\_Manual.pdf} (v3) -- 18\,pp. internal SAMBPS execution
+manual that operationalises the v2 deep-research project plan into day-level
+WBS, RACI, acceptance specs, schedule and repository inventory.  This document
+mirrors the manual's structure and is the canonical project-execution plan for
+the new \texttt{04\_code/sambp/fault\_location\_id/} sub-project, sized and
+named consistently with the four existing SAMBP sub-projects
+(\texttt{sync\_oc}, \texttt{transformer\_diff}, \texttt{line\_diff},
+\texttt{bus\_diff}).
+
+\vspace{0.7cm}
+
+\noindent{\large\textbf{Posture}}\\[3pt]
+\noindent
+Phase 0 unlocks IEEE Access camera-ready in $\approx 14$ person-days over weeks
+W0--W2.  Phases 1--5 retire the two structural risks identified by the v2 plan
+(corrected CRLB, continuously parametrised optimiser) and convert the
+manuscript into a literature-anchored, three-phase, hardware-tested SAMBPS
+DTaaS Protection-Validation module with a second journal paper and an
+institutional HIL pilot.  Total horizon 48 weeks; total effort
+$\approx 252$\,person-days; staffing one full-time lead engineer + one
+half-time second engineer + advisor time per the RACI in \S\,5.
+
+\vfill
+\noindent\colorbox{sambplight}{\parbox{\dimexpr\textwidth-2\fboxsep\relax}{%
+  \vspace{0.15cm}
+  \color{sambpblue}\textbf{Prepared by} Anoop Eluvathingal -- Chief Scientist \& CEO, SAMBPS DTaaS\\[1pt]
+  \color{sambpgrey}\small Issued: 09 May 2026 \quad\textbar\quad Confidential -- internal execution plan\\[1pt]
+  \small Located in: \texttt{04\_code/sambp/fault\_location\_id/docs/}
+  \vspace{0.15cm}
+}}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ===========================================================================
+\section{Purpose, scope and how to use this plan}
+% ===========================================================================
+
+This Execution Plan is the day-level operating document for the new
+SAMBPS DTaaS sub-project \texttt{fault\_location\_id} (Fault Location
+Identification).  It mirrors the structure, notation and decision-gate
+discipline of the SAMBPS HIF-TF Execution Manual v3 and is written so the
+lead engineer (Arjundas K.) can pick it up on Monday morning, drive
+Phase~0 to camera-ready, and continue without ambiguity through Phases
+1--5 to the second journal paper and the SAMBPS DTaaS Protection-Validation
+module v1.0.
+
+\paragraph{How to read this plan}
+
+\begin{itemize}
+  \item \textbf{\S\,2 Executive summary} -- five-phase posture, critical work
+    packages, decision gates.
+  \item \textbf{\S\,3 Section-by-section audit} -- nine manuscript-level
+    shortcomings, each tagged to the Work Package(s) and Deliverable(s)
+    that close it.
+  \item \textbf{\S\,4 Work Breakdown Structure} -- every WP from the v2/v3
+    plan decomposed into numbered sub-tasks with effort estimates in
+    person-days (PD) and dependencies.
+  \item \textbf{\S\,5 RACI matrix} -- nine-actor responsibility map across
+    SAMBPS, IIT-Madras, NUS, NTU, TU Dortmund, Amprion and the IED
+    industry partners.
+  \item \textbf{\S\,6 Acceptance test specifications} -- the eight
+    deliverables D-A through D-H locked to quantitative pass/fail
+    predicates that CI executes on every commit.
+  \item \textbf{\S\,7 Schedule} -- W0--W2 day-by-day; W2--W48 week-by-week.
+  \item \textbf{\S\,8 Communication plan} -- daily / weekly / phase-end
+    cadence and the decision-gate review template.
+  \item \textbf{\S\,9 Repository inventory} -- the
+    \texttt{fault\_location\_id} folder skeleton (created alongside this
+    plan) and the public artefact map.
+  \item \textbf{\S\,10 Risk register} -- ten-row register imported from the
+    v2 plan and tightened to this sub-project.
+  \item \textbf{\S\,11 KPI dashboard} -- 17 KPIs from the v2 plan with
+    current values and SAMBPS DTaaS v1.0 targets.
+  \item \textbf{\S\,12 Bottom line and approval block.}
+\end{itemize}
+
+\paragraph{Notation.}
+\textbf{WPx.y} = work package from the v2 plan
+(e.g.\ WP1.6 = re-derive the FIM via the proper-complex-Gaussian-ratio
+framework).  \textbf{D-A \ldots\ D-H} = v2 deliverables.
+\textbf{D0 \ldots\ D5} = decision gates at the end of each phase.
+\textbf{R1 \ldots\ R10} = v2 risk register rows.  \textbf{O1 \ldots\ O9} =
+v2 objectives.  Manual references like ``v3 \S\,3.7'' point to subsections
+of \texttt{HIF\_TF\_Execution\_Manual.pdf}.
+
+% ===========================================================================
+\section{Executive summary -- execution posture}
+% ===========================================================================
+
+\renewcommand{\arraystretch}{1.18}
+\begin{longtable}{L{1.4cm}L{4.0cm}L{5.6cm}L{4.0cm}}
+\toprule
+\rowcolor{sambplight}
+\textbf{Phase} & \textbf{Posture} & \textbf{Critical work packages} & \textbf{Decision gate}\\
+\midrule
+\endhead
+
+\textbf{Phase 0}\newline W0--2 &
+Editorial + reproducibility hardening; published as soon as Phase 0 closes.
+All work parallelisable across two engineers. &
+WP0.1 metric harmonisation; WP0.2 prior-art restructure; WP0.3 references
++ DOI pass; WP0.4 public repo + CI; WP0.5 Appendix A
+($\pi$-derivation + $\partial H/\partial\theta$). &
+\textbf{D0:} IEEE Access camera-ready v2.0 frozen; CI green.\\
+
+\textbf{Phase 1}\newline W2--10 &
+Two work-streams in parallel: (a)~cross-platform validation;
+(b)~corrected CRLB. &
+WP1.1--1.4 PSCAD + EMTP + 50-section reference + 720-rerun;
+WP1.5 Monte-Carlo; WP1.6 proper-complex-Gaussian-ratio FIM. &
+\textbf{D1:} Mean location error $<2$\,\% across all simulators at
+$\mathrm{SNR}_I\geq 30$\,dB; corrected CRLB visualised.\\
+
+\textbf{Phase 2}\newline W6--16 (overlaps Phase 1) &
+Mathematical work to retire the 39.44\,\% section-modelling-error
+ceiling; gated on Phase 1 D1. &
+WP2.1 closed-form $H$; WP2.2 $\partial H/\partial\alpha$ analytic;
+WP2.3 verify vs 50-section; WP2.4 analytical gradients in optimiser;
+WP2.5 re-run 720 + Monte-Carlo. &
+\textbf{D2:} Modelling error vs 50-section $<5$\,\%;
+estimator improvement $\geq 30$\,\% at noisy SNR.\\
+
+\textbf{Phase 3}\newline W10--24 &
+Generalisation to three-phase, branched, multi-section, IEEE feeders;
+replace single-bin DFT. &
+WP3.1--3.4 three-phase $Y_{abc}$ + IEEE 13/34/123 + fault types;
+WP3.5 Taylor-Fourier; WP3.6 multi-port FIM; WP3.7 CNRS dataset. &
+\textbf{D3:} Mean location error $<3$\,\% on IEEE 34-node at SNR
+$\geq 30$\,dB.\\
+
+\textbf{Phase 4}\newline W18--30 (overlaps Phase 3) &
+Field-grade impairments + numerical competitor benchmark + arc-class
+diversification. &
+WP4.1 impairments; WP4.2--4.4 Cassie-Mayr-Kizilcay + Wang-2020 +
+Torres-2022; WP4.5 four-competitor benchmark. &
+\textbf{D4:} $<5$\,\% location error at SNR $\geq 30$\,dB across all
+impairment classes; numerical superiority over $\geq 2$ of 4
+competitors.\\
+
+\textbf{Phase 5}\newline W26--48 &
+HIL pilot + DTaaS productisation; institutional partner engagement
+throughout. &
+WP5.1 HIL platform; WP5.2 real IED + IEC 61850-9-2 SV;
+WP5.3 live HIF arc; WP5.4 DTaaS module; WP5.5 second journal paper. &
+\textbf{D5:} Real-IED end-to-end estimate latency $<5$ cycles;
+institutional pilot signoff; SAMBPS DTaaS v1.0 release; second journal
+submitted.\\
+
+\bottomrule
+\end{longtable}
+
+% ===========================================================================
+\section{Section-by-section manuscript audit}
+% ===========================================================================
+
+The audit below mirrors the manuscript's running order.  Each row
+identifies what is currently written, the shortcoming after comparison
+with the v2 plan, and the upgrade actions tagged with the v2 work
+package(s) and deliverable(s) that close them.
+
+\renewcommand{\arraystretch}{1.18}
+\begin{longtable}{L{4.4cm}L{4.6cm}L{6.0cm}}
+\toprule
+\rowcolor{sambplight}
+\textbf{Existing writing} & \textbf{Shortcoming vs v2 plan} & \textbf{Upgrade action (WP / deliverable)}\\
+\midrule
+\endhead
+
+\textbf{Title.}
+``HIF Location and Resistance Estimation \ldots Transfer Function
+Identification at 50\,Hz with Dual-Channel Noise Modelling.'' Single-ended TF
+identification.
+&
+Title leads with the technique, not the deliverable; ``at 50 Hz'' reads as
+a constraint; the genuine novelty (joint $\alpha + R_x$) is buried.
+&
+\textbf{WP0.1.} Title to: ``Single-Ended Joint Estimation of HIF Location
+and Arc Resistance via Power-Frequency Admittance Identification with
+Dual-Channel Noise Modelling.'' Add training-free / single-frequency to
+keywords.  Closes \textbf{D-A}.\\
+
+\textbf{Abstract.}
+Method, two-stage optimiser, 720-case AWGN sweep, headline 0.009\,\% /
+1.18\,\%, 39.44\,\% vs 50-section, CRLB analysis.
+&
+Conflates location\,\% vs modelling\,\%; CRLB headline
+(``within 15\,\% of CRLB at SNR $\geq 40$\,dB'') absent;
+$R_x$ error envelope absent; no motivation paragraph; sampling
+config not stated.
+&
+\textbf{WP0.1.} Rewrite to $\leq 250$ words: open with PSRC D15 + NREL 2023
+motivation; disambiguate modelling vs estimation error; add CRLB headline;
+add $R_x$ envelope; state $f_s$ / $N_s$ / window.  Closes \textbf{D-A}.\\
+
+\textbf{Introduction.}
+Four-category taxonomy; single-ended single-frequency operation positioned
+as the contribution; five contributions listed.
+&
+Taxonomy is dated; should be 7 families per Wang--Lopes-2023 EPSR
+($\mu$-PMU, TW, morphology / wavelet, GAN / GNN, statistical missing).
+No real-world fatality evidence; no CPUC SB 901 / PSPS framing.
+&
+\textbf{WP0.1 + WP0.2.} Restructure prior-art into 7 families with tabular
+synthesis; add 1-paragraph wildfire / safety motivation; add
+forward-reference roadmap.  Closes \textbf{D-A}.\\
+
+\textbf{Distribution-line parameterisation (II.A).}
+11\,kV, 100\,km feeder split at $\alpha\in(0,1)$.  $R'=0.0728$\,$\Omega$/km,
+$L'=4R'$, $C'=3R'$.  Single-section, single-feeder, single-phase.
+&
+$L'=4R'$ and $C'=3R'$ are dimensionally heterodox; Saha-2010 and
+Wang--Lopes-2023 require explicit units.  Single-section / single-phase
+neglects the branched / DG-rich reality covered by Phase 3.
+&
+\textbf{WP0.5.} Add explicit numeric values
+($L'=0.927$\,mH/km, $C'=11.6$\,nF/km) with citation; dimensional-check
+sentence; scope statement on single-feeder restriction.
+\textbf{WP3.1--3.3.} Generalise to three-phase $Y_{abc}$, IEEE 13/34/123.
+Closes \textbf{D-A, D-D}.\\
+
+\textbf{Two-section $\pi$-model state-space (II.B).}
+$x = [V_{C1}, V_{C2}, I_{L1}, I_{L2}]^T$; 4$\times$4 $A$ matrix printed in
+Eq.~(3); $A_{11} = -1/(R_x C_1)$ continuously differentiable in
+$(\alpha, R_x)$.
+&
+Derivation correct but not appended; $\partial H/\partial\alpha$ and
+$\partial H/\partial R_x$ not written out, although both the gradient
+solver and the FIM need them.
+&
+\textbf{WP0.5.} Appendix A with annotated $\pi$-circuit, full KVL/KCL
+$\rightarrow$ state-space derivation, symbolic
+$\partial H/\partial\alpha$ and $\partial H/\partial R_x$.  Verify in
+MATLAB \texttt{sym/eig} regression test (R7 mitigation).
+Closes \textbf{D-A}.\\
+
+\textbf{Anti-parallel diode arc model (II.C).}
+$V_{kp}=50$\,V, $V_{kn}=45$\,V, $R_{sp}=5\,\Omega$, $R_{sn}=6\,\Omega$,
+$R_{\mathrm{off}}=10^{6}\,\Omega$, $\varepsilon=10^{-3}$\,A;
+quasi-static $R_x$ over one cycle.
+&
+Parameter provenance gap (Emanuel-1990 sandy-soil values are kV-range
+$V_p / V_n$, tens-to-thousands $\Omega$ $R_p / R_n$;
+Santos-2022 surface-resolved table contradicts the values); single arc
+class; random reignition not modelled.
+&
+\textbf{WP0.5.} Cite the source of every parameter; if internal
+calibration, document. \textbf{WP4.2--4.4.} Add Cassie--Mayr--Kizilcay,
+Wang-2020 distortion-controllable, Torres-2022 stochastic-configurable;
+report $\Delta$-error.  Closes \textbf{D-A, D-E}.  Mitigates R10.\\
+
+\textbf{Section-model accuracy study (II.D).}
+$N_s=2,5,10,20$ vs 50-section reference; 2-section mean 39.44\,\%, max
+89.78\,\%; 10-section creates fault-node discretisation that breaks the
+gradient solver; 2-section retained as deliberate trade-off.
+&
+\emph{Single most important residual issue.} Lopes-2023, Trew-2023,
+Suonan-2023, Kang-2021 publish closed-form continuously-parametrised
+distributed-parameter formulations in which the fault is inserted as a
+shunt at $\alpha$ with two cascaded ABCD / Bergeron / hyperbolic blocks.
+&
+\textbf{WP2.1--2.5.} Derive $H(j\omega_0; \alpha, R_x)$ from cascaded
+ABCD/Bergeron; prove $\partial H/\partial\alpha$ exists analytically;
+reproduce 50-section reference within 1\,\%; replace FD with analytical
+gradients in optimiser; re-run 720 + Monte-Carlo.  Closes \textbf{D-C}.
+Decision gate \textbf{D2}.\\
+
+\textbf{Transfer-function identification (III).}
+$H_{\mathrm{model}} = C(j\omega_0 I - A)^{-1}B$; DFT at 10\,kHz / 200
+samples / $k_{50}=2$; $J=|\Delta H|^2 = [\Delta\mathrm{Re}]^2 +
+[\Delta\mathrm{Im}]^2$.
+&
+Single-bin DFT biased under non-stationary HIF; single complex observation
+just-determined for 2 reals but locally degenerate where
+$\partial H/\partial\alpha$ and $\partial H/\partial R_x$ are colinear;
+Euclidean cost weighting sub-optimal -- Kay-1993 prescribes $\Sigma^{-1}$.
+&
+\textbf{WP3.5.} Replace single-bin DFT with first-order Taylor-Fourier;
+map $J(\alpha, R_x)$ on representative case; apply Hermann-Krener ORC.
+\textbf{WP3.6 + WP1.6.} Adopt ML / whitened-Mahalanobis cost
+$J_{\mathrm{ML}} = \Delta H^H \Sigma^{-1}\Delta H$.  Closes \textbf{D-D}.\\
+
+\textbf{Two-stage optimiser (IV).}
+Stage 1: $100\times50$ grid + top-3 multi-start + 8-neighbour steepest
+descent.  Stage 2: gradient descent with central FD + Armijo line-search;
+box constraints; 2000-iter cap.
+&
+Top-3 multi-start has no global-optimum guarantee; FD wasteful when
+analytic $\partial H/\partial\alpha$ available;
+no runtime / FLOP / wall-clock report; hyperparameters lack sensitivity
+analysis; ``2-cycle response'' claim not validated.
+&
+\textbf{WP2.4.} Replace FD with analytical gradients.
+\textbf{WP0.4 sub-tasks 6/7/8.} Global-optimum capture statistic over
+720-grid; hyperparameter sensitivity sub-table; median + 95th-percentile
+CPU time (\texttt{tic/toc} over 1000 calls).
+Closes \textbf{D-A, D-C}.\\
+
+\textbf{Simulation setup and noise (V).}
+Full-factorial 720-case ($10\,\alpha\times 5\,R_x\times 4\,\mathrm{SNR}_V
+\times 4\,\mathrm{SNR}_I$); independent dual-channel AWGN; \texttt{rng(42)};
+IEEE HIF range 100--5000\,$\Omega$.
+&
+Self-consistent simulation framework (same model generates and is fitted);
+AWGN-only; no CT/PT saturation; no off-nominal frequency; means only.
+&
+\textbf{WP1.1--1.4} re-run on PSCAD / EMTP / 50-section reference.
+\textbf{WP1.5} 100 Monte-Carlo trials per cell.
+\textbf{WP4.1} add five impairment classes.
+\textbf{WP3.7} validate on CNRS-2024 IEEE-34 dataset.
+Closes \textbf{D-B, D-D, D-E}.  Decision gates \textbf{D1, D3, D4}.\\
+
+\textbf{Results and discussion (VI).}
+Six panels: noiseless baseline; $\mathrm{SNR}_V$ sweep;
+$\mathrm{SNR}_I$ sweep (dominant); $R_x$ error sweeps; estimated-vs-true
+scatter; $\mathrm{SNR}_V \times \mathrm{SNR}_I$ and
+$\alpha \times R_x$ heatmaps.
+&
+Figure captions truncated; heatmaps don't overlay CRLB envelope;
+``systematic bias-free'' claim not numerically tested; no comparison
+plot vs competitors.
+&
+\textbf{WP0.4 sub-task 4.} Patch every figure caption; add axis labels
+with units. \textbf{WP1.6.} Overlay corrected CRLB envelope on Figs 2--5
+and 8--9. \textbf{WP1.5.} Add per-cell numerical bias and 95\,\% CI.
+\textbf{WP4.5.} Add comparison plot vs Paramo / Iurinic / Cui-Weng / Zeng.
+Closes \textbf{D-B, D-E}.\\
+
+\textbf{Comparison with existing methods (VII).}
+Table 3 contrasts proposed TF method with seven prior-art classes;
+categorical noise level Low/Med/High; comm requirement; location
+capability.
+&
+No numerical head-to-head; Iurinic-2018 spectral, Zeng-2021 double-ended
+HIF, Cui-Weng-2020 $\mu$-PMU, Lopes-2023 distributed-parameter all
+missing or shallowly cited; categorical noise non-quantitative.
+&
+\textbf{WP4.5.} Re-implement and re-run four competitors on identical
+720-case waveforms.  Publish numerical Table 3-bis: method, location\,\%
+error, $R_x$\,\% error, CPU time, comm infrastructure, training-data
+requirement, SNR floor for $<5$\,\% error.  Closes \textbf{D-E}.
+Mitigates R6.\\
+
+\textbf{Cram\'er-Rao Lower Bound (VIII).}
+FIM under circular complex Gaussian noise on $H_{\mathrm{meas}}$;
+four headline findings; near-source $\alpha < 0.2$ floor identified
+as fundamental.
+&
+\emph{Most consequential audit finding.} The data noise model in V-B is
+dual-channel AWGN on $V$ and $I$ ratioed to form $H_{\mathrm{meas}}$;
+the resulting density on $H$ is non-Gaussian; the Gaussian-on-$H$ FIM
+under-estimates the true bound and is valid only when
+$|I|\gg \sigma_I$ -- the opposite of the HIF regime.
+&
+\textbf{WP1.6.} Re-derive the FIM via the proper-complex-Gaussian-ratio
+framework (Kuruoglu-2018 ASCE) or a joint dual-channel FIM in $(V, I)$
+space (Nehorai-Hawkes-2000; Kay-1993 Vol.~I Ch.~15) projected onto
+$(\alpha, R_x)$.  Publish $\partial H/\partial\alpha,
+\partial H/\partial R_x$ in Appendix A (WP0.5).  Add CRLB-vs-empirical
+overlay plots.  Add Geary-Hinkley validity test.  Closes \textbf{D-B}.
+Decision gate \textbf{D1}.  Mitigates R9.\\
+
+\textbf{Conclusion and future work (IX).}
+Summarises method and headline numbers; identifies two-section limitation
+as principal residual; lists future work: continuously-parametrised model,
+three-phase, HIL, non-Gaussian noise.
+&
+Future-work list is broad but un-prioritised, un-scheduled, un-anchored;
+$R_x$-error envelope buried; no TRL framing; SAMBPS DTaaS productisation
+absent.
+&
+\textbf{WP0.1.} Convert future-work into numbered roadmap with horizons
+(12 / 24 / 36 mo) aligning to v2 phases; tighten $R_x$ envelope
+statement; add 2--3 line outlook on DTaaS Protection-Validation module
+integration; cite $\geq 3$ literature anchors per future-work item.
+Closes \textbf{D-A}.\\
+
+\textbf{References, figures, supplementary.}
+20 references (one duplicate); 9 figures (caption truncation issues);
+no public repo; no Data Availability Statement.
+&
+Thin reference set for an active literature; v2 bibliography offers
+$\geq 80$ candidate entries; Wei-2020 PSCAD HIAF GitHub model and
+CNRS-2024 IEEE-34 dataset exemplars.
+&
+\textbf{WP0.3.} De-duplicate Refs [2]/[10]; expand to $\approx 35$--$45$
+entries grouped by family; DOI + IEEE-style pass; verify every reference.
+\textbf{WP0.4.} Public GitHub/Zenodo repo with .m source, 720-case MAT,
+figure scripts, symbolic $\partial H/\partial\theta$ derivation, README,
+LICENSE, CI; add Data Availability Statement.  Closes \textbf{D-A}.\\
+
+\bottomrule
+\end{longtable}
+
+% ===========================================================================
+\section{Work Breakdown Structure (day-level decomposition)}
+% ===========================================================================
+
+Every WP is decomposed into numbered sub-tasks with effort estimates in
+person-days (PD).  Effort assumes one experienced MATLAB / Python power-systems
+engineer; halve elapsed time when two engineers work in parallel.
+
+\subsection{Phase 0 -- Editorial + reproducibility (W0--2; total $\approx 14$ PD)}
+
+\begin{longtable}{L{1.2cm}L{9.4cm}C{1.2cm}L{3.2cm}}
+\toprule\rowcolor{sambplight}
+\textbf{WP} & \textbf{Sub-task} & \textbf{Effort} & \textbf{Output}\\\midrule\endhead
+WP0.1 & Title rewrite (\S\,3.1); abstract rewrite (\S\,3.2); conclusion roadmap
+       (\S\,3.14); metric harmonisation across abstract / Sect.~VI / Sect.~IX. &
+       1.5\,PD & frozen \fpath{HIF-TF\_v2.0\_manuscript.docx} + \texttt{changelog.md}\\
+WP0.2 & Restructure prior-art into 7-family taxonomy; wildfire-motivation paragraph
+       (NREL 2023, PSRC D15, Camp Fire, Black Saturday, CPUC SB 901);
+       forward-reference roadmap. &
+       1.0\,PD & revised Sect.~I\\
+WP0.3 & Reference set expansion to $\approx 35$--$45$ entries; de-duplicate
+       Refs [2]/[10]; DOI + IEEE-style pass; verify every entry against IEEE
+       Xplore / Crossref. &
+       1.5\,PD & \fpath{references.bib}\\
+WP0.4 & Stand up public GitHub/Zenodo repo: \texttt{README}, \texttt{LICENSE} (MIT),
+       \texttt{.gitignore}, GH Actions CI workflow (unit tests + symbolic
+       \texttt{sym/eig} regression); push existing .m source + 720-case MAT +
+       figure scripts.  Sub-tasks 4--8: figure caption patch; CRLB-overlay
+       placeholder; global-optimum capture statistic; hyperparameter sensitivity
+       table; \texttt{tic/toc} CPU report. &
+       4.0\,PD & repository (private $\rightarrow$ public at D0); Zenodo DOI\\
+WP0.5 & Appendix A: annotated $\pi$-circuit; full KVL/KCL $\rightarrow$ state-space
+       derivation; symbolic $\partial H/\partial\alpha$ and
+       $\partial H/\partial R_x$; arc-parameter provenance citations; explicit
+       numeric line parameters with units; dimensional-check sentence. &
+       3.0\,PD & \fpath{AppendixA\_derivation.tex} + \fpath{derive\_partials.m}\\
+WP0.6 & IEEE Access camera-ready + supplementary upload; co-author signoff;
+       submit. &
+       1.0\,PD & submission ID; D-A achieved\\
+\midrule
+\multicolumn{2}{r}{\textbf{Phase 0 total}} & \textbf{14.0\,PD} & \\
+\bottomrule
+\end{longtable}
+
+\subsection{Phase 1 -- Cross-platform + corrected CRLB (W2--10; $\approx 35$\,PD)}
+
+\begin{longtable}{L{1.2cm}L{9.4cm}C{1.2cm}L{3.2cm}}
+\toprule\rowcolor{sambplight}
+\textbf{WP} & \textbf{Sub-task} & \textbf{Effort} & \textbf{Output}\\\midrule\endhead
+WP1.1 & Build PSCAD model: 11\,kV / 100\,km feeder + anti-parallel diode arc +
+       dual-channel CT/PT; export V/I waveforms at 10\,kHz to \texttt{.mat}. &
+       6.0\,PD & \fpath{pscad/HIFL\_11kV\_100km.pscx}\\
+WP1.2 & EMTP-RV mirror of WP1.1 (independent implementation by E2; or
+       third-party EMTP user reviews PSCAD case). &
+       5.0\,PD & \fpath{emtp/HIFL\_11kV\_100km.ecf}\\
+WP1.3 & Pure-MATLAB 50-section reference state-space (data-only; not used by
+       optimiser); generate waveforms across all 720 grid points. &
+       2.0\,PD & \fpath{matlab/ref\_50section\_dataset.mat}\\
+WP1.4 & Re-run optimiser (unchanged) on each independent dataset; compute mean
+       / max location and $R_x$ error; quantify $\Delta$-error attributable to
+       optimiser-vs-data model mismatch. &
+       3.0\,PD & \fpath{results/phase1\_crossplatform.csv} + report\\
+WP1.5 & 100-trial Monte-Carlo per grid cell across each dataset; mean /
+       95th-percentile; per-cell numerical bias and 95\,\% CI. &
+       4.0\,PD & \fpath{phase1\_montecarlo.mat} + per-cell CI table\\
+WP1.6 & Re-derive FIM via proper-complex-Gaussian-ratio framework
+       (Kuruoglu-2018) AND joint dual-channel FIM in $(V,I)$ projected onto
+       $(\alpha, R_x)$ (Nehorai-Hawkes-2000); cross-check; Geary-Hinkley
+       validity test; CRLB-vs-empirical overlay plots. &
+       8.0\,PD & \fpath{crlb\_proper.m}, \fpath{crlb\_dualchannel.m},
+       \fpath{fig/crlb\_overlay\_*.pdf}, \fpath{AppendixB\_correctedCRLB.tex}\\
+WP1.7 & Phase 1 milestone document; arXiv preprint of cross-validation +
+       corrected CRLB; D1 review. &
+       3.0\,PD & arXiv preprint; D-B achieved\\
+\midrule
+\multicolumn{2}{r}{\textbf{Phase 1 total}} & \textbf{31.0\,PD} & rounded $\approx 35$ with contingency\\
+\bottomrule
+\end{longtable}
+
+\subsection{Phase 2 -- Continuously parametrised optimiser (W6--16; $\approx 28$\,PD)}
+
+\begin{longtable}{L{1.2cm}L{9.4cm}C{1.2cm}L{3.2cm}}
+\toprule\rowcolor{sambplight}
+\textbf{WP} & \textbf{Sub-task} & \textbf{Effort} & \textbf{Output}\\\midrule\endhead
+WP2.1 & Derive cascaded ABCD / Bergeron / hyperbolic closed-form admittance
+       $H(j\omega_0; \alpha, R_x)$ where the fault is a shunt at distance
+       $\alpha$ between two distributed-parameter line sections (Lopes-2023;
+       Trew-2023; Kang-2021; Pozar Microwave Eng.\ ABCD). &
+       6.0\,PD & \fpath{H\_closedform.m} + \fpath{derive\_H\_closedform.m}\\
+WP2.2 & Derive $\partial H/\partial\alpha$ and $\partial H/\partial R_x$ in
+       closed form via analytic derivatives of $\cosh(\gamma\alpha\ell)$,
+       $\sinh(\gamma\alpha\ell)$; MATLAB \texttt{sym/diff} verification. &
+       3.0\,PD & \fpath{dH\_dalpha.m}, \fpath{dH\_dRx.m}\\
+WP2.3 & Reproduce 50-section reference within 1\,\% across all $(\alpha, R_x)$
+       grid; if $>1$\,\%, root-cause and iterate. &
+       4.0\,PD & \fpath{results/phase2\_modelfit.csv}\\
+WP2.4 & Replace FD with analytical gradients in optimiser; hyperparameter
+       sensitivity sub-table; re-verify Armijo line-search behaviour. &
+       4.0\,PD & updated \texttt{optimiser.m}; sensitivity table\\
+WP2.5 & Re-run all 720 cases + Monte-Carlo on the new optimiser; compare to
+       Phase 1 baseline; report estimator improvement. &
+       3.0\,PD & \fpath{results/phase2\_montecarlo.mat}\\
+WP2.6 & Phase 2 milestone document; manuscript revision (or follow-on TPWRD
+       paper draft); D2 review. &
+       8.0\,PD & revised IEEE Access response or TPWRD draft; D-C achieved\\
+\midrule
+\multicolumn{2}{r}{\textbf{Phase 2 total}} & \textbf{28.0\,PD} & \\
+\bottomrule
+\end{longtable}
+
+\subsection{Phase 3 -- 3-phase / IEEE feeders / Taylor-Fourier (W10--24; $\approx 50$\,PD)}
+
+\begin{longtable}{L{1.2cm}L{9.4cm}C{1.2cm}L{3.2cm}}
+\toprule\rowcolor{sambplight}
+\textbf{WP} & \textbf{Sub-task} & \textbf{Effort} & \textbf{Output}\\\midrule\endhead
+WP3.1 & Generalise state-space to 3-port admittance $Y_{abc}(j\omega_0)$;
+       multi-port closed-form $H$ per Phase 2. &
+       8.0\,PD & \fpath{Y\_abc\_closedform.m}\\
+WP3.2 & Add laterals, tap loads, $\geq 1$ DG; parameterise upstream Thevenin
+       source. &
+       5.0\,PD & extended feeder model\\
+WP3.3 & Build IEEE 13- / 34- / 123-node test-feeder digital twins
+       (PSCAD + MATLAB). &
+       10.0\,PD & \fpath{IEEE\_13.pscx}, \fpath{IEEE\_34.pscx},
+       \fpath{IEEE\_123.pscx}\\
+WP3.4 & Add SLG, LL, LLG fault types in addition to single-phase HIF;
+       re-run extended 720-grid. &
+       5.0\,PD & \fpath{results/phase3\_faulttypes.mat}\\
+WP3.5 & Replace single-bin DFT with first-order Taylor-Fourier; quantify
+       phasor-bias improvement on arc-modulated waveforms; map
+       $J(\alpha, R_x)$ on representative case
+       (Hermann-Krener / STRIKE-GOLDD). &
+       8.0\,PD & \fpath{tft\_phasor.m}; \fpath{fig/J\_surface\_*.pdf};
+       identifiability map\\
+WP3.6 & Multi-port FIM (3 ports $\rightarrow$ 6 real obs per port);
+       project onto $(\alpha, R_x)$; update ML cost and CRLB overlays. &
+       6.0\,PD & \fpath{fim\_multiport.m}\\
+WP3.7 & Validate on CNRS-2024 IEEE-34 HIF dataset
+       (DOI 10.57745/KRYCYY); compare vs simulator output. &
+       4.0\,PD & \fpath{phase3\_cnrs\_validation.csv}\\
+WP3.8 & Phase 3 milestone; conference paper (IEEE PES GM or ISGT); D3 review. &
+       4.0\,PD & conference paper draft; D-D achieved\\
+\midrule
+\multicolumn{2}{r}{\textbf{Phase 3 total}} & \textbf{50.0\,PD} & \\
+\bottomrule
+\end{longtable}
+
+\subsection{Phase 4 -- Impairments + competitor benchmark + arc diversity (W18--30; $\approx 45$\,PD)}
+
+\begin{longtable}{L{1.2cm}L{9.4cm}C{1.2cm}L{3.2cm}}
+\toprule\rowcolor{sambplight}
+\textbf{WP} & \textbf{Sub-task} & \textbf{Effort} & \textbf{Output}\\\midrule\endhead
+WP4.1 & Add 5 impairment classes: impulsive (Bernoulli-Gaussian), harmonic
+       (2/5/7/11), CT/PT saturation per IEEE C37.110, $\pm 0.5$\,Hz off-nominal
+       per IEEE C37.118.1 P-class, 12/14/16-bit ADC quantisation; re-run
+       720-grid for each. &
+       10.0\,PD & \fpath{impairments\_lib.m};
+       \fpath{phase4\_impairments.mat}\\
+WP4.2 & Cassie-Mayr-Kizilcay arc model (Darwish-Elkalashy-2005); re-run grid;
+       compare estimator performance to diode arc. &
+       5.0\,PD & \fpath{arc\_kizilcay.m}\\
+WP4.3 & Integrate Wang-2020 distortion-controllable arc (open-source
+       PSCAD-FILE-DISTC-HIAF-Model); use as PSCAD test stimulus. &
+       5.0\,PD & \fpath{pscad/wang2020\_arc/}\\
+WP4.4 & Torres-2022 stochastic-configurable arc (build-up, shoulder,
+       asymmetry, avalanche, intermittence, modulation); re-run grid. &
+       5.0\,PD & \fpath{arc\_torres.m}\\
+WP4.5 & Re-implement four competitors on identical 720-case waveforms:
+       (1)~Paramo-2023 eigenvalue, (2)~Iurinic-2018 / Orozco-Henao-2020
+       spectral, (3)~Cui-Weng-2020 $\mu$-PMU, (4)~Zeng-2021 double-ended HIF.
+       Publish numerical Table 3-bis. &
+       12.0\,PD & \fpath{matlab/competitors/};
+       \fpath{phase4\_table3bis.csv}\\
+WP4.6 & Phase 4 milestone; benchmark-data paper (IEEE TSG candidate);
+       D4 review. &
+       8.0\,PD & TSG draft; D-E achieved\\
+\midrule
+\multicolumn{2}{r}{\textbf{Phase 4 total}} & \textbf{45.0\,PD} & \\
+\bottomrule
+\end{longtable}
+
+\subsection{Phase 5 -- HIL pilot + DTaaS productisation (W26--48; $\approx 80$\,PD)}
+
+\begin{longtable}{L{1.2cm}L{9.4cm}C{1.2cm}L{3.2cm}}
+\toprule\rowcolor{sambplight}
+\textbf{WP} & \textbf{Sub-task} & \textbf{Effort} & \textbf{Output}\\\midrule\endhead
+WP5.1 & RTDS / Typhoon HIL platform commissioning at IIT-Madras lab;
+       engagement memos with NUS GEMS, NTU CTSP, Amprion. &
+       15.0\,PD & HIL access agreement; cabling diagram\\
+WP5.2 & Real relay-class IED integration (SEL / ABB / Siemens) via IEC
+       61850-9-2 SV; verify SV stream timing and GOOSE round-trip. &
+       20.0\,PD & \fpath{IED\_integration\_log.md}; SV timing report\\
+WP5.3 & Live HIF arc HIL scenarios using Wang-2020 distortion-controllable arc;
+       $\geq 25$ scenarios; report end-to-end estimate latency $<5$ cycles. &
+       15.0\,PD & \fpath{hil/scenario\_results.csv}\\
+WP5.4 & SAMBPS DTaaS Protection-Validation module: API spec (REST + Python
+       client), DT scenario-engine integration, identifiability + CRLB
+       overlays in UI, documentation, commercial case study. &
+       20.0\,PD & \fpath{dtaas/protection\_validation/}; API docs;
+       case study\\
+WP5.5 & Second journal paper (IEEE TPWRD / TSG) bringing HIL evidence +
+       4-competitor benchmark + multi-port CRLB. &
+       10.0\,PD & TPWRD/TSG submission; D-F, D-G, D-H achieved\\
+\midrule
+\multicolumn{2}{r}{\textbf{Phase 5 total}} & \textbf{80.0\,PD} & \\
+\bottomrule
+\end{longtable}
+
+\paragraph{Total project effort.}
+Phase 0 $\approx 14$ + Phase 1 $\approx 35$ + Phase 2 $\approx 28$ +
+Phase 3 $\approx 50$ + Phase 4 $\approx 45$ + Phase 5 $\approx 80$
+$=\approx 252$ person-days.  With one full-time engineer this is $\sim 50$
+weeks; with two engineers in parallel from W2 onward (Phase 1 + Phase 2
+overlap, and Phase 3 + Phase 4 overlap), the calendar fits the 48-week
+envelope with a small contingency margin.
+
+% ===========================================================================
+\section{RACI matrix}
+% ===========================================================================
+
+\textbf{R}esponsible (does the work),
+\textbf{A}ccountable (signs off),
+\textbf{C}onsulted (input before decision),
+\textbf{I}nformed (notified after).
+\textbf{PI} = Anoop Eluvathingal (SAMBPS PI).
+\textbf{LE} = Arjundas K.\ (lead engineer).
+\textbf{HA} = Prof.\ K.\ Shanthi Swarup (host advisor, IIT-Madras).
+\textbf{E2} = second engineer (Sanjana Verma / V.\ Pranjal / Renju PB; allocated per WP).
+\textbf{ER} = Prof.\ Christian Rehtanz (TU Dortmund EMT reviewer).
+\textbf{FE} = Fabian Erlemeyer (Amprion HVDC advisor).
+\textbf{DS} = Prof.\ Dipti Srinivasan (NUS GEMS).
+\textbf{YX} = Prof.\ Yan Xu (NTU).
+\textbf{IND} = Rajkumar Palaniappan / D.\ Hilbrich (IED industry partners).
+
+\renewcommand{\arraystretch}{1.10}
+\begin{longtable}{L{6.0cm} *{9}{C{0.7cm}}}
+\toprule\rowcolor{sambplight}
+\textbf{Work package} & PI & LE & HA & E2 & ER & FE & DS & YX & IND\\\midrule\endhead
+WP0.1 Editorial / metric harmonisation       & A & R & C & I & -- & -- & -- & -- & --\\
+WP0.2 Prior-art restructure                  & A & R & C & I & -- & -- & -- & -- & --\\
+WP0.3 Reference set + DOI pass               & I & R & C & R & -- & -- & -- & -- & --\\
+WP0.4 Public repo + CI                       & A & R & I & R & -- & -- & -- & -- & --\\
+WP0.5 Appendix A: derivation + $\partial H/\partial\theta$ & A & R & C & -- & -- & -- & -- & -- & --\\
+WP0.6 IEEE Access camera-ready               & A & R & C & I & -- & -- & -- & -- & --\\
+WP1.1 PSCAD model                            & A & R & C & R & C & -- & -- & -- & --\\
+WP1.2 EMTP-RV mirror                         & A & C & C & R & R & -- & -- & -- & --\\
+WP1.3 50-section reference state-space       & A & R & C & -- & -- & -- & -- & -- & --\\
+WP1.4 Optimiser re-run on 3 simulators       & A & R & C & R & -- & -- & -- & -- & --\\
+WP1.5 Monte-Carlo + 95-pct CI                & A & R & I & R & -- & -- & -- & -- & --\\
+WP1.6 Proper-complex-Gaussian-ratio FIM      & A & R & C & -- & -- & -- & -- & -- & --\\
+WP1.7 Phase 1 milestone + arXiv              & A & R & C & I & -- & -- & -- & -- & --\\
+WP2.1 Closed-form $H$ derivation             & A & R & C & -- & C & -- & -- & -- & --\\
+WP2.2 $\partial H/\partial\alpha$ closed-form & A & R & C & -- & -- & -- & -- & -- & --\\
+WP2.3 50-section reproduction                & A & R & I & R & -- & -- & -- & -- & --\\
+WP2.4 Analytical gradients in optimiser      & A & R & I & R & -- & -- & -- & -- & --\\
+WP2.5 720 + MC re-run                        & A & R & I & R & -- & -- & -- & -- & --\\
+WP2.6 Phase 2 milestone                      & A & R & C & I & -- & -- & -- & -- & --\\
+WP3.1 $Y_{abc}$ closed-form                  & A & R & C & -- & C & -- & -- & -- & --\\
+WP3.2 Laterals / DG                          & A & R & C & R & -- & -- & -- & -- & --\\
+WP3.3 IEEE 13/34/123 feeders                 & A & R & C & R & -- & -- & -- & -- & --\\
+WP3.4 Fault types                            & A & R & I & R & -- & -- & -- & -- & --\\
+WP3.5 Taylor-Fourier + identifiability map   & A & R & C & -- & -- & -- & -- & -- & --\\
+WP3.6 Multi-port FIM                         & A & R & C & -- & -- & -- & -- & -- & --\\
+WP3.7 CNRS dataset validation                & A & R & I & R & -- & -- & -- & -- & --\\
+WP3.8 Phase 3 milestone                      & A & R & C & I & I & -- & -- & -- & --\\
+WP4.1 Field-grade impairments                & A & R & C & R & -- & -- & -- & -- & --\\
+WP4.2 Cassie-Mayr-Kizilcay arc               & A & R & C & -- & C & -- & -- & -- & --\\
+WP4.3 Wang-2020 distortion-controllable      & A & R & I & R & -- & -- & -- & -- & --\\
+WP4.4 Torres-2022 stochastic arc             & A & R & I & R & -- & -- & -- & -- & --\\
+WP4.5 Competitor benchmark (4 methods)       & A & R & C & R & -- & -- & -- & C & --\\
+WP4.6 Phase 4 milestone                      & A & R & C & I & I & -- & -- & -- & --\\
+WP5.1 HIL platform commissioning             & A & R & C & R & -- & -- & C & C & C\\
+WP5.2 Real-IED integration (IEC 61850-9-2)   & A & R & C & -- & -- & -- & -- & -- & R\\
+WP5.3 Live HIF arc HIL                       & A & R & C & R & -- & C & C & C & C\\
+WP5.4 SAMBPS DTaaS module v1.0               & A & R & I & R & -- & -- & I & I & I\\
+WP5.5 Second journal paper                   & A & R & C & I & C & C & C & C & I\\
+\bottomrule
+\end{longtable}
+
+% ===========================================================================
+\section{Acceptance test specifications}
+% ===========================================================================
+
+Each deliverable D-A through D-H is locked to a quantitative acceptance
+test that CI executes on every commit.  A deliverable is not signed off
+until its test passes with no exceptions.
+
+\renewcommand{\arraystretch}{1.18}
+\begin{longtable}{L{2.2cm}L{1.0cm}L{2.8cm}L{5.6cm}L{2.8cm}}
+\toprule\rowcolor{sambplight}
+\textbf{Deliverable} & \textbf{Test ID} & \textbf{Input dataset} &
+\textbf{Acceptance predicate} & \textbf{CI artefact}\\\midrule\endhead
+
+D-A IEEE Access v2.0 & T-A1 &
+Camera-ready PDF + supplementary &
+(a) Single coherent metric set; (b) Appendix A includes
+$\pi$-derivation + $\partial H/\partial\theta$;
+(c) repository link resolves; (d) references $\geq 35$ entries with
+valid DOIs. &
+\fpath{tests/checklist\_camera\_ready.py}\\
+
+D-B Phase-1 cross-validation & T-B1 &
+720-grid on PSCAD + EMTP + 50-sec ref &
+Mean location error $<2$\,\% at $\mathrm{SNR}_I \geq 30$\,dB across
+all 3 simulators; max $<5$\,\%; per-cell 95\,\% CI excludes zero in
+$<5$\,\% of cells. &
+\fpath{test\_phase1\_crossplatform.py}\\
+
+D-B (CRLB) & T-B2 &
+Synthetic Monte-Carlo @ SNR $\in\{20,30,40\}$ dB &
+Empirical RMS error within 25\,\% of proper-complex-Gaussian-ratio CRLB at
+SNR $\geq 30$\,dB; Geary-Hinkley validity test reported per cell. &
+\fpath{test\_crlb\_proper.py}\\
+
+D-C Continuously parametrised optimiser & T-C1 &
+Synthetic 720-grid &
+Modelling error vs 50-section ref $<5$\,\% across all $(\alpha, R_x)$;
+estimator improvement $\geq 30$\,\% at $\mathrm{SNR}_I \leq 30$\,dB
+vs Phase-1 baseline. &
+\fpath{test\_phase2\_modelfit.py}\\
+
+D-D Three-phase + IEEE feeders + TFT & T-D1 &
+IEEE 13/34/123-node + CNRS dataset &
+Mean location error $<3$\,\% on IEEE 34-node at SNR $\geq 30$\,dB;
+phasor-bias improvement vs single-bin DFT $\geq 50$\,\% on
+arc-modulated waveform; identifiability map published. &
+\fpath{test\_phase3\_3phase.py}\\
+
+D-E Impairments + competitor benchmark & T-E1 &
+720-grid $\times$ 5 impairment classes &
+$<5$\,\% mean location error at SNR $\geq 30$\,dB across all 5
+impairment classes; numerical superiority over $\geq 2$ of 4
+competitors. &
+\fpath{test\_phase4\_impairments.py},\newline
+\fpath{test\_phase4\_benchmark.py}\\
+
+D-F HIL pilot & T-F1 &
+$\geq 25$ live HIF scenarios on RTDS / Typhoon HIL &
+Real-IED end-to-end estimate latency $<5$ power-frequency cycles;
+field-style HIF arc reproduced; $\geq 1$ institutional pilot signoff. &
+\fpath{hil/test\_latency.py};\newline pilot signoff letter\\
+
+D-G SAMBPS DTaaS module v1.0 & T-G1 &
+Smoke test on three reference twins &
+Module loads in DT scenario engine; API endpoints respond;
+identifiability + CRLB overlays render; smoke test passes on
+Reference Twins 1--3 (11 kV / 100 km, IEEE 34-node, HVDC stub). &
+\fpath{dtaas/tests/smoke\_test.py}\\
+
+D-H Second journal paper & T-H1 &
+Submission record &
+Submitted to IEEE TPWRD or TSG; reproducibility repo cited; HIL
+evidence included; $\geq 4$ competitors benchmarked numerically. &
+Submission ID;
+\fpath{docs/journal\_v2\_submission.md}\\
+
+\bottomrule
+\end{longtable}
+
+% ===========================================================================
+\section{Schedule}
+% ===========================================================================
+
+\subsection{Phase 0 day-level schedule (W0 = 11 May 2026)}
+
+\renewcommand{\arraystretch}{1.10}
+\begin{longtable}{L{1.4cm}L{1.5cm}L{7.8cm}L{1.2cm}L{2.6cm}}
+\toprule\rowcolor{sambplight}
+\textbf{Day} & \textbf{Date} & \textbf{Lead activity} & \textbf{Owner} & \textbf{Output}\\\midrule\endhead
+W0 Mon & 11 May & Title + abstract rewrite (WP0.1)                              & LE     & Draft v0\\
+W0 Tue & 12 May & Conclusion roadmap + metric harmonisation (WP0.1)             & LE     & Draft v1\\
+W0 Wed & 13 May & Prior-art restructure into 7 families (WP0.2)                 & LE     & Revised \S\,I\\
+W0 Thu & 14 May & Wildfire / safety motivation paragraph + forward-reference   & LE     & Revised \S\,I.1\\
+W0 Fri & 15 May & Reference set expansion start: pull v2 \S\,7 bibliography to BibTeX (WP0.3) & E2 & Initial \texttt{.bib}\\
+W1 Mon & 18 May & Reference DOI + IEEE-style consistency pass (WP0.3)           & E2     & Cleaned \texttt{.bib}\\
+W1 Tue & 19 May & Public repo standup: README, LICENSE, .gitignore, CI skeleton (WP0.4) & LE & Repo (private)\\
+W1 Wed & 20 May & Push existing .m source + 720-case MAT + figure scripts (WP0.4) & LE   & First commit\\
+W1 Thu & 21 May & Symbolic \texttt{sym/eig} regression test for $A$; \texttt{tic/toc} CPU report (WP0.4 sub-task 8) & LE & Test passes\\
+W1 Fri & 22 May & Appendix A start: annotated $\pi$-circuit + KVL/KCL (WP0.5)   & LE     & AppendixA v0\\
+W2 Mon & 25 May & Symbolic $\partial H/\partial\alpha$ and $\partial H/\partial R_x$ (WP0.5) & LE & \fpath{derive\_partials.m}\\
+W2 Tue & 26 May & Arc-parameter provenance citations + numeric line params with units (WP0.5) & LE & AppendixA v1\\
+W2 Wed & 27 May & Co-author signoff round (PI + HA review)                      & PI/HA  & Comments\\
+W2 Thu & 28 May & Final IEEE Access camera-ready integration; submit (WP0.6)   & LE/PI  & Submission ID\\
+W2 Fri & 29 May & \textbf{D0 review meeting}; flip repo to public; mint Zenodo DOI; kick off Phase 1 & PI/LE/HA & D-A signed off\\
+\bottomrule
+\end{longtable}
+
+\subsection{Phases 1--5 week-level schedule}
+
+\renewcommand{\arraystretch}{1.10}
+\begin{longtable}{L{1.4cm}C{1.1cm}L{8.0cm}L{3.8cm}}
+\toprule\rowcolor{sambplight}
+\textbf{Week} & \textbf{Phase} & \textbf{Active WPs} & \textbf{Milestone}\\\midrule\endhead
+W2--4   & 1   & WP1.1 PSCAD model                                               & --\\
+W4--6   & 1   & WP1.2 EMTP-RV mirror; WP1.3 50-section reference                & --\\
+W5--7   & 1   & WP1.4 cross-platform optimiser re-run                           & --\\
+W6--9   & 1+2 & WP1.5 Monte-Carlo; WP1.6 proper-complex-Gaussian-ratio FIM (parallel); WP2.1 closed-form $H$ starts & --\\
+W9--10  & 1   & WP1.7 Phase 1 milestone; arXiv preprint                         & \textbf{D1 / D-B}\\
+W10--12 & 2   & WP2.2 $\partial H/\partial\alpha$ closed-form; WP2.3 50-section reproduction & --\\
+W12--14 & 2   & WP2.4 analytical gradients; WP2.5 720 + MC re-run               & --\\
+W15--16 & 2   & WP2.6 Phase 2 milestone                                         & \textbf{D2 / D-C}\\
+W10--14 & 3   & WP3.1 $Y_{abc}$; WP3.2 laterals / DG; WP3.3 IEEE 13/34/123 (rolling) & --\\
+W14--18 & 3   & WP3.4 fault types; WP3.5 Taylor-Fourier; WP3.6 multi-port FIM   & --\\
+W18--22 & 3   & WP3.7 CNRS validation                                           & --\\
+W22--24 & 3   & WP3.8 Phase 3 milestone; conference paper                       & \textbf{D3 / D-D}\\
+W18--20 & 4   & WP4.1 impairment classes (parallel with Phase 3 tail)           & --\\
+W20--24 & 4   & WP4.2--4.4 arc-class diversification                            & --\\
+W24--28 & 4   & WP4.5 competitor benchmark (4 methods)                          & --\\
+W28--30 & 4   & WP4.6 Phase 4 milestone; benchmark paper                        & \textbf{D4 / D-E}\\
+W26--32 & 5   & WP5.1 HIL platform commissioning                                & --\\
+W32--38 & 5   & WP5.2 real-IED integration                                      & --\\
+W38--42 & 5   & WP5.3 live HIF HIL scenarios                                    & --\\
+W42--46 & 5   & WP5.4 SAMBPS DTaaS module v1.0                                  & --\\
+W46--48 & 5   & WP5.5 second journal paper; institutional pilot signoff         & \textbf{D5 / D-F, D-G, D-H}\\
+\bottomrule
+\end{longtable}
+
+% ===========================================================================
+\section{Communication plan}
+% ===========================================================================
+
+\renewcommand{\arraystretch}{1.18}
+\begin{longtable}{L{2.3cm}L{3.2cm}L{3.6cm}L{6.0cm}}
+\toprule\rowcolor{sambplight}
+\textbf{Cadence} & \textbf{Forum} & \textbf{Participants} & \textbf{Standing agenda}\\\midrule\endhead
+Daily (15 min)         & Stand-up (Slack / Zoom) & LE + E2 &
+What's done since yesterday; what's planned today; blockers.\\
+Weekly (60 min)        & Project sync            & PI + LE + HA + E2 &
+WP burn-down; CI status; risk register review; upcoming-week plan.\\
+Bi-weekly (45 min)     & Technical review        & LE + HA + ER (Phase 1/4) &
+Walk through new code, derivations, results; HA / ER signoff or
+revision request.\\
+Phase-end (90 min)     & Decision-gate review    & PI + LE + HA + relevant
+external partners &
+Acceptance-test results vs predicates; signoff or return to prior WP;
+publication plan.\\
+Quarterly (90 min)     & SAMBPS leadership update & PI + family co-founders + advisors &
+Phase progress; budget; productisation pathway; partnership pipeline.\\
+Ad-hoc                 & Escalation              & PI + HA &
+Triggered by R1, R2, R6, R9, R10 (per v2 risk register) or any blocker
+exceeding 2 working days.\\
+\bottomrule
+\end{longtable}
+
+\subsection{Decision-gate (D0--D5) review template}
+
+\begin{enumerate}
+  \item \textbf{Phase summary} (1 paragraph). Goal of the phase, what was
+    delivered.
+  \item \textbf{Acceptance-test results.} One line per test ID
+    (T-A1, T-B1, \ldots) with PASS / FAIL and the measured value vs the
+    predicate.
+  \item \textbf{Risk-register update.} Any v2 risk that changed likelihood
+    or impact this phase; new risks added.
+  \item \textbf{KPI snapshot.} Current value of every v2 KPI vs the SAMBPS
+    DTaaS v1.0 target.
+  \item \textbf{Decision.} One of:
+    (a)~\emph{Approve progression} to next phase;
+    (b)~\emph{Conditional approval} with explicit follow-on items and dates;
+    (c)~\emph{Return} to a prior WP, with re-entry plan.
+  \item \textbf{Publication artefact.} Link to the external artefact
+    produced by the phase (camera-ready, arXiv preprint, conference paper,
+    journal submission, repo release).
+  \item \textbf{Signoff.} PI and HA signatures + date.
+\end{enumerate}
+
+% ===========================================================================
+\section{Repository and artefact inventory}
+% ===========================================================================
+
+The single source of truth for this sub-project is the new folder
+\texttt{04\_code/sambp/fault\_location\_id/}, created alongside this plan
+and structured to mirror the four existing SAMBP sub-projects
+(\texttt{sync\_oc}, \texttt{transformer\_diff}, \texttt{line\_diff},
+\texttt{bus\_diff}).  The public mirror at
+\texttt{github.com/SAMBPS-DTaaS/HIF-TF-Locator} is minted from this folder
+at decision gate D0.
+
+\begin{verbatim}
+04_code/sambp/fault_location_id/
+|-- README.md                                # project overview, citation
+|-- __init__.py
+|-- docs/
+|   |-- FaultLocationIdentification_ExecutionPlan.tex
+|   |-- FaultLocationIdentification_ExecutionPlan.pdf   # this document
+|   |-- AppendixA_derivation.tex             # WP0.5
+|   |-- AppendixB_correctedCRLB.tex          # WP1.6
+|   |-- changelog.md
+|-- models/
+|   |-- __init__.py
+|   |-- faultloc_pi_section_model.py         # WP0.5  (Phase 0)
+|   |-- faultloc_distributed_param_model.py  # WP2.1  (Phase 2)
+|   |-- faultloc_three_phase_model.py        # WP3.1  (Phase 3)
+|   |-- faultloc_ieee_feeders.py             # WP3.3  (Phase 3)
+|   |-- faultloc_taylor_fourier.py           # WP3.5  (Phase 3)
+|   |-- faultloc_arc_models.py               # WP4.2-4.4 (Phase 4)
+|   `-- faultloc_noise_impairments.py        # WP4.1  (Phase 4)
+|-- inverse_estimation/
+|   |-- __init__.py
+|   |-- faultloc_two_stage_optimiser.py      # WP2.4
+|   |-- faultloc_analytical_gradients.py     # WP2.2
+|   |-- faultloc_crlb_proper.py              # WP1.6
+|   |-- faultloc_crlb_dualchannel.py         # WP1.6
+|   `-- faultloc_fim_multiport.py            # WP3.6
+|-- adaptation/
+|   |-- __init__.py
+|   |-- faultloc_identifiability_check.py    # WP3.5
+|   `-- faultloc_confidence_gate.py          # Phase 5 hand-off to DTaaS
+|-- evaluation/
+|   |-- __init__.py
+|   |-- faultloc_competitor_paramo.py        # WP4.5
+|   |-- faultloc_competitor_iurinic.py       # WP4.5
+|   |-- faultloc_competitor_cuiweng.py       # WP4.5
+|   `-- faultloc_competitor_zeng.py          # WP4.5
+|-- outputs/                                 # CSV / MAT / PNG artefacts
+|-- run_faultloc_phase0_baseline.py
+|-- run_faultloc_phase1_crossplatform.py
+|-- run_faultloc_phase2_continuous_param.py
+|-- run_faultloc_phase3_threephase.py
+|-- run_faultloc_phase4_impairments.py
+`-- run_faultloc_phase5_hil.py
+\end{verbatim}
+
+\paragraph{Naming convention.}
+\texttt{phase\{N\}\_\{topic\}.\{ext\}} for results;
+\texttt{faultloc\_*.py} for code, mirroring the
+\texttt{line\_*.py} / \texttt{transformer\_*.py} / \texttt{bus\_*.py}
+prefixes used by the other SAMBP sub-projects.  Every commit references
+at least one WP ID in the message; CI enforces this.  Public flip occurs
+at D0 (W2 Fri); Zenodo DOIs are minted on every D0 / D2 / D4 / D5
+release.  The Data Availability Statement in the IEEE Access camera-ready
+and the second journal paper points to the Zenodo DOI plus the GitHub
+head.
+
+% ===========================================================================
+\section{Risk register}
+% ===========================================================================
+
+\renewcommand{\arraystretch}{1.10}
+\begin{longtable}{L{0.6cm}L{4.2cm}L{1.2cm}L{1.2cm}L{6.4cm}}
+\toprule\rowcolor{sambplight}
+\textbf{ID} & \textbf{Risk} & \textbf{Likely} & \textbf{Impact} & \textbf{Mitigation / closing WP}\\\midrule\endhead
+R1 & Gaussian-on-$H$ FIM is invalid in the HIF regime
+   & High & High
+   & WP1.6 re-derives FIM via proper-complex-Gaussian-ratio +
+     joint dual-channel FIM; CRLB-vs-empirical overlays.\\
+R2 & 39.44\,\% section-modelling-error ceiling caps estimator accuracy
+   & High & High
+   & WP2.1--2.5 closed-form distributed-parameter $H$; WP2.4 analytical
+     gradients in optimiser.\\
+R3 & Single-section / single-phase model mismatches real feeders
+   & Med  & High
+   & WP3.1--3.4 generalise to 3-phase $Y_{abc}$ + IEEE 13/34/123 + SLG /
+     LL / LLG fault types.\\
+R4 & Diode arc parameter provenance gap
+   & Med  & Med
+   & WP0.5 cite source of every parameter; WP4.2--4.4 add 3 alternative
+     arc classes; report $\Delta$-error.\\
+R5 & Single-bin DFT biased on non-stationary HIF
+   & High & Med
+   & WP3.5 first-order Taylor-Fourier estimator; identifiability map.\\
+R6 & Categorical comparison with prior-art is non-quantitative
+   & High & Med
+   & WP4.5 numerical Table 3-bis with four competitors on identical
+     720-case waveforms.\\
+R7 & Symbolic derivation errors propagate to optimiser
+   & Low  & High
+   & WP0.4 \texttt{sym/eig} regression test in CI; WP0.5 verify in MATLAB
+     \texttt{sym/diff}.\\
+R8 & HIL access at IIT-Madras delayed by external schedule
+   & Med  & High
+   & WP5.1 engagement memos with NUS GEMS / NTU CTSP / Amprion as
+     redundant access paths; Typhoon HIL accepted as RTDS substitute.\\
+R9 & Geary-Hinkley validity test fails in part of the operating range
+   & Med  & High
+   & WP1.6 publish per-cell validity flag; flag down-stream usage; fall
+     back to joint dual-channel FIM where ratio is unstable.\\
+R10 & Real-world HIF is more random than diode arc captures
+   & Med  & Med
+   & WP4.3 / WP4.4 / WP5.3 Wang-2020 + Torres-2022 + live HIL arc.\\
+\bottomrule
+\end{longtable}
+
+% ===========================================================================
+\section{KPI dashboard}
+% ===========================================================================
+
+The 17 KPIs imported from the v2 plan, with the Phase that drives them
+to the SAMBPS DTaaS v1.0 target.
+
+\renewcommand{\arraystretch}{1.18}
+\begin{longtable}{L{0.7cm}L{6.6cm}L{2.4cm}L{2.4cm}L{1.4cm}}
+\toprule\rowcolor{sambplight}
+\textbf{\#} & \textbf{KPI} & \textbf{Baseline} & \textbf{Target} & \textbf{Phase}\\\midrule\endhead
+K01 & Mean location error, AWGN, $\mathrm{SNR}_I=30$ dB & 1.18\,\%             & $<1.0$\,\%  & 1\\
+K02 & Max location error, AWGN, $\mathrm{SNR}_I=30$ dB  & --                   & $<5$\,\%    & 1\\
+K03 & Modelling error vs 50-section reference           & 39.44\,\%            & $<5$\,\%    & 2\\
+K04 & Estimator improvement at $\mathrm{SNR}_I\le 30$ dB & --                  & $\geq 30$\,\% & 2\\
+K05 & Mean location error, IEEE 34-node                 & --                   & $<3$\,\%    & 3\\
+K06 & Phasor-bias improvement vs single-bin DFT         & --                   & $\geq 50$\,\% & 3\\
+K07 & Mean location error across 5 impairment classes   & --                   & $<5$\,\%    & 4\\
+K08 & \# competitors numerically beaten on location error & 0                  & $\geq 2$ of 4 & 4\\
+K09 & Real-IED end-to-end estimate latency              & --                   & $<5$ cycles & 5\\
+K10 & \# institutional HIL pilot signoffs               & 0                    & $\geq 1$    & 5\\
+K11 & References, IEEE-style, valid DOI                 & 19 unique            & $\geq 35$   & 0\\
+K12 & Public repo + Zenodo DOI                          & none                 & live at D0  & 0\\
+K13 & CI green build rate (rolling 30 days)             & --                   & $\geq 95$\,\% & 0+\\
+K14 & 95th-percentile estimator CPU time                & not reported         & published   & 0\\
+K15 & Hyperparameter sensitivity table coverage         & not present          & full        & 0\\
+K16 & DTaaS Protection-Validation module smoke test     & not built            & passes      & 5\\
+K17 & Second journal paper submitted                    & 0                    & 1           & 5\\
+\bottomrule
+\end{longtable}
+
+% ===========================================================================
+\section{Bottom line and approval block}
+% ===========================================================================
+
+\noindent\colorbox{sambplight}{\parbox{\dimexpr\textwidth-2\fboxsep\relax}{%
+\vspace{0.1cm}\color{sambpblue}
+The IEEE Access manuscript is publishable today after Phase 0 ($\approx 14$\,PD
+over W0--2).  All four shortcomings flagged in \S\,3 close inside Phase 0
+(D-A).  The two structural risks identified by the v2 plan close in Phase 1
+(corrected CRLB $\rightarrow$ D-B) and Phase 2 (continuously parametrised
+optimiser $\rightarrow$ D-C).  Phases 3--5 then convert the manuscript into
+a literature-anchored, field-validated, three-phase, hardware-tested SAMBPS
+DTaaS Protection-Validation module with a second journal paper (D-H) and
+an institutional HIL pilot (D-F).  Total horizon 48 weeks; total effort
+$\approx 252$\,PD; staffing assumption is one full-time lead engineer + one
+half-time second engineer + advisor time per the RACI in \S\,5.
+\vspace{0.1cm}
+}}
+
+\vspace{0.4cm}
+
+\subsection*{Approval block}
+
+\renewcommand{\arraystretch}{1.6}
+\begin{longtable}{L{5.0cm}L{4.6cm}L{3.0cm}L{2.0cm}}
+\toprule\rowcolor{sambplight}
+\textbf{Role} & \textbf{Name} & \textbf{Signature} & \textbf{Date}\\\midrule
+Principal Investigator                  & Anoop Eluvathingal                   & & \\
+Lead Engineer                           & Arjundas K.                          & & \\
+Host Advisor                            & Prof.\ K.\ Shanthi Swarup, IIT Madras & & \\
+EMT Cross-Validation Reviewer           & Prof.\ Christian Rehtanz, TU Dortmund & & \\
+HVDC Application Advisor                & Fabian Erlemeyer, Amprion            & & \\
+Singapore Academic Anchor (smart grid)  & Prof.\ Dipti Srinivasan, NUS GEMS    & & \\
+Singapore Academic Anchor (stability)   & Prof.\ Yan Xu, NTU                   & & \\
+\bottomrule
+\end{longtable}
+
+\vspace{1.0cm}
+\hrule
+\vspace{0.2cm}
+\centerline{\itshape\small -- End of Fault Location Identification Project Execution Plan --}
+
+\end{document}

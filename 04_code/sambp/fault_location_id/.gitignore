@@ -1,0 +1,56 @@
+# --- Python -----------------------------------------------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+build/
+dist/
+
+# --- MATLAB / Simulink ------------------------------------------------------
+*.asv
+*.mat~
+*.m~
+slprj/
+sccprj/
+
+# --- LaTeX ------------------------------------------------------------------
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+*.bbl
+*.blg
+*.lof
+*.lot
+*.nav
+*.snm
+*.vrb
+
+# --- Data / results ---------------------------------------------------------
+# Heavy artefacts are regenerable; keep outputs/.gitkeep tracked.
+outputs/*.mat
+outputs/*.csv
+outputs/*.npz
+outputs/*.h5
+outputs/*.pkl
+!outputs/.gitkeep
+
+# --- OS ---------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- IDE --------------------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo

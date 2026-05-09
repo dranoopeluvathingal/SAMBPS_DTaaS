@@ -1,0 +1,90 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sambp-fault-location-id"
+version = "0.1.0"
+description = "SAMBPS DTaaS - single-ended joint estimation of HIF location and arc resistance via power-frequency admittance identification with dual-channel noise modelling."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [
+  { name = "Anoop Eluvathingal", email = "anoop@sambps.dtaas" },
+  { name = "Arjundas K." },
+  { name = "K. Shanthi Swarup" },
+]
+keywords = [
+  "high-impedance-fault",
+  "fault-location",
+  "transfer-function-identification",
+  "Cramer-Rao-lower-bound",
+  "power-system-protection",
+  "SAMBPS",
+  "digital-twin",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = [
+  "numpy>=1.24",
+  "scipy>=1.11",
+  "matplotlib>=3.7",
+  "pandas>=2.0",
+  "sympy>=1.12",
+  "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "pytest-cov>=4.1",
+  "ruff>=0.5",
+  "black>=24.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/SAMBPS-DTaaS/HIF-TF-Locator"
+Documentation = "docs/FaultLocationIdentification_ExecutionPlan.pdf"
+Source = "https://github.com/SAMBPS-DTaaS/HIF-TF-Locator"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+  "models*",
+  "inverse_estimation*",
+  "adaptation*",
+  "evaluation*",
+  "tests*",
+]
+exclude = ["outputs*", "docs*", ".github*"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = [
+  "E501",  # line too long - long docstring tables tolerated in stubs
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311"]
