@@ -49,6 +49,13 @@ outputs/*.pkl
 !outputs/phase0_capture_and_timing.csv
 !outputs/phase0_hyperparam_sensitivity.csv
 
+# data/ holds heavy waveform bundles emitted by PSCAD or its surrogate.
+# Regenerable from tools/pscad_surrogate.py; keep .gitkeep tracked.
+data/*.mat
+data/*.npz
+data/*.h5
+!data/.gitkeep
+
 # --- OS ---------------------------------------------------------------------
 .DS_Store
 Thumbs.db

@@ -2,6 +2,62 @@
 
 Format: each entry is `YYYY-MM-DD - <stage / WP / decision-gate> - <summary>`.
 
+## 2026-05-10 - WP1.1 PSCAD model + 720-case export (P1.1)
+
+Phase-1 begins.  PSCAD itself is a proprietary Windows simulator and
+is not installed on this Linux dev box, so the canonical
+`pscad/HIFL_11kV_100km.pscx` binary cannot be authored here.  Per the
+brief's fallback instruction, this turn ships:
+
+- **`pscad/HIFL_11kV_100km_design.md`** — schematic-level
+  documentation reviewable without PSCAD.  Topology diagram,
+  per-km parameters with Saha 2010 citation, anti-parallel diode arc
+  parameters with provenance note (`TODO arc-provenance`: confirm
+  against Santos-2022 before camera-ready freezes), CT/PT
+  measurement scheme, dual-channel AWGN configuration, parametric
+  study driver definition (10 a x 5 Rx x 4 SNR_V x 4 SNR_I = 800
+  cells), output-bundle schema for `data/pscad_720.mat`, and
+  cross-validation pointers.  Suitable for Prof. Christian Rehtanz /
+  TU Dortmund cross-check (R1 mitigation per v3 plan §10).
+
+- **`pscad/README_manual_run.md`** — step-by-step GUI build and run
+  instructions for the lead engineer's Windows PSCAD station.
+  Section A: build (12 numbered steps from "New Project" through
+  "Save").  Section B.1: automation via `mhi.pscad`.
+  Section B.2: GUI fallback + .gnu post-processing.  Section C:
+  verification command.
+
+- **`pscad/run_pscad_720.py`** — Python automation skeleton.  Two
+  modes (`--automation` via `mhi.pscad`; `--gnu-postprocess`).  On a
+  machine without PSCAD, exits with a clear error pointing at
+  `tools/pscad_surrogate.py`.  Skeleton retained (not full driver)
+  so the lead engineer fills in the `mhi.pscad` call sequence on
+  the licensed station.
+
+- **`tools/pscad_surrogate.py`** — Python distributed-parameter
+  reference using cosh/sinh ABCD cascading (J. Marti at f_0).
+  Synthesises `data/pscad_720.mat` with the canonical schema (V, I
+  shape (720, 200); grid_alpha, grid_Rx, grid_SNR_V, grid_SNR_I
+  shape (720,); meta dict).  9 alpha (0.10..0.90 step 0.10) x
+  5 Rx x 4 SNR_V x 4 SNR_I = 720 cells.  Mirror of the v3 plan's
+  WP1.3 50-section reference idea, cast in frequency-domain ABCD
+  form for elegance.  Lead engineer's PSCAD run later overwrites
+  the .mat with measured waveforms via run_pscad_720.py.
+
+- **`tests/test_pscad_export_shape.py`** — 9-check schema test.
+  Auto-regenerates the .mat via the surrogate if missing, then
+  asserts V/I shape (720, 200), grid arrays shape (720,), alpha in
+  (0, 1), Rx > 0.  Schema-only — passes for either canonical PSCAD
+  output or surrogate output.
+
+- **`data/.gitkeep`** + `.gitignore` rule `data/*.mat` — heavy
+  waveform bundle is regenerable by the surrogate; tracking
+  `.gitkeep` preserves the directory.
+
+Test gate this commit: 15 passed (was 6 + 9 new pscad shape checks),
+1 skipped (test_phase0_smoke skipped because MATLAB is not on the
+dev-box PATH).  ruff clean.
+
 ## 2026-05-09 - WP0.6 / D0 - integrate, sign off, stage release (P0.6)
 
 Phase-0 closeout. Six artefacts staged for release tag `v0.2.0-phase0`.
