@@ -121,11 +121,170 @@ distribution protection, SAMBPS DTaaS.
 
 % =============================================================================
 \section{Introduction}\label{sec:intro}
-\textit{[WP0.2 - to be restructured into a 7-family taxonomy
-(Wang--Lopes-2023 EPSR) with a tabular synthesis; wildfire / safety
-motivation paragraph anchored to PSRC D15, NREL 2023, Camp Fire 85
-fatalities, Black Saturday 173, CPUC SB 901, PSPS; forward-reference
-roadmap.  Body content migrates from the IEEE\_Access-2 v1 PDF.]}
+% =============================================================================
+
+% ---- Wildfire / safety motivation (WP0.2 sub-task 2) ---------------------
+High-impedance faults (HIFs) account for an estimated 5--10\,\% of all
+distribution-feeder faults, and approximately one quarter of
+downed-conductor incidents go undetected by conventional overcurrent
+relaying~\cite{PSRC1996D15}.  In the United States, grid-related
+ignitions caused 19\,\% of wildfires recorded between 2016 and
+2020~\cite{NREL2023TP5R0080746}.  Two catastrophic events frame the
+operational stakes: the 2009 Australian Black Saturday bushfires
+killed 173 people, with electrical assets implicated as ignition
+sources on multiple fire fronts~\cite{BlackSaturday2009RoyalCommission};
+the 2018 PG\&E Camp Fire killed 85 and led to a USD 13.5 billion
+settlement after a worn transmission hook ignited dry grassland near
+Pulga, California~\cite{CampFire2018PGE}.
+
+In response, the California Public Utilities Commission (CPUC)
+implemented Senate Bill 901 (SB\,901), placing utilities under a
+formal Public Safety Power Shutoff (PSPS) framework that mandates
+de-energisation when fire-weather risk exceeds defined
+thresholds~\cite{CPUC2018SB901}.  PSPS shutoffs avoid catastrophic
+ignition but at significant social and economic cost; selective HIF
+location and arc-resistance estimation, by contrast, would enable
+targeted de-energisation of only the faulted segment, materially
+shrinking the PSPS footprint.  The estimator developed in this paper
+is designed to fill that gap.
+
+% ---- Prior-art classification (WP0.2 sub-task 1) -------------------------
+The prior-art literature on HIF location and detection clusters into
+seven distinct families, summarised in Table~\ref{tab:taxonomy}.  Two
+columns are added for the comparison this paper draws:
+``Single-ended,'' which marks methods that operate from a single line
+terminal, and ``Joint $\alpha\!+\!R_x$,'' which marks methods that
+estimate fault location $\alpha$ and arc resistance $R_x$
+\emph{simultaneously} from the same observation rather than estimating
+one and treating the other as a fixed parameter or post-processing
+step.
+
+\begin{table*}[t]
+\caption{Seven-family taxonomy of prior-art HIF location / detection
+methods.  ``Single-ended'' marks methods that use only one line
+terminal; ``Joint $\alpha\!+\!R_x$'' marks methods that estimate both
+quantities simultaneously from a single observation.  None of the
+seven families is Yes in both columns.}
+\label{tab:taxonomy}
+\centering
+\renewcommand{\arraystretch}{1.18}
+\begin{tabular}{@{}p{2.6cm}p{6.6cm}cc p{3.4cm}@{}}
+\toprule
+\textbf{Family} & \textbf{Representative anchors} &
+\textbf{Single-ended} & \textbf{Joint $\alpha\!+\!R_x$} &
+\textbf{Distinguishing trait}\\
+\midrule
+(i) Signal processing / morphology / wavelet
+  & Aucoin--Russell 1987 IEEE TPWRD~\cite{AucoinRussell1987TPWRD};
+    Brahma 2013 IEEE TPS~\cite{Brahma2013TPS};
+    Mishra 2019 IEEE TII (VMD)~\cite{Mishra2019TII}
+  & Yes & No
+  & Detection-only; no $R_x$ output.\\
+(ii) Impedance / admittance / spectral
+  & Iurinic--Bretas 2018 IJEPES~\cite{IurinicBretas2018IJEPES};
+    Orozco-Henao--Bretas 2020 EPSR~\cite{OrozcoHenaoBretas2020EPSR};
+    Penaloza 2023 EPSR~\cite{Penaloza2023EPSR}
+  & Yes & No
+  & $R_x$ enters as a parameter, not jointly estimated.\\
+(iii) Two-ended impedance / synchrophasor
+  & Eriksson--Saha 1985 IEEE TPAS~\cite{ErikssonSaha1985TPAS};
+    Zeng 2021 EPSR~\cite{Zeng2021EPSR};
+    Chandran 2024 IET GTD~\cite{Chandran2024IETGTD}
+  & No & No
+  & Requires comm channel + remote-end measurement.\\
+(iv) Traveling-wave
+  & SEL T401L~\cite{SEL_T401L_TM};
+    Costa--Lopes 2015--2022~\cite{CostaLopes2015};
+    IEEE TPWRD 2024~\cite{IEEE_TPWRD_TW_2024}
+  & Yes & No
+  & MHz-bandwidth front; HIF wavefront weak / smeared.\\
+(v) $\mu$-PMU / data-driven
+  & Cui--Weng 2020 IEEE TSG~\cite{CuiWeng2020TSG};
+    Shahsavari 2019 IEEE TSG~\cite{Shahsavari2019TSG};
+    Farajollahi 2018~\cite{Farajollahi2018}
+  & No & No
+  & Requires distributed $\mu$-PMU deployment.\\
+(vi) ML / DL / GAN / GNN
+  & Sirojan 2022 NCAA (transformer-CNN)~\cite{Sirojan2022NCAA};
+    Veerasamy 2021 IEEE Access (LSTM)~\cite{Veerasamy2021Access};
+    RGATv2 arXiv 2510.03571 (2025)~\cite{RGATv2_2025_arXiv}
+  & Yes & No
+  & Training-data dependent; opaque to operator.\\
+(vii) Eigenvalue / state-matrix
+  & Paramo--Bretas 2023 ISGT~\cite{ParamoBretas2023ISGT};
+    Bretas 2021 MDPI Appl.\ Sci.~\cite{Bretas2021MDPI}
+  & Yes & No
+  & Recovers eigenstructure; $R_x$ implicit only.\\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\textit{The proposed estimator described in this paper would occupy an
+eighth row of Table~\ref{tab:taxonomy} and is the only entry that is
+``Yes'' in both the Single-ended and the Joint $\alpha\!+\!R_x$
+columns: it operates from a single line terminal and produces a
+simultaneous estimate $(\hat\alpha,\hat R_x)$ from a single complex
+admittance observation $H_{\mathrm{meas}}(j\omega_0)$.}
+
+Of the seven prior-art families, only (i), (ii), (iv), (vi) and (vii)
+operate from a single terminal, and none produces a simultaneous
+estimate of fault location and arc resistance.  Families that do
+report $R_x$ either treat it as a nuisance parameter solved for after
+location is fixed (family (ii)) or infer it implicitly through a
+classifier boundary (family (vi)).
+
+% ---- Contributions (WP0.2 sub-task 3 - C5 reframed) ----------------------
+\subsection*{Paper contributions}
+\begin{enumerate}
+  \item A single-ended power-frequency admittance identification
+        formulation that derives $H_{\mathrm{meas}}(j\omega_0)$ from
+        the dual-channel single-bin DFT and matches it against a
+        state-space transfer function $H_{\mathrm{model}}(j\omega_0;
+        \alpha, R_x)$ derived in closed form from the two-section
+        $\pi$-line.
+  \item A two-stage optimiser (grid + multi-start, then gradient
+        descent with Armijo line-search) that jointly estimates
+        $(\hat\alpha,\hat R_x)$ from a single complex observation,
+        without remote-end communication and without offline training.
+  \item A 720-case study under independent dual-channel additive
+        white Gaussian noise that reports per-cell mean and
+        95\textsuperscript{th}-percentile location and $R_x$ error,
+        including a noiseless baseline that isolates the structural
+        floor.
+  \item An explicit disambiguation of two error metrics that the
+        prior literature routinely conflates:
+        (a) the TF-magnitude modelling error of the two-section
+        $\pi$-model versus a 50-section reference, and
+        (b) the location error of the estimator
+        (Glossary entries \texttt{MODEL-ERR} and \texttt{LOC-ERR},
+        \S\ref{sec:results}).
+  \item An \emph{identifiability bound}, derived from the
+        Cram\'er--Rao inequality, that quantifies the lowest variance
+        any unbiased single-bin admittance estimator can achieve at a
+        given $(\alpha, R_x, \mathrm{SNR}_V, \mathrm{SNR}_I)$.  We
+        position this not as a methodological novelty but as the
+        objective reference against which the proposed estimator's
+        residual gap is measured (\headlineCRLBGap).
+\end{enumerate}
+
+% ---- Forward-reference roadmap (WP0.2 sub-task 4) ------------------------
+\noindent\textbf{Roadmap.}
+Section~\ref{sec:models} sets up the distribution-line and arc
+\emph{modelling} (two-section $\pi$-line, anti-parallel diode arc, and
+the section-model accuracy study);
+Section~\ref{sec:tf} presents the transfer-function
+\emph{identification} (single-bin DFT cost and analytical model
+gradient);
+Section~\ref{sec:opt} describes the two-stage \emph{optimiser};
+Sections~\ref{sec:sim}--\ref{sec:results} carry the
+\emph{validation} programme (simulation matrix, dual-channel noise
+model, results);
+Section~\ref{sec:compare} compares against prior-art numerically; and
+Section~\ref{sec:crlb} derives the Cram\'er--Rao identifiability
+\emph{bound} that the estimator is benchmarked against.
+Section~\ref{sec:conclusion} concludes with a 12\,/\,24\,/\,36-month
+roadmap into the SAMBPS DTaaS Protection-Validation digital-twin
+module.
 
 \section{System and Models}\label{sec:models}
 \textit{[\S\,II.A distribution-line parameterisation, \S\,II.B

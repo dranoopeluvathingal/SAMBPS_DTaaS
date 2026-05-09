@@ -2,6 +2,40 @@
 
 Format: each entry is `YYYY-MM-DD - <stage / WP / decision-gate> - <summary>`.
 
+## 2026-05-09 - WP0.2 prior-art restructure + motivation (P0.2)
+
+- `docs/manuscript_v2.tex` §I (Introduction) restructured. Closes
+  WP0.2 of the v3 execution plan (§4.1, §3.3). Body changes:
+  - **Wildfire / safety motivation** — two short paragraphs added at
+    the head of §I citing all five sources required by the brief:
+    PSRC D15 (1996, ~5–10 % HIF share, 25 % undetected
+    downed-conductor incidents), NREL TP-5R00-80746 (2023, 19 %
+    grid-caused U.S. wildfires 2016–2020), 2009 Australian Black
+    Saturday (173 fatalities), 2018 PG&E Camp Fire (85 fatalities,
+    USD 13.5 B settlement), and CPUC SB 901 / PSPS regulatory
+    framework.
+  - **Table 1A — seven-family prior-art taxonomy.** Replaces the
+    legacy four-category block. Families (i)–(vii) listed with the
+    representative anchors specified in the WP0.2 brief; columns
+    `Single-ended` and `Joint α + R_x` added. The proposed
+    estimator's "Yes / Yes" position is asserted in italicised prose
+    immediately after the table — keeps Table 1A at exactly 7 data
+    rows.
+  - **Contributions list** authored. Five contributions; C5 (CRLB)
+    explicitly framed as an *identifiability bound* — "the
+    objective reference against which the proposed estimator's
+    residual gap is measured" — rather than as a methodological
+    novelty. C5 reuses the `\headlineCRLBGap` macro for
+    byte-identical reuse with the abstract / §VI / §IX.
+  - **Forward-reference roadmap** added as the closing paragraph of
+    §I, cross-linking §II → modelling, §III → identification,
+    §IV → optimiser, §§V–VI → validation, §VII → comparison,
+    §VIII → identifiability bound, §IX → roadmap.
+- `\cite{}` keys for the 22 anchor citations (5 motivation +
+  17 family anchors) inserted but **bibliography deliberately
+  unexpanded** per brief: P0.3 owns reference-set expansion to
+  ≈ 35–45 entries with DOI + IEEE-style pass.
+
 ## 2026-05-09 - WP0.1 metric harmonisation (P0.1)
 
 - `docs/manuscript_v2.tex` authored as the WP0.1-revised IEEE Access
