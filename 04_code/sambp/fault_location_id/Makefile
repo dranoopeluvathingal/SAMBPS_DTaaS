@@ -48,6 +48,18 @@ clean:
 matlab-smoke:
 	matlab -batch "addpath('matlab'); run_smoke"
 
+phase0-smoke:
+	matlab -batch "addpath('matlab'); addpath('matlab/utils'); run_phase0_smoke"
+
+phase0-capture:
+	matlab -batch "addpath('matlab'); addpath('matlab/utils'); run_capture_stats"
+
+phase0-sensitivity:
+	matlab -batch "addpath('matlab'); addpath('matlab/utils'); run_hyperparam_sensitivity"
+
+phase0-figs:
+	matlab -batch "addpath('matlab'); addpath('matlab/utils'); addpath('matlab/figs'); fig_section_convergence; fig_snr_sweep; fig_alpha_rx_heatmap"
+
 phase0: setup
 	$(PYTHON) run_faultloc_phase0_baseline.py
 

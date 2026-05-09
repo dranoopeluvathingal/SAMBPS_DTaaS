@@ -36,13 +36,18 @@ sccprj/
 *.vrb
 
 # --- Data / results ---------------------------------------------------------
-# Heavy artefacts are regenerable; keep outputs/.gitkeep tracked.
+# Heavy artefacts are regenerable; keep outputs/.gitkeep tracked.  Track
+# the Phase-0 baseline CSVs as reference outputs so Phase-1 cross-platform
+# runs have a stable comparator (overwritten by the MATLAB run, then
+# committed by the lead engineer once verified).
 outputs/*.mat
 outputs/*.csv
 outputs/*.npz
 outputs/*.h5
 outputs/*.pkl
 !outputs/.gitkeep
+!outputs/phase0_capture_and_timing.csv
+!outputs/phase0_hyperparam_sensitivity.csv
 
 # --- OS ---------------------------------------------------------------------
 .DS_Store

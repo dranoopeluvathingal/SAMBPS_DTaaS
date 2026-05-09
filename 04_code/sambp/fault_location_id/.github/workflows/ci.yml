@@ -114,3 +114,20 @@ jobs:
             cd('04_code/sambp/fault_location_id');
             addpath('matlab');
             run_smoke
+
+      - name: Run MATLAB Phase-0 smoke (WP0.4 sub-task 2)
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            cd('04_code/sambp/fault_location_id');
+            addpath('matlab');
+            addpath('matlab/utils');
+            run_phase0_smoke
+
+      - name: Upload Phase-0 outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase0_outputs
+          path: |
+            04_code/sambp/fault_location_id/outputs/phase0_*.csv

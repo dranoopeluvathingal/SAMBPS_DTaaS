@@ -2,6 +2,72 @@
 
 Format: each entry is `YYYY-MM-DD - <stage / WP / decision-gate> - <summary>`.
 
+## 2026-05-09 - WP0.4 repo standup + capture / timing / sensitivity (P0.4)
+
+User-confirmed authoring path: lead engineer's MATLAB source is not on
+this dev box, so the canonical .m files are authored from scratch
+(mirroring the manuscript_v2.tex pattern from P0.1).
+
+- **MATLAB scaffolding** (`matlab/`):
+  - `faultloc_optimiser.m` — two-stage joint estimator
+    (Stage 1: 100x50 grid + top-3 multi-start; Stage 2: gradient
+    descent with central FD + Armijo line-search; box constraints;
+    2000-iter cap; analytical-gradient swap deferred to WP2.4).
+    Project-specific, `faultloc_*` prefix.
+  - `utils/armijo.m` — generic backtracking Armijo line-search.
+    Kept under its original name and parked under `utils/` per the
+    SAMBPS cross-project convention.
+  - `faultloc_pi_state_space.m` — two-section pi-model state-space
+    with HIF shunt; A(1,1) = -1/(R_x C_1).
+  - `build_dataset.m` — generates the canonical 720-case dataset
+    (9 alpha x 5 R_x x 4 SNR_V x 4 SNR_I = 720); rng(42); writes
+    `matlab/data/dataset_720.mat`.
+  - `run_phase0_smoke.m` — loads the .mat (or builds it on first
+    run), runs the optimiser on the noiseless representative cell
+    (alpha=0.5, R_x=1000), asserts location error < 0.1 %, exits
+    with code 0/1.
+  - `run_capture_stats.m` — runs the optimiser on all 720 cells,
+    reports `J<1e-12` capture %, and 1000-call median + 95th-pct
+    CPU time.  Writes `outputs/phase0_capture_and_timing.csv`.
+  - `run_hyperparam_sensitivity.m` — sweeps h_alpha in {1e-3, 1e-4,
+    1e-5} x beta in {0.3, 0.5, 0.7}, reports per-cell mean location
+    error.  Writes `outputs/phase0_hyperparam_sensitivity.csv`.
+  - `figs/fig_section_convergence.m`, `figs/fig_snr_sweep.m`,
+    `figs/fig_alpha_rx_heatmap.m` — three representative figure-gen
+    scripts.  Lead engineer adds the remaining three (R_x error,
+    estimated-vs-true scatter, SNR_VxSNR_I heatmap) as needed.
+
+- **Python scaffolding**:
+  - `tools/phase0_synth.py` — produces the two output CSVs from a
+    deterministic synthetic model so the artefacts exist on
+    machines without MATLAB.  Numbers are sensible Phase-0
+    placeholders (capture 99.31 %, median ~28 ms, p95 ~50 ms;
+    sensitivity centred on the v1 1.18 % headline at h_alpha=1e-4,
+    beta=0.5).  The MATLAB scripts overwrite these CSVs when run.
+  - `tests/test_phase0_smoke.py` — wraps `matlab -batch
+    run_phase0_smoke` via subprocess; skipped when MATLAB is not
+    on PATH; collected by pytest in the canonical CI MATLAB job.
+
+- **Build-system updates**:
+  - Makefile gains `phase0-smoke`, `phase0-capture`,
+    `phase0-sensitivity`, `phase0-figs` targets.
+  - `.github/workflows/ci.yml` MATLAB job now runs both `run_smoke`
+    (sym/eig regression, S4) and `run_phase0_smoke` (P0.4) and
+    uploads `phase0_*.csv` as a workflow artefact.
+
+- **Manuscript update** (WP0.4 sub-task 6):
+  - `docs/manuscript_v2.tex` §VI gains three figure floats with
+    full captions and explicit axis labels with units (per-unit
+    alpha; arc resistance in ohms; SNR_I in dB; mean error in %;
+    log-axis annotations).  Figures are placeholder boxes
+    referencing the generated PDF paths in `outputs/`.
+
+Local execution gap: end-to-end `make matlab-smoke` and
+`make phase0-smoke` cannot be verified on this dev box (no MATLAB
+licence).  The Makefile dispatches the correct `matlab -batch`
+command, the .m files are syntactically straightforward, and the CI
+MATLAB job exercises both targets on a licensed runner.
+
 ## 2026-05-09 - WP0.3 references expansion + DOI check (P0.3)
 
 - `docs/references.bib` created with **44 entries** (target ≥ 35),
