@@ -6,7 +6,7 @@
 PYTHON ?= python3
 PIP    ?= $(PYTHON) -m pip
 
-.PHONY: help setup test lint format clean \
+.PHONY: help setup test lint format clean matlab-smoke \
         phase0 phase1 phase2 phase3 phase4 phase5 \
         all-phases
 
@@ -17,6 +17,7 @@ help:
 	@echo "  make lint         Run ruff check"
 	@echo "  make format       Run black (and ruff format)"
 	@echo "  make clean        Remove build / cache artefacts"
+	@echo "  make matlab-smoke Run MATLAB sym/eig smoke (WP0.4 sub-task 4)"
 	@echo "  make phase0       Run Phase 0 baseline (WP0.1-0.5)"
 	@echo "  make phase1       Run Phase 1 cross-platform + corrected CRLB"
 	@echo "  make phase2       Run Phase 2 continuously parametrised optimiser"
@@ -43,6 +44,9 @@ clean:
 	rm -rf .pytest_cache .ruff_cache .mypy_cache
 	find . -type d -name __pycache__ -prune -exec rm -rf {} +
 	find . -type f -name '*.pyc' -delete
+
+matlab-smoke:
+	matlab -batch "addpath('matlab'); run_smoke"
 
 phase0: setup
 	$(PYTHON) run_faultloc_phase0_baseline.py
