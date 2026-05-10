@@ -94,6 +94,9 @@ ignore = [
 # semicolons used for plot-block compactness; zip without strict= is
 # safe because both sequences derive from the same snr_levels list.
 "run_faultloc_phase2_continuous_param.py" = ["E741", "E702", "B905"]
+# WP3.1 three-phase WaveformBundle: `I` is the conventional current
+# symbol matching the WP1.1 single-phase bundle schema.
+"models/faultloc_ieee_feeders.py" = ["E741"]
 
 [tool.ruff.format]
 quote-style = "double"

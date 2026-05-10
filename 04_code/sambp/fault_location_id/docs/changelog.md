@@ -1,6 +1,99 @@
-# fault_location_id - changelog
+## 2026-05-10 - WP3.1 SKELETON queued (Phase-3 entry, no acceptance claimed)
 
-Format: each entry is `YYYY-MM-DD - <stage / WP / decision-gate> - <summary>`.
+Per the post-D2 user direction, queued the WP3.1 directory skeleton
+(three-phase Y_abc model + IEEE 13-node feeder hooks + joblib-parallel
+runner) WITHOUT modifying anything load-bearing.  No acceptance claim
+made; full WP3.1 acceptance lands at a future user-driven brief and
+WP3.7 closes T-D1 (mean loc-err < 3 % on IEEE 34-node).
+
+  models/faultloc_three_phase   Replaces the S1 stub.  Per-phase
+  _model.py                     distributed-parameter ABCD blocks
+                                reusing the WP2.1 single-phase
+                                cosh/sinh formulation, with a
+                                Carson-style 3x3 series impedance
+                                Z_abc and shunt admittance Y_abc
+                                derived from a fully symmetric
+                                placeholder coupling
+                                (MUTUAL_OVER_SELF_RATIO = 0.40).
+                                Karrenbauer modal decoupling so the
+                                3x3 ABCD chain evaluates as three
+                                decoupled scalar ABCD chains in
+                                modal space.  SLG-on-A fault insertion
+                                via the mode-0 zero-sequence channel
+                                only.  Public API: build_Y_abc,
+                                H_phase.  WP3.2 (Carson asymmetry +
+                                laterals + DG + Thevenin source) and
+                                WP3.4 (LL/LLG/3PH fault types) are
+                                explicit forward pointers in the
+                                module docstring.
+
+  models/faultloc_ieee_feeders  Replaces the S1 stub.  IEEE 13-node
+  .py                           feeder fully populated as a
+                                FeederModel dataclass (14 buses,
+                                12 branches with Kersting 2002 line
+                                codes 601--607, transformer XFM-1,
+                                switch); IEEE 34 and IEEE 123 carry
+                                name + bus-count placeholders pending
+                                WP3.3.  WaveformBundle dataclass
+                                mirrors the WP1.1 single-phase
+                                schema (V, I shape (3, n_samples)).
+                                inject_hif() returns a deterministic
+                                3-phase V/I bundle derived from the
+                                WP3.1 H_phase model with a 100 km
+                                placeholder for the actual feeder
+                                branch impedance (WP3.3 replaces
+                                with PSCAD-sourced waveforms).
+
+  run_faultloc_phase3_          Replaces the S1 docstring-only stub.
+  threephase.py                 27-cell sweep
+                                (3 buses x 3 alphas x 3 R_x) at
+                                IEEE 13 with joblib n_jobs=4 cap.
+                                Writes outputs/phase3_skeleton_
+                                smoke.csv (one row per cell with
+                                |H_phase| amplitudes per phase and
+                                bundle shape sanity).  Smoke time
+                                ~0.2s end-to-end on the dev box.
+                                WP3.5 (Taylor-Fourier estimator) and
+                                WP3.6 (multi-port FIM) replace the
+                                placeholder pipeline body.
+
+  tests/test_three_phase_       7 smoke tests, all PASS:
+  skeleton.py                     - H_phase returns finite (3,)
+                                    complex on three (alpha, R_x)
+                                    points;
+                                  - build_Y_abc has 3x3 shape with
+                                    H_phase on the diagonal and
+                                    MUTUAL_OVER_SELF_RATIO * H_phase
+                                    on the off-diagonals;
+                                  - load_feeder('IEEE_13') has the
+                                    canonical buses + >= 5 branches;
+                                  - load_feeder('IEEE_unknown')
+                                    raises ValueError;
+                                  - inject_hif returns a
+                                    WaveformBundle with V/I shape
+                                    (3, 200), fs=10kHz, f0=50Hz, and
+                                    the right bookkeeping fields;
+                                  - inject_hif('bus_NOPE') raises;
+                                  - H_phase(fault_phase=1) raises
+                                    NotImplementedError linking to
+                                    WP3.4.
+
+  pyproject.toml                One per-file-ignore added for E741
+                                on faultloc_ieee_feeders.py: `I` is
+                                the conventional current symbol on
+                                the WaveformBundle dataclass, matching
+                                the WP1.1 single-phase bundle schema.
+
+  .gitignore                    Whitelist outputs/phase3_skeleton_
+                                smoke.csv (regenerable from the
+                                skeleton runner; tracked as a
+                                regression baseline for WP3.2).
+
+Test gate this commit: 61 passed + 1 skipped + 9 xfailed (was 52 + 1
++ 9 at end of P2.6).  Net +9 passed (the 7 new skeleton tests +
+2 parametrised expansions).  ruff clean (per-file-ignore added).
+No tag, no push -- WP3.1 acceptance is gated on the next user-driven
+WP3.1 brief.
 
 ## 2026-05-10 - WP2.6 / D2 - Phase-2 manuscript update + author response + decision gate (P2.6)
 
