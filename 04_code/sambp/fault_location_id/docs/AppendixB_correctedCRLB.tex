@@ -260,6 +260,111 @@ this Appendix supports:
         ratio FIM \emph{overestimates} the true Marsaglia FIM.
 \end{enumerate}
 
+% =============================================================================
+\section{Multi-port projection (WP3.6)}
+% =============================================================================
+\label{sec:appB_multiport}
+
+The single-port derivation in Sect.\,B.1--B.4 treats the IED's
+observation as a single complex bin $H_{\mathrm{meas}} =
+I_{\mathrm{bin}}/V_{\mathrm{bin}}$.  In the three-phase case the
+IED instead observes the sending-end admittance \emph{matrix}
+$Y_{\mathrm{send}}\in\mathbb{C}^{3\times 3}$ relating
+$I_{\mathrm{abc}} = Y_{\mathrm{send}}\, V_{\mathrm{abc}}$ at the
+fundamental.  This section derives the multi-port FIM and certifies
+its consistency with the single-port limit.
+
+\paragraph{Per-entry proper-ratio variance.}
+Each entry $Y_{pq}$ is the ratio of two complex Gaussians
+($I_p$ phasor over $V_q$ phasor) under the WP1.6 Geary--Hinkley
+regime, so the per-entry approximate complex-Gaussian variance is
+\begin{equation}
+\sigma_{Y_{pq}}^{2} \;=\;
+   \frac{\sigma_{I_{p}}^{2}\,+\,|Y_{pq}|^{2}\sigma_{V_{q}}^{2}}
+        {|V_{\mathrm{phase}}^{(q)}|^{2}}
+\quad p,q\in\{a,b,c\},
+\label{eq:sigmaYpq}
+\end{equation}
+matching (\ref{eq:sigmaH}) per entry.
+
+\paragraph{Multi-port proper-ratio FIM.}
+The three-phase observation is the stacked vector
+$y\in\mathbb{R}^{2\,|\mathcal{S}|}$ of $\mathrm{Re}/\mathrm{Im}$
+parts of the chosen entry set
+$\mathcal{S}\subseteq\{(p,q):p,q\in\{a,b,c\}\}$.  Three observation
+policies are exposed in the public API:
+\begin{itemize}[leftmargin=2em]
+  \item $\mathcal{S}_{\mathrm{full}}$ -- all 9 entries (18 real),
+  \item $\mathcal{S}_{\mathrm{upper}}$ -- 6 upper-triangle entries
+        (12 real),
+  \item $\mathcal{S}_{\mathrm{diagonal}}$ -- 3 diagonal entries
+        ($Y_{aa},Y_{bb},Y_{cc}$, 6 real).
+\end{itemize}
+Stacking the per-entry contributions gives the $2\times 2$ FIM
+\begin{equation}
+F^{\mathrm{proper}}_{kl} \;=\;
+   \sum_{(p,q)\in\mathcal{S}}
+   \frac{1}{\sigma_{Y_{pq}}^{2}}\,
+   \mathrm{Re}\!\Bigl[
+     \bigl(\partial_{\theta_k} Y_{pq}\bigr)^{\!*}\,
+     \partial_{\theta_l} Y_{pq}
+   \Bigr],
+\label{eq:FproperMulti}
+\end{equation}
+with $\theta=(\alpha,R_x)$ and CRLB$(\theta_k) = (F^{-1})_{kk}$.
+
+\paragraph{Multi-port dual-channel FIM.}
+Following the WP1.6 Nehorai--Hawkes derivation in waveform space,
+each per-entry contribution to the FIM becomes
+\begin{equation}
+F^{\mathrm{dual}}_{kl} \;=\;
+   \sum_{(p,q)\in\mathcal{S}}
+   \frac{N_{s}\,|V_{\mathrm{phase}}|^{2}}{2\,\sigma_{I_{pq,t}}^{2}}\,
+   \mathrm{Re}\!\Bigl[
+     \bigl(\partial_{\theta_k} Y_{pq}\bigr)^{\!*}\,
+     \partial_{\theta_l} Y_{pq}
+   \Bigr],
+\label{eq:FdualMulti}
+\end{equation}
+with $\sigma_{I_{pq,t}}^{2}$ the time-domain variance of the per-(p,q)
+current and $N_s=200$ the cycle window length.  The two FIMs share
+the same kernel $\mathrm{Re}[(\partial Y_{pq})^{*}\partial Y_{pq}]$
+summed over $\mathcal{S}$; only the per-entry weights differ.
+
+\paragraph{Cross-check: consistency at $\sigma_V\to 0$.}
+At $\sigma_V\to 0$ the proper-ratio per-entry weight in
+(\ref{eq:FproperMulti}) reduces to
+$1/\sigma_{Y_{pq}}^{2} = |V_{\mathrm{phase}}|^{2}/\sigma_{I_{pq,b}}^{2}$
+where $\sigma_{I_{pq,b}}^{2} = (2/N_s)\sigma_{I_{pq,t}}^{2}$ is
+the single-bin DFT variance.  Substituting yields exactly the
+prefactor in (\ref{eq:FdualMulti}), so $F^{\mathrm{proper}} =
+F^{\mathrm{dual}}$ entry-by-entry under V-noiseless balanced
+3-phase operation.  The WP3.6 numerical check on the IEEE 34
+720-grid sub-sample reports $\max_{\mathrm{cell}}\,|\,r-1\,| \le
+7\!\times\!10^{-16}$ where
+$r = \mathrm{rmse}_\alpha^{\mathrm{proper}} /
+\mathrm{rmse}_\alpha^{\mathrm{dual}}$ (300/300 cells within
+5\,\%; in fact at machine precision).  Cross-checked in
+\texttt{tests/test\_fim\_multiport.py}.
+
+\paragraph{Information accumulation.}
+The multi-port FIM is a sum of $|\mathcal{S}|$ per-entry
+contributions; under balanced 3-phase operation each entry's kernel
+is approximately equal to the single-port kernel scaled by a
+constant.  In the asymptotic-MLE limit the multi-port CRLB is
+therefore tighter than the single-port bound by roughly
+$\sqrt{|\mathcal{S}|}$ -- a $\sqrt{9}=3\!\times$ improvement for
+the full observation in the no-load limit.  Empirically on the
+IEEE 34 sub-sample (load-dominated $Y_{\mathrm{send}}$) the per-
+cell improvement is smaller because the load admittance dilutes
+the per-entry parameter sensitivity
+$\partial Y_{pq}/\partial\theta$; the WP3.6 commit ships overlay
+PNGs in \texttt{outputs/phase3\_crlb\_multiport\_overlay/} that
+visualise this load-dilution effect.  The closure of the high-$R_x$
+near-source corner -- where the load dilution dominates the noise
+floor -- closes structurally at the WP3.5 Taylor--Fourier
+multi-bin extension already landed.
+
 \bigskip\hrule\bigskip
 \noindent\textit{End of Appendix~B.}
 

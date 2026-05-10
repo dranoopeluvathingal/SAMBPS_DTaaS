@@ -1,3 +1,115 @@
+## 2026-05-10 - WP3.6 multi-port FIM (P3.6)
+
+WP3.6 (P3.6) extends the WP1.6 single-port proper-complex-Gaussian-
+ratio + dual-channel CRLBs to 3-port observations on the 3 x 3
+sending-end admittance matrix Y_send.  18 real observations vs 2
+real unknowns -- structurally over-determined by 9x.
+
+Acceptance:
+  T-D6.consist     proper-ratio and dual-channel CRLBs agree to 5 %
+                   on every cell at SNR_I = 40 dB on the IEEE 34
+                   sub-sample -- PASS.  Measured: 300/300 cells
+                   within 5 %; max abs deviation = 6.66e-16
+                   (machine precision).
+  T-D6.envelope    overlay PNGs show CRLB envelope behaviour vs
+                   SNR_I -- PASS (3 PNGs in
+                   outputs/phase3_crlb_multiport_overlay/).
+  T-D6.appB        AppendixB updated with \S\,B.5 multi-port
+                   projection + recompiled -- PASS (4 pages, was
+                   3 pages at end of WP1.6).
+
+Files
+-----
+
+  inverse_estimation/faultloc_   Replaces the WP3.6 stub with the
+  fim_multiport.py               proper multi-port FIM.  Public API:
+                                 MultiPortCRLBResult dataclass;
+                                 crlb_multiport_proper(network,
+                                   fault_bus, alpha, Rx, omega, *,
+                                   snr_v_db, snr_i_db, observation,
+                                   v_phase, ns, fault_type,
+                                   fault_phase) -> result;
+                                 crlb_multiport_dual(...) -> result;
+                                 crlb_consistency_ratio(proper, dual)
+                                 -> float.
+                                 observation in {'full' (9 entries
+                                 = 18 real), 'upper' (6 = 12 real),
+                                 'diagonal' (3 = 6 real)}.
+
+  run_faultloc_phase3_           NEW.  Sweeps the IEEE 34 720-grid
+  multiport_crlb.py              sub-sample (10 buses x 5 R_x x 5
+                                 SNR_I x 3 observations = 750 cells);
+                                 produces overlay PNGs + per-cell
+                                 CSV.  Reports per-cell consistency
+                                 ratio at SNR_I in {40, 50} dB.
+
+  outputs/phase3_crlb_           NEW.  4 artefacts:
+  multiport_overlay/               per_cell_crlb.csv (750 rows);
+                                   snr_sweep.png (single-port vs
+                                     multi-port proper vs dual CRLB
+                                     curves at representative cell);
+                                   observation_kind.png (CRLB vs
+                                     SNR_I for the three observation
+                                     subsets);
+                                   consistency_at_40dB.png (per-cell
+                                     scatter of proper / dual ratio).
+
+  docs/AppendixB_corrected      \S\,B.5 ("Multi-port projection
+  CRLB.{tex,pdf}                (WP3.6)") added with:
+                                  - per-entry proper-ratio sigma_Y_pq
+                                    derivation;
+                                  - 2x2 multi-port FIM eqs
+                                    (eq:FproperMulti, eq:FdualMulti);
+                                  - cross-check of the per-cell
+                                    consistency identity at sigma_V
+                                    -> 0;
+                                  - information-accumulation note
+                                    (sqrt(|S|) tightening factor)
+                                    + load-dilution caveat for
+                                    IEEE 34;
+                                  - headline empirical-vs-CRLB
+                                    overlay reference.
+                                 Recompiles to 4 pages, 348 KB.
+
+  tests/test_fim_multiport.py    NEW.  9 tests, all PASS:
+                                  - 3 parametrised consistency tests
+                                    (full / upper / diagonal) at
+                                    sigma_V = 0;
+                                  - observation-subset information
+                                    accumulation (rmse decreases as
+                                    |S| grows);
+                                  - proper / dual ratio > 1 at
+                                    sigma_V > 0 (matches WP1.6
+                                    direction);
+                                  - per-cell CSV schema check;
+                                  - brief consistency acceptance at
+                                    SNR_I = 40 dB across IEEE 34
+                                    sub-sample (300/300 cells within
+                                    5 %);
+                                  - overlay PNGs present + non-empty;
+                                  - input validation for
+                                    observation kw.
+
+  .gitignore                    Whitelist outputs/phase3_crlb_
+                                multiport_overlay/.
+
+R-class register update
+-----------------------
+
+  R5 (single-bin DFT bias):  CLOSED at WP3.5 (Taylor-Fourier);
+                             WP3.6 multi-port FIM provides the
+                             complementary structural over-
+                             determination (factor sqrt(9) = 3
+                             tightening at no-load limit).
+  R-WP3.4-1 (fault-type 95%): forward closure path is the WP3.6
+                             multi-port observation -> additional
+                             independent channels increase the per-
+                             cell SNR on the fault signature.
+
+Test gate this commit: 117 passed + 1 skipped + 11 xfailed (was 108
++ 1 + 11 at end of WP3.5).  Net +9 passed.  ruff clean.  No tag,
+no push.
+
 ## 2026-05-10 - WP3.5 Taylor-Fourier + identifiability map (P3.5, closes R5)
 
 WP3.5 (P3.5) closes R5 ("single-bin DFT bias") with three deliverables:
