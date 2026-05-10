@@ -1,3 +1,160 @@
+## 2026-05-10 - WP3.5 Taylor-Fourier + identifiability map (P3.5, closes R5)
+
+WP3.5 (P3.5) closes R5 ("single-bin DFT bias") with three deliverables:
+
+1. **First-order Taylor-Fourier phasor estimator**
+   (models/faultloc_taylor_fourier.py).  K = 1 default; LS fit of
+   `v(t) = Re[(H_0 + H_1 t) exp(j w0 t)]` over the observation window.
+   Returns (H, dH/dt) at the window start.  Reduces to single-bin
+   DFT under K = 0; recovers static phasor + linear-envelope phasor
+   to machine precision (verified in tests).
+2. **K06 phasor-bias measurement**
+   (run_faultloc_phase3_taylor_fourier_bias.py).  At the brief
+   representative case (alpha=0.5, R_x=2000 ohm, SNR_I=30 dB) with
+   the Wang-2020-style distortion-controllable arc stimulus,
+   200-trial MC: TFT vs single-bin DFT.  **Measured: 55.94 %
+   mean bias improvement** (target >= 50 %, PASSES).
+3. **Identifiability map + Hermann-Krener ORC indicator**
+   (adaptation/faultloc_identifiability_check.py +
+   run_faultloc_phase3_identifiability_map.py).  50 x 50 grid over
+   (alpha, R_x); reports raw sigma_min(J) and the scale-invariant
+   inverse condition number sigma_min/sigma_max.  Hermann-Krener
+   ORC SATISFIED on all 2500 cells (rank == 2 everywhere).  104/2500
+   cells flagged as locally degenerate (inverse condition number
+   < 1e-2), clustering at the predicted near-source + high-R_x
+   corner per v3 plan Sect. 3.13.  Villaverde 2024 STRIKE-GOLDD
+   referenced as the symbolic Lie-derivative generalisation.
+
+Acceptance:
+  T-D5.K06.50pct  TFT phasor-bias improvement >= 50 % vs DFT at the
+                  representative case -- PASS.  Mean = 55.94 %;
+                  median = 55.56 %.
+  T-D5.heatmap    50 x 50 (alpha, R_x) identifiability heatmap PNG
+                  produced -- PASS (outputs/phase3_identifiability_
+                  heatmap.png; dual-panel raw sigma_min and
+                  inverse-condition-number views).
+  T-D5.orc        Hermann-Krener ORC binary indicator on the same
+                  grid -- PASS (outputs/phase3_identifiability_orc
+                  .csv; 2500/2500 cells satisfy ORC).
+  T-D5.r5_close   R5 ("single-bin DFT bias") closed.  The previous
+                  characterisation as a STRUCTURAL identifiability
+                  failure is REVISED: ORC is satisfied everywhere on
+                  the operating envelope.  R5 is correctly framed
+                  as a NOISE-SENSITIVITY issue (CRLB / cost-surface
+                  flatness in anisotropic regions), not a structural
+                  rank failure.  The TFT estimator addresses the
+                  bias contribution from arc modulation directly
+                  (K06); the residual noise-floor issue closes at
+                  WP3.6 (multi-port FIM).
+
+Files
+-----
+
+  models/faultloc_taylor_fourier  Replaces the WP3.5 stub with the
+  .py                             proper Taylor-Fourier estimator.
+                                  Public API: tft_phasor(v_t, fs, f0,
+                                  K=1) -> (H, dH/dt); H_meas_from_
+                                  waveforms_tft(v, i, fs, f0, K=1)
+                                  -> H_meas analogue of the WP1.4 /
+                                  Phase 2 single-bin DFT helper.
+
+  tools/wang2020_arc_stimulus.py  NEW.  Synthetic distortion-
+                                  controllable arc stimulus inspired
+                                  by Wang et al. 2020 EPSR.  Linear
+                                  magnitude + phase drift across the
+                                  observation window (the leading
+                                  non-stationary term TFT-K=1 captures);
+                                  3rd / 5th / 7th harmonics scaled by
+                                  the distortion_index in [0, 1].
+
+  run_faultloc_phase3_taylor_   NEW.  K06 measurement runner.  200-
+  fourier_bias.py                trial MC at the brief representative
+                                 case; writes outputs/phase3_tft_vs_
+                                 dft_bias.csv (per-trial bias for
+                                 both estimators + summary footer).
+
+  adaptation/faultloc_         Replaces the WP3.5 stub with the
+  identifiability_check.py     proper ORC + sigma_min framework.
+                               Public API: jacobian_real_imag,
+                               sigma_min_at, sigma_min_over_max_at,
+                               observability_rank, map_*, flag_local_
+                               degeneracy.  References Villaverde
+                               2024 STRIKE-GOLDD (arXiv:2410.06984)
+                               as the symbolic generalisation.
+
+  run_faultloc_phase3_           NEW.  Builds 50 x 50 (alpha, R_x)
+  identifiability_map.py         identifiability map.  Outputs:
+                                   outputs/phase3_identifiability_
+                                     sigma_min.csv (per-cell raw +
+                                     normalised + ORC rank +
+                                     is_degenerate flag);
+                                   outputs/phase3_identifiability_
+                                     orc.csv (binary ORC indicator);
+                                   outputs/phase3_identifiability_
+                                     heatmap.png (dual panel: raw
+                                     log10 sigma_min and log10
+                                     sigma_min/sigma_max).
+
+  tests/test_taylor_fourier.py   NEW.  7 tests, all PASS:
+                                   - TFT recovers static phasor to
+                                     1e-12;
+                                   - TFT-K=1 recovers linear envelope
+                                     (H_0, H_1) to 1e-9;
+                                   - TFT-K=0 matches single-bin DFT;
+                                   - H_meas_from_waveforms_tft
+                                     consistency on clean signals;
+                                   - input validation (K, length,
+                                     1-D shape);
+                                   - K06 report schema;
+                                   - K06 >= 50 % brief acceptance.
+
+  tests/test_identifiability_   NEW.  13 tests, all PASS:
+  map.py                          - 4 parametrised observability_
+                                    rank checks at typical cells;
+                                  - 3 parametrised sigma_min positive
+                                    checks;
+                                  - grid-wide rank uniformity;
+                                  - flag_local_degeneracy helper;
+                                  - heatmap CSV present + schema;
+                                  - ORC CSV present + full-rank
+                                    everywhere on 50 x 50 grid;
+                                  - heatmap PNG present + non-empty;
+                                  - flagged degenerate region sits
+                                    at the predicted near-source +
+                                    high-R_x corner.
+
+  .gitignore                    Whitelist outputs/phase3_tft_vs_dft_
+                                bias.csv, phase3_identifiability_
+                                {sigma_min,orc}.csv,
+                                phase3_identifiability_heatmap.png.
+
+R-class register update
+-----------------------
+
+  R5 (single-bin DFT bias):  CLOSED at WP3.5.
+                             - The structural-identifiability
+                               framing of R5 is RESOLVED: Hermann-
+                               Krener ORC is satisfied on every
+                               cell of the standard operating grid.
+                             - The phasor-bias contribution from
+                               arc modulation is REDUCED by the
+                               Taylor-Fourier K = 1 estimator
+                               (K06: 55.94 % mean bias improvement
+                               vs single-bin DFT at the brief case).
+                             - The residual noise-sensitivity in
+                               the near-source + high-R_x corner
+                               (104/2500 cells with sigma_min/
+                               sigma_max < 1e-2) is correctly
+                               characterised as a CRLB cost-surface-
+                               flatness issue, not a rank failure;
+                               closes structurally at WP3.6 (multi-
+                               port FIM provides additional
+                               independent observation channels).
+
+Test gate this commit: 108 passed + 1 skipped + 11 xfailed (was 88 +
+1 + 11 at end of WP3.4).  Net +20 passed (7 TFT + 13 identifiability
+tests).  ruff clean.  No tag, no push.
+
 ## 2026-05-10 - WP3.4 SLG/LL/LLG fault types (P3.4)
 
 WP3.4 (P3.4) ships the three fault-type extension to the WP3.x
