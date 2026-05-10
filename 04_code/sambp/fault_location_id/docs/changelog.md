@@ -2,6 +2,108 @@
 
 Format: each entry is `YYYY-MM-DD - <stage / WP / decision-gate> - <summary>`.
 
+## 2026-05-10 - WP1.4 cross-platform optimiser re-run (P1.4) + R1 escalation
+
+  inverse_estimation/faultloc_two_stage_optimiser.py
+                                Replaces the docstring stub from S1
+                                with the full Python port of
+                                matlab/faultloc_optimiser.m: Stage 1
+                                100x50 grid + top-3 multi-start;
+                                Stage 2 gradient descent with central-
+                                FD + Armijo + box constraints + 2000-
+                                iter cap.  Default tol_J = 1e-18
+                                (tighter than MATLAB's 1e-12 to avoid
+                                grid-resolution-limited Stage-1 bail).
+                                Plus single_bin_dft() and
+                                H_meas_from_waveforms() helpers.
+
+  run_faultloc_phase1_          Loads the three canonical waveform
+  crossplatform.py              sets (PSCAD/EMTP/ref50) plus an
+                                on-the-fly self-consistent baseline
+                                generated from the Cascaded-Gamma
+                                model.  Runs the unchanged optimiser
+                                on every cell of every dataset
+                                (4 x 720 = 2880 estimates), records
+                                per-cell (loc_err, Rx_err, J_final,
+                                n_iters, cpu_ms).  Writes
+                                outputs/phase1_crossplatform_results.csv
+                                + outputs/phase1_delta_error_
+                                attribution.csv + 6 figures in
+                                outputs/phase1_figs/.  Full run takes
+                                ~3 minutes.  --quick flag subsamples
+                                to 240 cells/dataset for CI.
+
+  tests/test_phase1_            8 tests:
+  crossplatform.py              - 6 xfail (mean<2% and max<5% per
+                                  dataset {pscad, emtp, ref50})
+                                - 1 PASS: self_consistent passes D1
+                                  thresholds on noiseless cells
+                                  (~0.005% mean, ~0.04% max),
+                                  confirming optimiser is sound.
+                                - 1 PASS: CSV schema check.
+
+R1 escalation OPEN
+------------------
+
+The brief's strict thresholds (mean loc_err < 2 %, max < 5 % at
+SNR_I >= 30 dB) FAIL across all three canonical datasets:
+
+                              noiseless (45 cells/dataset):
+    pscad / emtp / ref50:     mean ~19 %  max ~180 %
+    self_consistent:          mean 0.005% max 0.04 %
+
+                              high-SNR (both V and I >= 30 dB, 405 cells):
+    pscad / emtp / ref50:     mean 23-25%  max 330-430 %
+    self_consistent:          mean ~13 %   max ~190 %
+
+Two distinct failure modes diagnosed:
+
+  (a) Forward-model mismatch.  The H magnitude difference between
+      the Cascaded-Gamma 2-section optimiser model and the
+      distributed-parameter / 50-section reference is < 1 %
+      (P1.3 finding), but the inverse-problem ill-conditioning
+      amplifies that into ~19 % loc-error on PSCAD/EMTP/ref50 data.
+      Closes when WP2.1 lands the closed-form distributed-parameter
+      forward model that MATCHES the data-generating physics.
+
+  (b) Noise x conditioning amplification.  Noiseless self-consistent
+      recovers (alpha, R_x) to 0.005 %, but cells with even mild
+      noise (SNR_V/I = 30-40 dB) blow up to ~13 %.  The single
+      complex H bin has 2 real DOF for 2 unknowns but the cost
+      surface is near-degenerate over a curve in (alpha, R_x) space
+      (manifestation of v3 §3.13 "near-source alpha < 0.2 floor"
+      extended to all alpha under finite SNR).  Closes when WP1.6
+      lands the corrected proper-complex-Gaussian-ratio CRLB and
+      WP3.5 / WP3.6 add the Taylor-Fourier multi-bin estimator and
+      multi-port FIM.
+
+Per WP1.4 brief, do NOT auto-fix.  All 6 dataset-specific tests
+xfailed with reason text linking to the TODO Phase1 single-bin DFT
+identifiability block in the test file's docstring.  Self-consistent
+test PASSES (confirms optimiser is sound).
+
+**Implication for D1 acceptance.** D1 ("Mean location error < 2 % at
+SNR_I >= 30 dB across all simulators") is **unachievable** with the
+current 2-section optimiser.  D1 is now gated on:
+
+  1. WP1.6 corrected CRLB (quantifies the floor).
+  2. WP2.1 closed-form distributed-parameter forward model (closes
+     the model-mismatch gap).
+  3. WP3.5 + WP3.6 multi-bin / multi-port (improves conditioning).
+
+**This reframes Phase 2 again** (post-P1.3 reframing): WP2.1 is now
+*essential*, not optional - without it, the optimiser cannot match
+the canonical PSCAD/EMTP data even noiseless.  The P1.3 conclusion
+that the Cascaded-Gamma 2-section "is already a strict improvement
+over v1" stands - but that improvement only manifests on
+self-consistent data, not on real-world distributed-parameter
+waveforms.
+
+Test gate this commit: 23 passed + 1 skipped + 7 xfailed (was 21 + 1
++ 1 at end of P1.3 follow-up).  Net +2 passed
+(self_consistent + schema), +6 xfailed (P1.4 acceptance failures).
+ruff clean.
+
 ## 2026-05-10 - WP1.3 v1 provenance resolved (P1.3 follow-up)
 
 User re-issued the WP1.3 brief.  Acceptance criterion ("the 30-45 %
