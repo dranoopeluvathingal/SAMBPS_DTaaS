@@ -1,3 +1,106 @@
+## 2026-05-10 - WP3.8 / D3 - Phase-3 conference paper + decision gate (P3.8)
+
+Phase-3 closeout.  Two artefacts staged for release tag
+v0.5.0-phase3; awaiting PI signoff before push or any external
+submission.
+
+  docs/Phase3_conference_paper   NEW.  6-page IEEE conference draft
+  .{tex,pdf}                     (currently 4 pages of dense
+                                 prose; can extend to 6 with
+                                 additional figures / discussion if
+                                 reviewers request depth).  Title:
+                                 "Three-Phase, Multi-Section,
+                                 Branched-Feeder Single-Ended Joint
+                                 HIF Estimation with Multi-Port CRLB
+                                 and Public-Dataset Validation".
+                                 Sections: intro + related work +
+                                 model (P3.1 + P3.2) + IEEE feeders
+                                 (P3.3) + fault-type classification
+                                 (P3.4) + Taylor-Fourier (P3.5) +
+                                 multi-port CRLB (P3.6) + CNRS
+                                 validation (P3.7) + headline-
+                                 results table + 3 figures
+                                 (identifiability heatmap, multi-
+                                 port CRLB sweep, observation-set
+                                 comparison) + CNRS artefact table
+                                 + conclusions.  Uses IEEEtran
+                                 conference template; recompiles
+                                 to 4 pages, 446 KB.
+
+  docs/D3_review_pack.md         Phase-3 decision-gate template per
+                                 the D0 / D1 / D2 pattern.  Phase
+                                 summary (WP3.1 - WP3.8); 10-row
+                                 acceptance table with measured
+                                 K03 / K05 / K06 / K07 / K08 / 5x
+                                 numbers; risk-register update
+                                 (R5 CLOSED; R3 DOWNGRADED;
+                                 R-WP3.3-1 / R-WP3.4-1 / R-WP3.7-1
+                                 NEW with documented mitigation
+                                 paths); KPI snapshot K01-K14;
+                                 decision recommendation
+                                 (b) CONDITIONAL APPROVAL to
+                                 proceed to Phase 4; 4 pre-
+                                 progression items including PI
+                                 venue decision (PES GM Apr vs
+                                 ISGT Sep) and conference page-
+                                 count direction.
+
+  docs/references.bib            +2 entries:
+                                   KerstingDistribution2002Bk
+                                     (book entry; cited as the
+                                     canonical IEEE 13/34/123
+                                     line-code source for WP3.3);
+                                   Villaverde2024STRIKEGOLDD
+                                     (arXiv:2410.06984; cited from
+                                     WP3.5 identifiability + the
+                                     Phase-3 conference paper).
+
+D3 gate-blocker outcome:
+
+  3 PASS              K03 (forward-model accuracy) + K06 (TFT bias
+                      improvement) + K07 (multi-port CRLB
+                      consistency at machine precision)
+  1 XFAIL strict      K08 (74.5 % vs 95 % brief target; R-WP3.4-1
+                      escalation forward to WP3.5/3.6 multi-bin +
+                      WP3.3 follow-up canonical IEEE 34 line codes)
+  1 DEFER             K05 (CNRS test.zip held back behind
+                      --include-test; R-WP3.7-1 escalation forward
+                      to lead engineer's licensed Windows runner)
+  1 PASS              T-D5.5x regression (worst (alpha, R_x) cell)
+  1 PASS              make test (121 passed + 1 skipped + 11 xfailed)
+  1 PASS              ruff check (lint clean)
+
+R5 (single-bin DFT bias):  CLOSED at WP3.5 (Hermann-Krener ORC
+                           certified everywhere on the operating
+                           envelope; TFT-K=1 reduces arc-modulation
+                           bias 55.94 %; multi-port FIM at WP3.6
+                           supplies sqrt(9) information accumulation
+                           at the no-load limit).
+R3 (multi-class fault):    DOWNGRADED.  WP3.4 implements the SLG /
+                           LL / LLG outer loop with 100 % noiseless
+                           accuracy + structural Y_send pattern
+                           checks; closes at WP3.5/3.6 + WP3.3
+                           follow-up.
+
+Recommendation (per D3_review_pack \S\,5): (b) CONDITIONAL APPROVAL
+to proceed to Phase 4 OR continue Phase-3 follow-up if PI prefers
+depth-first closure of R-WP3.3-1 / R-WP3.4-1 / R-WP3.7-1 first.
+Four pre-progression items for the PI:
+
+  1. PI green light to push v0.5.0-phase3 tag to remote (along
+     with the WP2.6 v0.4.0-phase2 tag that is also pending).
+  2. PI direction on conference venue: IEEE PES GM 2027 (Apr
+     deadline) vs ISGT 2027 (Sep deadline).
+  3. PI confirmation on whether to extend the conference paper to
+     a strict 6 pages (add figures or extended discussion) or to
+     submit at 4 dense pages.
+  4. Lead engineer's CNRS test.zip pull on the licensed Windows
+     runner so K05 can be measured and reported.
+
+Test gate this commit: 121 passed + 1 skipped + 11 xfailed (no
+test count change vs WP3.7; this commit is documentation-only).
+ruff clean.  Tag v0.5.0-phase3 created locally (no push).
+
 ## 2026-05-10 - WP3.7 CNRS IEEE-34 external validation (P3.7)
 
 WP3.7 (P3.7) ships the CNRS / Recherche Data Gouv IEEE 34-node HIF
