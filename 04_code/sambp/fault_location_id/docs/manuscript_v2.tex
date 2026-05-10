@@ -289,9 +289,69 @@ module.
 \section{System and Models}\label{sec:models}
 \textit{[\S\,II.A distribution-line parameterisation, \S\,II.B
 two-section $\pi$-model state-space, \S\,II.C anti-parallel diode arc
-model, \S\,II.D section-model accuracy study.  WP0.5 lands the
-$\pi$-derivation appendix and the symbolic
-$\partial H/\partial\alpha,\partial H/\partial R_x$.]}
+model.  WP0.5 lands the $\pi$-derivation appendix
+(\texttt{docs/AppendixA\_derivation.pdf}); WP2.1 lands the closed-form
+distributed-parameter forward model
+(\texttt{models/faultloc\_distributed\_param\_model.py}); WP2.2 lands
+the closed-form analytic gradients
+(\texttt{inverse\_estimation/faultloc\_analytical\_gradients.py},
+Appendix~A §A.7).]}
+
+\subsection{Section-model accuracy study (\S\,II.D)}\label{sec:modeldelta}
+
+The convergence study below has been updated under WP2.3 to include
+the closed-form distributed-parameter model from §IV.  Three forward
+models are evaluated against a 50-section $\pi$ reference (Saha-2010
+half-$\pi$ convention) on the 19$\,\alpha\!\times\!5R_x$ operating
+grid at $f_0 = 50$\,Hz; magnitude errors $\bar{\varepsilon}_H$ in
+percent.
+
+\begin{table}[!t]
+\caption{Forward-model accuracy vs the WP1.3 50-section $\pi$
+reference on the operating grid.  ``Mean'' is across all 95 cells;
+``Max'' is the worst cell.  Updated under WP2.3 (P2.3).}
+\label{tab:modelfit}
+\centering
+\renewcommand{\arraystretch}{1.18}
+\begin{tabular}{@{}lrrl@{}}
+\toprule
+\textbf{Forward model} & \textbf{Mean $|\Delta H|/|H_{\text{ref}}|$} &
+\textbf{Max} & \textbf{Source}\\
+\midrule
+v1 R-L-only 2-section (no shunt $C$) & $40.4\,\%$ & $87.5\,\%$
+   & \texttt{models/faultloc\_legacy\_v1\_2section.py}\\
+P0.5 cascaded-$\Gamma$ 2-section
+   & $0.39\,\%$ & $0.98\,\%$
+   & \texttt{models/faultloc\_pi\_section\_model.py}\\
+\textbf{P2.1 distributed-parameter (closed form)}
+   & $\mathbf{4.3\!\times\!10^{-6}\,\%}$ & $\mathbf{2.7\!\times\!10^{-5}\,\%}$
+   & \texttt{models/faultloc\_distributed\_param\_model.py}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Headline:} the closed-form distributed-parameter model
+agrees with the 50-section $\pi$ reference to better than
+$\mathbf{1\,\%}$ across the operating grid (D-C acceptance).
+Empirically the agreement is at numerical precision, set by the
+50-section reference's own sectioning floor (which we measured at
+$\sim 2\!\times\!10^{-5}\,\%$ vs a 100-section reference --- the
+residual is the WP1.3 lumped-line discretisation, not a real
+distributed-vs-$\pi$ gap).  The per-cell breakdown is in
+\texttt{outputs/phase2\_reproduction.csv} (95 rows; \texttt{source\_of\_residual}
+column = \texttt{within\_target} on every row).
+
+\textbf{Out of scope.}  Frequency-dependent line parameters
+($R'(\omega)$ skin effect; earth-return $R_g'(\omega)$) are present
+in PSCAD's J.\,Marti FD line and EMTP-RV's FD model, but neither the
+P2.1 closed-form distributed model nor the WP1.3 50-section $\pi$
+reference includes them.  The Phase-1 cross-platform validation
+(P1.4) showed that this lumped-vs-FD gap, at $f_0 = 50$\,Hz with the
+short-feeder geometry studied here, is $<\!1\,\%$ in $|H|$ across
+the grid (P1.3 finding); WP4.1 will quantify the impairment-class
+sensitivity.  Frequency-dependent series impedance is therefore
+deferred to Phase~4 and treated as an \emph{intentional} omission
+at the §IV / §V layer.
 
 \section{Transfer-Function Identification}\label{sec:tf}
 \textit{[\S\,III analytical / DFT / cost - body migrates from v1.

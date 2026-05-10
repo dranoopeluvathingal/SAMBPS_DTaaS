@@ -2,6 +2,58 @@
 
 Format: each entry is `YYYY-MM-DD - <stage / WP / decision-gate> - <summary>`.
 
+## 2026-05-10 - WP2.3 50-section reproduction tightened (P2.3)
+
+D-C target: max magnitude error vs the 50-section reference < 1 %
+across the (alpha, R_x) grid.  Status: ALREADY MET by the P2.1
+closed-form distributed-parameter model with four orders of
+magnitude margin.  No model changes needed; no STOP-and-ask
+condition triggered.
+
+  outputs/phase2_reproduction    Per-cell residual classification:
+  .csv                            mag_err_pct, phase_err_deg,
+                                  source_of_residual.  All 95 cells
+                                  on the 19 alpha x 5 Rx grid =
+                                  'within_target' (max mag err
+                                  2.65e-5%; threshold 1.0%).
+
+                                  Diagnostic comparison: 50-section
+                                  pi vs 100-section pi (the
+                                  reference's own discretisation
+                                  floor) gives max 2.0e-5%.
+                                  Distributed vs 50-section is at
+                                  the same order, so the residual
+                                  is sectioning-limited - it is the
+                                  WP1.3 lumped-line floor, not a
+                                  real distributed-vs-pi gap.
+
+  tests/test_distributed_vs_     Added test_max_magnitude_error_
+  50section.py                   below_1pct_DC_target.  Asserts
+                                 max < 1% across the 10 x 5 grid.
+                                 Existing < 5% test retained as a
+                                 K03 sanity check.
+
+  docs/manuscript_v2.tex         §II rewritten with new §II.D
+                                 "Section-model accuracy study":
+                                 Table~\ref{tab:modelfit} comparing
+                                 v1 R-L-only 2-section
+                                 (40.4% / 87.5%), P0.5 cascaded-
+                                 Gamma 2-section (0.39% / 0.98%),
+                                 P2.1 distributed (4.3e-6% /
+                                 2.7e-5%).  Headline: closed-form
+                                 distributed-parameter model meets
+                                 D-C with four orders of magnitude
+                                 margin.  Frequency-dependent line
+                                 effects (R'(omega) skin / earth-
+                                 return) explicitly noted as
+                                 INTENTIONAL Phase-4 omission per
+                                 P1.3 finding (lumped-vs-FD gap
+                                 < 1% in |H| at f0=50Hz on the
+                                 short feeder studied).
+
+Test gate this commit: 46 passed + 1 skipped + 8 xfailed (was 45 +
+1 + 8 at end of P2.2).  ruff clean.
+
 ## 2026-05-10 - WP2.2 analytical gradients (P2.2)
 
   inverse_estimation/             Closed-form dH/dalpha and dH/dRx

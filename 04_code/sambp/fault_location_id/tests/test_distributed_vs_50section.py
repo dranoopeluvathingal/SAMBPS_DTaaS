@@ -52,6 +52,24 @@ def test_max_magnitude_error_below_5pct() -> None:
     )
 
 
+def test_max_magnitude_error_below_1pct_DC_target() -> None:
+    """D-C target (WP2.3): tighter < 1 % threshold across the grid.
+
+    Empirical: max ~ 2.65e-5 % across the 10 x 5 grid; the 50-section
+    reference's own sectioning floor (vs 100-section) is at the same
+    order, so the residual is sectioning-limited, not a real
+    distributed-vs-pi gap.  See outputs/phase2_reproduction.csv for
+    the per-cell source-of-residual classification.
+    """
+    H_d = H_distributed_grid(ALPHAS, RXS, OMEGA)
+    H_r = _ref_grid()
+    mag_err, _ = magnitude_phase_error(H_d, H_r)
+    assert mag_err.max() < 1.0, (
+        f"max magnitude error = {mag_err.max():.4f} %, exceeds D-C "
+        f"target of 1 %."
+    )
+
+
 def test_max_phase_error_below_5_deg_at_noiseless() -> None:
     """At SNR = inf the phase error must be < 5 degrees across the grid."""
     H_d = H_distributed_grid(ALPHAS, RXS, OMEGA)
