@@ -97,10 +97,10 @@ Justification:
 
 **Pre-progression items (≤ W27 Mon):**
 
-1. PI green light to push `v0.5.0-phase3` tag to remote (along with the WP2.6 push that is also pending).
-2. PI direction on conference venue: **IEEE PES GM 2027 (Apr deadline)** vs **ISGT 2027 (Sep deadline)**.
-3. PI confirmation on whether to extend the conference paper to a strict 6 pages (additional figures or extended discussion) or to submit at 4 pages.
-4. Lead engineer's CNRS test.zip pull on the licensed Windows runner so K05 can be measured and reported.
+1. ~~PI green light to push `v0.5.0-phase3` tag to remote~~ **AUTHORISED 2026-05-10 PI**: push both `v0.4.0-phase2` (pending from WP2.6) and `v0.5.0-phase3`.
+2. ~~PI direction on conference venue~~ **LOCKED 2026-05-10 PI**: **IEEE PES GM 2027 (Apr deadline)**. Per-conference template-class file (PESGMxxxx.cls) substituted at submission time.
+3. ~~PI page-count direction~~ **LOCKED 2026-05-10 PI**: submit at 4 dense pages; both PES GM and ISGT accept 4–6 page submissions.
+4. Lead engineer's CNRS test.zip pull on the licensed Windows runner so K05 can be measured and reported. Closure path: `python tools/fetch_cnrs_dataset.py --include-test` → `python run_faultloc_phase3_cnrs_validation.py`.
 
 ## 6. Publication artefact
 
