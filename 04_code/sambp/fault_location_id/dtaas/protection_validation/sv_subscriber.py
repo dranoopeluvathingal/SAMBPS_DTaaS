@@ -201,7 +201,7 @@ class SVSubscriber:
             )
             alpha = float(alpha)
             Rx = float(Rx)
-            confidence = 1.0 / (1.0 + float(info.J_at_exit))
+            confidence = 1.0 / (1.0 + float(info.J_min))
         except Exception:
             alpha = float("nan")
             Rx = float("nan")

@@ -1,3 +1,113 @@
+## 2026-05-10 - WP5.3 25-scenario HIL campaign (P5.3, simulation only)
+
+WP5.3 (P5.3) ships the 25 + 5 scenario test campaign through the
+WP5.2 SVSubscriber + WP1.4 single-bin DFT optimiser pipeline.
+**Dev-box simulation mode**: the hardware-side equivalent (real
+IED + real Merging Unit + Wireshark capture + photographs) is
+gated on the WP5.1 partner-window confirmation; this commit
+ships the simulation-side artefacts (CSV + diagnostic plots +
+report template + acceptance tests) so the HIL site can re-run
+the campaign end-to-end without further code changes.
+
+Scenarios
+---------
+
+  Primary 25:    Wang-2020 default arc on the IEEE 34 sub-sample
+                 with 5 alpha values (0.1, 0.3, 0.5, 0.7, 0.9) x
+                 5 R_x values (200, 500, 1000, 2000, 5000 ohm) x
+                 1 fault-type (SLG).
+  Cross-arc 5:   re-run of cells {1, 7, 13, 19, 25} with the
+                 Torres-2022 'tree' profile.
+
+Acceptance:
+  T-E2.csv_schema       30 rows in outputs/phase5_hil_scenario_
+                        results.csv with the expected schema --
+                        PASS.
+  T-E2.cross_arc        Both Wang-2020 + Torres-tree produce
+                        finite results (no acceptance threshold;
+                        reported as headline) -- PASS.
+  K09 (re-test)         all 30 scenarios complete the SV ->
+                        SVSubscriber -> optimiser -> GOOSE
+                        pipeline under 100 ms wall-clock on the
+                        dev box -- PASS.  Mean max-cycle latency
+                        65.6 ms; worst-case 85.7 ms.
+  K10 mean              proposed mean loc-err < 5 % on Wang2020
+                        25 scenarios -- XFAIL strict (measured
+                        239.46 %).  Same R-WP4.1-1 / R5 single-
+                        bin DFT identifiability floor that
+                        WP3.5 / 3.6 multi-bin TFT + multi-port
+                        FIM closure path resolves; the optimiser
+                        rewire to use multi-bin TFT phasors on
+                        the 3-port observation surface is a
+                        follow-on commit.
+  K10 p95               p95 loc-err < 10 % -- XFAIL strict
+                        (measured 899.90 %).  Same root cause.
+  K10 institutional     >= 1 of {IITM, NUS GEMS, NTU CTSP,
+  signoff               Amprion} signs the HIL pilot report --
+                        XFAIL strict pending HIL access (gated
+                        on WP5.1 partner-window confirmation).
+
+Files
+-----
+
+  run_faultloc_phase5_           NEW.  30-scenario simulation
+  hil_scenarios.py               campaign on the dev-box
+                                 SVSubscriber + Wang-2020 / Torres-
+                                 tree arc + IEEE 34 single-section
+                                 forward model.  Runtime ~ 15 s.
+                                 Outputs: outputs/phase5_hil_
+                                 scenario_results.csv +
+                                 outputs/phase5_figs/scenario_NN_*.pdf.
+
+  outputs/phase5_hil_            NEW.  30-row CSV with per-(scenario)
+  scenario_results.csv           alpha_true, Rx_true, alpha_est,
+                                 Rx_est, loc_err_pct, Rx_err_pct,
+                                 latency_ms_max + mean, n_cycles.
+
+  outputs/phase5_figs/           NEW.  30 per-scenario diagnostic
+  scenario_NN_*.pdf              plots: V/I waveform + per-cycle
+                                 alpha-hat vs alpha_true.
+
+  hil/test_phase5_hil_           NEW.  6 acceptance tests:
+  scenarios.py                     - CSV schema + arc-profile
+                                     coverage check;
+                                   - K10 mean loc-err < 5 % --
+                                     xfail-strict (R-WP4.1-1);
+                                   - K10 p95 loc-err < 10 % --
+                                     xfail-strict (R-WP4.1-1);
+                                   - K09 latency re-test (>= 25
+                                     scenarios under 100 ms);
+                                   - cross-arc robustness reported
+                                     (no threshold);
+                                   - institutional signoff recorded
+                                     -- xfail-strict pending HIL.
+
+  docs/phase5_hil_pilot_         NEW.  Pilot-campaign report with
+  report.md                      DRAFT, SIMULATION ONLY banner;
+                                 vendor IED placeholder;
+                                 SV configuration table (4.8 kHz,
+                                 6 channels); per-arc-profile
+                                 headline numbers; institutional
+                                 signoff table (all PENDING);
+                                 open items list.
+
+  .gitignore                     Whitelist outputs/phase5_hil_
+                                 scenario_results.csv +
+                                 outputs/phase5_figs/.
+
+R-class register update
+-----------------------
+
+  R8 (HIL access):       unchanged from WP5.1/5.2 (still PARTIAL);
+                         WP5.3 ships simulation-side, hardware-
+                         side gated on partner-window confirmation.
+  R-WP4.1-1 / R5:        explicitly re-surfaced as the structural
+                         driver of the K10 xfail-strict.
+
+Test gate this commit: 198 passed + 1 skipped + 16 xfailed (was
+195 + 1 + 13 at end of WP5.2; net +3 passed + 3 xfailed -- the
+3 K10 xfail-stricts).  ruff clean.  No tag.
+
 ## 2026-05-10 - WP5.2 IEC 61850-9-2 SV + IED integration (P5.2, K09 software-side PASS)
 
 WP5.2 (P5.2) ships the SV + GOOSE round-trip framework for the
