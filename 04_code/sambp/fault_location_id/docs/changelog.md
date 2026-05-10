@@ -1,3 +1,70 @@
+## 2026-05-10 - WP4.6 / D4 - Phase-4 IEEE TSG benchmark paper + decision gate (P4.6)
+
+Phase-4 closeout.  Three artefacts staged for release tag
+v0.6.0-phase4; awaiting PI signoff before push or any external
+submission.
+
+  docs/Phase4_TSG_benchmark.tex  NEW.  IEEE TSG full-paper draft.
+                                 Title: "Numerical Head-to-Head
+                                 Benchmark of Single-Ended HIF
+                                 Localisers under Field-Grade
+                                 Impairments and Three Independent
+                                 Arc-Model Classes."  Sections:
+                                 introduction (cites the arXiv
+                                 2510.00831 benchmark-deficit
+                                 critique), test bench (P3.3 IEEE
+                                 feeders + P4.3/P4.4 arcs + P4.1
+                                 impairments), three arc-model
+                                 classes, field-grade impairments,
+                                 Table 3-bis (P4.5), R6 mitigation
+                                 (competitor blind-review), discussion,
+                                 reproducibility statement pointing
+                                 to the public repo and the CNRS
+                                 dataset.
+
+  docs/D4_review_pack.md         NEW.  Phase-4 decision-gate review
+                                 pack: phase summary, T-E1
+                                 acceptance results (K07-Phase4 +
+                                 K08-Phase4 + per-WP smoke), R-class
+                                 register update (R4 + R10 CLOSED;
+                                 R6 PARTIAL gated on PI signoff),
+                                 KPI snapshot, decision recommendation,
+                                 open items carried into Phase 5.
+
+  v0.6.0-phase4 tag              NEW (this commit).  Local-only;
+                                 pushed only after PI signoff on
+                                 (i) competitor blind-review and
+                                 (ii) IEEE TSG fit confirmation.
+
+Test gate this commit: 194 passed + 1 skipped + 12 xfailed.
+ruff clean.
+
+R-class register summary at Phase-4 exit
+----------------------------------------
+
+  R4  arc-model diversity         CLOSED (Wang + Torres added at
+                                  WP4.3 + WP4.4)
+  R5  single-bin DFT bias         CLOSED at WP3.5 (TFT K=1, 55.94 %
+                                  bias improvement)
+  R6  categorical comparison      PARTIAL (Table 3-bis live; full
+                                  closure on competitor blind-review
+                                  PI signoff)
+  R10 real HIF stochasticity      CLOSED at WP4.4 (Torres + Wang)
+  R-WP3.4-1 IEEE 34 fault-type    OPEN; closes at WP3.5/3.6 follow-up
+  R-WP3.3-1 IEEE feeder power-flow OPEN; closes at WP3.3 follow-up
+  R-WP3.7-1 CNRS test.zip         OPEN; closes at licensed Windows
+                                  follow-up
+  R-WP4.1-1 K07 impairment        OPEN; closes at WP3.5/3.6 follow-up
+  R-WP4.5-1 competitor signoff    OPEN; closes on PI signoff to
+                                  docs/competitor_blind_review.md
+  R8  HIL access                  OPEN; closes at WP5.1 (in flight)
+
+D4 GATE: PASS conditional on PI sign-off of:
+  (a) Competitor blind-review (R-WP4.5-1).
+  (b) IEEE TSG vs alternative-venue (TPWRD / Access) confirmation.
+
+Push to GitHub: deferred until both above land.
+
 ## 2026-05-10 - WP4.5 head-to-head competitor benchmark (P4.5, partial R6 + K08 PASS)
 
 WP4.5 (P4.5) ships the canonical Table 3-bis: head-to-head
