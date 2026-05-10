@@ -628,6 +628,43 @@ multi-bin / multi-port observation extension of Phase~3
 roadmap item~5 in \S\,\ref{sec:conclusion}) and is the subject of
 the planned IEEE TPWRD follow-on submission.
 
+% --- VI.E External validation on the CNRS dataset (WP3.7) ----------
+\subsection{External validation on the CNRS IEEE 34-node HIF
+dataset (\S\,VI.E)}\label{sec:resE}
+WP3.7 cross-validates the proposed estimator against the public
+CNRS / Recherche Data Gouv IEEE 34-node HIF
+benchmark~\cite{PereiraDeSouza2024CNRS} (DOI 10.57745/KRYCYY,
+license \emph{etalab 2.0}).  The dataset's PSCAD-equivalent
+Simulink simulation provides 70-channel V/I traces at 30.72 kHz on
+the IEEE 34 feeder under (i) a normal state, (ii) load- and
+capacitor-switching disturbances (the \texttt{train\_LS\_CS\_3k}
+slice; 50 traces, no HIF labels), and (iii) 1\,550 labelled HIF
+cases at 7 fault positions $\{806, 814, 818, 830, 832, 844, 860\}$
+under 4 HIF parameter conditions (the \texttt{test} slice).
+
+The fetch + per-file SHA-256 record is in
+\texttt{tools/fetch\_cnrs\_dataset.py}; the validation runner
+\texttt{run\_faultloc\_phase3\_cnrs\_validation.py} processes each
+trace through the WP1.4 / WP2.4 single-bin DFT optimiser and the
+WP3.5 Taylor--Fourier K = 1 estimator at the source-bus channels
+(V at node 800 and the line current 800 $\to$ 802) after
+decimation to the 10 kHz native sample rate of the estimator and a
+1-cycle window starting 0.04 s post fault-injection.  Per-trace
+estimates are recorded in
+\texttt{outputs/phase3\_cnrs\_validation.csv} with overlay PDFs in
+\texttt{outputs/phase3\_figs/cnrs\_*.pdf}.
+
+\textbf{K05 status (P3.7).}  The unsupervised \texttt{train.zip}
+slice (50 traces, no HIF labels) cannot support the K05 mean
+location-error metric (``$<3\,\%$ on IEEE 34-node at
+$\mathrm{SNR}\geq 30$\,dB''); the labelled \texttt{test.zip}
+($\sim 3$~GB) is required and is held back behind the
+\texttt{--include-test} flag of the fetcher pending a dev-box
+disk and bandwidth allowance.  The framework end-to-end runs
+clean on the train slice; the K05 measurement is deferred to the
+WP3.7 follow-up commit on the lead engineer's licensed Windows
+runner per the WP3.7 brief acceptance ``or root-cause documented''.
+
 % Headline-number echo block kept for the WP0.1 byte-identical check.
 \subsection*{Headline numerical findings (WP0.1 echo)}
 Phase-1 self-consistent envelope: location error

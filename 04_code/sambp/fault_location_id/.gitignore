@@ -75,6 +75,8 @@ outputs/*.pkl
 !outputs/phase3_identifiability_orc.csv
 !outputs/phase3_identifiability_heatmap.png
 !outputs/phase3_crlb_multiport_overlay/
+!outputs/phase3_cnrs_validation.csv
+!outputs/phase3_figs/
 
 # data/ holds heavy waveform bundles emitted by PSCAD or its surrogate.
 # Regenerable from tools/pscad_surrogate.py; keep .gitkeep tracked.
@@ -87,6 +89,13 @@ data/*.h5
 !data/ieee13_720.mat
 !data/ieee34_720.mat
 !data/ieee123_720.mat
+!data/cnrs_ieee34/MANIFEST.sha256
+!data/cnrs_ieee34/data_explanation.pdf
+!data/cnrs_ieee34/data_read.py
+!data/cnrs_ieee34/IEEE_34_node_HIF.pdf
+# train_extracted/ is regenerable from train.zip (which lives in the
+# outer repo's **/*.zip ignore rule); skip from the tree.
+data/cnrs_ieee34/train_extracted/
 
 # --- OS ---------------------------------------------------------------------
 .DS_Store

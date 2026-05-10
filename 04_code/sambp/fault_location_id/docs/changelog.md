@@ -1,3 +1,128 @@
+## 2026-05-10 - WP3.7 CNRS IEEE-34 external validation (P3.7)
+
+WP3.7 (P3.7) ships the CNRS / Recherche Data Gouv IEEE 34-node HIF
+dataset (Pereira de Souza & Delinchant 2024; DOI 10.57745/KRYCYY)
+fetcher + per-trace validation pipeline + per-file SHA-256 manifest.
+
+Acceptance:
+  T-D7.sha256       per-file SHA-256 of fetched artefacts recorded
+                    in data/cnrs_ieee34/MANIFEST.sha256 -- PASS.
+                    4 files (data_explanation.pdf 188 KB,
+                    data_read.py 375 B, IEEE_34_node_HIF.pdf 152 KB,
+                    train.zip 75 MB) sha-recorded.
+  T-D7.csv          outputs/phase3_cnrs_validation.csv produced --
+                    PASS.  50 traces; per-trace alpha_hat / Rx_hat
+                    via DFT and TFT-K=1 estimators; |H| + per-trace
+                    cpu times.
+  T-D7.figs         outputs/phase3_figs/cnrs_*.pdf produced --
+                    PASS.  cnrs_distribution.pdf (alpha_hat
+                    histogram) + cnrs_dft_vs_tft.pdf (DFT-vs-TFT
+                    scatter).
+  T-D7.K05          mean loc-err < 3 % at SNR_I >= 30 dB on IEEE 34
+                    -- DEFERRED with root cause documented.  The
+                    train.zip slice (50 traces, the LIGHT artefact
+                    fetched this commit) is the UNSUPERVISED
+                    training set: nominal + load-switching +
+                    capacitor-switching disturbances WITHOUT HIF
+                    labels (per data_explanation.pdf Tab. 3 case
+                    indices 1, 9, 10).  K05 (a labelled error
+                    metric) cannot be measured here.  The labelled
+                    HIF data lives in test.zip (~ 3 GB; 1550 traces
+                    at 7 fault positions x 4 HIF parameter
+                    conditions per Tab. 1 / Tab. 4) which the WP3.7
+                    fetcher holds back behind --include-test;
+                    fetching was attempted and intercepted by the
+                    dev-box safety hook.  K05 measurement is
+                    deferred to the lead engineer's WP3.7 follow-up
+                    on the licensed Windows runner.
+  T-D7.manuscript   manuscript_v2 \S\,VI extended with CNRS
+                    validation paragraph + cite added to references
+                    .bib -- PASS.  Recompiles to 8 pages (was 7 at
+                    end of WP2.6).
+
+Files
+-----
+
+  tools/fetch_cnrs_dataset.py    NEW.  Recherche Data Gouv
+                                 Dataverse-API fetcher.  Default
+                                 fetches the LIGHT 4 artefacts;
+                                 --include-test pulls test.zip
+                                 (3 GB).  Streams to file +
+                                 SHA-256 + manifest.
+
+  data/cnrs_ieee34/MANIFEST     NEW.  Per-file SHA-256 record:
+  .sha256                         data_explanation.pdf
+                                    sha256: 2f9c6ba6d9e9...
+                                  data_read.py
+                                    sha256: a9b35383d0a0...
+                                  IEEE_34_node_HIF.pdf
+                                    sha256: 256d6a75ee4c...
+                                  train.zip
+                                    sha256: cec34cd1b747...
+
+  run_faultloc_phase3_cnrs_     NEW.  Per-trace processing pipeline.
+  validation.py                 Each .mat: extract V_800 +
+                                I_{800->802}, decimate 30.72 kHz ->
+                                10 kHz, take 1-cycle window starting
+                                at 0.04 s (post fault-injection at
+                                0.03 s), compute single-bin DFT and
+                                TFT-K=1 phasors, run the WP1.4 /
+                                WP2.4 optimiser on H_meas.
+
+  outputs/phase3_cnrs_           NEW.  50-row per-trace CSV.
+  validation.csv
+
+  outputs/phase3_figs/cnrs_      NEW.  alpha_hat distribution
+  distribution.pdf               histogram across 50 train.zip
+                                 traces.
+
+  outputs/phase3_figs/cnrs_      NEW.  DFT vs TFT-K=1 alpha_hat
+  dft_vs_tft.pdf                 scatter (parity plot).
+
+  docs/manuscript_v2.tex        \S\,VI.E external-validation
+                                paragraph added.  Cites
+                                PereiraDeSouza2024CNRS.  Documents
+                                the K05 deferral path.
+
+  docs/manuscript_v2.pdf        Recompiles to 8 pages, 418 KB.
+
+  docs/references.bib           +1 entry: PereiraDeSouza2024CNRS
+                                (DOI 10.57745/KRYCYY).
+
+  tests/test_cnrs_validation     NEW.  4 tests, all PASS:
+  .py                              - manifest present + SHA-256
+                                     records all 4 LIGHT files;
+                                   - validation CSV present + schema;
+                                   - both overlay PDFs present;
+                                   - train.zip SHA-256 in manifest
+                                     matches the file on disk.
+
+  .gitignore                    Whitelist data/cnrs_ieee34/{MANIFEST
+                                .sha256, data_explanation.pdf,
+                                data_read.py, IEEE_34_node_HIF.pdf}
+                                (tracked) and outputs/phase3_cnrs_
+                                validation.csv +
+                                outputs/phase3_figs/.  train.zip
+                                stays gitignored (heavy regenerable
+                                artefact).
+
+R-class register update
+-----------------------
+
+  R-WP3.7-1 (NEW)  K05 mean location-error measurement on the CNRS
+                   benchmark requires the LABELLED test.zip
+                   (~ 3 GB, 1550 traces).  Status: OPEN
+                   (deferred-with-documented-root-cause).
+                   Mitigation: lead engineer fetches test.zip on
+                   the licensed Windows runner via
+                   tools/fetch_cnrs_dataset.py --include-test;
+                   re-runs run_faultloc_phase3_cnrs_validation.py;
+                   adds K05 measurement column to the CSV.
+
+Test gate this commit: 121 passed + 1 skipped + 11 xfailed (was 117
++ 1 + 11 at end of WP3.6).  Net +4 passed.  ruff clean.  No tag,
+no push.
+
 ## 2026-05-10 - WP3.6 multi-port FIM (P3.6)
 
 WP3.6 (P3.6) extends the WP1.6 single-port proper-complex-Gaussian-
