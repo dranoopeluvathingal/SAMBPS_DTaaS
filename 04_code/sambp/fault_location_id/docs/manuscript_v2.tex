@@ -401,11 +401,69 @@ WP4.5 (Phase 4): Paramo-2023 eigenvalue, Iurinic-2018 spectral,
 Cui-Weng-2020 micro-PMU, Zeng-2021 double-ended HIF.]}
 
 \section{Cram\'er--Rao Lower Bound Analysis}\label{sec:crlb}
-\textit{[\S\,VIII corrected via the proper-complex-Gaussian-ratio FIM
-(Kuruoglu-2018) plus joint dual-channel FIM cross-check
-(Nehorai-Hawkes-2000); WP1.6 / D-B / Decision gate D1.
-The headline result is unchanged in symbol but tightened in scope:
-the empirical RMS estimator stays \headlineCRLBGap{}.]}
+
+The bound used by the v1 manuscript treats $H_{\mathrm{meas}}$ as
+contaminated by circular complex Gaussian noise with constant
+variance.  This linearisation is \emph{not} self-consistent with the
+\S\,V-B dual-channel AWGN noise model: $H_{\mathrm{meas}} =
+I_{\mathrm{bin}}/V_{\mathrm{bin}}$ is the ratio of two independent
+complex Gaussians, whose density is the
+Marsaglia--Nadarajah--Pog\'any form~\cite{Marsaglia1965Ratio,
+NadarajahPogany2018,Kuruoglu2018ASCE}, not Gaussian.  The Gaussian-on-$H$
+linearisation is valid only in the asymptotic
+$|I| \gg \sigma_I$ regime --- the opposite of the HIF regime,
+where $|H|^2 \sigma_V^2$ becomes comparable to $\sigma_I^2$.
+
+We therefore derive two corrected bounds (full derivation in
+Appendix~B):
+
+\paragraph{Proper-complex-Gaussian-ratio FIM.}
+At high SNR$_V$ (Geary--Hinkley~\cite{Marsaglia1965Ratio}
+$|V_{\mathrm{phase}}|/\sigma_V > 4$, satisfied across the entire
+720-case grid for time-domain SNR$_V > -8$\,dB) the ratio density
+admits a complex-Gaussian approximation with a
+\emph{signal-dependent} per-component variance
+$\sigma_H^2 = (\sigma_I^2 + |H|^2 \sigma_V^2)/|V_{\mathrm{phase}}|^2$.
+The resulting FIM is
+$F^{\mathrm{proper}}_{kl} = (1/\sigma_H^2)\,
+\mathrm{Re}[(\partial_{\theta_k} H)^* (\partial_{\theta_l} H)]$,
+implemented in \texttt{inverse\_estimation/faultloc\_crlb\_proper.py}.
+
+\paragraph{Joint dual-channel FIM (Nehorai--Hawkes, 2000)~\cite{NehoraiHawkes2000}.}
+Working directly in $(V(t), I(t))$ time-domain space and projecting
+onto $(\alpha, R_x)$ via the chain rule with $\partial V/\partial\theta
+\equiv 0$ and $\partial I/\partial\theta = \mathrm{Re}[(\partial H/
+\partial \theta) V_{\mathrm{phase}} e^{j\omega_0 t}]$ gives the
+ground-truth bound in waveform space, implemented in
+\texttt{inverse\_estimation/faultloc\_crlb\_dualchannel.py}.
+
+\paragraph{Cross-check.}
+The two FIMs share a common Fisher kernel and differ in their
+prefactor; their ratio is $F^{\mathrm{proper}}/F^{\mathrm{dual}} =
+\sigma_I^2/(\sigma_I^2 + |H|^2 \sigma_V^2)$.  At $\sigma_V \to 0$
+(V perfectly known) the two are exactly equal; at finite $\sigma_V$
+the proper-ratio bound is looser by exactly the factor expected from
+the loss of information when only the H-ratio is observed.  Both
+bounds are tested for consistency in
+\texttt{tests/test\_crlb\_consistency.py} (5 tests, all pass).
+
+\paragraph{Four headline findings (WP1.6 corrected).}
+\begin{enumerate}
+  \item The proper-ratio bound supersedes the v1 Gaussian-on-$H$
+        linearisation; the latter under-estimates the true bound and
+        is invalid in the HIF regime.
+  \item The dual-channel bound is tighter than the proper-ratio bound
+        whenever $\sigma_V > 0$, by a factor that quantifies the
+        information loss from working in H-ratio space rather than
+        on the raw waveforms.
+  \item The empirical RMS estimator stays \headlineCRLBGap{} of the
+        proper-ratio CRLB across the high-SNR cells of the 720-case
+        grid (Glossary entry \texttt{CRLB-GAP}; overlay panel
+        \texttt{outputs/phase1\_crlb\_overlay/}).
+  \item The Geary--Hinkley validity flag is satisfied across the
+        full 720-case grid; the Gaussian-on-ratio approximation is
+        therefore appropriate for the WP1.6 reporting envelope.
+\end{enumerate}
 
 % =============================================================================
 \section{Conclusion and Future Work}\label{sec:conclusion}

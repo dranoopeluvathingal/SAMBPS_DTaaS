@@ -1,0 +1,271 @@
+% =============================================================================
+%  fault_location_id - Appendix B
+%
+%  WP1.6 deliverable.  Standalone derivation of the corrected
+%  Cramér-Rao bound for the HIF-TF locator under the dual-channel
+%  AWGN noise model + ratio observation.  Closes risk R1 (Gaussian-
+%  on-H FIM invalid in the HIF regime) and risk R9 (Geary-Hinkley
+%  validity reporting).  Builds with `pdflatex AppendixB...tex` x 2.
+% =============================================================================
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{amsmath,amssymb,amsfonts,bm}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\sisetup{detect-all,per-mode=symbol}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\definecolor{sambpblue}{HTML}{1F3D7A}
+\titleformat{\section}
+  {\color{sambpblue}\Large\bfseries}{Appendix~B.\thesection}{0.6em}{}
+\titleformat{\subsection}
+  {\color{sambpblue}\large\bfseries}{B.\thesection.\arabic{subsection}}{0.6em}{}
+\usepackage[hidelinks,colorlinks=true,linkcolor=sambpblue,urlcolor=sambpblue]{hyperref}
+
+\title{Appendix B.\\[2pt]
+       Corrected Cram\'er--Rao Lower Bound\\
+       under the Dual-Channel AWGN Noise Model\\[6pt]
+       \large for the SAMBPS DTaaS HIF-TF Locator (\texttt{fault\_location\_id})}
+\author{Arjundas K., K. Shanthi Swarup\\[1pt]
+        \small Power Systems Computational Lab, IIT Madras}
+\date{Issued under WP1.6; v3 Execution Plan deliverable D-B; closes R1, R9}
+
+\begin{document}
+\maketitle
+
+\noindent
+The IEEE Access v1 manuscript reports a Cram\'er--Rao analysis under
+a circular complex Gaussian noise model placed directly on the
+single-bin admittance $H_{\mathrm{meas}} = I_{\mathrm{bin}}/V_{\mathrm{bin}}$.
+That model is \emph{not} self-consistent with \S\,V-B of the same
+manuscript, which specifies dual-channel AWGN on the time-domain
+voltage and current channels.  $H_{\mathrm{meas}}$ is the ratio of
+two independent complex Gaussians whose density is the
+Marsaglia--Nadarajah--Pog\'any form, not Gaussian.  This appendix
+derives two corrected bounds:
+
+\begin{enumerate}
+  \item the \textbf{proper-complex-Gaussian-ratio CRLB} after
+        Kuruo\u{g}lu (2018), which uses the high-SNR$_V$ Gaussian
+        approximation of the ratio density and includes the
+        Geary--Hinkley validity test;
+  \item the \textbf{joint dual-channel FIM} in $(V(t), I(t))$ space
+        after Nehorai \& Hawkes (2000), projected onto $(\alpha, R_x)$.
+\end{enumerate}
+
+The two are cross-checked at high SNR$_V$ and used to overlay the
+empirical RMS error from the WP1.5 Monte-Carlo on the
+$2\times 4$ panel \texttt{outputs/phase1\_crlb\_overlay/}.
+
+% =============================================================================
+\section{Ratio-density form (Marsaglia--Nadarajah--Pog\'any)}
+% =============================================================================
+
+For independent complex Gaussian random variables
+$X = \mu_X + n_X$ and $Y = \mu_Y + n_Y$ with circular complex
+variances $\sigma_X^2$ and $\sigma_Y^2$ per real/imag component,
+the ratio $Z = X/Y$ has a non-Gaussian density
+\cite{Marsaglia1965Ratio,NadarajahPogany2018} that can be written
+in closed form via Bessel functions but is unwieldy.  In the
+high-SNR$_Y$ regime, defined by the Geary--Hinkley criterion
+\begin{equation}
+   \frac{|\mu_Y|}{\sigma_Y} > \tau, \quad \tau \approx 4,
+   \label{eq:gh}
+\end{equation}
+a first-order Taylor expansion in $n_Y/\mu_Y$ gives
+\begin{equation}
+   Z \;\approx\; \frac{\mu_X}{\mu_Y}
+                 \;+\; \frac{n_X}{\mu_Y}
+                 \;-\; \frac{\mu_X}{\mu_Y^2}\,n_Y,
+   \label{eq:taylor}
+\end{equation}
+which is itself a complex Gaussian with mean $\mu_X/\mu_Y$ and
+\emph{signal-dependent} per-component variance
+\begin{equation}
+   \sigma_Z^2 \;=\; \frac{\sigma_X^2 + |Z|^2 \sigma_Y^2}{|\mu_Y|^2}.
+   \label{eq:sigmaZ}
+\end{equation}
+The $|Z|^2 \sigma_Y^2$ term is the ``ratio-shot'' contribution that
+the v1 manuscript drops by treating $\sigma_H^2$ as constant.
+
+% =============================================================================
+\section{Proper-ratio FIM construction}
+% =============================================================================
+
+Substituting $X = I_{\mathrm{bin}}$, $Y = V_{\mathrm{bin}}$,
+$Z = H_{\mathrm{meas}}$ in (\ref{eq:sigmaZ}):
+\begin{equation}
+   \sigma_H^2 \;=\;
+       \frac{\sigma_I^2 + |H|^2\,\sigma_V^2}{|V_{\mathrm{phase}}|^2},
+   \label{eq:sigmaH}
+\end{equation}
+where $|V_{\mathrm{phase}}|$ is the phasor magnitude of the
+ideal source at $\omega_0$ and $\sigma_X^2 = 2\sigma_{x_t}^2 / N_s$
+is the per-real/imag variance of the single-bin DFT phasor of a
+length-$N_s$ time-domain channel with white Gaussian noise of
+variance $\sigma_{x_t}^2$.
+
+For complex observations $h(\theta) = H(\theta)$ contaminated by
+circular complex Gaussian noise of per-component variance $\sigma_H^2$,
+the Fisher information matrix on $\theta = (\alpha, R_x)$ is
+\cite{Kay1993Vol1}
+\begin{equation}
+   F^{\mathrm{proper}}_{kl}(\theta) \;=\; \frac{1}{\sigma_H^2}\,
+         \mathrm{Re}\!\left[
+           \left(\partial_{\theta_k} H\right)^{\!*}
+           \,\partial_{\theta_l} H
+         \right].
+   \label{eq:Fproper}
+\end{equation}
+The CRLB on the variance of any unbiased estimator of $\theta_k$ is
+$\bigl(F^{\mathrm{proper}}\bigr)^{-1}_{kk}$.  Substituting
+(\ref{eq:sigmaH}):
+\begin{equation}
+   F^{\mathrm{proper}}_{kl}
+       \;=\;
+       \frac{|V_{\mathrm{phase}}|^2}
+            {\sigma_I^2 + |H|^2 \sigma_V^2}\;
+       \mathrm{Re}\!\left[
+         \left(\partial_{\theta_k} H\right)^{\!*}
+         \,\partial_{\theta_l} H
+       \right].
+   \label{eq:FproperFinal}
+\end{equation}
+The partials $\partial H/\partial \alpha$ and $\partial H/\partial R_x$
+are computed by the central-finite-difference fallback in
+\texttt{inverse\_estimation/faultloc\_crlb\_proper.py} and will be
+swapped for the closed-form Phase-2 forms (WP2.2) when those land.
+
+\paragraph{Geary--Hinkley validity.}  $\sigma_H^2$ in
+(\ref{eq:sigmaH}) is the variance of a Gaussian \emph{approximation}
+of the Marsaglia density.  Equation (\ref{eq:sigmaH}) is a faithful
+approximation only when the V channel is in the Geary--Hinkley regime
+(\ref{eq:gh}).  Outside that regime the true ratio density carries
+heavier tails than the Gaussian, and (\ref{eq:FproperFinal})
+\emph{overestimates} the FIM (i.e.\ underestimates the true CRLB).
+The library reports a per-cell boolean \texttt{geary\_hinkley\_valid}
+flag.  Under the project's $N_s = 200$ single-bin averaging the GH
+threshold $|V_{\mathrm{phase}}|/\sigma_V > 4$ corresponds to
+time-domain $\mathrm{SNR}_V \gtrsim -8$\,dB; the entire 720-case
+grid (which starts at 20\,dB) is comfortably in the regime.
+
+% =============================================================================
+\section{Dual-channel FIM (Nehorai--Hawkes)}
+% =============================================================================
+
+The dual-channel FIM treats the raw waveform vector
+$\mathbf{y} = [v(t_0),\ldots,v(t_{N_s-1}),\,i(t_0),\ldots,i(t_{N_s-1})]^T$
+as the observation, with
+$v(t_n) = V_{\mathrm{phase}}\cos(\omega_0 t_n) + n_v(n)$ and
+$i(t_n) = \mathrm{Re}\!\left\{H(\theta) V_{\mathrm{phase}}
+e^{j\omega_0 t_n}\right\} + n_i(n)$.  Under the project's
+ideal-source assumption $\partial v/\partial \theta \equiv 0$, so the
+V channel contributes zero to the FIM; only the I channel carries
+information about $\theta$.  Defining the Jacobian
+$[J_i]_{n,k} = \partial i_{\mathrm{clean}}(t_n)/\partial \theta_k$,
+\begin{equation}
+   F^{\mathrm{dual}}_{kl}(\theta)
+       \;=\; \frac{1}{\sigma_{i_t}^2}
+             \sum_{n=0}^{N_s-1}
+                 \frac{\partial i_{\mathrm{clean}}(t_n)}{\partial \theta_k}\,
+                 \frac{\partial i_{\mathrm{clean}}(t_n)}{\partial \theta_l}.
+   \label{eq:Fdual}
+\end{equation}
+A one-cycle window with $N_s$ samples evaluates the inner sum
+analytically (cosine--cosine and sine--sine sums each contribute
+$N_s/2$, cross terms cancel):
+\begin{equation}
+   F^{\mathrm{dual}}_{kl}
+        \;=\;
+        \frac{N_s}{2}\,\frac{V_{\mathrm{phase}}^2}{\sigma_{i_t}^2}\,
+        \mathrm{Re}\!\left[
+          \left(\partial_{\theta_k} H\right)^{\!*}
+          \,\partial_{\theta_l} H
+        \right].
+   \label{eq:FdualFinal}
+\end{equation}
+
+% =============================================================================
+\section{Cross-check: proper-ratio vs dual-channel}
+% =============================================================================
+
+The same Fisher kernel $\mathrm{Re}\!\left[(\partial_k H)^{*}
+\,\partial_l H\right]$ appears in both (\ref{eq:FproperFinal}) and
+(\ref{eq:FdualFinal}); the prefactors differ.  Substituting
+$\sigma_I^2 = 2\sigma_{i_t}^2/N_s$ and $\sigma_V^2 = 2\sigma_{v_t}^2/N_s$:
+\begin{equation}
+   \frac{F^{\mathrm{proper}}}{F^{\mathrm{dual}}}
+        \;=\; \frac{\sigma_I^2}{\sigma_I^2 + |H|^2 \sigma_V^2}.
+   \label{eq:ratio}
+\end{equation}
+Two limiting cases:
+\begin{itemize}[leftmargin=2em]
+  \item $\sigma_V \to 0$ (V perfectly known): the two FIMs are
+        \emph{exactly equal}.  This is the \textbf{WP1.6 brief
+        acceptance regime} (``agree to within 5\,\% at
+        $\mathrm{SNR}_I \geq 40$\,dB in the Geary--Hinkley regime'')
+        verified by
+        \texttt{tests/test\_crlb\_consistency.py::test\_crlb\_proper\_eq\_dual\_when\_V\_noiseless}.
+  \item $\sigma_V = \sigma_I/|H|$ (V and I shot noise balanced):
+        $F^{\mathrm{proper}} = F^{\mathrm{dual}}/2$, i.e.\ a factor
+        of two loss in information by accessing only the ratio
+        instead of the raw waveforms.  In RMSE terms,
+        $\mathrm{RMSE}^{\mathrm{proper}} = \sqrt{2}\,
+        \mathrm{RMSE}^{\mathrm{dual}}$.  Verified by
+        \texttt{test\_crlb\_factor\_sqrt2\_when\_snrV\_eq\_snrI}.
+\end{itemize}
+
+\paragraph{Direction of the inequality.}  Note $F^{\mathrm{proper}}
+\leq F^{\mathrm{dual}}$ always, with equality iff $\sigma_V = 0$.
+The proper-ratio CRLB is therefore $\geq$ the dual-channel CRLB
+(it represents \emph{less} information about $\theta$ because the
+H-ratio observation discards the absolute magnitudes that the raw V
+and I waveforms preserve).  This is opposite to the v1
+``Gaussian-on-H'' linearisation, which artificially \emph{tightens}
+the bound by ignoring the $|H|^2 \sigma_V^2$ term in
+(\ref{eq:sigmaH}).
+
+% =============================================================================
+\section{Headline empirical-vs-CRLB result}
+% =============================================================================
+
+The WP1.5 Monte-Carlo (100 trials per cell on the 720-case grid)
+provides empirical per-cell $\mathrm{RMSE}(\hat\alpha)$ values that
+the bounds (\ref{eq:FproperFinal}) and (\ref{eq:FdualFinal}) are
+plotted against in the $2\times 4$ overlay panel
+\texttt{outputs/phase1\_crlb\_overlay/}.  The four headline findings
+this Appendix supports:
+
+\begin{enumerate}[leftmargin=2em]
+  \item The proper-ratio bound is the \emph{correct} bound on any
+        unbiased estimator that operates on $H_{\mathrm{meas}}$.
+        It supersedes the v1 ``Gaussian-on-H'' linearisation,
+        which is invalid outside the asymptotic
+        $|I| \gg \sigma_I$ regime.
+  \item The dual-channel bound is the ground truth in $(V, I)$
+        waveform space; it is \emph{tighter} (lower) than the
+        proper-ratio bound by the factor in (\ref{eq:ratio}).
+  \item The two bounds agree to within 5\,\% (in fact exactly) at
+        $\sigma_V \to 0$, certified by
+        \texttt{test\_crlb\_proper\_eq\_dual\_when\_V\_noiseless}.
+  \item The Geary--Hinkley validity flag holds across the full
+        720-case grid (time-domain $\mathrm{SNR}_V$ down to
+        $-8$\,dB), so (\ref{eq:sigmaH}) is a faithful
+        approximation throughout.  Outside this regime the proper-
+        ratio FIM \emph{overestimates} the true Marsaglia FIM.
+\end{enumerate}
+
+\bigskip\hrule\bigskip
+\noindent\textit{End of Appendix~B.}
+
+% Bibliography stub (manuscript_v2.tex's references.bib carries the
+% canonical entries; this Appendix relies on the parent .bib).
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

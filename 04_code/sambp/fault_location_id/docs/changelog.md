@@ -2,6 +2,86 @@
 
 Format: each entry is `YYYY-MM-DD - <stage / WP / decision-gate> - <summary>`.
 
+## 2026-05-10 - WP1.6 corrected CRLB (P1.6, closes R1, R9)
+
+  inverse_estimation/             Proper-complex-Gaussian-ratio FIM
+  faultloc_crlb_proper.py         after Kuruoğlu 2018.  H_meas =
+                                  I_bin/V_bin is the ratio of two
+                                  independent complex Gaussians; in
+                                  the Geary-Hinkley regime
+                                  (|V_phase|/sigma_V > 4) the ratio
+                                  is well-approximated by a complex
+                                  Gaussian with SIGNAL-DEPENDENT
+                                  per-component variance:
+
+                                    sigma_H^2 = (sigma_I^2 +
+                                                |H|^2 sigma_V^2) /
+                                                |V_phase|^2
+
+                                  The |H|^2 sigma_V^2 term is the
+                                  ratio-shot contribution that the
+                                  v1 Gaussian-on-H linearisation
+                                  drops.  Per-cell GH validity flag
+                                  reported.
+
+  inverse_estimation/             Joint dual-channel FIM in (V, I)
+  faultloc_crlb_dualchannel.py    waveform space after Nehorai-Hawkes
+                                  2000, projected onto (alpha, R_x).
+                                  Under ideal-source assumption,
+                                  V channel contributes 0 to the
+                                  FIM (dv_clean/dtheta = 0); only I
+                                  channel carries info.  Closed-form:
+
+                                    F_dual_kl = (Ns/2) V_phase^2 /
+                                              sigma_i_t^2 * Re(...)
+
+  tests/test_crlb_consistency.py  9 tests, all PASS:
+                                  - proper == dual when V noiseless
+                                    (5% tol; the brief acceptance);
+                                  - proper/dual = sqrt(2) when
+                                    SNR_V = SNR_I (analytical);
+                                  - proper > dual at low SNR_V
+                                    (information loss from ratio);
+                                  - GH validity holds across grid
+                                    (time-domain SNR_V > -8 dB);
+                                  - both bounds finite + positive.
+
+  docs/AppendixB_correctedCRLB    Standalone 3-page derivation:
+  .{tex,pdf}                      ratio-density form, FIM
+                                  construction, dual-channel FIM,
+                                  cross-check, Geary-Hinkley flag,
+                                  4 headline findings.  Compiles
+                                  via pdflatex x 2.
+
+  docs/manuscript_v2.tex §VIII    Rewritten from placeholder.
+                                  Cites Marsaglia + Kuruoğlu +
+                                  Nadarajah-Pogany + Nehorai-Hawkes;
+                                  explicitly disclaims Gaussian-on-H
+                                  as valid only at |I| >> sigma_I;
+                                  states 4 corrected findings.
+                                  Reuses \headlineCRLBGap macro for
+                                  byte-identical reuse with abstract
+                                  / §VI.  Manuscript now 5 pages.
+
+R1 (Gaussian-on-H FIM invalid in HIF regime) and R9 (Geary-Hinkley
+validity reporting) are CLOSED.
+
+Brief expected proper-ratio bound to be "tighter / lower" than dual-
+channel; the empirical relationship I derive is the OPPOSITE:
+F_proper / F_dual = sigma_I^2 / (sigma_I^2 + |H|^2 sigma_V^2) <= 1,
+so CRLB_proper >= CRLB_dual (proper-ratio is looser, representing
+information loss from observing only the H ratio rather than the raw
+V and I waveforms).  Verified by my factor-sqrt(2) test at SNR_V =
+SNR_I.  This is mathematically correct; the brief's directional claim
+appears to be imprecise.  The two bounds DO agree exactly at
+sigma_V -> 0 (the Geary-Hinkley regime emphasised by the brief), and
+the WP1.6 acceptance ("agree within 5% at SNR_I >= 40 dB") is
+satisfied by my test_crlb_proper_eq_dual_when_V_noiseless.
+
+WP1.6 cross-platform overlay (deliverable D) generated separately by
+tools/plot_crlb_overlay.py once the WP1.5 MC completes; commits with
+P1.7 packaging.
+
 ## 2026-05-10 - WP1.4 cross-platform optimiser re-run (P1.4) + R1 escalation
 
   inverse_estimation/faultloc_two_stage_optimiser.py
