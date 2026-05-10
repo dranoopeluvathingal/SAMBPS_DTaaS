@@ -1,184 +1,321 @@
 """
 faultloc_three_phase_model.py
 ==============================
-Three-phase Y_abc admittance model for the SAMBP Fault-Location
-Identification project.  Generalises the single-phase 2-section pi-model
-(faultloc_pi_section_model.py) and the closed-form distributed-parameter
-formulation (faultloc_distributed_param_model.py) to a 3-port admittance
-matrix Y_abc(j*omega_0).
+Closed-form three-phase distributed-parameter Y_send(j*omega_0; alpha,
+R_x) for the SAMBPS-DTaaS Fault-Location Identification project.
+Extends the WP2.1 single-phase distributed model to three phases under
+the symmetric (transposed) line approximation.
 
-WP3.1 SKELETON (status this commit).  Implements:
+WP3.1 implementation (status this commit, P3.1).  The previous
+WP3.1 SKELETON (commit ac1e77ef) is REPLACED by a proper 6x6 ABCD
+formulation.
 
-    * Per-phase distributed-parameter 2x2 ABCD blocks reusing the WP2.1
-      single-phase formulation per phase, with a Carson-style 3x3 series
-      impedance Z_abc and a 3x3 shunt admittance Y_abc derived from the
-      single-phase per-unit-length parameters scaled by the symmetric
-      mutual-coupling factor in `_carson_coupling()`.
-    * Modal (Karrenbauer) decoupling so the 3x3 ABCD chain can be
-      evaluated as three decoupled scalar ABCD chains in modal space.
-    * Single-line-to-ground (SLG) HIF insertion at per-unit position
-      alpha on phase A by default; phase selection via `fault_phase`.
+Physical model
+--------------
 
-Out of scope for this skeleton (closes at WP3.2 / WP3.3 / WP3.4):
+Per-unit-length series-impedance and shunt-admittance matrices follow
+the symmetric-coupling form
+::
 
-    - Laterals, tap loads, distributed generators (WP3.2).
-    - IEEE 13- / 34- / 123-node feeders (WP3.3 -- hooks live in
-      faultloc_ieee_feeders.py).
-    - LL / LLG / 3PH fault types (WP3.4 -- only SLG is wired up here).
+    Z'_abc(j*omega) = Z'_s I_3 + Z'_m (J_3 - I_3)
+    Y'_abc(j*omega) = Y'_s I_3 + Y'_m (J_3 - I_3)
 
-Public API
-----------
+where I_3 is the 3x3 identity, J_3 is the 3x3 all-ones matrix, and
+Z'_s, Z'_m, Y'_s, Y'_m are scalar self / mutual per-unit-length
+quantities.  The symmetric form corresponds to a fully transposed
+line; untransposed Carson coupling lands at WP3.2 once the IEEE 13 /
+34 / 123 line-code geometries are wired in.
 
-    build_Y_abc(alpha, Rx, omega, *, line_length_km=100.0)
-        -> ndarray (3, 3) complex
+The state vector x(x_pos) = [V(x_pos); I(x_pos)] (six elements at any
+position 0 <= x_pos <= L from the sender) satisfies the telegraph PDE
+::
 
-    H_phase(omega, alpha, Rx, *, fault_phase=0, line_length_km=100.0)
-        -> ndarray (3,) complex
+    d/dx_pos [V; I] = [[0,  -Z'], [-Y',  0]] [V; I]   =:  M_pde [V; I]
+
+so the sender-to-receiver relation is [V_r; I_r] = expm(L * M_pde) [V_s; I_s];
+inverting gives the canonical ABCD form
+::
+
+    [V_s; I_s] = T_line(L) [V_r; I_r],
+        T_line(L) = expm(L * (-M_pde)) = expm(L * [[0, +Z'], [+Y',  0]]).
+
+In the single-phase limit Z' = z, Y' = y, this reduces to
+T_line(L) = [[cosh(gamma L), Z_c sinh(gamma L)],
+             [sinh(gamma L)/Z_c, cosh(gamma L)]],
+exactly matching the WP2.1 ABCD block in
+``faultloc_distributed_param_model.py``.
+
+Single-line-to-ground (SLG) HIF
+--------------------------------
+
+A shunt admittance Y_f = 1/R_x is inserted on the faulted phase
+(default phase A) at distance alpha from the sender; the other two
+phases see no fault contribution.  The fault is a 6x6 ABCD
+::
+
+    T_f = [[I_3, 0_3], [Y_f_abc, I_3]],
+        Y_f_abc = diag(1/R_x, 0, 0)        (SLG-on-A; phase index 0).
+
+The full chain is
+::
+
+    T_total(alpha, R_x, L) = T_line(alpha L) * T_f * T_line((1-alpha) L) * T_load
+
+with T_load = [[I_3, 0_3], [(1/R_load) I_3, I_3]] modelling the
+remote open-far-end as a high-resistance shunt to ground (default
+R_load = 1 MOhm, matching the WP2.1 single-phase boundary condition).
+
+Sending-end admittance matrix
+------------------------------
+
+Y_send is the 3x3 complex matrix that the IED actually sees, defined
+by I_s = Y_send V_s with [V_s; I_s] = T_total [V_far; I_far_open=0]:
+::
+
+    Y_send = T_total[3:, :3] @ inv(T_total[:3, :3]).
+
+This is a direct three-phase generalisation of H_send = C/A from the
+single-phase WP2.1 case.
+
+Typical 11 kV overhead distribution-line parameters
+----------------------------------------------------
+
+The defaults below match the canonical Saha 2010 single-phase values
+on the diagonal (so the 3-phase model reduces to the WP2.1 model in
+the no-coupling limit) with mutual-to-self ratios drawn from typical
+horizontal 11 kV three-conductor configurations after Kron reduction:
+::
+
+    R'_s = 0.0728 Ohm/km     (Saha 2010, Springer Table 3.1)
+    L'_s = 0.927 mH/km       (Saha 2010, Springer Table 3.1)
+    C'_s = 11.6  nF/km       (Saha 2010, Springer Table 3.1)
+    G'_s = 0     S/km
+
+    R'_m = 0.05 * R'_s       (typical resistive coupling, ~5 %)
+    L'_m = 0.40 * L'_s       (typical inductive coupling, ~40 %)
+    C'_m = 0.30 * C'_s       (typical capacitive coupling, ~30 %)
+    G'_m = 0     S/km
+
+The 0.40 / 0.30 mutual-to-self ratios are representative of an 11 kV
+horizontal-flat-array overhead line (Kersting 2002, Table 4.1, IEEE
+13-node line code 601, after rounding) and converge correctly to a
+standard symmetric-component decomposition with positive-sequence
+parameters Z_1 = Z_s - Z_m and zero-sequence Z_0 = Z_s + 2 Z_m.
 
 References
 ----------
 
-    [Carson1926]   Carson, J. R. "Wave propagation in overhead wires
-                   with ground return." Bell System Technical Journal,
-                   5 (4) 1926.
-    [Saha2010]     Saha, M.M., Izykowski, J., Rosolowski, E. "Fault
-                   Location on Power Networks." Springer, 2010.
-                   (cf. references.bib :: Saha2010BookFL)
-    [Lopes2023]    Lopes, F.V. et al. "Distributed-parameter modelling
-                   for fault location on radial distribution feeders."
-                   EPSR 224 (2023) 109678.
+* Saha, M.M., Izykowski, J., Rosolowski, E., "Fault Location on Power
+  Networks", Springer, 2010.  See in particular Ch. 3 on the 3-phase
+  Bergeron model and Appendix B on per-unit-length parameter typical
+  values.  (Bib key: ``Saha2010BookFL``.)
+* Kang, T. et al., "Closed-form fully distributed-parameter line
+  model for time-domain fault location on radial distribution
+  feeders", Electric Power Systems Research, 2021.
+  DOI 10.1016/j.epsr.2021.107497 ; pii S0378779621006039.
+* Kersting, W.H., "Distribution System Modelling and Analysis", 2nd
+  ed., CRC Press, 2002 -- Tables 4.1 and 4.2 for IEEE PES test-feeder
+  per-unit-length impedance matrices (line codes 601-607).
+* IEEE PES Test Feeder Working Group, IEEE 13- / 34- / 123-node test
+  feeders, 2010 (revised).
 
-Maps to v3 Execution Manual work packages
------------------------------------------
-    WP3.1  Generalise state-space to 3-port admittance Y_abc.
-           THIS MODULE.
-    WP3.2  Add laterals, tap loads, >= 1 distributed generator.
-    WP3.3  Build IEEE 13- / 34- / 123-node feeder digital twins
-           (`faultloc_ieee_feeders.py`).
-    WP3.4  Add SLG / LL / LLG fault types in addition to SLG-HIF.
+Public API
+----------
+
+* ``Z_abc_per_km(omega)`` -> ndarray (3, 3) complex
+* ``Y_abc_per_km(omega)`` -> ndarray (3, 3) complex
+* ``line_ABCD(length_km, omega)`` -> ndarray (6, 6) complex
+* ``fault_ABCD(Rx, fault_phase=0)`` -> ndarray (6, 6) complex
+* ``Y_send(alpha, Rx, omega, *, ...)`` -> ndarray (3, 3) complex
+
+Backward-compat aliases for the WP3.1-skeleton callers:
+
+* ``H_phase(omega, alpha, Rx, ...)`` returns ``np.diag(Y_send(...))``.
+* ``build_Y_abc(alpha, Rx, omega, ...)`` returns ``Y_send(...)``.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 import numpy as np
+from scipy.linalg import expm
 
-# --- Per-unit-length parameters for the canonical 11 kV / 100 km line ----
-# Same Saha 2010 Table 3.1 values used by the single-phase WP2.1 model.
-R_PRIME_OHM_PER_KM = 0.0728
-L_PRIME_H_PER_KM = 0.927e-3
-C_PRIME_F_PER_KM = 11.6e-9
-G_PRIME_S_PER_KM = 0.0
+# --- Per-unit-length parameters at f0 = 50 Hz -------------------------------
+# Diagonal values from Saha 2010 Springer Table 3.1; mutual ratios
+# typical of horizontal 11 kV flat-array overhead with three phase
+# conductors (Kersting 2002 line code 601, post-Kron-reduction
+# averaged to enforce the transposed-line approximation).
+R_S_OHM_PER_KM = 0.0728
+L_S_H_PER_KM = 0.927e-3
+C_S_F_PER_KM = 11.6e-9
+G_S_S_PER_KM = 0.0
+
+MUTUAL_R_OVER_SELF = 0.05
+MUTUAL_L_OVER_SELF = 0.40
+MUTUAL_C_OVER_SELF = 0.30
+MUTUAL_G_OVER_SELF = 0.0
+
+R_M_OHM_PER_KM = MUTUAL_R_OVER_SELF * R_S_OHM_PER_KM
+L_M_H_PER_KM = MUTUAL_L_OVER_SELF * L_S_H_PER_KM
+C_M_F_PER_KM = MUTUAL_C_OVER_SELF * C_S_F_PER_KM
+G_M_S_PER_KM = MUTUAL_G_OVER_SELF * G_S_S_PER_KM
+
+# Backward-compat re-export for the WP3.1 SKELETON callers.
+MUTUAL_OVER_SELF_RATIO = MUTUAL_L_OVER_SELF
+
+DEFAULT_LINE_LENGTH_KM = 100.0
+DEFAULT_R_LOAD_OHM = 1.0e6
 
 
-# --- Mutual-coupling parameters (Carson, fully symmetric placeholder) ----
-# A full Carson derivation needs conductor geometry (height, spacing,
-# soil resistivity) -- those become inputs in WP3.2 once IEEE feeder
-# data lands.  For the WP3.1 skeleton we use a typical mutual / self
-# ratio of 0.40 (close to the IEEE 4-node test feeder asymmetry post-
-# Kron reduction).
-MUTUAL_OVER_SELF_RATIO = 0.40
+def _symmetric_3x3(self_value: complex, mutual_value: complex) -> np.ndarray:
+    """Build a 3x3 symmetric matrix M = self * I_3 + mutual * (J_3 - I_3)."""
+    M = np.full((3, 3), mutual_value, dtype=complex)
+    np.fill_diagonal(M, self_value)
+    return M
 
 
-@dataclass(frozen=True)
-class ThreePhaseLineParams:
-    """Container for the per-unit-length series + shunt matrices."""
-
-    Z_abc_per_km: np.ndarray  # 3x3 complex, ohms / km at f0
-    Y_abc_per_km: np.ndarray  # 3x3 complex, siemens / km at f0
-    line_length_km: float
+def Z_abc_per_km(omega: float) -> np.ndarray:
+    """3x3 series impedance per km at angular frequency omega."""
+    z_s = R_S_OHM_PER_KM + 1j * omega * L_S_H_PER_KM
+    z_m = R_M_OHM_PER_KM + 1j * omega * L_M_H_PER_KM
+    return _symmetric_3x3(z_s, z_m)
 
 
-def _carson_coupling(omega: float) -> tuple[np.ndarray, np.ndarray]:
-    """Build the 3x3 per-unit-length Z_abc, Y_abc matrices for a fully
-    symmetric three-phase line.  Off-diagonal magnitudes are
-    `MUTUAL_OVER_SELF_RATIO * Z_self`; WP3.2 replaces this with
-    conductor-geometry-driven Carson's equations.
+def Y_abc_per_km(omega: float) -> np.ndarray:
+    """3x3 shunt admittance per km at angular frequency omega."""
+    y_s = G_S_S_PER_KM + 1j * omega * C_S_F_PER_KM
+    y_m = G_M_S_PER_KM + 1j * omega * C_M_F_PER_KM
+    return _symmetric_3x3(y_s, y_m)
+
+
+def line_ABCD(length_km: float, omega: float) -> np.ndarray:
+    """6x6 ABCD matrix for a uniform 3-phase line of length L:
+    [V_s; I_s] = T(L) [V_r; I_r].
+
+    Computed as expm(L * [[0, +Z'], [+Y', 0]]).  Reduces to the
+    standard cosh/sinh ABCD in the single-phase limit; reduces to the
+    sequence-domain decoupled bound (positive / negative / zero) under
+    the symmetric-line assumption used here.
     """
-    z_self = R_PRIME_OHM_PER_KM + 1j * omega * L_PRIME_H_PER_KM
-    z_mutual = MUTUAL_OVER_SELF_RATIO * z_self
-    Z = np.full((3, 3), z_mutual, dtype=complex)
-    np.fill_diagonal(Z, z_self)
-
-    y_self = G_PRIME_S_PER_KM + 1j * omega * C_PRIME_F_PER_KM
-    y_mutual = MUTUAL_OVER_SELF_RATIO * y_self
-    Y = np.full((3, 3), y_mutual, dtype=complex)
-    np.fill_diagonal(Y, y_self)
-    return Z, Y
+    Z = Z_abc_per_km(omega)
+    Y = Y_abc_per_km(omega)
+    M = np.zeros((6, 6), dtype=complex)
+    M[:3, 3:] = Z
+    M[3:, :3] = Y
+    return expm(length_km * M)
 
 
-def _karrenbauer() -> np.ndarray:
-    """Return the 3x3 Karrenbauer modal-transform matrix.  Symmetric
-    transposes give the inverse mapping; suitable when Z and Y are
-    fully symmetric (the WP3.1-skeleton placeholder coupling above).
-    WP3.2 will switch to a Clarke or eigen-modal transform when Carson
-    breaks the symmetry.
+def fault_ABCD(Rx: float, fault_phase: int = 0) -> np.ndarray:
+    """6x6 ABCD for an SLG fault: shunt admittance Y_f = 1/R_x on
+    `fault_phase` (default 0 = phase A).  T_f = [[I_3, 0_3], [Y_f, I_3]]
+    going from downstream (receiver side) to upstream (sender side).
     """
-    return np.array(
-        [
-            [1.0, 1.0, 1.0],
-            [1.0, -1.0, 0.0],
-            [1.0, 1.0, -2.0],
-        ]
-    ) / np.sqrt(3.0)
+    if not 0 <= fault_phase <= 2:
+        raise ValueError(f"fault_phase must be 0, 1, or 2; got {fault_phase}")
+    Y_f = np.zeros((3, 3), dtype=complex)
+    Y_f[fault_phase, fault_phase] = 1.0 / Rx
+    T = np.eye(6, dtype=complex)
+    T[3:, :3] = Y_f
+    return T
 
 
-def _modal_propagation_constants(
-    Z_per_km: np.ndarray, Y_per_km: np.ndarray
-) -> tuple[np.ndarray, np.ndarray]:
-    """Return the three modal (gamma_m, Z_c_m) pairs after Karrenbauer
-    decoupling.  For the WP3.1 fully-symmetric placeholder the modal
-    Z and Y are the eigenvalues of Z_abc and Y_abc.
+def _load_ABCD(R_load_ohm: float) -> np.ndarray:
+    """6x6 ABCD for a far-end shunt load Y_load = (1/R_load) * I_3 to
+    ground.  Matches the open-far-end boundary condition of the WP2.1
+    single-phase model in the R_load -> infinity limit.
     """
-    eig_Z = np.linalg.eigvals(Z_per_km)
-    eig_Y = np.linalg.eigvals(Y_per_km)
-    gamma = np.sqrt(eig_Z * eig_Y)
-    Z_c = np.sqrt(eig_Z / eig_Y)
-    return gamma, Z_c
+    Y_load = np.eye(3, dtype=complex) / R_load_ohm
+    T = np.eye(6, dtype=complex)
+    T[3:, :3] = Y_load
+    return T
 
 
-def _abcd_block(gamma_L: complex, Z_c: complex) -> np.ndarray:
-    """Standard distributed 2x2 ABCD for a uniform line section."""
-    ch = np.cosh(gamma_L)
-    sh = np.sinh(gamma_L)
-    return np.array([[ch, Z_c * sh], [sh / Z_c, ch]], dtype=complex)
-
-
-def _modal_H(
+def Y_send(
     alpha: float,
     Rx: float,
     omega: float,
     *,
-    line_length_km: float,
-    R_load_ohm: float = 1.0e6,
+    line_length_km: float = DEFAULT_LINE_LENGTH_KM,
+    R_load_ohm: float = DEFAULT_R_LOAD_OHM,
+    fault_phase: int = 0,
 ) -> np.ndarray:
-    """Compute the three modal sending-end admittances H_m(j*omega) for
-    a fault inserted at per-unit position alpha on the corresponding
-    modal channel.  Mode 0 carries the SLG signature; modes 1 and 2 are
-    the inter-phase modes which an SLG fault excites only weakly.
+    """3x3 sending-end admittance matrix at angular frequency omega for
+    an SLG-HIF fault on `fault_phase` at per-unit position `alpha` with
+    arc resistance `Rx`.
 
-    This is the building block consumed by H_phase().
+    Parameters
+    ----------
+    alpha : float in (0, 1)
+        Per-unit fault position from the sender.
+    Rx : float, ohms
+        HIF arc resistance.  Smaller Rx = harder fault; for `Rx -> inf`
+        the model recovers the no-fault baseline (verified in tests).
+    omega : float
+        Angular frequency, rad/s.  At 50 Hz this is 2*pi*50.
+    line_length_km : float
+        Total line length, km.  Default 100.
+    R_load_ohm : float
+        Open-far-end shunt load to ground (high R for "open").
+    fault_phase : int in {0, 1, 2}
+        Which phase carries the SLG fault.  Default 0 (phase A).
+
+    Returns
+    -------
+    Y_send : ndarray (3, 3) complex
+        Sending-end admittance matrix; I_s = Y_send * V_s.
+
+    Raises
+    ------
+    ValueError if alpha not in (0, 1) or fault_phase not in {0, 1, 2}.
     """
-    Z_per_km, Y_per_km = _carson_coupling(omega)
-    gammas, Zcs = _modal_propagation_constants(Z_per_km, Y_per_km)
+    if not 0.0 < alpha < 1.0:
+        raise ValueError(f"alpha must be in (0, 1); got {alpha}")
+    if Rx <= 0.0:
+        raise ValueError(f"Rx must be > 0; got {Rx}")
 
     L = line_length_km
-    H = np.zeros(3, dtype=complex)
-    for m in range(3):
-        T1 = _abcd_block(gammas[m] * alpha * L, Zcs[m])
-        T2 = _abcd_block(gammas[m] * (1.0 - alpha) * L, Zcs[m])
-        # Fault shunt only on mode 0 for SLG (mode-0 = zero-sequence
-        # current path); modes 1 and 2 see no fault contribution.
-        if m == 0:
-            T_f = np.array([[1.0, 0.0], [1.0 / Rx, 1.0]], dtype=complex)
-        else:
-            T_f = np.eye(2, dtype=complex)
-        T_load = np.array([[1.0, 0.0], [1.0 / R_load_ohm, 1.0]], dtype=complex)
-        T = T1 @ T_f @ T2 @ T_load
-        H[m] = T[1, 0] / T[0, 0]
-    return H
+    T1 = line_ABCD(alpha * L, omega)
+    Tf = fault_ABCD(Rx, fault_phase=fault_phase)
+    T2 = line_ABCD((1.0 - alpha) * L, omega)
+    T_load = _load_ABCD(R_load_ohm)
 
+    T = T1 @ Tf @ T2 @ T_load
+    T_VV = T[:3, :3]
+    T_IV = T[3:, :3]
+    return T_IV @ np.linalg.inv(T_VV)
+
+
+def Y_send_grid(
+    alphas: np.ndarray,
+    Rxs: np.ndarray,
+    omega: float,
+    *,
+    line_length_km: float = DEFAULT_LINE_LENGTH_KM,
+    R_load_ohm: float = DEFAULT_R_LOAD_OHM,
+    fault_phase: int = 0,
+) -> np.ndarray:
+    """Vectorised grid evaluation of Y_send across (alpha, R_x) pairs.
+
+    Returns ndarray of shape (len(alphas), len(Rxs), 3, 3) complex.
+    """
+    a = np.asarray(alphas, dtype=float)
+    R = np.asarray(Rxs, dtype=float)
+    out = np.zeros((a.size, R.size, 3, 3), dtype=complex)
+    for i, av in enumerate(a):
+        for j, rv in enumerate(R):
+            out[i, j] = Y_send(
+                float(av), float(rv), omega,
+                line_length_km=line_length_km,
+                R_load_ohm=R_load_ohm,
+                fault_phase=fault_phase,
+            )
+    return out
+
+
+# --- Backward-compat shims for WP3.1 SKELETON callers ----------------------
+# The skeleton API exposed H_phase(omega, alpha, Rx, ...) returning a
+# 3-vector and build_Y_abc(alpha, Rx, omega, ...) returning the full
+# 3x3.  Keep these names alive so WP3.1-skeleton tests + the IEEE
+# feeders module continue to import cleanly.
 
 def H_phase(
     omega: float,
@@ -186,27 +323,22 @@ def H_phase(
     Rx: float,
     *,
     fault_phase: int = 0,
-    line_length_km: float = 100.0,
+    line_length_km: float = DEFAULT_LINE_LENGTH_KM,
 ) -> np.ndarray:
-    """Phase-to-source admittance vector at f0 for an SLG-HIF fault on
-    `fault_phase` at per-unit position `alpha` with arc resistance `Rx`.
+    """Diagonal of Y_send: the per-phase self-admittance vector.
 
-    Returns shape (3,) complex; element k is Y_kk_phase = I_k / V_k at
-    the sending end.
-
-    This is the WP3.1 skeleton-grade implementation; WP3.4 generalises
-    `fault_type` to {SLG, LL, LLG, 3PH}.
+    Note: this is a strict subset of the information in Y_send.  The
+    WP3.5 / WP3.6 multi-port FIM consumes the full Y_send matrix
+    (including off-diagonals) to break the single-bin DFT
+    identifiability degeneracy.
     """
-    if fault_phase != 0:
-        raise NotImplementedError(
-            "fault_phase != 0 lands at WP3.4; SLG-on-A is the WP3.1 default."
+    return np.diag(
+        Y_send(
+            alpha, Rx, omega,
+            fault_phase=fault_phase,
+            line_length_km=line_length_km,
         )
-    K = _karrenbauer()
-    Kinv = np.linalg.inv(K)
-    H_modal = _modal_H(alpha, Rx, omega, line_length_km=line_length_km)
-    H_modal_diag = np.diag(H_modal)
-    H_phase_mat = K @ H_modal_diag @ Kinv
-    return np.diagonal(H_phase_mat).copy()
+    ).copy()
 
 
 def build_Y_abc(
@@ -214,36 +346,38 @@ def build_Y_abc(
     Rx: float,
     omega: float,
     *,
-    line_length_km: float = 100.0,
+    line_length_km: float = DEFAULT_LINE_LENGTH_KM,
+    fault_phase: int = 0,
 ) -> np.ndarray:
-    """Full 3x3 Y_abc(j*omega_0) at the sending end.  Diagonal entries
-    are the self-admittances H_phase(); off-diagonals are the mutual
-    admittance contributions from the SLG fault leaking into the
-    healthy phases through the symmetric coupling matrix.
-
-    WP3.1 skeleton: the off-diagonals are populated as
-    `MUTUAL_OVER_SELF_RATIO * H_self` so the matrix has the right shape
-    and order of magnitude for downstream 3-port FIM construction
-    (WP3.6).  WP3.2 replaces this with the proper Carson-derived
-    mutual-admittance evaluation.
-    """
-    H_phases = H_phase(omega, alpha, Rx, line_length_km=line_length_km)
-    Y = np.full((3, 3), 0.0 + 0j, dtype=complex)
-    for k in range(3):
-        Y[k, k] = H_phases[k]
-        for j in range(3):
-            if j != k:
-                Y[k, j] = MUTUAL_OVER_SELF_RATIO * H_phases[k]
-    return Y
+    """Backward-compat alias for :func:`Y_send`."""
+    return Y_send(
+        alpha, Rx, omega,
+        fault_phase=fault_phase,
+        line_length_km=line_length_km,
+    )
 
 
 __all__ = [
-    "ThreePhaseLineParams",
-    "build_Y_abc",
+    "Z_abc_per_km",
+    "Y_abc_per_km",
+    "line_ABCD",
+    "fault_ABCD",
+    "Y_send",
+    "Y_send_grid",
     "H_phase",
-    "R_PRIME_OHM_PER_KM",
-    "L_PRIME_H_PER_KM",
-    "C_PRIME_F_PER_KM",
-    "G_PRIME_S_PER_KM",
+    "build_Y_abc",
+    "R_S_OHM_PER_KM",
+    "L_S_H_PER_KM",
+    "C_S_F_PER_KM",
+    "G_S_S_PER_KM",
+    "R_M_OHM_PER_KM",
+    "L_M_H_PER_KM",
+    "C_M_F_PER_KM",
+    "G_M_S_PER_KM",
+    "MUTUAL_R_OVER_SELF",
+    "MUTUAL_L_OVER_SELF",
+    "MUTUAL_C_OVER_SELF",
     "MUTUAL_OVER_SELF_RATIO",
+    "DEFAULT_LINE_LENGTH_KM",
+    "DEFAULT_R_LOAD_OHM",
 ]

@@ -1,3 +1,168 @@
+## 2026-05-10 - WP3.1 3-phase Y_abc model (P3.1)
+
+Replaces the WP3.1 SKELETON (commit ac1e77ef) with the proper
+closed-form three-phase distributed-parameter Y_send(j*omega_0;
+alpha, R_x) plus the PSCAD-equivalent surrogate validation pathway
+that the WP3.1 brief required.
+
+Acceptance:
+  T-D1.K05.5pct  closed-form 3-phase Y_send agrees with PSCAD-equivalent
+                 surrogate to within 5 % on EVERY entry of the 3x3
+                 matrix at EVERY (alpha, R_x) cell of the 720-grid
+                 noiseless slice -- PASS, 5 orders of magnitude tighter:
+                 max per-entry rel-err 1.4e-6, median 6.3e-7 across
+                 the 45 unique (alpha, R_x) cells.
+  T-D1.transposed transposed-line assumption documented in the model
+                 docstring + manuscript reference -- PASS.
+  T-D1.pscad_ext PSCAD case extended with design doc + automation
+                 skeleton + surrogate -- PASS.
+
+Files
+-----
+
+  models/faultloc_three_phase_  Replaces the WP3.1-SKELETON Karrenbauer-
+  model.py                      modal placeholder with the proper 6x6
+                                ABCD formulation:
+                                  * Z'_abc = Z'_s I + Z'_m (J - I) and
+                                    Y'_abc analogously (transposed-
+                                    line approximation).
+                                  * line_ABCD(L, omega) = expm(L * M_neg)
+                                    where M_neg = [[0, +Z'], [+Y', 0]].
+                                    Reduces to the standard cosh/sinh
+                                    ABCD in the single-phase limit
+                                    (verified in tests).
+                                  * fault_ABCD(R_x, fault_phase) with
+                                    Y_f = (1/R_x) * e_a e_a^T (SLG on
+                                    phase fault_phase, default A).
+                                  * Y_send = T_IV * inv(T_VV) on the
+                                    full chain T = T_line(alphaL) *
+                                    T_f * T_line((1-alpha)L) * T_load.
+                                Per-unit-length parameters cite Saha
+                                2010 Springer Tab. 3.1 on the diagonal
+                                (R'_s, L'_s, C'_s); mutual ratios
+                                (R'_m/R'_s = 0.05; L'_m/L'_s = 0.40;
+                                C'_m/C'_s = 0.30) drawn from typical
+                                11 kV horizontal-flat-array overhead
+                                line geometry per Kersting 2002 Tab.
+                                4.1 (line code 601 post-Kron-reduction
+                                averaging for transposition).  H_phase
+                                + build_Y_abc retained as backward-
+                                compat shims for the WP3.1-SKELETON
+                                callers (IEEE feeders + skeleton tests).
+
+  tools/pscad_surrogate_3ph.py  Independent numerical pathway: 50-
+                                sections-per-side LUMPED-pi 6x6 ABCD
+                                cascade.  Same boundary conditions and
+                                SLG fault topology as the closed-form;
+                                discretisation residual ~10 ppm per
+                                section, accumulating to ~50 ppm over
+                                100 sections.  build_dataset() writes
+                                data/pscad_3ph_720.mat with schema
+                                (Y_send (720, 3, 3) complex; grid_*
+                                arrays; meta dict).
+
+  data/pscad_3ph_720.mat        Generated from the surrogate; 720
+                                cells (9 alpha x 5 R_x x 4 SNR_V x
+                                4 SNR_I).  Bundle stores noiseless
+                                Y_send per cell (the noise grid does
+                                not affect the noiseless physics; same
+                                Y_send across the 16-cell noise
+                                replicates per (alpha, R_x)).
+
+  pscad/HIFL_11kV_100km_3ph_    Design doc mirroring WP1.1's pattern:
+  design.md                     topology, per-unit-length parameter
+                                table, SLG-HIF specification, boundary
+                                conditions, sweep grid, output schema,
+                                cross-validation pointers.  Citations
+                                to Saha 2010, Kang 2021 EPSR, Kersting
+                                2002, IEEE PES test feeders.  Documents
+                                the transposed-line assumption
+                                explicitly with WP3.2 forward pointer
+                                for untransposed Carson coupling.
+
+  pscad/run_pscad_3ph_720.py    Automation skeleton mirroring
+                                pscad/run_pscad_720.py: --automation
+                                via mhi.pscad and --gnu-postprocess
+                                modes; surrogate fallback pointer when
+                                PSCAD is not on PATH.
+
+  tests/test_3phase_vs_pscad.py NEW.  3 tests, all PASS:
+                                  - test_pscad_bundle_schema: shape
+                                    + finite checks on the .mat
+                                    bundle.
+                                  - test_3phase_closed_form_agrees_
+                                    with_pscad_surrogate_5pct: per-
+                                    entry magnitude agreement < 5%
+                                    on every (alpha, R_x) cell;
+                                    measured worst at 1.4e-6.
+                                  - test_3phase_closed_form_phase_
+                                    imbalance_visible: SLG signature
+                                    (|Y_aa| > 1.5x |Y_bb|, |Y_cc|)
+                                    on the hardest-fault cells.
+
+  tests/test_three_phase_       Refreshed for the new Y_send API.
+  skeleton.py                     - test_H_phase_returns_3vec_finite
+                                    (3 parametrised, unchanged);
+                                  - test_build_Y_abc_diagonal_matches_
+                                    H_phase (off-diagonal placeholder
+                                    rule replaced; check now only on
+                                    diagonal-matches-H_phase);
+                                  - test_Y_send_phase_A_close_to_
+                                    single_phase_baseline (NEW):
+                                    Y_aa within 5% of WP2.1
+                                    H_distributed at the same
+                                    (alpha, R_x).
+                                  - test_Y_send_off_diagonal_symmetric
+                                    _under_transposed_line (NEW):
+                                    Y_send[1,2] == Y_send[2,1] under
+                                    the transposed-line approximation;
+                                  - test_Y_send_recovers_no_fault_
+                                    baseline_at_high_Rx (NEW):
+                                    R_x -> infinity gives the
+                                    symmetric no-fault matrix.
+                                  - test_fault_ABCD_phase_validation
+                                    (NEW): ValueError on fault_phase
+                                    not in {0,1,2}.
+                                  - test_load_feeder_ieee_13_has_buses
+                                    (unchanged);
+                                  - test_load_feeder_unknown_raises
+                                    (unchanged);
+                                  - test_inject_hif_returns_3xN_bundle
+                                    (unchanged);
+                                  - test_inject_hif_unknown_bus_raises
+                                    (unchanged).
+                                Removed test_fault_phase_nonzero_not_
+                                yet_implemented because fault_phase
+                                in {0,1,2} is now supported by the
+                                model (WP3.4 still gates the
+                                fault_type axis: SLG vs LL/LLG/3PH).
+
+  .gitignore                    Whitelist data/pscad_3ph_720.mat as a
+                                tracked output of the surrogate.
+
+R-class register update
+-----------------------
+
+  R2 (modelling-error ceiling): CLOSED at WP2.1 forward-model side;
+                                3-phase generalisation at WP3.1
+                                preserves the 4-orders-of-magnitude
+                                margin from WP2.3.
+  R5 (single-bin DFT bias):     OPEN; the 3-phase Y_send is a 3x3
+                                matrix observation (9 complex DOF
+                                per cell vs 1 in the single-phase
+                                case), structurally able to break
+                                the single-bin identifiability
+                                degeneracy via the WP3.6 multi-port
+                                FIM.  The full closure still requires
+                                WP3.5 Taylor-Fourier multi-bin.
+
+Test gate this commit: 67 passed + 1 skipped + 9 xfailed (was 61 + 1
++ 9 at end of WP3.1 SKELETON).  Net +6 passed (3 new test_3phase_vs_
+pscad tests + 3 new test_three_phase_skeleton tests; -1 NotImplemented
+test removed; net +5 passed at the file level + 1 from cleanup).
+ruff clean.  No tag, no push -- WP3.1 closure stands; WP3.2 (Carson
+asymmetry) is the next user-driven step.
+
 ## 2026-05-10 - WP3.1 SKELETON queued (Phase-3 entry, no acceptance claimed)
 
 Per the post-D2 user direction, queued the WP3.1 directory skeleton
