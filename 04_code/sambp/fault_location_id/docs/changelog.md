@@ -1,3 +1,85 @@
+## 2026-05-10 - WP5.2 IEC 61850-9-2 SV + IED integration (P5.2, K09 software-side PASS)
+
+WP5.2 (P5.2) ships the SV + GOOSE round-trip framework for the
+SAMBPS DTaaS HIF-locator integration with a relay-class IED.
+Software-side complete and tested on the dev box; hardware-side
+measurements (real Merging Unit, real IED, Wireshark capture)
+gated on the WP5.1 partner-access plan.
+
+Acceptance:
+  K09 (software-side, mock-replay)  end-to-end latency < 5 cycles
+                                    (= 100 ms at 50 Hz) on >= 25 of
+                                    30 representative scenarios --
+                                    PASS on the dev box.  Estimator
+                                    is the WP1.4 single-bin DFT;
+                                    optimiser max_iter = 100 to fit
+                                    the latency budget under system
+                                    load.
+  K09 (hardware-side, HIL capture)  PENDING (xfail).  The full
+                                    SV ingress -> GOOSE egress on a
+                                    real IED's NIC requires a HIL
+                                    site visit per docs/hil_access_
+                                    matrix.md; gated on WP5.1
+                                    partner-window confirmation.
+
+Files
+-----
+
+  dtaas/protection_validation/   NEW.  SVSubscriber class with two
+  sv_subscriber.py               execution modes: hardware mode
+                                 (libiec61850 bindings; gated on
+                                 the binding being installed) and
+                                 dev-box mode (in-memory waveform
+                                 stream, callback-driven GOOSE
+                                 emission).  Produces HIFEstimate
+                                 dataclasses with (alpha, R_x,
+                                 confidence, fault_type, latency).
+                                 Public API:
+                                   SVSubscriber(iface, sv_app_id,
+                                     goose_app_id, ied_iec61850,
+                                     estimator, on_estimate)
+                                   .feed(v_stream, i_stream)
+                                   .start() (HW mode only)
+                                   .publish_goose(estimate)
+
+  hil/test_latency.py            NEW.  K09 acceptance test on 30
+                                 representative scenarios spanning
+                                 alpha (5 values) x R_x (3 values)
+                                 x SNR_I (2 values) x arc_model
+                                 (4 values).  Asserts >= 25 of 30
+                                 scenarios under 100 ms latency.
+                                 HIL-mode end-to-end test is xfail-
+                                 pending the SV capture file at
+                                 outputs/phase5_sv_capture.pcapng
+                                 (which is NOT committed -- the .pcapng
+                                 lives at the licensed Windows runner).
+
+  docs/ied_target.md             NEW.  Per-vendor capability profile
+                                 (SEL-487E / ABB REF615 / Siemens
+                                 7SJ85) + selection criteria + custom
+                                 GOOSE message dataset spec
+                                 (SAMBPS_HIF_LOC_PROT/SAMBPS$GO$LOC_EST)
+                                 + open items for HIL-site sign-off.
+
+  docs/ied_integration_report.md NEW.  Latency budget per stage
+                                 (sample arrival + accumulation +
+                                 estimator + GOOSE encode + egress);
+                                 per-scenario K09 results placeholder
+                                 for HIL-site capture; deferred
+                                 hardware-side activities documented.
+
+R-class register update
+-----------------------
+
+  R8 (HIL access):  unchanged from WP5.1 (still PARTIAL).  WP5.2
+                    ships software-side with K09 met; hardware-side
+                    measurement lands at HIL-site commissioning per
+                    WP5.1 access plan.
+
+Test gate this commit: 195 passed + 1 skipped + 13 xfailed (was
+194 + 1 + 12 at end of WP5.1; net +1 K09 PASS + 1 K09-HIL xfail-
+pending).  ruff clean.  No tag.
+
 ## 2026-05-10 - WP5.1 HIL platform commissioning + partner memos (P5.1, partial R8)
 
 WP5.1 (P5.1) sets up real-time HIL access via three redundant
