@@ -310,22 +310,70 @@ class KizilcayArc(ArcModelBase):
 # =============================================================================
 
 class Wang2020Arc(ArcModelBase):
-    """Wang 2020 distortion-controllable HIAF (deferred to WP4.3).
+    """Wang 2020 distortion-controllable HIAF (DistC-HIAF) model.
 
-    A skeleton subclass that delegates to ``EmanuelArc`` for now;
-    the canonical Wang-2020 implementation lands at WP4.3.
+    WP4.3 (P4.3) implementation.  Canonical reference: Wang, Yang &
+    Bo, "A distortion-controllable high-impedance arc fault model for
+    renewable-penetrated distribution networks", IEEE Trans. Power
+    Delivery, 2020 (TPWRD).  Open-source PSCAD reference at
+    https://github.com/MingjieWei/PSCAD-FILE-DISTC-HIAF-Model
+    (vendoring deferred -- see ``pscad/wang2020_arc/README.md``).
+
+    The model layers a per-half-cycle DISTORTION ZONE on top of an
+    Emanuel diode-arc baseline.  The distortion zone is described by
+    three parameters drawn fresh each half-cycle:
+
+        OFFSET   in [0, 1] -- where in the half-cycle the distortion
+                              zone begins (0 = at zero-crossing,
+                              1 = at peak).
+        EXTENT   in [0, 1] -- width of the distortion zone, expressed
+                              as fraction of half-cycle.
+        DURATION in [0, 1] -- intensity of distortion (0 = none,
+                              1 = full Wang-2020 envelope wobble +
+                              harmonic injection).
+
+    Within the distortion zone the arc current is multiplicatively
+    perturbed by an envelope ``1 + DURATION * envelope_factor`` and
+    additively perturbed by 3rd / 5th / 7th harmonics with random
+    phase.  Drawing OFFSET / EXTENT / DURATION fresh per half-cycle
+    is the canonical Wang-2020 randomness mechanism: the resulting
+    waveform exhibits inter-cycle harmonic variance the deterministic
+    diode model cannot produce.
+
+    The randomness intensity is bounded by ``distortion_index`` in
+    [0, 1] -- a global scaling factor that controls how aggressive
+    the per-half-cycle randomisation gets (0 = clean Emanuel diode;
+    1 = full Wang-2020 randomness envelope).
     """
 
     name: str = "Wang2020Arc"
 
-    def __init__(self, distortion_index: float = 0.5):
+    def __init__(
+        self,
+        distortion_index: float = 0.5,
+        *,
+        emanuel: EmanuelArc | None = None,
+        rng: np.random.Generator | None = None,
+        f0_hz: float = 50.0,
+    ):
         if not 0.0 <= distortion_index <= 1.0:
             raise ValueError(
                 f"distortion_index must be in [0, 1]; "
                 f"got {distortion_index}"
             )
         self.distortion_index = float(distortion_index)
-        self._fallback = EmanuelArc()
+        self.emanuel = emanuel if emanuel is not None else EmanuelArc(
+            V_kp=2000.0, V_kn=1800.0,
+        )
+        self._rng = rng if rng is not None else np.random.default_rng()
+        self.f0_hz = float(f0_hz)
+
+    def _draw_zone_params(self) -> tuple[float, float, float]:
+        """Draw fresh OFFSET / EXTENT / DURATION for one half-cycle."""
+        offset = float(self._rng.uniform(0.05, 0.85))
+        extent = float(self._rng.uniform(0.10, 0.40))
+        duration = float(self._rng.uniform(0.5, 1.0)) * self.distortion_index
+        return offset, extent, duration
 
     def synthesise_current(
         self,
@@ -333,7 +381,72 @@ class Wang2020Arc(ArcModelBase):
         v_arc: np.ndarray,
         Rx: float,
     ) -> np.ndarray:
-        return self._fallback.synthesise_current(t, v_arc, Rx)
+        """Wang-2020 distortion-controllable arc current.
+
+        Steps:
+        1. Compute baseline diode current via :class:`EmanuelArc`.
+        2. Identify half-cycles by zero-crossings of v_arc.
+        3. For each half-cycle, draw fresh OFFSET / EXTENT / DURATION
+           and apply the multiplicative envelope + additive harmonic
+           perturbation INSIDE the distortion zone.
+        4. Return the perturbed current.
+        """
+        if Rx <= 0:
+            raise ValueError(f"Rx must be > 0; got {Rx}")
+        t = np.asarray(t, dtype=float)
+        v = np.asarray(v_arc, dtype=float)
+        if t.shape != v.shape:
+            raise ValueError(
+                f"t and v_arc must have the same shape; "
+                f"got {t.shape} vs {v.shape}"
+            )
+
+        # Baseline diode current
+        i_baseline = self.emanuel.synthesise_current(t, v, Rx)
+
+        # Identify half-cycle boundaries via voltage zero-crossings
+        zero_idx = list(np.where(np.diff(np.sign(v)))[0] + 1)
+        # Boundaries: [0, z1, z2, ..., N]
+        boundaries = [0] + zero_idx + [len(v)]
+
+        # Apply per-half-cycle perturbation
+        i_out = i_baseline.copy()
+        if self.distortion_index <= 0:
+            return i_out
+
+        f0 = self.f0_hz
+        omega0 = 2.0 * np.pi * f0
+        for k in range(len(boundaries) - 1):
+            i0, i1 = boundaries[k], boundaries[k + 1]
+            if i1 - i0 < 4:
+                continue   # too short to be a meaningful half-cycle
+            offset, extent, duration = self._draw_zone_params()
+            n_half = i1 - i0
+            zone_start = i0 + int(round(offset * n_half))
+            zone_end = min(i1, zone_start + max(1, int(round(extent * n_half))))
+            if zone_end <= zone_start:
+                continue
+            zone_t = t[zone_start:zone_end]
+            zone_n = zone_end - zone_start
+            zone_norm = (
+                (np.arange(zone_n) + 0.5) / zone_n
+            )  # 0..1 inside the zone
+            # Multiplicative envelope: smooth bump
+            envelope = 1.0 + duration * 0.30 * np.sin(np.pi * zone_norm)
+            # Additive harmonic injection (random phase per zone)
+            phi3 = float(self._rng.uniform(-np.pi, np.pi))
+            phi5 = float(self._rng.uniform(-np.pi, np.pi))
+            phi7 = float(self._rng.uniform(-np.pi, np.pi))
+            base_amp = abs(i_baseline[zone_start:zone_end]).mean()
+            harmonic = duration * base_amp * (
+                0.10 * np.cos(3 * omega0 * zone_t + phi3)
+                + 0.05 * np.cos(5 * omega0 * zone_t + phi5)
+                + 0.03 * np.cos(7 * omega0 * zone_t + phi7)
+            )
+            i_out[zone_start:zone_end] = (
+                i_baseline[zone_start:zone_end] * envelope + harmonic
+            )
+        return i_out
 
 
 class Torres2022Arc(ArcModelBase):

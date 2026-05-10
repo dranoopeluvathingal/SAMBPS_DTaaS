@@ -225,6 +225,46 @@ diode-arc shape from the WP1.1 PSCAD baseline.  The per-cell
 **Δ-error = loc_err_kizilcay − loc_err_emanuel** is the
 arc-model-mismatch contribution to the optimiser's residual.
 
+## Phase-4 (WP4.3) Wang-2020 distortion-controllable HIAF
+
+The Wang-2020 distortion-controllable arc class
+(`Wang2020Arc`) in
+[`models/faultloc_arc_models.py`](../models/faultloc_arc_models.py)
+upgrades the WP4.2 skeleton into the canonical Wang-2020
+*distortion-zone* model.  Per the WP4.3 brief and the upstream
+PSCAD reference (https://github.com/MingjieWei/PSCAD-FILE-DISTC-HIAF-Model;
+vendoring deferred per
+[`pscad/wang2020_arc/README.md`](../pscad/wang2020_arc/README.md))
+the model layers three randomised parameters per half-cycle
+on top of an Emanuel diode baseline.
+
+| Parameter | Default / Range | Source |
+|---|---|---|
+| `distortion_index` (global intensity) | **0.5** (default) / **0.7** (cross-fit runner) | WP4.3 brief; `0` reduces to the Emanuel baseline (determinism limit), `1` is full Wang-2020 randomness envelope. |
+| `OFFSET` (per-half-cycle, drawn fresh) | **U[0.05, 0.85]** | Wang 2020 §III.B; locates where in the half-cycle the distortion zone begins (0 = at zero-crossing, 1 = at peak). |
+| `EXTENT` (per-half-cycle, drawn fresh) | **U[0.10, 0.40]** | Wang 2020 §III.B; width of the distortion zone, in half-cycle fractions. |
+| `DURATION` (per-half-cycle, drawn fresh) | **U[0.5, 1.0] · `distortion_index`** | Wang 2020 §III.B; intensity of the distortion within the zone. Bounded by the global `distortion_index` so the zone is always contained inside [0, 1]. |
+| Multiplicative envelope | `1 + DURATION · 0.30 · sin(π · zone_norm)` | Smooth perturbation envelope; the 0.30 amplitude matches the Wang-2020 Fig. 5 / 6 illustrative trace. |
+| Additive harmonic injection | 3rd / 5th / 7th harmonics with U[−π, π] random phase, amplitudes 10 % / 5 % / 3 % of the in-zone baseline mean | Wang 2020 §III.C odd-harmonic content of the arc spectrum. |
+| `f0_hz` | **50 Hz** | India / EU mains; runner-aligned. |
+| RNG | `numpy.random.default_rng` (PCG-64) | Reproducible per-trial seed-sequence; same seed → bit-identical waveform (verified by `tests/test_wang2020_randomness_signature.py::test_wang2020_rng_determinism`). |
+
+### Cross-fit + Monte-Carlo experiment
+
+[`run_faultloc_phase4_wang2020.py`](../run_faultloc_phase4_wang2020.py)
+extends the WP4.2 cross-fit pattern with a Monte-Carlo trial axis
+(20 trials per (alpha, R_x, SNR_I) cell × 5 fault buses × 5 R_x ×
+SNR_I-restricted subset = 2000 (cell, trial) pairs) and applies
+*both* the WP1.4 / WP2.4 single-bin DFT estimator AND the WP3.5
+Taylor-Fourier (K=1) phasor estimator.  The per-(cell, trial)
+**Δ-error_DFT = loc_err_wang2020_dft − loc_err_emanuel_dft** and
+**Δ-error_TFT = loc_err_wang2020_tft − loc_err_emanuel_tft**
+quantify the *Wang-2020 stochasticity* contribution to the
+optimiser's residual under both phasor estimators.  The MC bundle
+[`data/wang2020_ieee34_720.mat`](../data/wang2020_ieee34_720.mat)
+preserves V / I_emanuel / I_wang2020 waveforms shape `(n_trials,
+n_cells, N_samples)` for downstream R&D.
+
 ## References
 
 * Kizilcay, M., "Dynamic arc model for arc burning and arcing
@@ -233,6 +273,12 @@ arc-model-mismatch contribution to the optimiser's residual.
 * Darwish, H.A. and Elkalashy, N.I., "Universal arc representation
   using EMTP", IEEE Trans. Power Delivery, 20(2):772-779, 2005.
   doi:10.1109/TPWRD.2004.838523.  (Bib key: pending.)
+* Wang, M., Yang, B., Bo, Z., "A distortion-controllable
+  high-impedance arc fault model for renewable-penetrated
+  distribution networks", IEEE Trans. Power Delivery, 2020.
+  Open-source PSCAD reference at
+  https://github.com/MingjieWei/PSCAD-FILE-DISTC-HIAF-Model.
+  (Bib key: pending.)
 * IEEE Std 519-2014, *IEEE Recommended Practice and Requirements
   for Harmonic Control in Electric Power Systems*.
 * IEEE Std C37.110-2007, *IEEE Guide for the Application of Current

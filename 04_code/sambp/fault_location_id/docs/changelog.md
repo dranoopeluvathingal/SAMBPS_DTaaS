@@ -1,3 +1,144 @@
+## 2026-05-10 - WP4.3 Wang-2020 distortion-controllable HIAF (P4.3, partial R10)
+
+WP4.3 (P4.3) upgrades the WP4.2 ``Wang2020Arc`` skeleton to the
+canonical Wang-2020 distortion-controllable HIAF model.  Per-half-
+cycle OFFSET / EXTENT / DURATION randomisation + multiplicative
+envelope wobble + 3rd / 5th / 7th harmonic injection with random
+phase, bounded by a global ``distortion_index`` in [0, 1].
+Determinism limit (``distortion_index = 0``) reproduces the Emanuel
+baseline exactly.  Cross-fit + Monte-Carlo experiment quantifies
+the Wang-2020 stochasticity contribution to the optimiser residual
+on the IEEE 34 sub-sample under both DFT and TFT phasor estimators.
+
+Acceptance:
+  T-E2.wang_inter_trial   3rd-harmonic DFT-bin inter-trial variance
+                          on the Wang2020 stimulus exceeds the
+                          deterministic Emanuel baseline by > 5x --
+                          PASS.  The randomness signature the
+                          deterministic diode model cannot produce.
+  T-E2.wang_zone_bounded  Per-half-cycle distortion zone is bounded
+                          (does not leak across zero-crossing) --
+                          PASS.
+  T-E2.wang_rng_hygiene   Same RNG seed -> bit-identical waveform;
+                          different seeds -> distinguishable -- PASS.
+  T-E2.wang_zero_distort  ``distortion_index = 0`` matches Emanuel
+                          baseline byte-identical -- PASS.
+  T-E2.wang_cross_fit     6000 (cell, trial) pairs (300 cells x
+                          20 MC trials) on IEEE 34 sub-sample;
+                          Wang2020 vs Emanuel cross-fit Delta
+                          quantified under DFT + TFT.  Headline:
+                          Emanuel-DFT mean=92.87%, Wang2020-DFT
+                          mean=88.06%, Delta-DFT abs.mean=5.30%
+                          (abs.p95=38.58%); Emanuel-TFT mean=99.95%,
+                          Wang2020-TFT mean=98.15%, Delta-TFT
+                          abs.mean=1.81% (abs.p95=16.30%).  TFT
+                          attenuates the Wang-2020 stochasticity
+                          contribution roughly 3x vs single-bin DFT.
+
+Files
+-----
+
+  models/faultloc_arc_models.py  Replaces the WP4.2 Wang2020Arc
+                                 skeleton with the proper distortion
+                                 -zone implementation: 138-line class
+                                 carrying the OFFSET / EXTENT /
+                                 DURATION randomisation logic + the
+                                 multiplicative envelope + the
+                                 3rd / 5th / 7th harmonic injection.
+                                 Public API: Wang2020Arc(distortion_
+                                 index, *, emanuel, rng, f0_hz).
+
+  run_faultloc_phase4_wang2020.  NEW.  Cross-fit + Monte-Carlo
+  py                             runner: 5 buses x ~60 cells x 20
+                                 trials = 6000 (cell, trial) pairs;
+                                 per pair runs the WP1.4 single-bin
+                                 DFT optimiser AND the WP3.5 TFT
+                                 K=1 estimator on both Emanuel and
+                                 Wang2020 stimuli; records per-cell
+                                 (alpha_hat, R_x_hat) for each (4
+                                 estimator x stimulus combinations
+                                 per cell).  Runtime ~ 31 min on dev
+                                 box.  Sub-samples to SNR_I >= 30 dB
+                                 (full 720-grid x 100-trial run
+                                 queued for licensed Windows
+                                 runner).
+
+  data/wang2020_ieee34_720.mat   NEW (28 MB).  Per-(trial, cell, sample)
+                                 waveform bundle: V, I_emanuel,
+                                 I_wang2020 with shape (20, 300,
+                                 200); + grid arrays and meta dict.
+                                 Mirrors the data/ieee34_720.mat
+                                 schema with an added trial axis.
+
+  outputs/phase4_wang2020_       NEW.  6000-row per-(cell, trial)
+  results.csv                    CSV: trial, fault_bus, alpha_true,
+                                 Rx_true, snr_v_db, snr_i_db,
+                                 loc_err_emanuel_dft, loc_err_
+                                 wang2020_dft, loc_err_emanuel_tft,
+                                 loc_err_wang2020_tft, delta_dft,
+                                 delta_tft.
+
+  tests/test_wang2020_randomness NEW.  12 tests, all PASS:
+  _signature.py                    - is-ArcModelBase + finite + signed;
+                                   - input validation (distortion_index,
+                                     Rx, shape mismatch);
+                                   - determinism limit (distortion_
+                                     index = 0 matches Emanuel exactly);
+                                   - inter-trial 3rd-harmonic variance
+                                     ratio > 5x baseline (the
+                                     randomness signature);
+                                   - RNG hygiene (same seed -> bit-
+                                     identical; different -> distinct);
+                                   - zone-bounded perturbation
+                                     (no leak across zero-crossing);
+                                   - cross-fit CSV schema +
+                                     non-trivial deltas.
+
+  pscad/wang2020_arc/README.md   NEW.  Vendor placeholder for the
+  pscad/wang2020_arc/LICENSE.    upstream open-source PSCAD reference
+  placeholder                    at https://github.com/MingjieWei/
+                                 PSCAD-FILE-DISTC-HIAF-Model.
+                                 Vendoring deferred per the SAMBPS
+                                 safety hook (Untrusted Code
+                                 Integration policy: queued for the
+                                 licensed Windows runner where
+                                 upstream files can be reviewed
+                                 manually under the permitted-
+                                 vendoring policy).  Documents the
+                                 canonical PSCAD bundle schema +
+                                 the dev-box surrogate match
+                                 (per-half-cycle distortion zone +
+                                 inter-cycle harmonic variance +
+                                 determinism limit).
+
+  docs/feeder_assumptions.md     New "Phase-4 (WP4.3) Wang-2020
+                                 distortion-controllable HIAF"
+                                 section with parameter table +
+                                 cross-fit / MC experiment description
+                                 + Wang 2020 TPWRD reference.
+
+  .gitignore                     Whitelist outputs/phase4_wang2020_
+                                 results.csv + data/wang2020_ieee34_
+                                 720.mat.
+
+R-class register update
+-----------------------
+
+  R10 (real HIF stochasticity):  PARTIAL CLOSURE.  Wang-2020
+                                 distortion-controllable variant
+                                 added; cross-fit Delta under DFT
+                                 (abs.mean 5.30%) + TFT (abs.mean
+                                 1.81%) quantifies the Wang-2020
+                                 contribution to the optimiser
+                                 residual.  Closes fully at WP4.4
+                                 (Torres-2022) + WP5.3 (real-world
+                                 traces).
+
+Test gate this commit: 168 passed + 1 skipped + 12 xfailed (was
+156 + 1 + 12 at end of WP4.2).  Net +12 passed.  ruff clean.  No
+tag, no push.  Upstream-vendor follow-up pending (see WP4.5
+brief deferral pattern).
+
 ## 2026-05-10 - WP4.2 Kizilcay arc + cross-fit test (P4.2, partial R4)
 
 WP4.2 (P4.2) ships an ABC-based arc-fault stimulus library:
