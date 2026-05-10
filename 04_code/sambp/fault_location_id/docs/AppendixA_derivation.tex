@@ -385,6 +385,114 @@ $H = I/V$ is in $[\si{\per\ohm}]$.  This matches the
 single-bin DFT admittance $H_{\text{meas}}$ used throughout
 \S\,III.
 
+% =============================================================================
+\section{Closed-form $\partial H/\partial\alpha$ and
+         $\partial H/\partial R_x$ for the distributed-parameter model}
+\label{sec:dHdtheta}
+% =============================================================================
+
+\textit{(Added under WP2.2 in P2.2; references the closed-form
+forward model from
+}\texttt{models/faultloc\_distributed\_param\_model.py}\textit{ — see
+v3 plan §3.7 / §4.3 WP2.2.)}
+
+The Phase-2 forward model casts the line as two cascaded
+distributed-parameter ABCD blocks of lengths $\alpha L$ and
+$(1-\alpha)L$, joined by a shunt fault admittance $Y_f = 1/R_x$ and
+terminated by the open-far-end load
+$T_{\text{load}} = \begin{bmatrix} 1 & 0 \\ 1/R_{\text{load}} & 1
+\end{bmatrix}$:
+\begin{equation}
+   T \;=\; T_1(\alpha)\, T_f(R_x)\, T_2(\alpha)\, T_{\text{load}},
+   \qquad
+   H(\alpha, R_x) \;=\; \frac{C_{\text{end}}}{A_{\text{end}}},
+   \label{eq:Tend_dist}
+\end{equation}
+with each line block
+\begin{equation}
+   T_k \;=\;
+   \begin{bmatrix}
+     \cosh(\gamma\ell_k) & Z_c \sinh(\gamma\ell_k)\\
+     \sinh(\gamma\ell_k)/Z_c & \cosh(\gamma\ell_k)
+   \end{bmatrix},
+   \qquad
+   T_f \;=\;
+   \begin{bmatrix} 1 & 0 \\ 1/R_x & 1 \end{bmatrix}.
+\end{equation}
+
+\paragraph{Block partials.}
+Since $\frac{\mathrm{d}}{\mathrm{d}\alpha}\cosh(\gamma\alpha L)
+= \gamma L \sinh(\gamma\alpha L)$ and analogously for sinh:
+\begin{align}
+\frac{\partial T_1}{\partial \alpha}
+   &\;=\; \gamma L\,
+   \begin{bmatrix}
+     \sinh(\gamma\alpha L) & Z_c \cosh(\gamma\alpha L)\\
+     \cosh(\gamma\alpha L)/Z_c & \sinh(\gamma\alpha L)
+   \end{bmatrix},\\[4pt]
+\frac{\partial T_2}{\partial \alpha}
+   &\;=\; -\gamma L\,
+   \begin{bmatrix}
+     \sinh(\gamma(1{-}\alpha)L) & Z_c \cosh(\gamma(1{-}\alpha)L)\\
+     \cosh(\gamma(1{-}\alpha)L)/Z_c & \sinh(\gamma(1{-}\alpha)L)
+   \end{bmatrix},\\[4pt]
+\frac{\partial T_f}{\partial R_x}
+   &\;=\;
+   \begin{bmatrix} 0 & 0 \\ -1/R_x^{2} & 0 \end{bmatrix},
+\end{align}
+and $\partial T_f/\partial\alpha = \partial T_{\text{load}}/\partial\theta = 0$.
+
+\paragraph{Chain rule.}
+Apply the product rule to $T = T_1 T_f T_2 T_{\text{load}}$:
+\begin{align}
+\frac{\partial T}{\partial \alpha}
+   &\;=\; \frac{\partial T_1}{\partial \alpha}\, T_f T_2 T_{\text{load}}
+       \;+\; T_1 T_f \,\frac{\partial T_2}{\partial \alpha}\, T_{\text{load}},
+\\[4pt]
+\frac{\partial T}{\partial R_x}
+   &\;=\; T_1 \,\frac{\partial T_f}{\partial R_x}\, T_2 T_{\text{load}}.
+\end{align}
+Only two of the four product-rule terms are nonzero for
+$\partial/\partial\alpha$ (because $T_f$ and $T_{\text{load}}$ do
+not depend on $\alpha$); only one term is nonzero for
+$\partial/\partial R_x$.
+
+\paragraph{Sending-end admittance partial.}
+By the quotient rule applied to $H = C_{\text{end}}/A_{\text{end}}$:
+\begin{equation}
+\boxed{\;
+\frac{\partial H}{\partial \theta} \;=\;
+\frac{
+   \dfrac{\partial C_{\text{end}}}{\partial \theta}\, A_{\text{end}}
+   \;-\;
+   C_{\text{end}}\, \dfrac{\partial A_{\text{end}}}{\partial \theta}
+}{A_{\text{end}}^{\,2}}
+\;}
+\quad \theta\in\{\alpha, R_x\}.
+\label{eq:dHdtheta_quotient}
+\end{equation}
+
+\paragraph{Use sites.}
+The closed-form gradient (\ref{eq:dHdtheta_quotient}) is consumed by:
+\begin{itemize}[leftmargin=2em]
+  \item the Phase-2 swap of the optimiser's central-FD gradient
+        (\texttt{inverse\_estimation/faultloc\_two\_stage\_optimiser.py},
+        WP2.4 work-package);
+  \item the Fisher information matrices in
+        \texttt{inverse\_estimation/faultloc\_crlb\_proper.py} and
+        \texttt{inverse\_estimation/faultloc\_crlb\_dualchannel.py}
+        (P1.6 currently uses the central-FD partials; the swap is
+        a one-line change once the closed-form module is on the
+        runtime path).
+\end{itemize}
+The implementation is in
+\texttt{inverse\_estimation/faultloc\_analytical\_gradients.py};
+\texttt{tests/test\_analytical\_gradients.py} verifies a relative
+error below $10^{-4}$ vs central FD at the three brief test points
+$(\alpha, R_x) \in \{(0.2, 100), (0.5, 1000), (0.8, 5000)\}$, and
+\texttt{matlab/tests/test\_distributed\_partials.m} cross-checks
+against a MATLAB \texttt{sym/diff} derivation to $10^{-9}$.
+
 \bigskip\hrule\bigskip
 \noindent\textit{End of Appendix~A.}
 

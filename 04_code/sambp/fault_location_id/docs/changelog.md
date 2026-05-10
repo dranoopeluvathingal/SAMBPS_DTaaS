@@ -2,6 +2,82 @@
 
 Format: each entry is `YYYY-MM-DD - <stage / WP / decision-gate> - <summary>`.
 
+## 2026-05-10 - WP2.2 analytical gradients (P2.2)
+
+  inverse_estimation/             Closed-form dH/dalpha and dH/dRx
+  faultloc_analytical_            for the distributed-parameter
+  gradients.py                    forward model from P2.1.
+                                  Recipe (see Appendix A §A.7):
+                                    d/dα cosh(γαL) = γL sinh(γαL)
+                                    d/dα sinh(γαL) = γL cosh(γαL)
+                                  with sign flip for T_2 (argument
+                                  γ(1-α)L), and ∂T_f/∂Rx =
+                                  [[0,0],[-1/Rx², 0]].
+                                  Chain rule for T = T1·T_f·T2·Tload
+                                  gives ∂T/∂α (2 nonzero terms) and
+                                  ∂T/∂Rx (1 nonzero term).
+                                  Quotient rule on H = C_end / A_end
+                                  yields the boxed result.
+                                  Public API:
+                                    dH_dalpha(alpha, Rx, omega)
+                                    dH_dRx   (alpha, Rx, omega)
+                                    dH_dtheta(alpha, Rx, omega)
+                                      -> (dH_da, dH_dR) packed
+                                  The packed form amortises the
+                                  cosh/sinh calls in a single block
+                                  evaluation.
+
+  tests/test_analytical_          8 tests, all PASS:
+  gradients.py                      - dH/dalpha vs FD at
+                                      (0.2,100), (0.5,1000),
+                                      (0.8,5000) - rel err < 1e-4
+                                      (actual: 1e-9 to 1e-10);
+                                    - dH/dRx vs FD same points -
+                                      rel err < 1e-4 (actual ~1e-4
+                                      at the FD truncation floor
+                                      from h_R = 1e-2 relative);
+                                    - packed dH_dtheta matches
+                                      individual calls to 1e-15;
+                                    - finite + nonzero across the
+                                      9 alpha x 5 Rx grid.
+
+  matlab/tests/test_              MATLAB symbolic regression test
+  distributed_partials.m          using sym/diff on the same ABCD
+                                  chain.  Hard-codes the Python
+                                  reference values (regenerable via
+                                  the static update_python_reference
+                                  helper).  Asserts agreement to
+                                  rel err 1e-9 at the same three
+                                  test points.  Skips cleanly if
+                                  the Symbolic Math Toolbox is not
+                                  installed.
+
+  docs/AppendixA_derivation       New §A.7 "Closed-form ∂H/∂α and
+  .{tex,pdf}                      ∂H/∂R_x for the distributed-
+                                  parameter model" (boxed quotient-
+                                  rule result).  Recompiles to
+                                  5 pages (was 4 at end of P0.5).
+                                  References Phase-2's manuscript
+                                  revision; cited from
+                                  faultloc_analytical_gradients.py
+                                  module docstring.
+
+Numerical agreement (Python analytical vs central FD with
+h_alpha=1e-5, h_R=1e-2 relative):
+  - dH/dalpha: 1e-10 to 1e-9 rel err (essentially machine precision)
+  - dH/dRx:    ~1e-4 rel err (FD truncation floor at this h_R; the
+               analytical expression is exact)
+
+The analytical gradient is consumed by:
+  - WP2.4 optimiser swap (replaces central-FD inside
+    faultloc_two_stage_optimiser.py); reduces grad evals from
+    4 cost calls per iter to 1 evaluation;
+  - WP1.6 FIM construction (one-line swap to plug into
+    faultloc_crlb_proper.py and faultloc_crlb_dualchannel.py).
+
+Test gate this commit: 45 passed + 1 skipped + 8 xfailed (was 37 +
+1 + 8 at end of P2.1).  ruff clean.
+
 ## 2026-05-10 - WP2.1 distributed-parameter H closed-form (P2.1)
 
 Phase 2 begins.
