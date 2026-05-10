@@ -1,3 +1,143 @@
+## 2026-05-10 - WP4.1 5 impairment classes (P4.1)
+
+WP4.1 (P4.1) ships five field-grade impairment generators that
+extend the WP1.1 / WP1.4 dual-channel AWGN noise model with the
+dominant non-Gaussian phenomena seen on real distribution feeders.
+A composite "field-grade" pipeline chains all five in canonical
+order.  All 5 generators + composite are unit-tested.  The Phase-4
+K07 acceptance ("mean loc-err < 5 % at SNR_I >= 30 dB across all 5
+impairment classes individually on IEEE 34") is xfail-strict per
+the established R-class escalation pattern: the structural single-
+bin DFT identifiability floor on the load-dominated IEEE 34 (R-
+WP3.4-1 from WP3.4 / WP3.7) drives the clean baseline well above
+5 %, and the per-impairment delta is < 1 %.
+
+KPI numbering note
+------------------
+
+The WP4.1 brief reuses ``K07`` for the impairment-class acceptance.
+This collides with the WP3.6 K07 (multi-port CRLB consistency, PASS
+at machine precision).  The Phase-4 K07 is referred to as
+``K07 (Phase 4)`` throughout this changelog and in the test reason
+text; the long-form D3 review pack will renumber as K09 in the
+master KPI tracker at the next D-gate.
+
+Acceptance:
+  T-E1.gen_impulsive   add_impulsive(v, i, prob, mag_db) -- PASS.
+                       Bernoulli-Gaussian mixture; defaults
+                       prob=0.005, mag_db=20 dB (typical PD / PLC
+                       background).
+  T-E1.gen_harmonics   add_harmonic_background(v, i, harmonics) --
+                       PASS.  Defaults {2:0.02, 5:0.04, 7:0.03,
+                       11:0.02} per IEEE 519-2014 Tab. 2.
+  T-E1.gen_ct_sat      add_ct_saturation(i, remanence_pu, burden_ohm,
+                       ct_class) -- PASS.  Smooth-tanh envelope
+                       with effective knee
+                       I_knee_eff = (V_knee/burden) * (1-remanence);
+                       4 ct_class options (5P20 default per
+                       IEEE C37.110-2007); sweep ranges {0,0.3,0.5,
+                       0.8} remanence x {1,2,4,8} ohm burden.
+  T-E1.gen_off_nom     add_off_nominal_frequency(v, i, df_hz) --
+                       PASS.  DFT-based fundamental swap, preserves
+                       harmonic / transient residual, +/-5 Hz cap
+                       per IEEE C37.118.1-2018 P-class envelope
+                       (default df_hz = 0.5).
+  T-E1.gen_adc         add_adc_quantisation(v, i, bits, vref_v,
+                       iref_a) -- PASS.  Mid-tread uniform; sweep
+                       {12, 14, 16} bits.  Default vref / iref set
+                       by caller.
+  T-E1.composite       add_composite_field_grade chains all five in
+                       canonical order (impulsive -> harmonics ->
+                       CT sat -> off-nominal -> ADC) -- PASS.
+  T-E1.K07_phase4      mean loc-err < 5 % across all 5 individual
+                       classes at SNR_I >= 30 dB on IEEE 34 sub-
+                       sample -- XFAIL strict.  Measured ~62 %
+                       across all conditions including CLEAN
+                       baseline (per-class delta from clean < 1 %);
+                       R-WP4.1-1 escalation forward to WP3.5/3.6
+                       multi-bin / multi-port + WP3.3 follow-up
+                       canonical IEEE 34 line codes.
+  T-E1.parquet         outputs/phase4_impairments_results.parquet
+                       produced (4200 rows, 600 cells x 7
+                       conditions) -- PASS.
+
+Files
+-----
+
+  models/faultloc_noise_         Replaces the WP4.1 stub with the
+  impairments.py                 5 generators + composite.  All
+                                 functions take ``(v, i)`` and a
+                                 numpy.random.Generator (where
+                                 stochastic).  Public API:
+                                   add_impulsive
+                                   add_harmonic_background
+                                   add_ct_saturation
+                                   add_off_nominal_frequency
+                                   add_adc_quantisation
+                                   add_composite_field_grade
+                                 Constants: DEFAULT_HARMONICS,
+                                 CT_CLASSES.
+
+  run_faultloc_phase4_           NEW.  IEEE 34 sub-sample sweep
+  impairments.py                 (10 fault buses x 5 R_x x 4 SNR_V
+                                 x 3 SNR_I[>=30dB] = 600 cells x
+                                 7 conditions = 4200 optimiser
+                                 runs; ~6 min on dev box).  Per-
+                                 cell waveform synthesis from
+                                 IEEE 34 720-grid Y_aa, AWGN per
+                                 the cell's SNR_V/SNR_I, then each
+                                 impairment applied independently.
+
+  outputs/phase4_                NEW.  Long-format parquet
+  impairments_results.parquet    (4200 rows: fault_bus, alpha_true,
+                                 Rx_true, snr_v_db, snr_i_db,
+                                 condition, alpha_hat, Rx_hat,
+                                 J_min, loc_err_pct, Rx_err_pct).
+
+  outputs/phase4_                NEW.  Per-condition summary
+  impairments_summary.csv        (mean / p95 of loc_err_pct and
+                                 Rx_err_pct).  All 7 conditions sit
+                                 at ~62 % mean loc-err -- the
+                                 single-bin DFT identifiability
+                                 floor dominates.
+
+  tests/test_phase4_             NEW.  20 tests:
+  impairments.py                   - 14 unit tests covering pass-
+                                     through under degenerate
+                                     parameters + signal
+                                     modification under defaults
+                                     + input validation + composite
+                                     pipeline + summary CSV /
+                                     parquet schema;
+                                   - K07 (Phase 4) acceptance
+                                     XFAIL strict with R-WP4.1-1
+                                     escalation reason text.
+
+  docs/feeder_assumptions.md     New "Phase-4 (WP4.1) impairment-
+                                 class parameter defaults" section
+                                 with full provenance per generator
+                                 + 5 IEEE Std citations.
+
+  .gitignore                    Whitelist outputs/phase4_
+                                impairments_{results.parquet,
+                                summary.csv}.
+
+R-class register update
+-----------------------
+
+  R-WP4.1-1 (NEW)    K07 (Phase 4) impairment-classes target gap.
+                     Status: OPEN (xfail-strict).
+                     Mitigation: same closure path as R-WP3.4-1 +
+                     R-WP3.7-1; the impairment generators
+                     themselves are correct (per-class delta from
+                     clean baseline is < 1 %), the gap is in the
+                     underlying single-bin DFT optimiser on the
+                     load-dominated IEEE 34.
+
+Test gate this commit: 140 passed + 1 skipped + 12 xfailed (was
+121 + 1 + 11 at end of WP3.8).  Net +19 passed, +1 xfailed.
+ruff clean.  No tag, no push.
+
 ## 2026-05-10 - WP3.8 / D3 - Phase-3 conference paper + decision gate (P3.8)
 
 Phase-3 closeout.  Two artefacts staged for release tag

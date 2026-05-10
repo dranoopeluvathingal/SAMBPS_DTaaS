@@ -121,8 +121,81 @@ Future opens (carried forward to WP3.3 / WP3.4 / WP3.6):
 * Multiple laterals (the WP3.2 surrogate has only one)? (WP3.3 IEEE 13)
 * Phase-imbalanced loads (the WP3.2 surrogate is balanced)? (WP3.4)
 
+## Phase-4 (WP4.1) impairment-class parameter defaults
+
+The five impairment generators in
+[`models/faultloc_noise_impairments.py`](../models/faultloc_noise_impairments.py)
+extend the WP1.1 / WP1.4 dual-channel AWGN noise model with the
+dominant non-Gaussian field-grade phenomena.  Default parameter
+values + provenance below.
+
+### (1) `add_impulsive` — Bernoulli–Gaussian impulsive noise
+
+| Parameter | Default | Source |
+|---|---|---|
+| `prob` | **0.005** | Per-sample event probability; corresponds to ~1 impulse / cycle at 200 samples. Representative of partial-discharge / PLC background on overhead distribution feeders (PSRC D15 1996; Aucoin–Russell 1987). |
+| `mag_db` | **20 dB** | Impulse standard deviation 10× the per-channel rms; matches the IEEE 1159-2019 power-quality "interruption / spike" envelope (transients ≥ 10× steady-state for sub-µs durations). |
+
+### (2) `add_harmonic_background` — IEEE 519-2014 harmonics
+
+| Order | Default per-unit amplitude | Source |
+|---|---|---|
+| 2nd | 0.02 | IEEE Std 519-2014 Tab. 2 (general distribution: TDD ≤ 5 %, individual harmonics ≤ 4 % at < 11 kV, ≤ 2 % for even orders). |
+| 5th | 0.04 | Largest typical odd harmonic; non-linear loads and 6-pulse converters. |
+| 7th | 0.03 | Same source family. |
+| 11th | 0.02 | Higher-order harmonics; switched-mode loads. |
+
+Phases are randomised independently per channel per the IEEE 519
+assumption that harmonics from different sources are statistically
+uncorrelated.
+
+### (3) `add_ct_saturation` — IEEE C37.110-2007 CT model
+
+| Parameter | Default | Source |
+|---|---|---|
+| `remanence_pu` | **0.3** | Fractional residual flux at t=0; sweep range {0, 0.3, 0.5, 0.8} per WP4.1 brief. IEEE C37.110-2007 §5.3.2 cites typical relay-class CTs: 30-50 % residual immediately after a heavy fault clearing. |
+| `burden_ohm` | **2.0 Ω** | CT secondary burden; sweep range {1, 2, 4, 8} Ω per WP4.1 brief. 2 Ω is typical IED-relay nominal burden (IEEE C37.110-2007 §4.4). |
+| `ct_class` | **`5P20`** | IEEE C37.110-2007 Tab. 5; 5 % composite error at 20× rated current, the protection-class workhorse. Other supported: `10P20`, `5P10`, `10P10`. |
+| Saturation envelope | tanh-based with effective knee `I_knee_eff = (V_knee/burden) · (1 − remanence_pu)` | Smooth-saturation approximation; closed-form, differentiable, no DC-bias artefact. |
+
+### (4) `add_off_nominal_frequency` — IEEE C37.118.1 P-class
+
+| Parameter | Default | Source |
+|---|---|---|
+| `df_hz` | **0.5 Hz** | Off-nominal frequency drift (signed). IEEE C37.118.1-2018 §5.5 P-class compliance envelope ±2 Hz; 0.5 Hz is the typical mid-range test point. ±5 Hz hard cap enforced. |
+| Implementation | DFT-based: extract f0 phasor, subtract clean fundamental, re-synthesise at f0 + df_hz, add back the residual | Preserves harmonics + transients while shifting the fundamental. |
+
+### (5) `add_adc_quantisation` — uniform mid-tread
+
+| Parameter | Default | Source |
+|---|---|---|
+| `bits` | **14** | Typical relay IED ADC resolution (e.g., GE Multilin, SEL relays); sweep {12, 14, 16}. |
+| `vref_v` / `iref_a` | **caller-specified** | Voltage / current full-scale reference; runner sets these to 2 × per-channel rms (clean baseline) or 4 × for the composite case. Symmetric clip at ±vref / ±iref. |
+| Quantiser type | mid-tread uniform | Standard IEC 61869-9 quantiser convention; round-to-nearest with a step of `2 · vref / 2^bits`. |
+
+### Composite "field-grade" pipeline
+
+`add_composite_field_grade` chains all five in the canonical order
+**impulsive → harmonics → CT saturation → off-nominal → ADC**.
+This ordering matches the physical signal-chain (impairments at the
+primary side propagate through the CT, then the IED's anti-aliasing
+filter and ADC); reversing the order would change the CT saturation
+operating point because it would see harmonics + impulses already
+distorted by the off-nominal-frequency shift.
+
 ## References
 
+* IEEE Std 519-2014, *IEEE Recommended Practice and Requirements
+  for Harmonic Control in Electric Power Systems*.
+* IEEE Std C37.110-2007, *IEEE Guide for the Application of Current
+  Transformers Used for Protective Relaying Purposes*.
+* IEEE Std C37.118.1-2018, *IEEE Standard for Synchrophasor
+  Measurements for Power Systems*.
+* IEEE Std 1159-2019, *IEEE Recommended Practice for Monitoring
+  Electric Power Quality* (impulsive transient envelope).
+* PSRC Working Group D15, "Distribution line protection practices
+  industry survey results", 1996 (HIF arc / partial-discharge
+  impulsive-noise rates).
 * Saha, M.M., Izykowski, J., Rosolowski, E. *Fault Location on Power
   Networks*. Springer, 2010, Ch. 3 (3-phase Bergeron and lateral
   modelling). Bib key `Saha2010BookFL`.
