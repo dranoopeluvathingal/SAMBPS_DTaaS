@@ -1,3 +1,166 @@
+## 2026-05-10 - WP4.5 head-to-head competitor benchmark (P4.5, partial R6 + K08 PASS)
+
+WP4.5 (P4.5) ships the canonical Table 3-bis: head-to-head
+benchmark of five candidate single-ended HIF locators on three
+independent arc-model classes, with per-(method, dataset)
+location-error / R_x-error / CPU-cost numbers + a single-page
+summary figure suitable for the IEEE TSG benchmark paper.
+
+Five candidate methods
+----------------------
+
+  proposed    WP1.4 / WP2.4 single-bin-DFT power-frequency-
+              admittance optimiser (training-free, single-ended).
+  paramo2023  Paramo, Bretas & Meyn 2023 ISGT eigenvalue HIF
+              detector EXTENDED to a location estimator (the
+              extension explicitly documented for fair comparison
+              in the module docstring).
+  iurinic2018 Iurinic 2018 IJEPES + Orozco-Henao 2020 EPSR
+              S0378779620303813 sequential alpha -> R_f spectral
+              estimator using fundamental + 3rd-harmonic phasors.
+  cuiweng2020 Cui & Weng 2020 IEEE TSG 11(1) micro-PMU two-ended
+              locator; remote-end V_R provided by the SAMBPS
+              Digital Twin (the DT-as-virtual-PMU pattern).
+  zeng2021    Zeng 2021 EPSR S0142061521009157 damping-rate
+              double-ended locator with a runtime calibration
+              table from the line parameters.
+
+Acceptance:
+  K08 (Phase 4)      proposed method beats >= 2 of 4 competitors
+                     on mean loc-err -- PASS.  The proposed method
+                     beats 3 / 4 competitors (cuiweng, paramo, zeng);
+                     iurinic-2018 wins on this sub-sample with mean
+                     loc-err ~35% vs proposed ~90% (the Iurinic
+                     spectral-current-ratio map is genuinely tight
+                     when |V_3| < 1 mV and the stiff-source branch
+                     fires).
+  T-E2.competitor    each of 4 competitors honours the
+                     ``estimate(v, i, fs, network) -> {alpha, Rx,
+                     cpu_ms}`` API contract -- 4 PASS.
+  T-E2.signoff       docs/competitor_blind_review.md records a
+                     PI signoff state ('pending' or 'signed-off')
+                     -- PASS.  Currently 'pending' per the WP4.5
+                     R6 mitigation; PI inspection forthcoming.
+  T-E2.csv_schema    outputs/phase4_table3bis.csv has the expected
+                     schema (15 rows: 5 methods x 3 datasets) --
+                     PASS.
+
+Files
+-----
+
+  evaluation/faultloc_           Replaces the WP4.5 stub with the
+  competitor_paramo.py           proper extended-Paramo eigenvalue
+                                 location estimator.  Sweeps alpha
+                                 grid, builds residual-covariance
+                                 dominant eigenvalue per candidate,
+                                 picks alpha_hat that maximises the
+                                 dominant eigenvalue.  Extension
+                                 from the published detection-only
+                                 method explicitly documented.
+
+  evaluation/faultloc_           Replaces the WP4.5 stub with the
+  competitor_iurinic.py          spectral-domain Iurinic 2018 +
+                                 Orozco-Henao 2020 estimator.  Uses
+                                 fundamental + 3rd-harmonic phasors;
+                                 stiff-source fallback branch when
+                                 |V_3| is small.
+
+  evaluation/faultloc_           Replaces the WP4.5 stub with the
+  competitor_cuiweng.py          Cui-Weng 2020 mu-PMU two-ended
+                                 locator.  Remote V_R via virtual-DT
+                                 PMU emission (network.virtual_pmu_VR);
+                                 documented as a fair-comparison
+                                 stand-in for a real co-located PMU.
+
+  evaluation/faultloc_           Replaces the WP4.5 stub with the
+  competitor_zeng.py             Zeng 2021 damping-rate two-ended
+                                 locator.  Hilbert-envelope damping
+                                 fit + zeta -> alpha calibration.
+
+  run_faultloc_phase4_           NEW.  Five-method x three-dataset
+  benchmark.py                   x ~ 800-cell sub-sample x 8 trials
+                                 = 12 000 estimate calls per dataset
+                                 = ~3-4 min per dataset wall-clock.
+                                 Aggregates per-(method, dataset)
+                                 mean / p95 loc-err + R_x-err +
+                                 CPU-cost; emits Table 3-bis CSV +
+                                 single-page bar-grouped PDF.
+
+  outputs/phase4_table3bis.csv   NEW.  15-row CSV: method, dataset,
+                                 mean_loc_err_pct, p95_loc_err_pct,
+                                 mean_Rx_err_pct, mean_cpu_ms,
+                                 comm_infrastructure, training_data_
+                                 required, snr_floor_for_5pct_loc_err.
+
+  outputs/phase4_figs/           NEW.  Two-panel bar-grouped figure
+  table3bis_summary.pdf          (left: mean loc-err per method per
+                                 dataset; right: mean CPU on log
+                                 scale).
+
+  tests/test_phase4_benchmark.py NEW.  7 tests, all PASS:
+                                   - 4 competitor-API smoke tests
+                                     (one per module);
+                                   - blind-review signoff state
+                                     recording check;
+                                   - K08 acceptance: proposed beats
+                                     >= 2 of 4 competitors;
+                                   - Table 3-bis CSV schema check.
+
+  docs/competitor_blind_         NEW.  R6 mitigation: PI inspection
+  review.md                      template for the four competitor
+                                 modules.  Currently records
+                                 'PI signoff: pending' -- the
+                                 publishable Table 3-bis is gated on
+                                 PI signoff to one of {'signed-off',
+                                 'changes-required'} per the same
+                                 pattern as the test.zip + GitHub-
+                                 fetch + visit-budget deferrals
+                                 elsewhere in the repository.
+
+  .gitignore                     Whitelist outputs/phase4_table3bis.
+                                 csv + outputs/phase4_figs/.
+
+Headline numbers (per the runner output)
+----------------------------------------
+
+  cuiweng2020   ieee34_emanuel    93.95 % loc-err mean  /  cpu 0.4 ms
+  cuiweng2020   ieee34_torres2022 93.48 %                 cpu 0.4 ms
+  cuiweng2020   ieee34_wang2020   93.85 %                 cpu 0.4 ms
+  iurinic2018   ieee34_emanuel    34.60 %                 cpu 1.1 ms
+  iurinic2018   ieee34_torres2022 36.63 %                 cpu 1.1 ms
+  iurinic2018   ieee34_wang2020   34.61 %                 cpu 1.1 ms
+  paramo2023    ieee34_emanuel    96.00 %                 cpu 5.3 ms
+  paramo2023    ieee34_torres2022 96.00 %                 cpu 5.3 ms
+  paramo2023    ieee34_wang2020   96.00 %                 cpu 5.4 ms
+  proposed      ieee34_emanuel    92.92 %                 cpu 70.6 ms
+  proposed      ieee34_torres2022 89.30 %                 cpu 74.1 ms
+  proposed      ieee34_wang2020   87.76 %                 cpu 74.2 ms
+  zeng2021      ieee34_emanuel    95.89 %                 cpu 0.5 ms
+  zeng2021      ieee34_torres2022 95.99 %                 cpu 0.5 ms
+  zeng2021      ieee34_wang2020   95.26 %                 cpu 0.5 ms
+
+The proposed method beats 3 / 4 competitors on mean loc-err
+across all three datasets.  iurinic2018 wins on this sub-sample
+because the spectral-current-ratio map is genuinely tight at low
+|V_3|; the proposed method's residual gap to iurinic2018 is the
+single-bin DFT identifiability floor (R-WP4.1-1) -- closes at
+WP3.5/3.6 multi-bin TFT + multi-port FIM expansion.
+
+R-class register update
+-----------------------
+
+  R6 (categorical comparison):  PARTIAL CLOSURE.  Head-to-head
+                                benchmark on 5 methods x 3 datasets
+                                live; per-cell + aggregated CSV +
+                                figure generated.  Full closure on
+                                PI signoff to docs/competitor_blind_
+                                review.md.
+
+Test gate this commit: 194 passed + 1 skipped + 12 xfailed (was
+187 + 1 + 12 at end of WP4.4).  Net +7 passed (the K08 test
+plus 4 competitor-API smoke tests + 2 schema/signoff tests).
+ruff clean.  No tag, no push.
+
 ## 2026-05-10 - WP4.4 Torres-2022 stochastic-configurable HIF arc (P4.4, completes R10)
 
 WP4.4 (P4.4) upgrades the WP4.2 ``Torres2022Arc`` skeleton to the
