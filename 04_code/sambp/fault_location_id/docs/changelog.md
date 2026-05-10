@@ -1,3 +1,170 @@
+## 2026-05-10 - WP3.2 laterals + tap load + DG (P3.2)
+
+Branched extension of WP3.1: one main feeder with one lateral
+tapped at the mid-feeder, a tap load at the lateral end, and a
+distributed generator (DG) at the lateral mid-point.  The optimiser-
+facing observable Y_send remains a 3x3 sending-end admittance
+matrix; the fault can sit on `main` OR on `lateral`, controlled by
+the new `fault_branch` axis.
+
+Acceptance:
+  T-D2.K06.5pct  branched 3-phase Y_send (closed-form vs PSCAD-
+                 equivalent surrogate) within 5 % on every entry of
+                 the 3x3 matrix at every (alpha, R_x, fault_branch)
+                 cell of the 1440-grid noiseless slice -- PASS,
+                 6 orders of magnitude tighter than the brief
+                 tolerance: max per-entry rel err 2.1e-7
+                 across 90 unique cells (45 main + 45 lateral).
+  T-D2.assumpts  feeder assumptions documented with provenance --
+                 PASS (`docs/feeder_assumptions.md`).
+  T-D2.lat_case  lateral fault-on-branch case validated -- PASS:
+                 45 unique lateral-fault cells exercised by the same
+                 5 % tolerance test plus a sanity test that
+                 fault_branch is wired through the reduction (lateral
+                 vs main Y_send differ above floating-point noise).
+
+Files
+-----
+
+  models/faultloc_three_phase_  Adds the `Network` class composing
+  model.py                      the WP3.1 line + fault primitives
+                                into a branched topology:
+
+                                  sender--[main_seg_1]--tap--[main_seg_2]--open
+                                                         |
+                                                       [lat_seg_1]
+                                                         |
+                                                       DG_bus
+                                                         |
+                                                       [lat_seg_2]
+                                                         |
+                                                       tap_load_bus
+
+                                Reduction: look-back admittance
+                                propagation through 6x6 line ABCD
+                                using the same identity Y_back =
+                                (T_IV + T_II Y_load)(T_VV + T_VI
+                                Y_load)^(-1) as WP3.1.  At each
+                                interior node sum the look-back
+                                admittances of all branches plus the
+                                local shunt (fault, DG internal,
+                                load).  Position-sorted reduction
+                                handles the alpha == tap_position and
+                                alpha == dg_position degenerate cases
+                                uniformly via shunt collapse at a
+                                single node.
+
+                                Public API:
+                                  Network(main_length_km, tap_position,
+                                          lateral_length_km, dg_position,
+                                          tap_load_impedance_ohm,
+                                          dg_internal_impedance_ohm,
+                                          R_load_open_ohm)
+                                  Network.Y_send(omega, alpha=, Rx=,
+                                                 fault_phase=0,
+                                                 fault_branch='main',
+                                                 line_abcd_fn=None)
+
+                                The `line_abcd_fn` override hook lets
+                                the surrogate inject a 50-section
+                                lumped-pi line ABCD as the per-segment
+                                evaluator while reusing the network
+                                reduction algebra verbatim.
+
+  tools/pscad_surrogate_3ph_    Independent numerical pathway for
+  branched.py                   the WP3.2 acceptance.  Same `Network`
+                                reduction with a 50-sections-per-
+                                segment lumped-pi `line_abcd_fn`.
+                                Generates data/pscad_branched_720.mat
+                                with schema (Y_send (1440, 3, 3) cmplx;
+                                grid_alpha/Rx/SNR_V/SNR_I (1440,);
+                                grid_fault_branch (1440,) U16; meta
+                                dict).
+
+  data/pscad_branched_720.mat   Generated from the surrogate.  1440
+                                cells (9 alpha x 5 R_x x 4 SNR_V x
+                                4 SNR_I x 2 fault_branch); file name
+                                retains "_720" suffix for schema-
+                                family consistency with WP1.1 / WP3.1.
+
+  pscad/HIFL_11kV_100km_3ph_    Design doc mirroring WP3.1's pattern,
+  branched_design.md            extended for the branched topology.
+                                Topology diagram, parameter table
+                                (cross-reference to feeder_assumptions
+                                .md), 1440-grid sweep specification,
+                                output schema.  Citations: Saha 2010
+                                Springer (3-phase Bergeron); Kang 2021
+                                EPSR; Kersting 2002 / IEEE PES test
+                                feeders.  WP3.3 forward-pointer for
+                                IEEE 13-node feeder line-code data.
+
+  pscad/run_pscad_branched_720  Automation skeleton mirroring
+  .py                           pscad/run_pscad_3ph_720.py with the
+                                5-axis sweep parameters and surrogate
+                                fallback pointer.
+
+  docs/feeder_assumptions.md    NEW.  Documents every default in the
+                                Network constructor with provenance:
+                                  - Lateral length 20 km (Saha 2010
+                                    typical 11 kV sub-feeder).
+                                  - DG: 1 MVA / 0.95 pf at lateral
+                                    mid (per WP3.2 brief default,
+                                    confirmed by PI), X"d=0.20 pu,
+                                    R=0.05 pu (IEEE C50.13 typical),
+                                    derived Z_dg = 2 + j 8 ohm/phase.
+                                  - Tap load: 1 MW + j 0.5 Mvar at
+                                    lateral end (constant impedance;
+                                    constant-power deferred to WP3.4),
+                                    derived Z_load = 32 + j 16 ohm/
+                                    phase.
+                                  - Open-question history with answer
+                                    locked + future opens carried to
+                                    WP3.3 / WP3.4 / WP3.6.
+
+  tests/test_branched_vs_       NEW.  6 tests, all PASS:
+  pscad.py                        - test_pscad_branched_bundle_schema
+                                  - test_branched_closed_form_agrees_
+                                    with_pscad_surrogate_5pct (90
+                                    unique cells; max per-entry rel
+                                    err 2.1e-7);
+                                  - test_lateral_fault_changes_Y_send
+                                    _vs_main_fault (sanity that
+                                    fault_branch is wired through);
+                                  - test_no_fault_baseline_independent
+                                    _of_fault_branch (sanity that
+                                    R_x -> infinity gives a fault-
+                                    branch-independent baseline);
+                                  - test_network_constructor_validation
+                                    (parameter-range checks);
+                                  - test_network_Y_send_validation
+                                    (runtime-arg checks).
+
+  .gitignore                    Whitelist data/pscad_branched_720.mat.
+
+Open question at brief time: "where on the lateral should the DG be
+placed, and at what kVA / pf?"  PI direction (per brief): default to
+1 MVA / 0.95 pf at the lateral mid-point.  Locked into the Network
+defaults and documented in feeder_assumptions.md.
+
+R-class register update
+-----------------------
+
+  R5 (single-bin DFT bias):     OPEN; the branched 3-phase Y_send
+                                exposes the same 9-complex-DOF/cell
+                                observation surface as WP3.1 but with
+                                stronger bus loading (load + DG vs
+                                open far-end), which sharpens the
+                                identifiability cost-surface curvature
+                                slightly but does not break the
+                                degeneracy.  Closes at WP3.5 + WP3.6.
+  R6 (categorical comparison):  OPEN; closes at WP4.5.
+  R10 (real HIF stochasticity): OPEN; closes at WP4.3 / WP4.4 / WP5.3.
+
+Test gate this commit: 73 passed + 1 skipped + 9 xfailed (was 67 + 1
++ 9 at end of WP3.1).  Net +6 passed (the 6 new test_branched_vs_
+pscad tests).  ruff clean.  No tag, no push -- WP3.3 (IEEE 13-node
+feeder) is the next user-driven step.
+
 ## 2026-05-10 - WP3.1 3-phase Y_abc model (P3.1)
 
 Replaces the WP3.1 SKELETON (commit ac1e77ef) with the proper

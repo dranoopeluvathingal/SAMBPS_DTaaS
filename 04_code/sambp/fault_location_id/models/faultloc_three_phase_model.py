@@ -357,6 +357,293 @@ def build_Y_abc(
     )
 
 
+# =============================================================================
+# WP3.2 -- branched network with lateral, tap load, DG
+# =============================================================================
+#
+# Adds a small `Network` class composing the WP3.1 line + fault primitives
+# into a branched topology:
+#
+#     sender ---[main_seg_1]---[tap_node]---[main_seg_2]---[open_far_end]
+#                                  |
+#                              [lat_seg_1]
+#                                  |
+#                              [DG_bus]
+#                                  |
+#                              [lat_seg_2]
+#                                  |
+#                             [tap_load_bus]
+#
+# A SLG-HIF fault can sit anywhere on the main feeder OR anywhere on
+# the lateral.  The look-back admittance reduction algorithm below
+# evaluates Y_send at the substation in O(network_depth) -- no nodal
+# Y-bus inversion required, because the topology is a tree and the
+# transfer of look-back admittance through a uniform line section is
+# exactly the WP2.1 / WP3.1 ``(T_IV + T_II Y_load) inv(T_VV + T_VI Y_load)``
+# identity.
+#
+# Default lateral / DG / load parameters are documented in
+# ``docs/feeder_assumptions.md``; the class constructor accepts overrides.
+
+DEFAULT_TAP_POSITION = 0.5             # per-unit on main feeder
+DEFAULT_LATERAL_LENGTH_KM = 20.0
+DEFAULT_DG_POSITION = 0.5              # per-unit on lateral
+
+# 1 MW + j 0.5 Mvar at 11 kV phase-to-ground (~ 0.9 pf inductive).
+# Per-phase Z = V_phase^2 / S* with V_phase = 11/sqrt(3) kV, S = 1 + j0.5 MVA.
+DEFAULT_TAP_LOAD_IMPEDANCE_OHM = 32.0 + 16.0j
+
+# 1 MVA, 0.95 pf, X"d = 0.20 pu on a 11 kV / 1 MVA base, R = 0.05 pu.
+# Per-phase Z_dg = (R + j X) * Z_base where Z_base = (V_LL^2 / S_3ph) / 3.
+DEFAULT_DG_INTERNAL_IMPEDANCE_OHM = 2.0 + 8.0j
+
+
+def _propagate_look_back(T: np.ndarray, Y_load: np.ndarray) -> np.ndarray:
+    """Propagate look-back 3x3 admittance through one 6x6 line ABCD.
+
+    Given a uniform line section with ABCD T mapping receiver-side
+    [V_r; I_r] to sender-side [V_s; I_s], and the look-back admittance
+    Y_load (3x3) seen at the receiver end, return the look-back
+    admittance at the sender end:
+    ::
+
+        Y_send = (T_IV + T_II Y_load) (T_VV + T_VI Y_load)^{-1}.
+
+    This is the same identity used in :func:`Y_send` for the radial
+    case and is the only line operation needed by the branched network
+    reduction below.
+    """
+    T_VV = T[:3, :3]
+    T_VI = T[:3, 3:]
+    T_IV = T[3:, :3]
+    T_II = T[3:, 3:]
+    return (T_IV + T_II @ Y_load) @ np.linalg.inv(T_VV + T_VI @ Y_load)
+
+
+class Network:
+    """Branched 3-phase network: main feeder + one lateral with tap load + DG.
+
+    The topology is fixed by construction (one main feeder, one
+    lateral, one tap point, one DG, one tap load); WP3.3 generalises
+    to the IEEE 13- / 34- / 123-node feeders.
+
+    Constructor parameters
+    ----------------------
+    main_length_km : float
+        Total length of the main feeder, km.  Default 100 (matches
+        WP3.1 / WP1.1).
+    tap_position : float in (0, 1)
+        Per-unit position along the main feeder where the lateral
+        taps off.  Default 0.5 (mid-feeder).
+    lateral_length_km : float
+        Total lateral length, km.  Default 20 (typical 11 kV
+        sub-feeder; see ``docs/feeder_assumptions.md``).
+    dg_position : float in (0, 1)
+        Per-unit position along the lateral where the DG bus sits.
+        Default 0.5 (lateral mid-point per the WP3.2 brief).
+    tap_load_impedance_ohm : complex
+        Per-phase constant-impedance load at the lateral end.
+        Default 32 + j 16 ohm (~ 1 MW + j 0.5 Mvar at 11 kV; see
+        ``docs/feeder_assumptions.md``).
+    dg_internal_impedance_ohm : complex
+        Per-phase Thevenin internal impedance of the DG.  Default
+        2 + j 8 ohm (1 MVA / 0.95 pf, X"d = 0.20 pu, R = 0.05 pu).
+        The Thevenin source voltage itself is irrelevant for the
+        small-signal Y_send computation (it adds an injection but the
+        admittance matrix at f0 is what the IED estimator uses).
+    R_load_open_ohm : float
+        Open-far-end shunt to ground (high R for "open"), per phase.
+        Default 1 MOhm.
+    """
+
+    def __init__(
+        self,
+        *,
+        main_length_km: float = DEFAULT_LINE_LENGTH_KM,
+        tap_position: float = DEFAULT_TAP_POSITION,
+        lateral_length_km: float = DEFAULT_LATERAL_LENGTH_KM,
+        dg_position: float = DEFAULT_DG_POSITION,
+        tap_load_impedance_ohm: complex = DEFAULT_TAP_LOAD_IMPEDANCE_OHM,
+        dg_internal_impedance_ohm: complex = DEFAULT_DG_INTERNAL_IMPEDANCE_OHM,
+        R_load_open_ohm: float = DEFAULT_R_LOAD_OHM,
+    ) -> None:
+        if not 0.0 < tap_position < 1.0:
+            raise ValueError(f"tap_position must be in (0, 1); got {tap_position}")
+        if not 0.0 < dg_position < 1.0:
+            raise ValueError(f"dg_position must be in (0, 1); got {dg_position}")
+        if main_length_km <= 0 or lateral_length_km <= 0:
+            raise ValueError("line lengths must be > 0")
+        self.main_length_km = float(main_length_km)
+        self.tap_position = float(tap_position)
+        self.lateral_length_km = float(lateral_length_km)
+        self.dg_position = float(dg_position)
+        self.tap_load_impedance_ohm = complex(tap_load_impedance_ohm)
+        self.dg_internal_impedance_ohm = complex(dg_internal_impedance_ohm)
+        self.R_load_open_ohm = float(R_load_open_ohm)
+
+    # --- Common shunt admittances (fault, load, DG, open) ------------------
+    @staticmethod
+    def _Y_fault_diag(Rx: float, fault_phase: int) -> np.ndarray:
+        Y_f = np.zeros((3, 3), dtype=complex)
+        Y_f[fault_phase, fault_phase] = 1.0 / Rx
+        return Y_f
+
+    def _Y_open(self) -> np.ndarray:
+        return np.eye(3, dtype=complex) / self.R_load_open_ohm
+
+    def _Y_load(self) -> np.ndarray:
+        return np.eye(3, dtype=complex) / self.tap_load_impedance_ohm
+
+    def _Y_dg(self) -> np.ndarray:
+        return np.eye(3, dtype=complex) / self.dg_internal_impedance_ohm
+
+    # --- Lateral look-back at the tap node ---------------------------------
+    def _lateral_look_back_at_tap(
+        self,
+        omega: float,
+        *,
+        line_abcd_fn,
+        fault_branch: str,
+        alpha: float,
+        Rx: float,
+        fault_phase: int,
+    ) -> np.ndarray:
+        """Y_back at the tap node, looking down the lateral.  Uses the
+        same position-sorted reduction as the main feeder so the
+        alpha == dg_position degenerate case collapses cleanly."""
+        L_lat = self.lateral_length_km
+        dg_pos = self.dg_position
+
+        # Lateral nodes by per-unit distance from the tap (0 = tap):
+        # always end-load + DG bus; fault if fault_branch == "lateral".
+        nodes: list[tuple[float, np.ndarray]] = [(1.0, self._Y_load())]
+        if fault_branch == "lateral":
+            Y_f = self._Y_fault_diag(Rx, fault_phase)
+            if abs(alpha - dg_pos) < 1.0e-12:
+                nodes.append((dg_pos, self._Y_dg() + Y_f))
+            else:
+                nodes.append((dg_pos, self._Y_dg()))
+                nodes.append((alpha, Y_f))
+        else:
+            nodes.append((dg_pos, self._Y_dg()))
+
+        nodes.sort(key=lambda n: -n[0])  # descending position (far -> near)
+
+        Y_back = nodes[0][1]
+        prev_pos = nodes[0][0]
+        for pos, shunt in nodes[1:]:
+            seg_km = (prev_pos - pos) * L_lat
+            if seg_km > 0:
+                Y_back = _propagate_look_back(
+                    line_abcd_fn(seg_km, omega), Y_back
+                )
+            Y_back = Y_back + shunt
+            prev_pos = pos
+
+        # Final segment: leftmost interior node back to the tap (pos 0).
+        if prev_pos > 0:
+            Y_back = _propagate_look_back(
+                line_abcd_fn(prev_pos * L_lat, omega), Y_back
+            )
+        return Y_back
+
+    def Y_send(
+        self,
+        omega: float,
+        *,
+        alpha: float,
+        Rx: float,
+        fault_phase: int = 0,
+        fault_branch: str = "main",
+        line_abcd_fn=None,
+    ) -> np.ndarray:
+        """3x3 sending-end admittance matrix for an SLG-HIF fault on
+        the network at per-unit position alpha.
+
+        Parameters
+        ----------
+        omega : float
+            Angular frequency, rad/s.
+        alpha : float in (0, 1)
+            Per-unit fault position.  If ``fault_branch == 'main'``,
+            measured along the main feeder from the sender; if
+            ``'lateral'``, along the lateral from the tap.
+        Rx : float, ohms
+            HIF arc resistance.
+        fault_phase : int in {0, 1, 2}
+            Phase carrying the SLG fault (default 0 = phase A).
+        fault_branch : str in {'main', 'lateral'}
+            Where the fault sits.
+        line_abcd_fn : callable(length_km, omega) -> ndarray (6, 6) or None
+            Optional override for the per-segment line ABCD evaluator.
+            Default is the closed-form :func:`line_ABCD` (single matrix
+            exponential).  The branched-pi surrogate in
+            ``tools/pscad_surrogate_3ph_branched.py`` passes a 50-
+            sections-per-side lumped-pi cascade as the override so the
+            Network reduction reuses the same composition algebra.
+        """
+        if not 0.0 < alpha < 1.0:
+            raise ValueError(f"alpha must be in (0, 1); got {alpha}")
+        if Rx <= 0.0:
+            raise ValueError(f"Rx must be > 0; got {Rx}")
+        if fault_branch not in {"main", "lateral"}:
+            raise ValueError(
+                f"fault_branch must be 'main' or 'lateral'; got {fault_branch!r}"
+            )
+        if not 0 <= fault_phase <= 2:
+            raise ValueError(f"fault_phase must be 0, 1, or 2; got {fault_phase}")
+        if line_abcd_fn is None:
+            line_abcd_fn = line_ABCD
+
+        L = self.main_length_km
+        tau = self.tap_position
+
+        # 1. Look-back at the tap from the lateral side.
+        Y_back_at_tap_lat = self._lateral_look_back_at_tap(
+            omega,
+            line_abcd_fn=line_abcd_fn,
+            fault_branch=fault_branch,
+            alpha=alpha,
+            Rx=Rx,
+            fault_phase=fault_phase,
+        )
+
+        # 2. Walk the main feeder from the open far-end back to the
+        #    sender, summing shunt admittances at each interior node
+        #    (tap, fault).  Position-sorted reduction handles the
+        #    alpha < tau, alpha > tau, and alpha == tau cases uniformly:
+        #    in the degenerate alpha == tau case the fault and the tap
+        #    collapse into a single node and their shunts add.
+        nodes: list[tuple[float, np.ndarray]] = [(1.0, self._Y_open())]
+        if fault_branch == "main":
+            Y_f = self._Y_fault_diag(Rx, fault_phase)
+            if abs(alpha - tau) < 1.0e-12:
+                nodes.append((tau, Y_back_at_tap_lat + Y_f))
+            else:
+                nodes.append((tau, Y_back_at_tap_lat))
+                nodes.append((alpha, Y_f))
+        else:
+            nodes.append((tau, Y_back_at_tap_lat))
+
+        nodes.sort(key=lambda n: -n[0])  # descending position (far -> near)
+
+        Y_back = nodes[0][1]
+        prev_pos = nodes[0][0]
+        for pos, shunt in nodes[1:]:
+            seg_km = (prev_pos - pos) * L
+            if seg_km > 0:
+                Y_back = _propagate_look_back(line_abcd_fn(seg_km, omega), Y_back)
+            Y_back = Y_back + shunt
+            prev_pos = pos
+
+        # Final segment: leftmost interior node back to the sender (pos 0).
+        if prev_pos > 0:
+            Y_back = _propagate_look_back(
+                line_abcd_fn(prev_pos * L, omega), Y_back
+            )
+        return Y_back
+
+
 __all__ = [
     "Z_abc_per_km",
     "Y_abc_per_km",
@@ -366,6 +653,7 @@ __all__ = [
     "Y_send_grid",
     "H_phase",
     "build_Y_abc",
+    "Network",
     "R_S_OHM_PER_KM",
     "L_S_H_PER_KM",
     "C_S_F_PER_KM",
@@ -380,4 +668,9 @@ __all__ = [
     "MUTUAL_OVER_SELF_RATIO",
     "DEFAULT_LINE_LENGTH_KM",
     "DEFAULT_R_LOAD_OHM",
+    "DEFAULT_TAP_POSITION",
+    "DEFAULT_LATERAL_LENGTH_KM",
+    "DEFAULT_DG_POSITION",
+    "DEFAULT_TAP_LOAD_IMPEDANCE_OHM",
+    "DEFAULT_DG_INTERNAL_IMPEDANCE_OHM",
 ]
