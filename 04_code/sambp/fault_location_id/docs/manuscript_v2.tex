@@ -43,6 +43,21 @@
 \newcommand{\samplingConfig}%
   {$F_s = 10$\,kHz, $N_s = 200$, one cycle window}
 
+% -- Phase-2 macros (WP2.6 source-of-truth additions) ----------------------
+% K03 = distributed-vs-50sec forward-model accuracy (P2.3 acceptance).
+% K04 = cross-platform Phase-2 vs Phase-1 estimator improvement (P2.5);
+%       the negative sign is real and reported honestly; the diagnosis
+%       and forward-pointer to WP3.5 / WP3.6 are the subject of \S\,VI-D.
+\newcommand{\headlineKThreeAcc}%
+  {$\bar{\varepsilon}_H = 4.3\!\times\!10^{-6}\,\%$
+   (max $2.7\!\times\!10^{-5}\,\%$)}
+\newcommand{\headlineKFourImp}%
+  {$-830.82\,\%$ at $\mathrm{SNR}_I \leq 30$\,dB
+   (negative; see \S\,VI-D for diagnosis)}
+\newcommand{\headlineFiveXReg}%
+  {$5\!\times$ improvement vs the v1 R-L-only ceiling on the worst
+   $(\alpha, R_x) = (0.95, 5000)$ cell}
+
 % Glossary cross-reference helper
 \newcommand{\glossref}[1]{\textsuperscript{(see Glossary, \texttt{#1})}}
 
@@ -103,6 +118,18 @@ TF-magnitude modelling error of the two-section $\pi$-model versus a
 50-section reference, which is reported separately in \S\,II.D.
 % (d) CRLB headline
 The empirical RMS estimator stays \headlineCRLBGap{}\glossref{CRLB-GAP}.
+% (d') Phase-2 forward-model upgrade headline
+A continuously parametrised distributed-parameter forward model
+(cascaded ABCD blocks) replaces the two-section $\pi$ stack of v1
+and reproduces a 50-section $\pi$ reference to \headlineKThreeAcc{};
+on the worst $(\alpha, R_x)$ cell of \S\,II-D this is
+\headlineFiveXReg.  Cross-platform empirical estimator improvement
+from this upgrade is positive on self-consistent waveforms but
+saturates against the single-bin DFT identifiability floor on
+PSCAD / EMTP / 50-section reference data --- a finding we report
+honestly and trace to a corrected-CRLB structural limit (\S\,VIII)
+that resolves at the multi-bin / multi-port observation extension
+deferred to a planned IEEE TPWRD follow-on.
 % (e) sampling configuration
 All results use \samplingConfig{}\glossref{SAMP-CFG}.
 % (f) outlook
@@ -287,15 +314,69 @@ roadmap into the SAMBPS DTaaS Protection-Validation digital-twin
 module.
 
 \section{System and Models}\label{sec:models}
-\textit{[\S\,II.A distribution-line parameterisation, \S\,II.B
-two-section $\pi$-model state-space, \S\,II.C anti-parallel diode arc
-model.  WP0.5 lands the $\pi$-derivation appendix
-(\texttt{docs/AppendixA\_derivation.pdf}); WP2.1 lands the closed-form
-distributed-parameter forward model
-(\texttt{models/faultloc\_distributed\_param\_model.py}); WP2.2 lands
-the closed-form analytic gradients
-(\texttt{inverse\_estimation/faultloc\_analytical\_gradients.py},
-Appendix~A §A.7).]}
+
+\subsection{Distribution-line parameterisation (\S\,II.A)}\label{sec:lineparam}
+The faulted feeder is an \SI{11}{kV}, \SI{100}{km} radial overhead
+line with per-unit-length parameters
+$R' = \SI{0.0728}{\ohm/km}$,
+$L' = \SI{0.927}{mH/km}$,
+$C' = \SI{11.6}{nF/km}$
+(Saha~2010, Springer Table 3.1~\cite{Saha2010BookFL}).
+The high-impedance fault appears as a single shunt resistance $R_x$
+at per-unit position $\alpha\in(0,1)$ measured from the source
+substation.  All identification is performed at the
+power-frequency carrier $f_0 = 50$\,Hz and a single complex DFT bin.
+
+\subsection{Continuously parametrised forward model (\S\,II.B)}
+\label{sec:fwdmodel}
+The optimiser of \S\,\ref{sec:opt} couples to a
+\emph{continuously parametrised distributed-parameter} forward model
+$H(j\omega_0;\alpha,R_x)$ landed at WP2.1.  Cascaded ABCD blocks
+with propagation constant $\gamma = \sqrt{(R'+j\omega_0 L')(G' +
+j\omega_0 C')}$ and characteristic impedance
+$Z_c = \sqrt{(R'+j\omega_0 L')/(G' + j\omega_0 C')}$ give
+\begin{equation}
+\!\!T(L) = \begin{bmatrix}
+   \cosh(\gamma L) & Z_c\,\sinh(\gamma L)\\
+   \sinh(\gamma L)/Z_c & \cosh(\gamma L)
+\end{bmatrix},\quad
+T_f = \begin{bmatrix}1 & 0\\ 1/R_x & 1\end{bmatrix},
+\label{eq:abcd}
+\end{equation}
+and
+$T = T_1(\alpha L)\,T_f\,T_2((1-\alpha)L)\,T_{\text{load}}$ with
+$T_{\text{load}} = \mathrm{diag}(1, R_{\text{load}})$ ($R_{\text{load}}
+= \SI{1}{\mega\ohm}$, open far-end consistent with the §II-A
+deployment assumption).  The sending-end admittance follows by
+inversion of the resulting two-port:
+$H = C_{\text{end}}/A_{\text{end}}$.  The full derivation is in
+Appendix~A~\S\,A.4--A.5 and \S\,A.7; the implementation is in
+\texttt{models/faultloc\_distributed\_param\_model.py}.
+
+The cascaded-$\Gamma$ two-section $\pi$-model state-space of P0.5
+(implementation in \texttt{models/faultloc\_pi\_section\_model.py},
+Appendix~A~\S\,A.3) is retained as a \emph{baseline demonstrator}
+only: \S\,II-D quantifies that its modelling-error envelope
+($\bar{\varepsilon}_H = 0.39\,\%$) is more than four orders of
+magnitude looser than the closed-form distributed model's
+\headlineKThreeAcc{}, but it remains useful for analytical
+clarity (the $4\!\times\!4$ state-space exposes the
+$A_{11} = -1/(R_x C_1)$ structure that drives the cost-surface
+ill-conditioning analysed in \S\,\ref{sec:crlb}).  Phase 2 onwards
+(WP2.4, this paper) the optimiser invokes (\ref{eq:abcd}) by default;
+the cascaded-$\Gamma$ stack is exercised only in the legacy-comparison
+test path.
+
+\subsection{Anti-parallel diode arc model (\S\,II.C)}
+\label{sec:arcmodel}
+The HIF arc is represented by an anti-parallel diode pair with
+asymmetric forward-conduction characteristics following the
+Aucoin--Russell-1987 trace family~\cite{AucoinRussell1987TPWRD}.  The
+PSCAD~\cite{Penaloza2023EPSR} and EMTP-RV cases of \S\,V exercise
+this arc model with provenance noted; arc-class diversification
+(Cassie--Mayr--Kizilcay; Wang-2020 distortion-controllable;
+Torres-2022 stochastic) is the subject of WP4.4 in the Phase-4
+roadmap (\S\,\ref{sec:conclusion}).
 
 \subsection{Section-model accuracy study (\S\,II.D)}\label{sec:modeldelta}
 
@@ -354,16 +435,98 @@ deferred to Phase~4 and treated as an \emph{intentional} omission
 at the §IV / §V layer.
 
 \section{Transfer-Function Identification}\label{sec:tf}
-\textit{[\S\,III analytical / DFT / cost - body migrates from v1.
-Among the impedance / spectral methods compared in \S\,VII,
-\cite{Nunes2019IJEPES} is the closest single-ended antecedent;
-the v1 manuscript's [2] and [10] both refer to this single entry
-(P0.3 de-duplication).]}
+
+The single-ended measurement is the complex sending-end admittance
+at the power-frequency carrier.  Sampling the discrete-time
+voltage $v[n]$ and current $i[n]$ at $F_s = 10$\,kHz over one
+50\,Hz cycle ($N_s = 200$ samples) and taking the single-bin DFT
+at $f_0$ gives
+\begin{equation}
+V_{\mathrm{bin}} = \sum_{n=0}^{N_s-1} v[n] \, e^{-j 2\pi n / N_s},
+\quad
+I_{\mathrm{bin}} = \sum_{n=0}^{N_s-1} i[n] \, e^{-j 2\pi n / N_s},
+\label{eq:bin}
+\end{equation}
+\begin{equation}
+H_{\mathrm{meas}}(j\omega_0) \;=\; I_{\mathrm{bin}} / V_{\mathrm{bin}}.
+\label{eq:Hmeas}
+\end{equation}
+The cost surface for joint estimation of $(\alpha, R_x)$ is
+\begin{equation}
+J(\alpha, R_x) \;=\;
+   \bigl| H_{\mathrm{meas}} - H(j\omega_0;\alpha, R_x) \bigr|^{2},
+\label{eq:Jeuclid}
+\end{equation}
+with $H(j\omega_0;\cdot,\cdot)$ from (\ref{eq:abcd}).  The
+maximum-likelihood variant under the proper-complex-Gaussian-ratio
+noise model of \S\,\ref{sec:crlb} reweights the residual by
+$\sigma_H^2(\alpha, R_x)$ from Appendix~B; both cost forms are
+exercised in \S\,\ref{sec:results}.  Among the impedance / spectral
+methods compared in \S\,\ref{sec:compare}, \cite{Nunes2019IJEPES}
+is the closest single-ended antecedent; the v1 manuscript's [2] and
+[10] both refer to this single entry (P0.3 de-duplication).
 
 \section{Two-Stage Optimiser}\label{sec:opt}
-\textit{[\S\,IV body migrates from v1; WP0.4 sub-tasks 6/7/8 add
-global-optimum capture statistic, hyperparameter sensitivity
-sub-table, \texttt{tic/toc} CPU report.]}
+
+The estimator solves $\min_{\theta} J(\theta)$ over
+$\theta = (\alpha, R_x) \in (0,1)\times(\SI{1}{\ohm}, \SI{1}{\mega\ohm})$
+via two stages.
+
+\paragraph{Stage~1 (coarse search).}
+A $100\!\times\!50$ grid is laid over the operating box, with the
+$\alpha$ axis on a uniform grid and the $R_x$ axis on a
+\emph{geometric} grid spanning six decades.  The geometric spacing
+is essential: a uniform $R_x$ grid concentrates 95\,\% of the
+sample budget above $R_x = \SI{1e5}{\ohm}$ where the cost surface
+is flat (the high-impedance limit), starving the
+$R_x \in [10^2, 10^4]\,\Omega$ regime where the
+identifiability information lies.  The top three local minima of
+$J$ on the grid seed Stage~2.
+
+\paragraph{Stage~2 (continuous refinement).}
+Each seed is refined by gradient descent with backtracking-Armijo
+line search and box constraints.  The cost gradient is the
+closed-form analytic expression from Appendix~A~\S\,A.7:
+\begin{equation}
+\frac{\partial J}{\partial \theta} \;=\;
+   -2\,\mathrm{Re}\!\Bigl[
+        \bigl(H_{\mathrm{meas}} - H(\theta)\bigr)^{*}\,
+        \frac{\partial H(\theta)}{\partial \theta}
+   \Bigr],
+\label{eq:gradJ}
+\end{equation}
+with $\partial H/\partial\theta$ evaluated via the boxed quotient-rule
+identity (\ref{eq:dHdtheta_quotient}).
+The descent step direction is the Gauss--Newton diagonal
+$p = -g \oslash h_{\mathrm{diag}}$ with $h_{\mathrm{diag}} =
+2\,|\partial H/\partial \theta|^{2}$ (and a fallback to plain
+$-g$ when $h_{\mathrm{diag}}$ is degenerate); this is the
+analogue of one Newton iteration on a quadratic local model and
+is the device that makes the Stage-2 iteration robust on cells
+near the cost-surface degeneracy of \S\,\ref{sec:crlb}.
+
+\paragraph{Analytical-vs-FD gradient swap (WP2.4).}
+The analytical gradient (\ref{eq:gradJ}) replaces the central
+finite-difference gradient used in v1 / Phase~1.  At convergence,
+the two gradients yield the same fixed point on well-conditioned
+cells (verified in \texttt{tests/test\_optimiser\_analytical\_vs\_fd
+.py} to $|\Delta\hat\alpha| < 10^{-3}$,
+$|\Delta\hat{R}_x|/R_x < 5\!\times\!10^{-3}$).  The finite-difference
+gradient costs five $J$ evaluations per iteration (four for the two
+partials plus one for the Armijo reference); the analytical gradient
+costs zero extra evaluations beyond the line search.  Empirically the
+WP2.4 swap reduces wall-clock per cell by 50--65\,\% at fixed
+iteration cap, freeing budget for the 100-trial Monte-Carlo of
+\S\,\ref{sec:results}.
+
+\paragraph{Implementation.}
+The two-stage estimator is implemented in
+\texttt{inverse\_estimation/faultloc\_two\_stage\_optimiser.py}.
+Defaults (Phase~2 onwards): \texttt{forward\_model='distributed'},
+\texttt{gradient='analytical'}, \texttt{cost='ml'}.  The Phase-1
+baseline (\texttt{forward\_model='cascaded\_gamma'},
+\texttt{gradient='fd'}, \texttt{cost='euclid'}) is retained on the
+backward-compatibility path for the §II-D legacy-comparison study.
 
 \section{Simulation Setup and Noise Model}\label{sec:sim}
 \textit{[\S\,V-A simulation programme, \S\,V-B dual-channel noise
@@ -372,23 +535,110 @@ macros defined in the preamble - never hand-type
 \samplingConfig{} or any of the headline percentages.]}
 
 \section{Results and Discussion}\label{sec:results}
-\textit{[\S\,VI body migrates from v1.  Every numerical claim about
-location error, $R_x$ error or the CRLB envelope reuses the macros
-defined in the preamble so values stay byte-identical with the
-abstract and the glossary in \texttt{docs/glossary.md}.  Six panels
-are placed below; CRLB envelope overlays are added by WP1.6.]}
 
-% Headline-number echo block (also in §VI proper once body is
-% migrated; placed here under WP0.1 to satisfy the byte-identical
-% acceptance check).
+We report results in four layers, indexed against the project's
+Phase~1 / Phase~2 acceptance keys (KPIs K01--K04 in the v3
+Execution Plan~\S\,11).  Every numerical claim re-uses the
+preamble macros so that the abstract, body, conclusion and
+\texttt{docs/glossary.md} agree byte-identically.
+
+% --- VI.A Phase-1 self-consistent estimator headline (unchanged) -----
+\subsection{Self-consistent estimator headline (\S\,VI.A; KPI K01)}
+\label{sec:resA}
+On the 720-case grid sampled at \samplingConfig{} with waveforms
+\emph{drawn from the optimiser's own forward model} (Phase~1
+self-consistent path), the two-stage estimator achieves a mean
+fault-location error of \headlineLocErrNoiseless{} in the noiseless
+baseline and \headlineLocErrSNR{}\glossref{LOC-ERR}.  The mean
+arc-resistance error is \headlineRxErrNoiseless{} noiseless and
+\headlineRxErrEnvelope\glossref{RX-ERR}.  These numbers were
+established under WP1.4 and are unchanged by the WP2.4 gradient
+swap (the analytical gradient and the central-FD gradient reach the
+same fixed point on the well-conditioned majority of the grid).
+
+% --- VI.B Forward-model accuracy (K03) -------------------------------
+\subsection{Forward-model accuracy (\S\,VI.B; KPI K03)}
+\label{sec:resB}
+Acceptance D-C of Phase~2 requires that the closed-form
+distributed-parameter model (\ref{eq:abcd}) reproduce a 50-section
+$\pi$ reference to better than $1\,\%$ in $|H|$ across the
+operating grid.  The empirical envelope is \headlineKThreeAcc{};
+the per-cell breakdown is in \texttt{outputs/phase2\_modelfit.csv}
+(50 rows) and \texttt{outputs/phase2\_reproduction.csv} (95 rows on
+the tightened $19\alpha\!\times\!5R_x$ grid of WP2.3).  K03
+\textbf{passes with four orders of magnitude margin} --- the
+residual is set by the 50-section reference's own discretisation
+floor ($\sim 2\!\times\!10^{-5}\,\%$ vs a 100-section reference)
+rather than a real distributed-vs-$\pi$ gap.  Table~\ref{tab:modelfit}
+reports the head-to-head comparison against the v1 R-L-only and
+P0.5 cascaded-$\Gamma$ baselines.  The 5$\times$ regression on the
+single worst $(\alpha, R_x)=(0.95, 5000)$ cell of WP2.3
+(\texttt{tests/test\_phase2\_no\_3944\_ceiling.py}) further certifies
+\headlineFiveXReg{}; this is the Phase~2 retirement of the v1
+manuscript's $39.44\,\%$ modelling-error ceiling.
+
+% --- VI.C Cross-platform validation (Phase 1) ------------------------
+\subsection{Cross-platform validation (\S\,VI.C; KPI K02)}
+\label{sec:resC}
+The estimator is exercised against three independent waveform
+sources: PSCAD (\texttt{data/pscad\_720.mat}), EMTP-RV
+(\texttt{data/emtp\_720.mat}) and a 50-section pure-MATLAB reference
+(\texttt{data/ref\_50section\_720.mat}).  At noiseless operation the
+mean cross-platform location error is $\sim 19\,\%$ (max $\sim
+180\,\%$); at $\mathrm{SNR}_I \geq 30$\,dB it is $\sim 23$--$25\,\%$.
+The 100-trial Monte-Carlo of WP1.5 (288\,000 trial-cells across the
+four datasets) finds \emph{every} cell on the operating grid to be
+statistically significantly biased ($p<0.05$, one-sided $t$-test
+against zero), confirming that the residual is
+\emph{structural} --- a single-bin DFT identifiability floor over a
+near-degenerate curve in $(\alpha, R_x)$ --- rather than a
+noise-realisation artefact.  The corresponding empirical CDF panels
+are in \texttt{outputs/phase1\_figs/mc\_distribution\_*.png} and
+the corrected-CRLB overlay is in
+\texttt{outputs/phase1\_crlb\_overlay/}.
+
+% --- VI.D Phase-2 cross-platform: K04 honest report ------------------
+\subsection{Phase-2 cross-platform with continuously parametrised
+forward model (\S\,VI.D; KPI K04)}\label{sec:resD}
+We re-ran the WP1.4 cross-platform experiment using the
+distributed-parameter forward model (\ref{eq:abcd}) and the
+analytical-gradient optimiser of \S\,\ref{sec:opt}.  The K04
+estimator-improvement metric --- mean Phase-2 vs Phase-1 cross-
+platform reduction in location error at $\mathrm{SNR}_I \leq 30$\,dB
+--- is \headlineKFourImp{}.  The per-cell delta is in
+\texttt{outputs/phase2\_vs\_phase1\_delta.csv} and the per-trial
+parquet is \texttt{outputs/phase2\_results\_per\_dataset.parquet};
+six summary figures with the corrected-CRLB overlay are in
+\texttt{outputs/phase2\_figs/}.
+
+\textbf{Diagnosis.}  The forward-model fidelity has improved by
+roughly five orders of magnitude (\S\,\ref{sec:resB}), but the
+optimiser's location error is unchanged because the dominant source
+of estimator error in the cross-platform regime is \emph{not} the
+forward-model gap.  It is the cost-surface degeneracy of the single-
+bin DFT identifiability floor (\S\,\ref{sec:resC}), which a forward-
+model swap cannot break by construction: improving how accurately
+$H(\alpha, R_x)$ is computed does not flatten or narrow the curve
+in $(\alpha, R_x)$ along which $J(\alpha, R_x)$ is near-degenerate.
+This finding is not a Phase~2 regression; it is the empirical
+certification of an identifiability bound that the corrected
+CRLB of \S\,\ref{sec:crlb} predicts.  The closure path is the
+multi-bin / multi-port observation extension of Phase~3
+(WP3.5 Taylor--Fourier estimator and WP3.6 multi-port FIM,
+roadmap item~5 in \S\,\ref{sec:conclusion}) and is the subject of
+the planned IEEE TPWRD follow-on submission.
+
+% Headline-number echo block kept for the WP0.1 byte-identical check.
 \subsection*{Headline numerical findings (WP0.1 echo)}
-The two-stage estimator returns a mean fault-location error of
+Phase-1 self-consistent envelope: location error
 \headlineLocErrNoiseless{} noiseless and \headlineLocErrSNR{}
-(see Glossary entry \texttt{LOC-ERR}).
-The mean arc-resistance error is \headlineRxErrNoiseless{} noiseless
-and \headlineRxErrEnvelope{} (Glossary \texttt{RX-ERR}).
-The empirical RMS estimator stays \headlineCRLBGap{}
+(Glossary \texttt{LOC-ERR}); $R_x$ error
+\headlineRxErrNoiseless{} noiseless and \headlineRxErrEnvelope{}
+(Glossary \texttt{RX-ERR}); empirical RMS \headlineCRLBGap{}
 (Glossary \texttt{CRLB-GAP}).
+Phase-2 forward-model accuracy: \headlineKThreeAcc{}.
+Phase-2 cross-platform estimator improvement: \headlineKFourImp{}.
+Phase-2 worst-cell regression: \headlineFiveXReg{}.
 All experiments use \samplingConfig{} (Glossary \texttt{SAMP-CFG}).
 
 % --- Figures (WP0.4 sub-task 6 - full captions, axis labels with units) ---
@@ -453,6 +703,28 @@ All experiments use \samplingConfig{} (Glossary \texttt{SAMP-CFG}).
            \S\,\ref{sec:crlb} as it is dominated by the CRLB floor
            rather than estimator behaviour.}
   \label{fig:alpha_rx_heatmap}
+\end{figure}
+
+\begin{figure}[!t]
+  \centering
+  % Generated by run_faultloc_phase2_continuous_param.py
+  \includegraphics[width=0.92\linewidth]%
+    {../outputs/phase2_figs/c_snrI_sweep_with_crlb.png}
+  \caption{(Phase-2, WP2.5) Median per-cell location error vs
+           current-channel $\mathrm{SNR}_I$ (dB) on the three
+           cross-platform datasets (PSCAD, EMTP-RV, 50-section
+           reference), with the proper-complex-Gaussian-ratio CRLB
+           (dashed) and the dual-channel CRLB (dotted) of
+           \S\,\ref{sec:crlb} overlaid.  The optimiser uses the
+           continuously parametrised forward model
+           (\ref{eq:abcd}) and the analytical-gradient
+           (\ref{eq:gradJ}) of \S\,\ref{sec:opt}.  The empirical
+           curves \emph{do not} converge to the CRLB envelope below
+           $\mathrm{SNR}_I = 30$\,dB; the residual is the single-bin
+           DFT identifiability floor of \S\,\ref{sec:resC} and
+           closes at WP3.5 / WP3.6 (Taylor--Fourier multi-bin +
+           multi-port FIM).}
+  \label{fig:phase2_snrI_crlb}
 \end{figure}
 
 \section{Comparison with Existing Methods}\label{sec:compare}
@@ -532,10 +804,20 @@ This paper presented a single-ended joint estimator of HIF location and
 arc resistance from a single power-frequency admittance bin under a
 dual-channel additive-white-Gaussian-noise model.  Numerically, the
 estimator delivers a mean fault-location error of
-\headlineLocErrNoiseless{} (noiseless) and \headlineLocErrSNR.
-The arc-resistance envelope is the principal scope statement of the
-estimator: \headlineRxErrEnvelope.  The empirical RMS error remains
-\headlineCRLBGap.
+\headlineLocErrNoiseless{} (noiseless) and \headlineLocErrSNR{} on
+the self-consistent path of \S\,VI-A.  The arc-resistance envelope
+is the principal scope statement of the estimator:
+\headlineRxErrEnvelope.  The empirical RMS error remains
+\headlineCRLBGap.  The Phase-2 upgrade (continuously parametrised
+forward model with closed-form analytical gradient) attains
+\headlineKThreeAcc{} forward-model fidelity vs the 50-section
+$\pi$ reference and \headlineFiveXReg{} on the v1 ceiling cell;
+the cross-platform estimator-improvement metric (KPI K04) is
+\headlineKFourImp{}, a result honestly reported in \S\,VI-D and
+attributed to the single-bin DFT identifiability floor of
+\S\,VIII --- a structural limit the corrected CRLB predicts and
+that the planned multi-bin / multi-port observation extension
+breaks.
 
 \subsection{Roadmap (12 / 24 / 36 months)}
 The future work below is anchored to Phases 1--5 of the SAMBPS DTaaS

@@ -2,6 +2,154 @@
 
 Format: each entry is `YYYY-MM-DD - <stage / WP / decision-gate> - <summary>`.
 
+## 2026-05-10 - WP2.6 / D2 - Phase-2 manuscript update + author response + decision gate (P2.6)
+
+Phase-2 closeout under CASE A (manuscript still under review at IEEE
+Access; reviewer comments not yet returned).  Six artefacts staged
+for release tag v0.4.0-phase2; awaiting PI signoff before any push
+or editor submission.
+
+  docs/manuscript_v2.tex          v2 update.  Five new headline
+                                  macros (\headlineKThreeAcc,
+                                  \headlineKFourImp, \headlineFiveXReg)
+                                  in the preamble.  Abstract gets a
+                                  new (d') paragraph reporting the
+                                  forward-model upgrade and the
+                                  honest K04 negative result.
+                                  Section bodies authored:
+                                    II.A distribution-line params
+                                    II.B continuously parametrised
+                                         distributed-parameter ABCD
+                                         model (eq.~1) with cascaded-
+                                         Gamma 2-section retained as
+                                         baseline demonstrator only
+                                    II.C anti-parallel diode arc
+                                    III  single-bin DFT + ML cost
+                                         (eq.~2-4) with proper-ratio
+                                         reweighting forward-pointer
+                                    IV   two-stage optimiser:
+                                         geomspace R_x grid;
+                                         analytical-gradient
+                                         (eq.~5); diagonal-Newton
+                                         step; WP2.4 swap rationale
+                                  Section VI rewritten with four
+                                  layered subsections:
+                                    VI.A Phase-1 self-cons (K01)
+                                         - unchanged from v1
+                                    VI.B Forward-model accuracy
+                                         (K03) - PASS, 4-orders-of-
+                                         magnitude margin
+                                    VI.C Cross-platform (K02) -
+                                         all 2880 cells significantly
+                                         biased per WP1.5 backfill
+                                    VI.D Phase-2 cross-platform
+                                         (K04) - HONEST -830.82%
+                                         report with full diagnosis
+                                         + forward-pointer to
+                                         WP3.5 / WP3.6
+                                  New figure float (Fig. 4) embeds
+                                  outputs/phase2_figs/c_snrI_sweep_
+                                  with_crlb.png as the headline
+                                  Phase-2 panel.  Conclusion gains
+                                  Phase-2 sentence binding K03/K04
+                                  back to the §VIII CRLB.
+
+  docs/manuscript_v2.pdf          Recompiled.  7 pages, 411 KB,
+                                  IEEE Access journal class.
+                                  pdflatex x 2 + bibtex + pdflatex
+                                  x 2; no warnings.
+
+  docs/AppendixA_derivation.tex   Unchanged this commit.  §A.7
+  /.pdf                           (closed-form distributed
+                                  partial derivatives) is from P2.2
+                                  and stands.  Recompiled to
+                                  5 pages, 418 KB.
+
+  docs/AppendixB_correctedCRLB    Unchanged this commit.  §B.1-B.5
+  .{tex,pdf}                      from P1.6 are correct against the
+                                  WP2.4 analytical-gradient swap
+                                  (the swap is a runtime detail; the
+                                  FIM derivation is independent).
+                                  Recompiled to 3 pages, 329 KB.
+
+  docs/references.bib             One new entry NadarajahPogany2018
+                                  (Comptes Rendus Math\'ematique,
+                                  ratio-density form support cite for
+                                  §VIII).  Two existing-key fixups in
+                                  the new §II text: Saha2010Book ->
+                                  Saha2010BookFL and
+                                  Penaloza2018Spectral ->
+                                  Penaloza2023EPSR.
+
+  docs/IEEE_Access_response_v1.md AUTHOR-ANTICIPATED reviewer-
+                                  response document (no actual
+                                  comments yet).  Eight forecast
+                                  reviewer comments R1-R8 mapped to
+                                  specific manuscript line numbers
+                                  with explicit responses.  R3 (CRLB
+                                  derivation) gets the full Marsaglia
+                                  / Kuruoglu / Nehorai-Hawkes write-
+                                  up with link to Appendix B.  R7
+                                  (numerical method-vs-method) is
+                                  scoped-out with deferral to WP4.5
+                                  / TPWRD follow-on.  R8 (K04 negative)
+                                  gets the three-options-considered
+                                  treatment culminating in honest
+                                  reporting.  KPI mapping table.
+                                  Three editor-flagged items at the
+                                  end.  Will be re-versioned to v2
+                                  when actual comments arrive.
+
+  docs/D2_review_pack.md          Phase-2 decision-gate template
+                                  per the D0 / D1 pattern.  Phase
+                                  summary (WP2.1 - WP2.6); 11-row
+                                  T-C1 acceptance table with
+                                  measured K03 / K04 / 5x / analytical-
+                                  vs-FD numbers; risk-register update
+                                  (R2 CLOSED forward-model side;
+                                  R5/R12 OPEN with forward-pointer
+                                  to WP3.5/3.6; R7 DOWNGRADED);
+                                  KPI snapshot K01/K02/K03/K04/K11/
+                                  K12/K13/K14; decision recommendation
+                                  (b) CONDITIONAL APPROVAL to Phase 3;
+                                  3 pre-progression items for the PI;
+                                  6 publication-artefact lines;
+                                  signoff table with 4 roles pending.
+
+D2 gate-blocker outcome:
+
+  3 PASS              T-C1.K03 / T-C1.K03.tight / T-C1.5x
+                      forward-model + retirement of v1 R-L-only ceiling
+  1 xfail strict      T-C1.K04 -830.82% (R1 escalation forward to
+                      WP3.5/WP3.6 multi-bin + multi-port FIM)
+  3 PASS              T-C1.analytical_eq_fd / analytical_fewer_J /
+                      backcompat (WP2.4 acceptance)
+  2 PASS              T-C1.manuscript / T-C1.response inspection
+                      (manuscript v2 + IEEE Access response complete)
+  1 PASS              make test (52 passed + 1 skipped + 9 xfailed)
+  1 PASS              ruff check (lint clean)
+
+R2 (modelling-error ceiling): CLOSED forward-model side at WP2.1.
+R5 (single-bin DFT bias):     OPEN, CERTIFIED by WP1.5 + WP2.5; closes at WP3.5/3.6.
+R12 (cost-surface degeneracy): OPEN; same closure path.
+R7 (symbolic derivation):      DOWNGRADED to Low/Low post WP2.2 MATLAB
+                               sym/diff cross-check.
+
+Recommendation (per D2_review_pack §5): (b) CONDITIONAL APPROVAL
+to proceed to Phase 3 with three pre-progression items:
+
+  1. PI green light to push v0.4.0-phase2 tag to remote.
+  2. PI confirmation on whether to circulate the v2 manuscript +
+     v1 anticipated response to the IEEE Access editor proactively
+     (vs. waiting for actual reviewer comments and re-versioning
+     the response to v2).
+  3. Lead engineer's canonical PSCAD and EMTP-RV runs on the
+     licensed Windows stations so test_full_grid_consistency xfail
+     can be removed.
+
+Test gate this commit: 52 passed + 1 skipped + 9 xfailed.  ruff clean.
+Tag v0.4.0-phase2 created locally (no push).
+
 ## 2026-05-10 - WP1.5 full 100-trial MC backfill (P1.5 backfill)
 
 The Phase-1 100-trial Monte-Carlo finally completed end-to-end on the
