@@ -183,8 +183,56 @@ filter and ADC); reversing the order would change the CT saturation
 operating point because it would see harmonics + impulses already
 distorted by the off-nominal-frequency shift.
 
+## Phase-4 (WP4.2) arc-model parameter defaults
+
+The two concrete arc classes in
+[`models/faultloc_arc_models.py`](../models/faultloc_arc_models.py)
+provide alternative HIF current generators for the cross-fit
+experiment in
+[`run_faultloc_phase4_arc_kizilcay.py`](../run_faultloc_phase4_arc_kizilcay.py).
+Wang-2020 + Torres-2022 are skeleton subclasses that delegate to
+`EmanuelArc` until WP4.3 / WP4.4 land.
+
+### `EmanuelArc` — anti-parallel diode pair (WP1.1 baseline)
+
+| Parameter | Default | Source |
+|---|---|---|
+| `V_kp` (positive-half breakdown V) | **50 V** (default constructor) / **2000 V** (WP4.2 cross-fit) | Aucoin–Russell 1987 trace family. The 50 V default matches the WP1.1 PSCAD case (downscaled secondary-side test); the 2000 V value is what the cross-fit runner uses for an MV (11 kV) primary-side simulation. |
+| `V_kn` (negative-half breakdown V) | **45 V** / **1800 V** | Same source; asymmetric V_kn ≈ 0.9 · V_kp captures the typical asymmetric arc reignition voltages on sandy soil. |
+| `R_sp` (forward series Ω) | **5 Ω** | WP1.1 PSCAD case. |
+| `R_sn` (reverse series Ω) | **6 Ω** | WP1.1 PSCAD case. |
+| `R_off` (off-state leakage Ω) | **1 MΩ** | WP1.1 PSCAD case. |
+
+### `KizilcayArc` — dynamic-conductance ODE
+
+| Parameter | Default | Source |
+|---|---|---|
+| `tau_s` (arc time constant) | **1.3 ms** | Kizilcay 1991 ETEP 1(1) — canonical HIF-on-sandy-soil arc time constant. |
+| `L_arc_cm` (arc length) | **5 cm** | WP4.2 brief default for an 11 kV / sandy-soil HIF (typical contact-to-ground gap). |
+| `cooling_W_per_cm` (cooling-power density) | **1000 W/cm** = 1 kW/cm | Darwish & Elkalashy 2005 IEEE TPWRD 20(2):772–779 §III; combined with `L_arc_cm` gives **P_0 = 5 kW** for the default 5-cm arc. |
+| `arc_voltage_gradient_V_per_cm` | **12 V/cm** | Darwish-Elkalashy 2005 §III steady-state arc voltage gradient for HIF on sandy soil; combined with `L_arc_cm` gives **U_ss = 60 V**. |
+| `g0` (initial conductance, S) | **1 / R_x** (default) | Hot-start initial condition. The Kizilcay ODE has bistable attractors (cold-stable g→0 and hot-stable g≥1/R_x); ignition is hysteretic and not captured by the ODE itself. The hot-start g_0 = 1/R_x emulates an already-established arc; the cold start g_0 → 0 collapses to the deionised attractor. The Emanuel diode model captures explicit re-ignition via V_kp / V_kn breakpoints; Kizilcay assumes the arc is already established. |
+| Implementation | `scipy.integrate.solve_ivp` with `method='LSODA'`, `max_step = tau / 4` | LSODA handles the stiff dynamics at MV operation (u² / P_0 >> 1); RK4 with sample-aligned steps blows up at tau / dt < 100. |
+
+### Cross-fit experiment
+
+[`run_faultloc_phase4_arc_kizilcay.py`](../run_faultloc_phase4_arc_kizilcay.py)
+synthesises the same clean voltage waveform on phase A of the
+IEEE 34 720-grid (sub-sample) and generates two current waveforms
+(Emanuel + Kizilcay) per cell.  Both pass through the WP1.4 / WP2.4
+single-bin DFT optimiser whose implicit forward model assumes the
+diode-arc shape from the WP1.1 PSCAD baseline.  The per-cell
+**Δ-error = loc_err_kizilcay − loc_err_emanuel** is the
+arc-model-mismatch contribution to the optimiser's residual.
+
 ## References
 
+* Kizilcay, M., "Dynamic arc model for arc burning and arcing
+  faults", European Transactions on Electrical Power, 1(1):31-38,
+  1991.  (Bib key: pending; cited in code only.)
+* Darwish, H.A. and Elkalashy, N.I., "Universal arc representation
+  using EMTP", IEEE Trans. Power Delivery, 20(2):772-779, 2005.
+  doi:10.1109/TPWRD.2004.838523.  (Bib key: pending.)
 * IEEE Std 519-2014, *IEEE Recommended Practice and Requirements
   for Harmonic Control in Electric Power Systems*.
 * IEEE Std C37.110-2007, *IEEE Guide for the Application of Current

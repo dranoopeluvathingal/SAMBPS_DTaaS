@@ -1,3 +1,124 @@
+## 2026-05-10 - WP4.2 Kizilcay arc + cross-fit test (P4.2, partial R4)
+
+WP4.2 (P4.2) ships an ABC-based arc-fault stimulus library:
+ArcModelBase + EmanuelArc (the WP1.1 / manuscript baseline) +
+KizilcayArc (dynamic-conductance ODE; Kizilcay 1991 ETEP; Darwish
+& Elkalashy 2005 IEEE TPWRD 20(2)) + Wang2020Arc / Torres2022Arc
+skeleton subclasses pending WP4.3 / WP4.4.  Cross-fit experiment
+quantifies the arc-model-mismatch contribution to the optimiser
+residual on the IEEE 34 sub-sample.
+
+Acceptance:
+  T-E2.kizilcay_ode    KizilcayArc reproduces ODE behaviour --
+                       PASS.  Smooth current through voltage zero
+                       (vs Emanuel's hard-zero diode-off region);
+                       asymmetric rise vs decay rate from dynamic
+                       conductance; finite + signed across Rx in
+                       {100, 1000, 5000} ohm.
+  T-E2.distinct_arcs   EmanuelArc and KizilcayArc produce
+                       structurally distinct currents -- PASS.
+                       Single-bin DFT phasor magnitudes differ by
+                       > 5 % at the representative Rx=1000 cell.
+  T-E2.cross_fit       cross-fit Delta-error quantified and
+                       reported -- PASS.  300 IEEE 34 cells x 2
+                       arc models.  Headline: Emanuel-on-diode
+                       baseline mean=92.73%, p95=99.98%; Kizilcay-
+                       on-diode mismatch mean=91.95%, p95=99.98%;
+                       Delta (Kizilcay - Emanuel) mean=-0.78%,
+                       abs.mean=0.81%, abs.p95=5.77%.  The arc-
+                       model-mismatch contribution is a small
+                       perturbation atop the underlying ~92 %
+                       single-bin DFT identifiability floor (R-
+                       WP3.4-1 / R-WP4.1-1 / R5).
+
+Files
+-----
+
+  models/faultloc_arc_models.py  Replaces the WP4.2 stub with the
+                                 proper ABC + 2 concrete classes +
+                                 2 skeleton subclasses.  Public
+                                 API:
+                                   ArcModelBase (ABC)
+                                   EmanuelArc (V_kp, V_kn, R_sp,
+                                     R_sn, R_off)
+                                   KizilcayArc (tau_s, L_arc_cm,
+                                     cooling_W_per_cm,
+                                     arc_voltage_gradient_V_per_cm,
+                                     g0)
+                                   Wang2020Arc / Torres2022Arc
+                                     (skeleton; deferred to WP4.3 /
+                                     WP4.4)
+                                 KizilcayArc uses scipy.integrate.
+                                 solve_ivp with method='LSODA' for
+                                 stiff handling at MV operation;
+                                 default g0 = 1/Rx (hot-stable
+                                 attractor) emulates the canonical
+                                 already-established arc condition.
+
+  run_faultloc_phase4_arc_      NEW.  Cross-fit IEEE 34 sub-sample
+  kizilcay.py                   (5 buses x ~60 cells = 300
+                                cells); per cell synthesises clean
+                                voltage, generates Emanuel + Kizilcay
+                                current waveforms, runs both through
+                                the WP1.4 / WP2.4 single-bin DFT
+                                optimiser, computes Delta-error.
+                                Runtime ~ 50 s on dev box.
+
+  outputs/phase4_arc_           NEW.  300-row per-cell CSV: fault_
+  kizilcay_results.csv          bus, alpha_true, Rx_true, snr_v_db,
+                                snr_i_db, alpha/Rx_hat_emanuel,
+                                loc/Rx_err_pct_emanuel, alpha/Rx_
+                                hat_kizilcay, loc/Rx_err_pct_kizilcay,
+                                delta_loc/Rx_err_pct.
+
+  tests/test_arc_kizilcay_      NEW.  16 tests, all PASS:
+  smoke.py                        - 2 ABC + class-hierarchy checks;
+                                  - 6 Emanuel + Kizilcay current-
+                                    finite-and-signed checks (3 Rx
+                                    values each);
+                                  - 2 input-validation checks;
+                                  - Emanuel hard-zero near v=0;
+                                  - Kizilcay smooth + monotonic
+                                    through v=0 (current-zero
+                                    deionisation behaviour);
+                                  - Emanuel/Kizilcay phasor mag.
+                                    differ structurally;
+                                  - Kizilcay rise/decay asymmetry;
+                                  - cross-fit CSV schema check;
+                                  - cross-fit Delta-error non-trivial.
+
+  docs/feeder_assumptions.md    New "Phase-4 (WP4.2) arc-model
+                                parameter defaults" section with
+                                Emanuel + Kizilcay parameter tables,
+                                Kizilcay bistability note + LSODA
+                                solver rationale, cross-fit
+                                experiment description, +2 citations
+                                (Kizilcay 1991 ETEP, Darwish-
+                                Elkalashy 2005 IEEE TPWRD).
+
+  .gitignore                    Whitelist outputs/phase4_arc_
+                                kizilcay_results.csv.
+
+R-class register update
+-----------------------
+
+  R4 (arc-model diversity):  PARTIAL CLOSURE.  Kizilcay variant +
+                             cross-fit Delta quantified; Wang-2020
+                             + Torres-2022 deferred to WP4.3 /
+                             WP4.4.  At the cross-fit sub-sample
+                             the arc-model-mismatch contribution is
+                             ~1 % mean abs (5.77 % p95) atop the
+                             ~92 % R-WP4.1-1 baseline, so the arc-
+                             model uncertainty is dominated by the
+                             underlying single-bin DFT identifia-
+                             bility floor.  Closes fully at WP4.4
+                             + the WP3.5 / WP3.6 multi-bin / multi-
+                             port closure path.
+
+Test gate this commit: 156 passed + 1 skipped + 12 xfailed (was
+140 + 1 + 12 at end of WP4.1).  Net +16 PASS.  ruff clean.  No
+tag, no push.
+
 ## 2026-05-10 - WP4.1 5 impairment classes (P4.1)
 
 WP4.1 (P4.1) ships five field-grade impairment generators that
