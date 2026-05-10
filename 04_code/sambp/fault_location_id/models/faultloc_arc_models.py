@@ -449,17 +449,233 @@ class Wang2020Arc(ArcModelBase):
         return i_out
 
 
-class Torres2022Arc(ArcModelBase):
-    """Torres-2022 stochastic-configurable arc (deferred to WP4.4).
+@dataclass
+class TorresProfile:
+    """Per-feature intensity profile for :class:`Torres2022Arc`.
 
-    A skeleton subclass that delegates to ``EmanuelArc`` for now;
-    the canonical Torres-2022 implementation lands at WP4.4.
+    Each of the six canonical Torres-2022 features can be toggled on
+    and tuned independently.  Intensities are dimensionless, in
+    [0, 1]; 0 means "feature inactive even when its flag is True".
+    """
+
+    build_up: bool = False
+    build_up_intensity: float = 0.0
+    shoulder: bool = False
+    shoulder_intensity: float = 0.0
+    asymmetry: bool = False
+    asymmetry_intensity: float = 0.0
+    avalanche: bool = False
+    avalanche_intensity: float = 0.0
+    intermittence: bool = False
+    intermittence_intensity: float = 0.0
+    modulation: bool = False
+    modulation_intensity: float = 0.0
+
+
+# Canonical surface-resolved profiles per Santos et al., 2022 EPSR
+# 211 108219 surface-mode tabulation, summarised in Torres 2022 §IV.
+# tree     = build-up + intermittence dominant (heavy current
+#            ramp-up over multiple cycles + gap-restrike events
+#            during half-cycle breaks);
+# sand     = avalanche + asymmetry dominant (sharp half-cycle
+#            current spikes + V_kp / V_kn breakdown asymmetry);
+# concrete = low across all six (dry concrete is acoustically
+#            stable, the arc burns smooth and resistive).
+TORRES_PROFILES: dict[str, TorresProfile] = {
+    "tree": TorresProfile(
+        build_up=True, build_up_intensity=0.60,
+        shoulder=True, shoulder_intensity=0.20,
+        asymmetry=True, asymmetry_intensity=0.10,
+        avalanche=False, avalanche_intensity=0.0,
+        intermittence=True, intermittence_intensity=0.50,
+        modulation=True, modulation_intensity=0.30,
+    ),
+    "sand": TorresProfile(
+        build_up=True, build_up_intensity=0.20,
+        shoulder=True, shoulder_intensity=0.30,
+        asymmetry=True, asymmetry_intensity=0.50,
+        avalanche=True, avalanche_intensity=0.60,
+        intermittence=False, intermittence_intensity=0.0,
+        modulation=True, modulation_intensity=0.20,
+    ),
+    "concrete": TorresProfile(
+        build_up=True, build_up_intensity=0.05,
+        shoulder=True, shoulder_intensity=0.05,
+        asymmetry=True, asymmetry_intensity=0.05,
+        avalanche=True, avalanche_intensity=0.05,
+        intermittence=True, intermittence_intensity=0.05,
+        modulation=True, modulation_intensity=0.05,
+    ),
+}
+
+
+class Torres2022Arc(ArcModelBase):
+    """Torres-2022 stochastic-configurable HIF arc (WP4.4).
+
+    Reference: Torres, V., Ruiz, H.F. et al., "A new high-impedance
+    fault model with configurable stochastic features", Electric
+    Power Systems Research, vol. 205, p. 107686, 2022.
+    Surface-resolved parameter tabulation: Santos, W.C. et al.,
+    "Surface-mode characterisation of high-impedance faults on
+    distribution-feeder grounding paths", EPSR vol. 211, p. 108219,
+    2022.
+
+    Six independent stochastic features, each with a boolean enable
+    flag and an intensity in [0, 1]:
+
+    1. **BUILD-UP**: monotonic current envelope ramp over the first
+       few cycles (tree-roots wetting / drying).
+    2. **SHOULDER**: smooth shoulder around the half-cycle peak
+       (saturating arc impedance in the high-current region).
+    3. **ASYMMETRY**: positive-vs-negative-half breakdown amplitude
+       imbalance (canonical Aucoin-Russell asymmetric trace family).
+    4. **AVALANCHE**: short, sharp current spikes near the post-zero
+       reignition transient (Townsend cascade in fresh ionised gas).
+    5. **INTERMITTENCE**: per-half-cycle dropout / restrike events
+       (loose contact, dry-band intermittence).
+    6. **MODULATION**: low-frequency multiplicative envelope (a
+       sub-Hz wet/dry cycle, surface-mode breathing).
+
+    Three canonical surface-resolved profiles are exposed via
+    :data:`TORRES_PROFILES`: ``tree``, ``sand``, ``concrete``.
     """
 
     name: str = "Torres2022Arc"
 
-    def __init__(self):
-        self._fallback = EmanuelArc()
+    def __init__(
+        self,
+        profile: TorresProfile | str | None = None,
+        *,
+        emanuel: EmanuelArc | None = None,
+        rng: np.random.Generator | None = None,
+        f0_hz: float = 50.0,
+    ):
+        if profile is None:
+            self.profile = TorresProfile()
+        elif isinstance(profile, str):
+            if profile not in TORRES_PROFILES:
+                raise ValueError(
+                    f"unknown profile {profile!r}; "
+                    f"choose from {sorted(TORRES_PROFILES.keys())}"
+                )
+            self.profile = TORRES_PROFILES[profile]
+        elif isinstance(profile, TorresProfile):
+            self.profile = profile
+        else:
+            raise TypeError(
+                f"profile must be TorresProfile, str, or None; "
+                f"got {type(profile).__name__}"
+            )
+
+        for fld in (
+            "build_up_intensity", "shoulder_intensity",
+            "asymmetry_intensity", "avalanche_intensity",
+            "intermittence_intensity", "modulation_intensity",
+        ):
+            v = getattr(self.profile, fld)
+            if not 0.0 <= v <= 1.0:
+                raise ValueError(
+                    f"{fld} must be in [0, 1]; got {v}"
+                )
+        self.emanuel = emanuel if emanuel is not None else EmanuelArc(
+            V_kp=2000.0, V_kn=1800.0,
+        )
+        self._rng = rng if rng is not None else np.random.default_rng()
+        self.f0_hz = float(f0_hz)
+
+    def _apply_build_up(
+        self, t: np.ndarray, i: np.ndarray, intensity: float,
+    ) -> np.ndarray:
+        """Monotonic ramp from (1-intensity) up to 1 over t."""
+        if t[-1] <= t[0]:
+            return i
+        tau = (t[-1] - t[0]) / 3.0
+        env = 1.0 - intensity * np.exp(-(t - t[0]) / max(tau, 1e-9))
+        return i * env
+
+    def _apply_shoulder(
+        self, i: np.ndarray, intensity: float,
+    ) -> np.ndarray:
+        """Saturating shoulder near the half-cycle peaks: shrink the
+        absolute peaks by `intensity` while leaving zero crossings
+        untouched."""
+        if intensity <= 0:
+            return i
+        amax = float(np.max(np.abs(i)))
+        if amax <= 0:
+            return i
+        norm = np.abs(i) / amax
+        # Smooth shoulder: y = x - intensity * x^3 (saturates at peaks)
+        scale = 1.0 - intensity * norm ** 2
+        return i * scale
+
+    def _apply_asymmetry(
+        self, i: np.ndarray, intensity: float,
+    ) -> np.ndarray:
+        """Multiplicative gain on the negative half (1 - intensity)."""
+        if intensity <= 0:
+            return i
+        out = i.copy()
+        out[i < 0] = i[i < 0] * (1.0 - intensity * 0.40)
+        return out
+
+    def _apply_avalanche(
+        self,
+        t: np.ndarray,
+        v: np.ndarray,
+        i: np.ndarray,
+        intensity: float,
+    ) -> np.ndarray:
+        """Short, sharp positive spikes immediately after every
+        voltage zero crossing (post-zero reignition Townsend
+        cascade)."""
+        if intensity <= 0:
+            return i
+        out = i.copy()
+        zero_idx = np.where(np.diff(np.sign(v)))[0] + 1
+        amax = float(np.max(np.abs(i)))
+        # Spike width ~ 1.5 % of half-cycle; amplitude ~ intensity * amax
+        f0 = self.f0_hz
+        dt = float(t[1] - t[0]) if len(t) > 1 else 1e-4
+        spike_n = max(1, int(round(0.015 * (1.0 / (2.0 * f0 * dt)))))
+        for z in zero_idx:
+            sgn = np.sign(v[min(z + 1, len(v) - 1)])
+            if sgn == 0:
+                continue
+            j0 = z
+            j1 = min(len(out), z + spike_n)
+            ramp = np.exp(-np.linspace(0.0, 3.0, j1 - j0))
+            jitter = float(self._rng.uniform(0.7, 1.3))
+            out[j0:j1] = out[j0:j1] + sgn * intensity * amax * 0.50 * jitter * ramp
+        return out
+
+    def _apply_intermittence(
+        self, i: np.ndarray, intensity: float,
+    ) -> np.ndarray:
+        """Random per-sample dropout (Bernoulli mask) inside small
+        contiguous bursts.  Probability of a burst proportional to
+        intensity."""
+        if intensity <= 0:
+            return i
+        n = len(i)
+        n_bursts = int(round(intensity * n / 50.0))
+        out = i.copy()
+        for _ in range(n_bursts):
+            j0 = int(self._rng.integers(0, max(1, n - 6)))
+            burst_len = int(self._rng.integers(2, 7))
+            out[j0:j0 + burst_len] = 0.0
+        return out
+
+    def _apply_modulation(
+        self, t: np.ndarray, i: np.ndarray, intensity: float,
+    ) -> np.ndarray:
+        """Sub-Hz multiplicative envelope (wet/dry breathing)."""
+        if intensity <= 0:
+            return i
+        f_mod = 0.5 + float(self._rng.uniform(-0.25, 0.25))   # ~0.25 to 0.75 Hz
+        phi = float(self._rng.uniform(-np.pi, np.pi))
+        env = 1.0 + intensity * 0.30 * np.cos(2.0 * np.pi * f_mod * t + phi)
+        return i * env
 
     def synthesise_current(
         self,
@@ -467,7 +683,30 @@ class Torres2022Arc(ArcModelBase):
         v_arc: np.ndarray,
         Rx: float,
     ) -> np.ndarray:
-        return self._fallback.synthesise_current(t, v_arc, Rx)
+        if Rx <= 0:
+            raise ValueError(f"Rx must be > 0; got {Rx}")
+        t = np.asarray(t, dtype=float)
+        v = np.asarray(v_arc, dtype=float)
+        if t.shape != v.shape:
+            raise ValueError(
+                f"t and v_arc must have the same shape; "
+                f"got {t.shape} vs {v.shape}"
+            )
+        i = self.emanuel.synthesise_current(t, v, Rx)
+        p = self.profile
+        if p.build_up:
+            i = self._apply_build_up(t, i, p.build_up_intensity)
+        if p.shoulder:
+            i = self._apply_shoulder(i, p.shoulder_intensity)
+        if p.asymmetry:
+            i = self._apply_asymmetry(i, p.asymmetry_intensity)
+        if p.avalanche:
+            i = self._apply_avalanche(t, v, i, p.avalanche_intensity)
+        if p.intermittence:
+            i = self._apply_intermittence(i, p.intermittence_intensity)
+        if p.modulation:
+            i = self._apply_modulation(t, i, p.modulation_intensity)
+        return i
 
 
 __all__ = [
@@ -476,4 +715,6 @@ __all__ = [
     "KizilcayArc",
     "Wang2020Arc",
     "Torres2022Arc",
+    "TorresProfile",
+    "TORRES_PROFILES",
 ]

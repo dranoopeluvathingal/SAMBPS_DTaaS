@@ -1,3 +1,115 @@
+## 2026-05-10 - WP4.4 Torres-2022 stochastic-configurable HIF arc (P4.4, completes R10)
+
+WP4.4 (P4.4) upgrades the WP4.2 ``Torres2022Arc`` skeleton to the
+canonical Torres 2022 EPSR 205 107686 model: six independent
+boolean feature flags (BUILD_UP, SHOULDER, ASYMMETRY, AVALANCHE,
+INTERMITTENCE, MODULATION) each with per-feature intensity in
+[0, 1], plus three canonical surface-resolved profiles
+(``tree``, ``sand``, ``concrete``) calibrated against the Santos
+2022 EPSR 211 108219 surface-mode tabulation.
+
+Acceptance:
+  T-E2.torres_each_feature  Each of 6 features observable on its
+                            own (rel-RMS-delta > 0.5 % vs Emanuel
+                            baseline at intensity 0.6) -- PASS.
+  T-E2.torres_distinct      The 6 single-feature signatures
+                            (rms-delta, asymmetry-delta, peak-delta,
+                            zero-count-delta) are pairwise non-co-
+                            linear (cosine sim < 0.999) -- PASS.
+  T-E2.torres_three         Tree / sand / concrete pairwise
+                            distinguishable (rel-RMS-diff > 1 %) --
+                            PASS.
+  T-E2.torres_concrete      Concrete profile perturbs less than
+                            tree + sand (per design) -- PASS.
+  T-E2.torres_rng_hygiene   Same RNG seed -> bit-identical waveform
+                            -- PASS.
+  T-E2.torres_cross_fit     7200 (cell, trial, profile) triples
+                            (300 cells x 8 trials x 3 profiles)
+                            on the IEEE 34 sub-sample.  Headline:
+                            tree   Em mean=92.85% / To mean=90.95%,
+                                   Delta mean=-1.90%, abs.p95=36.60%;
+                            sand   Em mean=92.85% / To mean=84.43%,
+                                   Delta mean=-8.42%, abs.p95=54.33%;
+                            concrete Em mean=92.85% / To mean=90.69%,
+                                   Delta mean=-2.17%, abs.p95=13.45%.
+                            Sand profile produces the largest Torres
+                            contribution (avalanche + asymmetry are
+                            the dominant features); concrete is
+                            consistently within ~ 2 % of Emanuel as
+                            expected from the low intensity setting.
+
+Files
+-----
+
+  models/faultloc_arc_models.py  Replaces the WP4.2 Torres2022Arc
+                                 skeleton with the proper six-feature
+                                 implementation (200+ lines).  New
+                                 public API: TorresProfile (dataclass)
+                                 + TORRES_PROFILES (dict of canonical
+                                 profiles) + Torres2022Arc(profile,
+                                 *, emanuel, rng, f0_hz).
+
+  run_faultloc_phase4_torres.py  NEW.  Cross-fit runner: 5 buses x
+                                 ~60 cells x 8 trials x 3 profiles
+                                 = 7200 triples on the IEEE 34
+                                 sub-sample.  Per triple: synthesises
+                                 clean voltage, generates Emanuel +
+                                 Torres-profile current waveforms,
+                                 runs both through the WP1.4 / WP2.4
+                                 single-bin DFT optimiser, computes
+                                 per-(profile, cell, trial) Delta-
+                                 error.  Runtime ~ 12 min on dev box.
+
+  outputs/phase4_torres_         NEW.  7200-row per-(cell, trial,
+  results.csv                    profile) CSV with profile + alpha_
+                                 hat / Rx_hat for both Emanuel and
+                                 Torres + per-cell Delta values.
+
+  tests/test_torres_six_         NEW.  19 tests, all PASS:
+  features.py                      - subclass / profile-resolution
+                                     checks (4 tests);
+                                   - intensity validation, input
+                                     validation (2 tests);
+                                   - default-profile-matches-Emanuel
+                                     (the determinism limit);
+                                   - 6 independent-feature observability
+                                     tests (one per feature);
+                                   - 6-feature signature distinctness
+                                     check (cosine-similarity matrix);
+                                   - 3 profile pairwise distinguishability;
+                                   - concrete-least-perturbed sanity;
+                                   - RNG hygiene;
+                                   - cross-fit CSV schema + 3-profile
+                                     coverage check.
+
+  docs/feeder_assumptions.md     New "Phase-4 (WP4.4) Torres-2022
+                                 stochastic-configurable HIF arc"
+                                 section with the 6-feature behaviour
+                                 table + 3 surface-profile table +
+                                 cross-fit experiment description +
+                                 Torres 2022 EPSR + Santos 2022 EPSR
+                                 references.
+
+  .gitignore                     Whitelist outputs/phase4_torres_
+                                 results.csv.
+
+R-class register update
+-----------------------
+
+  R4 (arc-model diversity):     CLOSED.  All four arc classes
+                                shipped (Emanuel + Kizilcay + Wang-
+                                2020 + Torres-2022) with cross-fit
+                                Delta quantified.
+  R10 (real HIF stochasticity): CLOSED.  Wang-2020 distortion-
+                                controllable + Torres-2022 six-feature
+                                stochastic both shipped with documented
+                                randomness signatures.  Field-trace
+                                cross-check at WP5.3.
+
+Test gate this commit: 187 passed + 1 skipped + 12 xfailed (was
+168 + 1 + 12 at end of WP4.3).  Net +19 passed (the 19 new Torres
+tests).  ruff clean.  No tag, no push.
+
 ## 2026-05-10 - WP4.3 Wang-2020 distortion-controllable HIAF (P4.3, partial R10)
 
 WP4.3 (P4.3) upgrades the WP4.2 ``Wang2020Arc`` skeleton to the

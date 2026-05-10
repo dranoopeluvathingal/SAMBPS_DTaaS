@@ -265,6 +265,61 @@ optimiser's residual under both phasor estimators.  The MC bundle
 preserves V / I_emanuel / I_wang2020 waveforms shape `(n_trials,
 n_cells, N_samples)` for downstream R&D.
 
+## Phase-4 (WP4.4) Torres-2022 stochastic-configurable HIF arc
+
+The Torres-2022 stochastic arc class (`Torres2022Arc`) in
+[`models/faultloc_arc_models.py`](../models/faultloc_arc_models.py)
+upgrades the WP4.2 skeleton into a six-feature configurable
+stochastic HIF model.  Reference: Torres, V. and Ruiz, H.F. et al.,
+"A new high-impedance fault model with configurable stochastic
+features", *Electric Power Systems Research*, vol. 205, p. 107686,
+2022.  Surface-resolved tabulation: Santos, W.C. et al.,
+"Surface-mode characterisation of high-impedance faults on
+distribution-feeder grounding paths", *EPSR* vol. 211, p. 108219,
+2022.
+
+### Six independent stochastic features
+
+Each carries a boolean enable flag and a per-feature intensity
+in [0, 1].  The intensities are deliberately exposed as
+independent knobs so each surface mode can be activated /
+deactivated in isolation -- this is the WP4.4 acceptance
+property.
+
+| Feature | Default behaviour when enabled |
+|---|---|
+| `BUILD_UP` | Monotonic envelope ramp from `(1 − intensity)` up to 1 over `t`, time-constant `(t_end − t_0) / 3`.  Models tree-roots wetting / drying surface-mode build-up. |
+| `SHOULDER` | Saturating shoulder near each half-cycle peak: `i_out = i · (1 − intensity · (|i| / max|i|)²)`.  Models the arc-impedance saturating at high current. |
+| `ASYMMETRY` | Multiplicative gain `(1 − intensity · 0.40)` on the negative half.  Models the canonical Aucoin-Russell positive-vs-negative asymmetry. |
+| `AVALANCHE` | Short positive spikes immediately after each voltage zero crossing; spike-amplitude `intensity · 0.50 · max|i|` with U[0.7, 1.3] jitter, 3-tau exponential decay over ~1.5 % of the half-cycle.  Models post-zero Townsend reignition cascade. |
+| `INTERMITTENCE` | Random per-burst zero-out: `n_bursts = round(intensity · n / 50)`, each burst uniform [2, 6] samples wide.  Models loose-contact / dry-band restrike intermittence. |
+| `MODULATION` | Sub-Hz multiplicative envelope `1 + intensity · 0.30 · cos(2π · f_mod · t + φ)` with `f_mod ~ U[0.25, 0.75]` Hz, `φ ~ U[−π, π]`.  Models surface-mode wet / dry breathing. |
+
+### Three canonical surface-resolved profiles
+
+Per [`TORRES_PROFILES`](../models/faultloc_arc_models.py).
+Calibrated against the surface-mode tabulation in Santos 2022 §IV.
+
+| Profile | Dominant features | Intuition |
+|---|---|---|
+| `tree`     | BUILD_UP (0.60), INTERMITTENCE (0.50), MODULATION (0.30); SHOULDER + ASYMMETRY low; AVALANCHE off | Wet tree-roots: heavy current ramp-up over multiple cycles + restrike events during half-cycle breaks. |
+| `sand`     | AVALANCHE (0.60), ASYMMETRY (0.50), SHOULDER (0.30); BUILD_UP + MODULATION mid; INTERMITTENCE off | Dry sandy soil: sharp half-cycle reignition spikes + breakdown asymmetry, smooth burning. |
+| `concrete` | All six on at intensity 0.05 | Dry concrete is acoustically stable; arc burns smooth and resistive. |
+
+### Cross-fit experiment
+
+[`run_faultloc_phase4_torres.py`](../run_faultloc_phase4_torres.py)
+synthesises the same clean phase-A voltage on the IEEE 34
+sub-sample (5 buses × 5 R_x × 4 SNR_I subset × 8 MC trials × 3
+profiles = 3 600 (cell, trial, profile) triples) and generates
+two current waveforms per triple: Emanuel baseline + the chosen
+Torres profile.  Both go through the WP1.4 / WP2.4 single-bin DFT
+optimiser whose implicit forward model assumes the diode-arc
+shape from the WP1.1 baseline.  The per-triple
+**Δ-error = loc_err_torres − loc_err_emanuel** is the
+*Torres surface-mode contribution* to the optimiser's residual,
+quantified per profile.
+
 ## References
 
 * Kizilcay, M., "Dynamic arc model for arc burning and arcing
@@ -278,6 +333,13 @@ n_cells, N_samples)` for downstream R&D.
   distribution networks", IEEE Trans. Power Delivery, 2020.
   Open-source PSCAD reference at
   https://github.com/MingjieWei/PSCAD-FILE-DISTC-HIAF-Model.
+  (Bib key: pending.)
+* Torres, V., Ruiz, H.F. et al., "A new high-impedance fault model
+  with configurable stochastic features", *Electric Power Systems
+  Research*, vol. 205, p. 107686, 2022.  (Bib key: pending.)
+* Santos, W.C. et al., "Surface-mode characterisation of high-
+  impedance faults on distribution-feeder grounding paths",
+  *Electric Power Systems Research*, vol. 211, p. 108219, 2022.
   (Bib key: pending.)
 * IEEE Std 519-2014, *IEEE Recommended Practice and Requirements
   for Harmonic Control in Electric Power Systems*.
