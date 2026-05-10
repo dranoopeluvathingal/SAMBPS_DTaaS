@@ -648,15 +648,20 @@ class IEEEFeederNetwork:
         alpha: float = 0.5,
         Rx: float = 1000.0,
         fault_phase: int = 0,
+        fault_type: str = "SLG",
     ) -> np.ndarray:
         """3x3 sending-end admittance matrix.
 
-        Fault is inserted at per-unit position alpha into the line
-        connecting `fault_bus` to its parent in the BFS tree (so
-        `alpha=0.5` puts the fault at the line midpoint).  For the
-        source bus itself (no parent), `alpha` is ignored and the
-        fault attaches as a shunt at the source bus.
+        Fault (type ``fault_type`` in {SLG, LL, LLG}; WP3.4) is inserted
+        at per-unit position ``alpha`` into the line connecting
+        ``fault_bus`` to its parent in the BFS tree.  For the source bus
+        itself (no parent), ``alpha`` is ignored and the fault attaches
+        as a shunt at the source bus.
         """
+        from sambp_fault_location_id.models.faultloc_three_phase_model import (
+            FAULT_TYPES,
+            Y_f_for_type,
+        )
         if fault_bus not in self.data.buses:
             raise ValueError(
                 f"fault_bus {fault_bus!r} not in feeder {self.data.name!r}"
@@ -665,9 +670,14 @@ class IEEEFeederNetwork:
             raise ValueError(f"fault_phase must be 0/1/2; got {fault_phase}")
         if Rx <= 0:
             raise ValueError(f"Rx must be > 0; got {Rx}")
+        if fault_type not in FAULT_TYPES:
+            raise ValueError(
+                f"fault_type must be one of {FAULT_TYPES}; got {fault_type!r}"
+            )
 
-        Y_f = np.zeros((3, 3), dtype=complex)
-        Y_f[fault_phase, fault_phase] = 1.0 / Rx
+        Y_f = Y_f_for_type(
+            Rx, fault_type=fault_type, fault_phase=fault_phase,
+        )
 
         # Recursive look-back at each bus.  At a leaf, look-back = local
         # load.  At an internal node, look-back = sum of look-backs from

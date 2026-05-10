@@ -204,15 +204,115 @@ def line_ABCD(length_km: float, omega: float) -> np.ndarray:
     return expm(length_km * M)
 
 
-def fault_ABCD(Rx: float, fault_phase: int = 0) -> np.ndarray:
-    """6x6 ABCD for an SLG fault: shunt admittance Y_f = 1/R_x on
-    `fault_phase` (default 0 = phase A).  T_f = [[I_3, 0_3], [Y_f, I_3]]
-    going from downstream (receiver side) to upstream (sender side).
+# =============================================================================
+# WP3.4 -- Fault-type block matrices (SLG, LL, LLG)
+# =============================================================================
+#
+# At the fault node the three-phase admittance perturbation Y_f
+# satisfies KCL: I_fault = Y_f * V_fault, where V_fault is the
+# 3-vector of phase-to-ground voltages at the fault node and
+# I_fault is the 3-vector of currents drawn into the fault.  The
+# 6x6 ABCD that maps downstream-of-fault to upstream-of-fault is
+# always T_f = [[I_3, 0_3], [Y_f, I_3]]; only Y_f differs by type.
+#
+# Type definitions and block matrices (with Rx as the single
+# resistance parameter; for LLG, R_g = Rx so the ground path
+# matches the phase-phase path -- see the WP3.4 brief and
+# docs/feeder_assumptions.md):
+#
+#   SLG  (a-g)         single line a to ground via Rx
+#       Y_f = diag(1/Rx, 0, 0)
+#
+#   LL   (b-c)         line-to-line b-c via Rx (no ground path)
+#                      KCL at fault: I_b = (V_b - V_c)/Rx;  I_c = -I_b;
+#                                    I_a = 0.
+#       Y_f = (1/Rx) * [[ 0,  0,  0],
+#                       [ 0,  1, -1],
+#                       [ 0, -1,  1]]
+#
+#   LLG  (b-c-g)       phase-phase via Rx PLUS each of b, c to ground
+#                      via R_g = Rx.
+#       Y_f = (1/Rx) * [[ 0,  0,  0],
+#                       [ 0,  2, -1],
+#                       [ 0, -1,  2]]
+#
+# The three types form a non-overlapping family in Y_f-block space.
+# The structural pattern of Y_send (the IED's observation) carries
+# distinct signatures per type that the WP3.4 multi-type classifier
+# in inverse_estimation/faultloc_two_stage_optimiser.py exploits.
+
+FAULT_TYPES: tuple[str, ...] = ("SLG", "LL", "LLG")
+
+
+def Y_f_for_type(
+    Rx: float,
+    fault_type: str = "SLG",
+    *,
+    fault_phase: int = 0,
+    R_g_ohm: float | None = None,
+) -> np.ndarray:
+    """3x3 admittance perturbation Y_f for the chosen fault type.
+
+    SLG: ``fault_phase`` selects which phase carries the line-to-
+    ground fault (default 0 = phase A).  LL and LLG are wired to
+    phases B and C per the canonical IEEE C37.110 convention; the
+    ``fault_phase`` argument is ignored for these types in WP3.4
+    (other phase pairs land at WP3.4 follow-up if needed).
+
+    R_g_ohm: ground-path resistance for the LLG case.  Defaults to
+    ``Rx`` so the fault has a single resistance parameter consistent
+    with the WP3.4 outer-loop optimiser parameter vector
+    (alpha, R_x, fault_type).
     """
+    if fault_type not in FAULT_TYPES:
+        raise ValueError(
+            f"fault_type must be one of {FAULT_TYPES}; got {fault_type!r}"
+        )
+    if Rx <= 0.0:
+        raise ValueError(f"Rx must be > 0; got {Rx}")
     if not 0 <= fault_phase <= 2:
         raise ValueError(f"fault_phase must be 0, 1, or 2; got {fault_phase}")
+
     Y_f = np.zeros((3, 3), dtype=complex)
-    Y_f[fault_phase, fault_phase] = 1.0 / Rx
+    inv_Rx = 1.0 / Rx
+    if fault_type == "SLG":
+        Y_f[fault_phase, fault_phase] = inv_Rx
+        return Y_f
+    if R_g_ohm is None:
+        R_g_ohm = Rx
+    inv_Rg = 1.0 / R_g_ohm
+    if fault_type == "LL":
+        # Phase-phase between B (index 1) and C (index 2)
+        Y_f[1, 1] = inv_Rx
+        Y_f[1, 2] = -inv_Rx
+        Y_f[2, 1] = -inv_Rx
+        Y_f[2, 2] = inv_Rx
+        return Y_f
+    # LLG: phase-phase + each of B, C to ground
+    Y_f[1, 1] = inv_Rx + inv_Rg
+    Y_f[1, 2] = -inv_Rx
+    Y_f[2, 1] = -inv_Rx
+    Y_f[2, 2] = inv_Rx + inv_Rg
+    return Y_f
+
+
+def fault_ABCD(
+    Rx: float,
+    fault_phase: int = 0,
+    *,
+    fault_type: str = "SLG",
+    R_g_ohm: float | None = None,
+) -> np.ndarray:
+    """6x6 ABCD for a fault: shunt admittance Y_f at the fault node.
+
+    `T_f = [[I_3, 0_3], [Y_f, I_3]]` going from downstream
+    (receiver side) to upstream (sender side).  Y_f is the 3x3
+    admittance perturbation produced by :func:`Y_f_for_type`.
+    """
+    Y_f = Y_f_for_type(
+        Rx, fault_type=fault_type,
+        fault_phase=fault_phase, R_g_ohm=R_g_ohm,
+    )
     T = np.eye(6, dtype=complex)
     T[3:, :3] = Y_f
     return T
@@ -237,35 +337,34 @@ def Y_send(
     line_length_km: float = DEFAULT_LINE_LENGTH_KM,
     R_load_ohm: float = DEFAULT_R_LOAD_OHM,
     fault_phase: int = 0,
+    fault_type: str = "SLG",
 ) -> np.ndarray:
     """3x3 sending-end admittance matrix at angular frequency omega for
-    an SLG-HIF fault on `fault_phase` at per-unit position `alpha` with
-    arc resistance `Rx`.
+    a fault of the chosen type at per-unit position `alpha` with
+    resistance `Rx`.
 
     Parameters
     ----------
     alpha : float in (0, 1)
         Per-unit fault position from the sender.
     Rx : float, ohms
-        HIF arc resistance.  Smaller Rx = harder fault; for `Rx -> inf`
-        the model recovers the no-fault baseline (verified in tests).
+        Fault resistance (HIF arc resistance for SLG; phase-phase
+        resistance for LL / LLG).
     omega : float
-        Angular frequency, rad/s.  At 50 Hz this is 2*pi*50.
+        Angular frequency, rad/s.
     line_length_km : float
         Total line length, km.  Default 100.
     R_load_ohm : float
-        Open-far-end shunt load to ground (high R for "open").
+        Open-far-end shunt load (default 1 MOhm per phase).
     fault_phase : int in {0, 1, 2}
-        Which phase carries the SLG fault.  Default 0 (phase A).
+        Phase carrying the SLG fault (ignored for LL / LLG, which are
+        wired to phases B-C per the WP3.4 brief).
+    fault_type : str in {'SLG', 'LL', 'LLG'}
+        Fault topology; see ``Y_f_for_type``.
 
     Returns
     -------
     Y_send : ndarray (3, 3) complex
-        Sending-end admittance matrix; I_s = Y_send * V_s.
-
-    Raises
-    ------
-    ValueError if alpha not in (0, 1) or fault_phase not in {0, 1, 2}.
     """
     if not 0.0 < alpha < 1.0:
         raise ValueError(f"alpha must be in (0, 1); got {alpha}")
@@ -274,7 +373,7 @@ def Y_send(
 
     L = line_length_km
     T1 = line_ABCD(alpha * L, omega)
-    Tf = fault_ABCD(Rx, fault_phase=fault_phase)
+    Tf = fault_ABCD(Rx, fault_phase=fault_phase, fault_type=fault_type)
     T2 = line_ABCD((1.0 - alpha) * L, omega)
     T_load = _load_ABCD(R_load_ohm)
 
@@ -483,10 +582,19 @@ class Network:
 
     # --- Common shunt admittances (fault, load, DG, open) ------------------
     @staticmethod
+    def _Y_fault(
+        Rx: float,
+        fault_phase: int,
+        fault_type: str = "SLG",
+    ) -> np.ndarray:
+        return Y_f_for_type(
+            Rx, fault_type=fault_type, fault_phase=fault_phase,
+        )
+
+    # Backward-compat shim for any caller that imported the SLG-only helper.
+    @staticmethod
     def _Y_fault_diag(Rx: float, fault_phase: int) -> np.ndarray:
-        Y_f = np.zeros((3, 3), dtype=complex)
-        Y_f[fault_phase, fault_phase] = 1.0 / Rx
-        return Y_f
+        return Y_f_for_type(Rx, fault_type="SLG", fault_phase=fault_phase)
 
     def _Y_open(self) -> np.ndarray:
         return np.eye(3, dtype=complex) / self.R_load_open_ohm
@@ -507,6 +615,7 @@ class Network:
         alpha: float,
         Rx: float,
         fault_phase: int,
+        fault_type: str = "SLG",
     ) -> np.ndarray:
         """Y_back at the tap node, looking down the lateral.  Uses the
         same position-sorted reduction as the main feeder so the
@@ -518,7 +627,7 @@ class Network:
         # always end-load + DG bus; fault if fault_branch == "lateral".
         nodes: list[tuple[float, np.ndarray]] = [(1.0, self._Y_load())]
         if fault_branch == "lateral":
-            Y_f = self._Y_fault_diag(Rx, fault_phase)
+            Y_f = self._Y_fault(Rx, fault_phase, fault_type)
             if abs(alpha - dg_pos) < 1.0e-12:
                 nodes.append((dg_pos, self._Y_dg() + Y_f))
             else:
@@ -555,10 +664,10 @@ class Network:
         Rx: float,
         fault_phase: int = 0,
         fault_branch: str = "main",
+        fault_type: str = "SLG",
         line_abcd_fn=None,
     ) -> np.ndarray:
-        """3x3 sending-end admittance matrix for an SLG-HIF fault on
-        the network at per-unit position alpha.
+        """3x3 sending-end admittance matrix for a fault on the network.
 
         Parameters
         ----------
@@ -569,18 +678,17 @@ class Network:
             measured along the main feeder from the sender; if
             ``'lateral'``, along the lateral from the tap.
         Rx : float, ohms
-            HIF arc resistance.
+            Fault resistance (HIF arc resistance for SLG; phase-phase
+            resistance for LL / LLG).
         fault_phase : int in {0, 1, 2}
-            Phase carrying the SLG fault (default 0 = phase A).
+            Phase carrying the SLG fault (ignored for LL / LLG, which
+            are wired to phases B-C per WP3.4).
         fault_branch : str in {'main', 'lateral'}
             Where the fault sits.
+        fault_type : str in {'SLG', 'LL', 'LLG'}
+            Fault topology (WP3.4 extension).
         line_abcd_fn : callable(length_km, omega) -> ndarray (6, 6) or None
-            Optional override for the per-segment line ABCD evaluator.
-            Default is the closed-form :func:`line_ABCD` (single matrix
-            exponential).  The branched-pi surrogate in
-            ``tools/pscad_surrogate_3ph_branched.py`` passes a 50-
-            sections-per-side lumped-pi cascade as the override so the
-            Network reduction reuses the same composition algebra.
+            Optional per-segment line ABCD evaluator override.
         """
         if not 0.0 < alpha < 1.0:
             raise ValueError(f"alpha must be in (0, 1); got {alpha}")
@@ -592,6 +700,10 @@ class Network:
             )
         if not 0 <= fault_phase <= 2:
             raise ValueError(f"fault_phase must be 0, 1, or 2; got {fault_phase}")
+        if fault_type not in FAULT_TYPES:
+            raise ValueError(
+                f"fault_type must be one of {FAULT_TYPES}; got {fault_type!r}"
+            )
         if line_abcd_fn is None:
             line_abcd_fn = line_ABCD
 
@@ -606,17 +718,15 @@ class Network:
             alpha=alpha,
             Rx=Rx,
             fault_phase=fault_phase,
+            fault_type=fault_type,
         )
 
         # 2. Walk the main feeder from the open far-end back to the
         #    sender, summing shunt admittances at each interior node
-        #    (tap, fault).  Position-sorted reduction handles the
-        #    alpha < tau, alpha > tau, and alpha == tau cases uniformly:
-        #    in the degenerate alpha == tau case the fault and the tap
-        #    collapse into a single node and their shunts add.
+        #    (tap, fault).
         nodes: list[tuple[float, np.ndarray]] = [(1.0, self._Y_open())]
         if fault_branch == "main":
-            Y_f = self._Y_fault_diag(Rx, fault_phase)
+            Y_f = self._Y_fault(Rx, fault_phase, fault_type)
             if abs(alpha - tau) < 1.0e-12:
                 nodes.append((tau, Y_back_at_tap_lat + Y_f))
             else:
