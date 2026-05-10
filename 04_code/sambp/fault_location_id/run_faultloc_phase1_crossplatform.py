@@ -2,7 +2,7 @@
 run_faultloc_phase1_crossplatform.py
 =====================================
 
-WP1.4 cross-platform optimiser re-run.
+WP1.4 cross-platform optimiser re-run + WP1.5 Monte-Carlo wrapper.
 
 Loads three independent waveform sets:
 
@@ -30,11 +30,29 @@ every dataset, and writes:
         (e) Rx error vs SNR_I per dataset, (f) per-cell loc_err
         boxplot per dataset.
 
+WP1.5 Monte-Carlo mode (--monte-carlo N) draws N independent noise
+realisations per cell per dataset (varying the rng seed away from
+rng(42)), then writes:
+
+    outputs/phase1_montecarlo_results.parquet
+        long-format (dataset, alpha, Rx, snrV, snrI, trial,
+        loc_err_pct, Rx_err_pct, J_final)
+
+    outputs/phase1_montecarlo_summary.csv
+        per-cell summary (mean/std/p5/p50/p95 of loc + Rx error,
+        one-sided t-test for zero bias, 95 % CI half-width).
+
+    outputs/phase1_figs/mc_distribution_*.png
+        empirical CDF of loc-err per cell at SNR_I = 20 dB.
+
 Usage
 -----
     .venv/bin/python run_faultloc_phase1_crossplatform.py
     .venv/bin/python run_faultloc_phase1_crossplatform.py --quick
         (quick mode: subsample to alpha in {0.3, 0.5, 0.7}, useful for CI)
+    .venv/bin/python run_faultloc_phase1_crossplatform.py --monte-carlo 100
+    .venv/bin/python run_faultloc_phase1_crossplatform.py --monte-carlo 100 \\
+        --mc-quick     (subsample to 9 cells per dataset, smoke check)
 """
 
 from __future__ import annotations
@@ -61,6 +79,7 @@ PROJ_ROOT = Path(__file__).resolve().parent
 DATA_DIR = PROJ_ROOT / "data"
 OUT_DIR = PROJ_ROOT / "outputs"
 FIG_DIR = OUT_DIR / "phase1_figs"
+sys.path.insert(0, str(PROJ_ROOT))  # so `import tools.*` works for MC mode
 
 DATASETS = [
     ("pscad", DATA_DIR / "pscad_720.mat"),
@@ -309,14 +328,293 @@ def _plot_figs(rows: list[dict], out_dir: Path) -> None:
     plt.close(fig)
 
 
-# ---------------------------------------------------------------------------
+# ===========================================================================
+# WP1.5 Monte-Carlo mode
+# ===========================================================================
+
+# Forward-model dispatch per dataset (re-derives noiseless H from
+# (alpha, Rx) using the dataset's underlying physics).  Imported
+# lazily so --crossplatform mode does not pay the import cost.
+def _h_dataset_factory(name: str):
+    omega0 = 2.0 * np.pi * F0
+    if name == "pscad":
+        from tools.pscad_surrogate import H_distributed
+        return lambda a, R: H_distributed(a, R, omega0)
+    if name == "emtp":
+        from tools.emtp_surrogate import H_50section
+        return lambda a, R: H_50section(a, R, omega0)
+    if name == "ref50":
+        from sambp_fault_location_id.models.faultloc_50section_reference import (
+            H_model_n_sections,
+        )
+        return lambda a, R: H_model_n_sections(a, R, omega0)
+    if name == "self_consistent":
+        return lambda a, R: H_model(a, R, omega0)
+    raise KeyError(name)
+
+
+def _mc_synthesize(H_true: complex, snrV: float, snrI: float, rng) -> complex:
+    """Build noisy V/I waveforms for one trial and return H_meas."""
+    Vph = V_PHASE * np.sqrt(2.0)
+    omega = 2.0 * np.pi * F0
+    t = np.arange(NS) / FS
+    v = Vph * np.cos(omega * t)
+    i = (H_true * Vph * np.exp(1j * omega * t)).real
+    if np.isfinite(snrV):
+        sigma = np.sqrt(float(np.mean(v ** 2)) / (10 ** (snrV / 10)))
+        v = v + sigma * rng.standard_normal(NS)
+    if np.isfinite(snrI):
+        sigma = np.sqrt(float(np.mean(i ** 2)) / (10 ** (snrI / 10)))
+        i = i + sigma * rng.standard_normal(NS)
+    from sambp_fault_location_id.inverse_estimation.faultloc_two_stage_optimiser import (
+        H_meas_from_waveforms,
+    )
+    return H_meas_from_waveforms(v, i, FS, F0)
+
+
+def _mc_one_trial(args_tuple):
+    """Worker for joblib.Parallel.  Runs one (cell, trial) and returns one row."""
+    (dataset, alpha, Rx, snrV, snrI, trial, H_true) = args_tuple
+    rng = np.random.default_rng(2026_05_10 + 1_000 * trial + int(alpha * 1000) * 100 + int(Rx))
+    H_meas = _mc_synthesize(H_true, snrV, snrI, rng)
+    theta, info = estimate_alpha_Rx(H_meas)
+    loc_err = 100.0 * abs(theta[0] - alpha) / alpha
+    Rx_err = 100.0 * abs(theta[1] - Rx) / Rx
+    return {
+        "dataset": dataset,
+        "alpha": float(alpha),
+        "Rx": float(Rx),
+        "snrV": float(snrV),
+        "snrI": float(snrI),
+        "trial": int(trial),
+        "loc_err_pct": float(loc_err),
+        "Rx_err_pct": float(Rx_err),
+        "J_final": float(info.J_min),
+    }
+
+
+def _build_jobs(datasets: list[str], alphas, Rxs, snrVs, snrIs, n_trials: int):
+    jobs = []
+    htrue_cache: dict = {}
+    for ds in datasets:
+        h_func = _h_dataset_factory(ds)
+        for a in alphas:
+            for R in Rxs:
+                key = (ds, float(a), float(R))
+                if key not in htrue_cache:
+                    htrue_cache[key] = h_func(float(a), float(R))
+                H_true = htrue_cache[key]
+                for sV in snrVs:
+                    for sI in snrIs:
+                        for t in range(n_trials):
+                            jobs.append((ds, float(a), float(R), float(sV),
+                                         float(sI), int(t), H_true))
+    return jobs
+
+
+def _summarise_mc(rows: list[dict]) -> list[dict]:
+    """Per-cell summary stats + zero-bias t-test + 95% CI half-width."""
+    from collections import defaultdict
+
+    from scipy.stats import t as student_t
+
+    by_cell: dict[tuple, list[dict]] = defaultdict(list)
+    for r in rows:
+        key = (r["dataset"], r["alpha"], r["Rx"], r["snrV"], r["snrI"])
+        by_cell[key].append(r)
+
+    summary = []
+    for key, trials in by_cell.items():
+        ds, a, R, sV, sI = key
+        loc = np.array([r["loc_err_pct"] for r in trials])
+        Rx_e = np.array([r["Rx_err_pct"] for r in trials])
+        n = len(loc)
+        loc_mean = float(loc.mean())
+        loc_std = float(loc.std(ddof=1))
+        Rx_mean = float(Rx_e.mean())
+        Rx_std = float(Rx_e.std(ddof=1))
+        # 95 % CI half-width on mean (Student t)
+        tcrit = float(student_t.ppf(0.975, df=n - 1))
+        ci_half = tcrit * loc_std / np.sqrt(n)
+        # One-sided t-test for zero bias (H1: mean > 0)
+        t_stat = loc_mean / (loc_std / np.sqrt(n)) if loc_std > 0 else float("inf")
+        p_one = float(1.0 - student_t.cdf(t_stat, df=n - 1))
+        ci_excludes_zero = (loc_mean - ci_half) > 0.0
+        summary.append({
+            "dataset": ds, "alpha": a, "Rx": R, "snrV": sV, "snrI": sI,
+            "n_trials": n,
+            "loc_mean_pct": loc_mean, "loc_std_pct": loc_std,
+            "loc_p5": float(np.percentile(loc, 5)),
+            "loc_p50": float(np.percentile(loc, 50)),
+            "loc_p95": float(np.percentile(loc, 95)),
+            "Rx_mean_pct": Rx_mean, "Rx_std_pct": Rx_std,
+            "Rx_p5": float(np.percentile(Rx_e, 5)),
+            "Rx_p50": float(np.percentile(Rx_e, 50)),
+            "Rx_p95": float(np.percentile(Rx_e, 95)),
+            "ci_halfwidth_pct": float(ci_half),
+            "ci_excludes_zero": int(ci_excludes_zero),
+            "p_one_sided_zero_bias": p_one,
+        })
+    return summary
+
+
+def _plot_ecdf_per_cell(rows: list[dict], out_dir: Path) -> None:
+    """ECDF of loc-err per dataset at SNR_I=20 dB; one panel per (alpha,Rx)."""
+    df = [r for r in rows if r["snrI"] == 20.0]
+    if not df:
+        return
+    alphas = sorted({r["alpha"] for r in df})
+    Rxs = sorted({r["Rx"] for r in df})
+    out_dir.mkdir(parents=True, exist_ok=True)
+    # One file per (alpha, Rx): ECDF of all 4 datasets across all SNR_V values
+    for a in alphas:
+        for R in Rxs:
+            cell_rows = [r for r in df if r["alpha"] == a and r["Rx"] == R]
+            if not cell_rows:
+                continue
+            datasets = sorted({r["dataset"] for r in cell_rows})
+            fig, ax = plt.subplots(figsize=(7, 4.5))
+            for ds in datasets:
+                vals = sorted(r["loc_err_pct"] for r in cell_rows if r["dataset"] == ds)
+                if not vals:
+                    continue
+                xs = np.array(vals)
+                ys = np.arange(1, len(xs) + 1) / len(xs)
+                ax.step(xs, ys, where="post", label=ds, linewidth=1.4)
+            ax.set_xscale("log")
+            ax.set_xlabel("Per-trial location error [%]")
+            ax.set_ylabel("Empirical CDF [-]")
+            ax.set_title(
+                rf"ECDF, $\alpha={a:.2f}$, $R_x={R:.0f}\,\Omega$, "
+                rf"$\mathrm{{SNR}}_I=20$ dB (across SNR$_V$ trials)"
+            )
+            ax.grid(alpha=0.3, which="both")
+            ax.legend()
+            fig.tight_layout()
+            fig.savefig(
+                out_dir / f"mc_distribution_a{a:.2f}_R{int(R)}.png", dpi=110
+            )
+            plt.close(fig)
+
+
+def _run_monte_carlo(
+    n_trials: int,
+    *,
+    n_jobs: int = -1,
+    quick: bool = False,
+    forecast_only: bool = False,
+) -> int:
+    """Phase-1 Monte-Carlo driver.  Returns 0 on success."""
+    import joblib
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    FIG_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Grids (mirror of WP1.4 dataset schema)
+    if quick:
+        alphas = np.array([0.3, 0.5, 0.7])
+        Rxs = np.array([1000.0])
+        snrVs = np.array([30.0, np.inf])
+        snrIs = np.array([20.0, 30.0, np.inf])
+    else:
+        alphas = np.round(np.arange(0.10, 0.91, 0.10), 6)
+        Rxs = np.array([100.0, 500.0, 1000.0, 2000.0, 5000.0])
+        snrVs = np.array([20.0, 30.0, 40.0, np.inf])
+        snrIs = np.array([20.0, 30.0, 40.0, np.inf])
+
+    datasets = ["pscad", "emtp", "ref50", "self_consistent"]
+    n_cells = len(alphas) * len(Rxs) * len(snrVs) * len(snrIs)
+    n_total = len(datasets) * n_cells * n_trials
+    print(
+        f"WP1.5 MC plan: {len(datasets)} datasets x {n_cells} cells x "
+        f"{n_trials} trials = {n_total} jobs"
+    )
+
+    # Timing forecast: 5 cells x 5 trials
+    print("WP1.5 forecast: timing 5 cells x 5 trials (1 dataset)...")
+    sample_jobs = _build_jobs(
+        ["self_consistent"], alphas[:5] if len(alphas) >= 5 else alphas,
+        Rxs[:1], snrVs[:1], snrIs[:1], 5,
+    )[:25]
+    t0 = time.perf_counter()
+    for j in sample_jobs:
+        _mc_one_trial(j)
+    serial_t = (time.perf_counter() - t0) / max(len(sample_jobs), 1)
+    n_workers = (n_jobs if n_jobs > 0 else (joblib.cpu_count() or 1))
+    forecast_s = n_total * serial_t / n_workers
+    print(
+        f"  per-trial wall: {serial_t * 1000:.1f} ms (serial) ; "
+        f"workers={n_workers}; forecast = {forecast_s:.0f} s "
+        f"= {forecast_s / 60:.1f} min = {forecast_s / 3600:.2f} h"
+    )
+    if forecast_s > 8 * 3600:
+        print(
+            "WP1.5 forecast > 8 hours - aborting per brief; "
+            "ask the operator before re-running.",
+            file=sys.stderr,
+        )
+        return 5
+    if forecast_only:
+        return 0
+
+    # Build all jobs
+    jobs = _build_jobs(datasets, alphas, Rxs, snrVs, snrIs, n_trials)
+    print(f"WP1.5 dispatching {len(jobs)} jobs across {n_workers} workers...")
+    t0 = time.perf_counter()
+    rows = joblib.Parallel(
+        n_jobs=n_jobs, backend="loky", verbose=0
+    )(joblib.delayed(_mc_one_trial)(j) for j in jobs)
+    print(f"WP1.5 done in {time.perf_counter() - t0:.1f} s ({len(rows)} rows)")
+
+    # Write parquet
+    parquet_path = OUT_DIR / "phase1_montecarlo_results.parquet"
+    table = pa.Table.from_pylist(rows)
+    pq.write_table(table, str(parquet_path), compression="zstd")
+    print(f"  wrote {parquet_path}")
+
+    # Per-cell summary
+    summary = _summarise_mc(rows)
+    summary_csv = OUT_DIR / "phase1_montecarlo_summary.csv"
+    with summary_csv.open("w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(summary[0].keys()))
+        w.writeheader()
+        for s in summary:
+            w.writerow(s)
+    print(f"  wrote {summary_csv}  ({len(summary)} cells)")
+
+    # ECDF figures at SNR_I=20 dB
+    print("  plotting ECDFs at SNR_I=20 dB...")
+    _plot_ecdf_per_cell(rows, FIG_DIR)
+    print("WP1.5 done.")
+    return 0
+
+
+# ===========================================================================
 # Driver
-# ---------------------------------------------------------------------------
+# ===========================================================================
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--quick", action="store_true",
                         help="Subsample to 3 alpha x 5 Rx x 4 SNR_V x 4 SNR_I = 240 cells/dataset.")
+    parser.add_argument("--monte-carlo", type=int, default=0, metavar="N",
+                        help="Run WP1.5 Monte-Carlo with N trials per cell.")
+    parser.add_argument("--mc-quick", action="store_true",
+                        help="MC sub-grid: 3 alpha x 1 Rx x 2 SNR_V x 3 SNR_I = 18 cells/dataset.")
+    parser.add_argument("--mc-jobs", type=int, default=-1,
+                        help="joblib n_jobs (default: all cores).")
+    parser.add_argument("--mc-forecast-only", action="store_true",
+                        help="Print runtime forecast and exit without running MC.")
     args = parser.parse_args(argv)
+
+    if args.monte_carlo > 0:
+        return _run_monte_carlo(
+            args.monte_carlo,
+            n_jobs=args.mc_jobs,
+            quick=args.mc_quick,
+            forecast_only=args.mc_forecast_only,
+        )
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     FIG_DIR.mkdir(parents=True, exist_ok=True)

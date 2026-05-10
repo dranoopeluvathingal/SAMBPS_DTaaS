@@ -1,0 +1,69 @@
+{
+  "title": "Cross-Platform Validation and Proper-Complex-Gaussian-Ratio CRLB for Single-Ended HIF Transfer-Function Identification",
+  "authors": [
+    {
+      "name": "Arjundas K.",
+      "affiliation": "Power Systems Computational Lab, Department of Electrical Engineering, Indian Institute of Technology Madras"
+    },
+    {
+      "name": "Swarup, K. Shanthi",
+      "affiliation": "Power Systems Computational Lab, Department of Electrical Engineering, Indian Institute of Technology Madras"
+    },
+    {
+      "name": "Eluvathingal, Anoop",
+      "affiliation": "SAMBPS Digital Twin Labs"
+    }
+  ],
+  "abstract": "This Phase-1 preprint of the SAMBPS DTaaS fault_location_id project (i) recaps the IEEE Access submission's single-ended joint estimator of HIF location alpha and arc resistance R_x via power-frequency admittance identification; (ii) reports cross-platform validation across three independent waveform sources (PSCAD-equivalent distributed-parameter ABCD; EMTP-equivalent 50-section pi; pure-Python 50-section reference) plus a self-consistent cascaded-Gamma 2-section baseline, both single-trial and 100-trial Monte-Carlo; (iii) derives and tests the corrected proper-complex-Gaussian-ratio CRLB (Kuruoglu 2018) and the joint dual-channel FIM (Nehorai-Hawkes 2000) projected onto (alpha, R_x), closing risks R1 and R9; and (iv) discusses the residual modelling-error ceiling and the Phase-2 closed-form distributed-parameter forward model that closes it.",
+  "comments": "4 pages; preprint companion to IEEE Access submission. Phase-1 release v0.3.0-phase1 of the SAMBPS DTaaS fault_location_id project. Reproducibility code: see docs/Phase1_arxiv_preprint.pdf §3 for the GitHub URL.",
+  "license": "CC-BY-4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "arxiv_classification": {
+    "primary": "eess.SY",
+    "secondary": ["stat.AP"]
+  },
+  "msc_class": "",
+  "acm_class": "",
+  "doi": "",
+  "journal_reference": "Submitted as preprint companion to IEEE Access manuscript 2026 (submission ID pending).",
+  "report_no": "SAMBPS-DTaaS-fault_location_id-Phase1-v0.3.0",
+  "related_identifiers": [
+    {
+      "relation": "isCompiledFrom",
+      "identifier": "docs/Phase1_arxiv_preprint.tex",
+      "scheme": "url"
+    },
+    {
+      "relation": "isSupplementedBy",
+      "identifier": "docs/AppendixB_correctedCRLB.pdf",
+      "scheme": "url"
+    },
+    {
+      "relation": "isSupplementTo",
+      "identifier": "IEEE-Access-submission-pending",
+      "scheme": "other"
+    }
+  ],
+  "keywords": [
+    "high-impedance fault",
+    "fault location",
+    "transfer-function identification",
+    "Cramer-Rao lower bound",
+    "proper complex Gaussian ratio",
+    "Marsaglia density",
+    "Geary-Hinkley validity",
+    "dual-channel AWGN",
+    "Monte-Carlo cross-platform validation",
+    "PSCAD",
+    "EMTP-RV",
+    "50-section pi-model reference",
+    "SAMBPS DTaaS"
+  ],
+  "_todo_before_post": [
+    "Confirm IEEE Access submission ID (replace 'submission-pending').",
+    "Insert ORCID iDs for the three authors (skipped at v0.2.0 per PI choice; backfill before public arXiv post).",
+    "Run a final pdflatex pass after any last edits to manuscript_v2.tex / AppendixB_correctedCRLB.tex so cross-references resolve cleanly.",
+    "PI signoff before posting (per WP1.7 brief: 'STOP before pushing: ask me to confirm before posting to arXiv.')."
+  ],
+  "submission_command": "arxiv submit --license CC-BY-4.0 --primary eess.SY --secondary stat.AP --pdf docs/Phase1_arxiv_preprint.pdf --metadata outputs/arxiv_metadata.json"
+}

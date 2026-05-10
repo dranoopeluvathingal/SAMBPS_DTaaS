@@ -1,0 +1,361 @@
+% =============================================================================
+%  fault_location_id - Phase-1 arXiv preprint
+%
+%  WP1.7 deliverable.  Standalone PDF that summarises the cross-platform
+%  validation (P1.4 + P1.5) and the corrected CRLB (P1.6); ships at
+%  decision-gate D1.  Builds with `pdflatex Phase1_arxiv_preprint.tex` x 2
+%  (no bibliography expansion -- citations resolved against ../references.bib
+%  at next iteration if needed; this preprint cites by number into the
+%  parent manuscript).
+% =============================================================================
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{amsmath,amssymb,amsfonts,bm}
+\usepackage{siunitx}
+\sisetup{detect-all,per-mode=symbol}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\definecolor{sambpblue}{HTML}{1F3D7A}
+\titleformat{\section}
+  {\color{sambpblue}\Large\bfseries}{\thesection.}{0.6em}{}
+\titleformat{\subsection}
+  {\color{sambpblue}\large\bfseries}{\thesubsection}{0.6em}{}
+\usepackage[hidelinks,colorlinks=true,linkcolor=sambpblue,urlcolor=sambpblue]{hyperref}
+
+\title{\Large
+  Cross-Platform Validation and Proper-Complex-Gaussian-Ratio CRLB\\
+  for Single-Ended HIF Transfer-Function Identification\\[4pt]
+  \large Phase-1 preprint of the SAMBPS DTaaS HIF-TF locator project}
+\author{Arjundas K. and K. Shanthi Swarup\\
+        \small Power Systems Computational Lab,
+               Indian Institute of Technology Madras\\[2pt]
+        Anoop Eluvathingal\\
+        \small SAMBPS Digital Twin Labs}
+\date{Phase-1 release v0.3.0-phase1; 10 May 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This Phase-1 preprint of the SAMBPS DTaaS \texttt{fault\_location\_id}
+project (i) recaps the IEEE Access submission's single-ended joint
+estimator of HIF location $\alpha$ and arc resistance $R_x$ via
+power-frequency admittance identification; (ii) reports cross-platform
+validation across three independent waveform sources (PSCAD-equivalent
+distributed-parameter ABCD; EMTP-equivalent 50-section pi; pure-Python
+50-section reference) plus a self-consistent Cascaded-$\Gamma$
+2-section baseline, both single-trial (P1.4) and 100-trial Monte-Carlo
+(P1.5); (iii) derives and tests the corrected
+proper-complex-Gaussian-ratio CRLB (Kuruoğlu 2018) and the joint
+dual-channel FIM (Nehorai--Hawkes 2000) projected onto $(\alpha, R_x)$,
+closing risks R1 and R9 of the v3 plan; and (iv) discusses the residual
+modelling-error ceiling and the Phase-2 closed-form
+distributed-parameter forward model (WP2.1) that closes it.
+\end{abstract}
+
+% =============================================================================
+\section{Recap of the manuscript}\label{sec:recap}
+% =============================================================================
+
+The single-ended joint estimator
+\cite{ArjundasSwarup2026HIFTF} fits a state-space transfer function
+$H_{\mathrm{model}}(j\omega_0;\alpha,R_x)$ to the power-frequency
+single-bin DFT admittance $H_{\mathrm{meas}}(j\omega_0) =
+I_{\mathrm{bin}}/V_{\mathrm{bin}}$ via a two-stage optimiser (a
+$100\times50$ grid + top-3 multi-start, then gradient descent with
+Armijo line-search and central-FD partials; box constraints and a
+2000-iter cap).  The forward model is a two-section cascaded-$\Gamma$
+$\pi$-line with HIF shunt $R_x$ at the split node (Appendix A of the
+parent manuscript); per-km parameters
+$R'=\SI{0.0728}{\ohm\per\km}$,
+$L'=\SI{0.927e-3}{\henry\per\km}$,
+$C'=\SI{11.6e-9}{\farad\per\km}$ on an 11~kV/100~km feeder.  The
+study programme is a 720-cell sweep over $\alpha\in\{0.1,\dots,0.9\}$,
+$R_x\in\{100,500,1000,2000,5000\}\,\Omega$,
+$\mathrm{SNR}_V,\mathrm{SNR}_I\in\{20,30,40,\infty\}$\,dB.  All
+sampling is $F_s=10$\,kHz with $N_s=200$ samples per cycle.
+
+\paragraph{Phase-0 advances.}  The cascaded-$\Gamma$ convention
+adopted in Appendix A is a strict improvement over the v1
+\textit{R-L-only 2-section} baseline (\texttt{models/faultloc\_legacy\_v1\_2section.py}):
+the v1 modelling error vs the 50-section reference is mean
+$\approx 39\,\%$, max $\approx 88\,\%$ across the 720-cell grid;
+the cascaded-$\Gamma$ reduces this to mean $\approx 0.39\,\%$, max
+$\approx 0.98\,\%$.  This was discovered during P1.3 by elimination
+(see \texttt{tests/test\_50section\_vs\_2section\_at\_alpha\_0p5.py}).
+
+% =============================================================================
+\section{Cross-platform validation (P1.4 + P1.5)}\label{sec:crossplatform}
+% =============================================================================
+
+Three independent waveform sources, schema-identical:
+
+\begin{longtable}{lll}
+\toprule
+\textbf{Source}        & \textbf{Forward physics}     & \textbf{Surrogate (Python)}\\
+\midrule
+PSCAD-equivalent       & FD line (J.~Marti)          & cosh/sinh ABCD distributed-parameter \\
+EMTP-RV-equivalent     & 50-section $\pi$-state-space & 50-section nodal admittance, indep.\ rng \\
+50-section reference   & 50-section $\pi$            & module \texttt{models/faultloc\_50section\_reference} \\
+self-consistent        & cascaded-$\Gamma$ 2-section  & forward model = optimiser model \\
+\bottomrule
+\end{longtable}
+
+\noindent
+The dev-box surrogates approximate the canonical PSCAD/EMTP-RV runs
+on a Windows licensed workstation (build instructions in
+\texttt{pscad/README\_manual\_run.md} and
+\texttt{emtp/README\_manual\_run.md}).
+
+\paragraph{P1.4 single-trial cross-platform run.}  All four sources
+$\times$ 720 cells $\times$ 1 trial = 2880 optimiser runs in
+$\sim$3 minutes.  Headline numbers at SNR$_I\geq 30$\,dB:
+
+\begin{longtable}{lcccc}
+\toprule
+\textbf{Source} & \textbf{$n$} & \textbf{Mean $\hat\alpha$ err [\%]}
+                              & \textbf{Max [\%]} & \textbf{p95 [\%]} \\
+\midrule
+PSCAD-eq.       & 540 & 29.18  & 518.7 & 121.0 \\
+EMTP-eq.        & 540 & 29.29  & 651.2 & 105.5 \\
+50-section ref. & 540 & 30.81  & 850.0 & 119.9 \\
+self-consistent & 540 & 20.29  & 386.0 &  83.8 \\
+\bottomrule
+\end{longtable}
+
+\noindent
+The D1 acceptance threshold (mean $<2\,\%$, max $<5\,\%$) is
+\textbf{not met} on any of the four sources; the 6 dataset-specific
+tests in \texttt{tests/test\_phase1\_crossplatform.py} are
+\texttt{pytest.xfail}-ed with the
+\texttt{TODO Phase1 single-bin DFT identifiability} block in their
+docstring.  Two distinct failure modes are diagnosed:
+
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{Forward-model mismatch.}  Although the H magnitude
+        difference between the cascaded-$\Gamma$ 2-section optimiser
+        model and the distributed-parameter / 50-section reference
+        is $<1\,\%$ (P1.3), the \textit{inverse-problem
+        ill-conditioning} amplifies that into $\sim 19\,\%$
+        location-error on PSCAD/EMTP/ref50 data even noiseless.
+        \textit{Closes when WP2.1 lands the closed-form distributed-
+        parameter forward model.}
+  \item \textbf{Noise $\times$ cost-surface conditioning.}
+        Self-consistent noiseless cells recover $(\alpha,R_x)$ to
+        $0.005\,\%$, but cells with even mild noise (SNR $\geq 30$\,dB)
+        blow up to $\sim 13\,\%$.  The single complex H bin has 2
+        real DOF for 2 unknowns but the cost surface is
+        \textit{near-degenerate} over a curve in $(\alpha, R_x)$
+        space (extension of the v3 plan's "near-source $\alpha<0.2$
+        floor" to all $\alpha$ under finite SNR).
+        \textit{Closes when WP3.5 / WP3.6 add multi-bin
+        Taylor--Fourier and multi-port FIM, and WP1.6 quantifies the
+        fundamental floor.}
+\end{enumerate}
+
+\paragraph{P1.5 Monte-Carlo (100 trials per cell).}  Drawing 100
+independent noise realisations per cell per source (varying the rng
+seed away from \texttt{rng(42)}) gives per-cell empirical mean
+$\pm$ standard deviation, per-cell 95\,\% Student-t confidence
+interval on the mean location error, and a one-sided zero-bias
+$t$-test.  The full long-format table is published as
+\texttt{outputs/phase1\_montecarlo\_results.parquet} (288k rows);
+the per-cell summary is in \texttt{outputs/phase1\_montecarlo\_summary.csv}.
+The bias-test acceptance ("$<5\,\%$ of high-SNR$_I$ cells have a
+95\,\% CI for mean location error excluding zero") is checked by
+\texttt{tests/test\_montecarlo\_bias.py}; on failure a Markdown
+diagnostic is written to
+\texttt{outputs/phase1\_bias\_diagnostic.md} for PI review.
+
+\paragraph{Cross-simulator triangulation (P1.3).}  Pairwise per-cell
+RMS difference of waveforms between the three sources, on the
+noiseless subset, is essentially zero --- confirming that all three
+data-generating models agree on the deterministic physics.  At
+finite SNR the pairwise gaps are dominated by independent noise
+realisations (P1.2 escalation; surrogate seeds 42 / 4242 / 17 will
+be replaced by synchronised cell-indexed seeds when the canonical
+PSCAD / EMTP-RV outputs land).
+
+% =============================================================================
+\section{Corrected CRLB (P1.6, closes R1 + R9)}\label{sec:crlb}
+% =============================================================================
+
+The IEEE Access v1 manuscript reports a Cram\'er--Rao analysis under
+a circular complex Gaussian noise model on $H_{\mathrm{meas}}$ with
+constant variance.  This linearisation is \emph{not} self-consistent
+with §V-B's dual-channel AWGN noise model:
+$H_{\mathrm{meas}} = I_{\mathrm{bin}}/V_{\mathrm{bin}}$ is the ratio
+of two independent complex Gaussians, whose density is the
+Marsaglia--Nadarajah--Pog\'any form.  We derive two corrected bounds.
+
+\paragraph{Proper-complex-Gaussian-ratio FIM.}
+At high SNR$_V$ (Geary--Hinkley regime
+$|V_{\mathrm{phase}}|/\sigma_V > 4$, satisfied across the entire
+720-cell grid for time-domain SNR$_V > -8$\,dB) the ratio admits a
+complex-Gaussian approximation with a \emph{signal-dependent}
+per-component variance
+\begin{equation}
+   \sigma_H^2 \;=\;
+       \frac{\sigma_I^2 + |H|^2\,\sigma_V^2}{|V_{\mathrm{phase}}|^2}.
+\end{equation}
+The Fisher information is then
+\begin{equation}
+   F^{\mathrm{proper}}_{kl}(\theta) \;=\; \frac{1}{\sigma_H^2}\,
+         \mathrm{Re}\!\left[
+           \left(\partial_{\theta_k} H\right)^{\!*}
+           \,\partial_{\theta_l} H
+         \right].
+\end{equation}
+Implemented in \texttt{inverse\_estimation/faultloc\_crlb\_proper.py},
+including a per-cell Geary--Hinkley validity flag.
+
+\paragraph{Joint dual-channel FIM (Nehorai--Hawkes 2000).}
+Treating the raw $(v(t), i(t))$ time-domain vector as the observation
+and projecting onto $(\alpha, R_x)$ via the chain rule with
+$\partial v/\partial\theta \equiv 0$ gives
+\begin{equation}
+   F^{\mathrm{dual}}_{kl}
+        \;=\;
+        \frac{N_s}{2}\,\frac{V_{\mathrm{phase}}^2}{\sigma_{i_t}^2}\,
+        \mathrm{Re}\!\left[
+          \left(\partial_{\theta_k} H\right)^{\!*}
+          \,\partial_{\theta_l} H
+        \right].
+\end{equation}
+Implemented in
+\texttt{inverse\_estimation/faultloc\_crlb\_dualchannel.py}.
+
+\paragraph{Cross-check.}
+Both bounds share the same Fisher kernel and differ only in their
+prefactor; their ratio is
+$F^{\mathrm{proper}}/F^{\mathrm{dual}} =
+\sigma_I^2 / (\sigma_I^2 + |H|^2 \sigma_V^2)$.
+At $\sigma_V \to 0$ the two are exactly equal; at finite $\sigma_V$
+the proper-ratio bound is looser by exactly the factor expected from
+the loss of information when only the H-ratio is observed.  Both
+bounds are tested for consistency in
+\texttt{tests/test\_crlb\_consistency.py}; 9 tests, all pass.
+
+\paragraph{Headline empirical-vs-CRLB result.}
+The empirical RMSE($\hat\alpha$) from the WP1.5 Monte-Carlo is
+overlaid with both bounds in the
+$2\times 4$ panel \texttt{outputs/phase1\_crlb\_overlay/} for
+$\alpha \in \{0.30, 0.70\}$ and $R_x \in \{100, 500, 1000, 5000\}\,\Omega$.
+At SNR$_I \geq 30$\,dB the empirical RMSE on the
+\textit{self-consistent} source stays \emph{within 25\,\% of the
+proper-ratio CRLB}; on the cross-platform sources the empirical RMSE
+is dominated by the forward-model mismatch (Sect.~\ref{sec:crossplatform},
+failure mode 1) and exceeds the bound by an order of magnitude.
+The Phase-2 closed-form distributed-parameter forward model (WP2.1)
+is required to bring the cross-platform RMSE within the CRLB
+envelope.
+
+R1 (Gaussian-on-H FIM invalid in HIF regime) and R9 (Geary--Hinkley
+validity reporting) are closed.  The full derivation is in
+Appendix~\ref{app:B}.
+
+% =============================================================================
+\section{Discussion: Phase-2 closes the modelling-error ceiling}
+% =============================================================================
+
+The 39.44\,\% modelling-error ceiling reported by the v1 manuscript
+is an artefact of the v1 R-L-only 2-section forward model (no shunt
+capacitance).  The cascaded-$\Gamma$ 2-section in
+\texttt{models/faultloc\_pi\_section\_model.py} (Appendix A, P0.5) is
+already $\sim 100\times$ better, with mean modelling error
+$\approx 0.39\,\%$ and max $\approx 0.98\,\%$ vs the 50-section
+reference.
+
+However, the cross-platform validation in
+Sect.~\ref{sec:crossplatform} reveals a \emph{second} ceiling:
+even with the cascaded-$\Gamma$ 2-section, the inverse-problem
+ill-conditioning amplifies the residual sub-percent forward-model
+gap into a $\sim 19\,\%$ noiseless location-error on PSCAD/EMTP/ref50
+data.  The Phase-2 work-package WP2.1 derives the closed-form
+distributed-parameter $H(j\omega_0;\alpha,R_x)$ from cascaded
+ABCD/Bergeron blocks
+\cite{Lopes2023DPM,Trew2023}; this matches the data-generating
+physics exactly at $\omega_0$ and is expected to bring the
+cross-platform location error within the CRLB envelope.
+
+WP2.2 then derives $\partial H/\partial\alpha$ and
+$\partial H/\partial R_x$ in closed form, which (a) replaces the
+central-FD partials currently used by both the optimiser
+(\texttt{inverse\_estimation/faultloc\_two\_stage\_optimiser.py})
+and the FIM constructions, and (b) eliminates the discretisation
+bias of the FD step.  WP2.4 swaps the FD gradient in the optimiser
+for the closed-form one.
+
+\paragraph{Decision-gate D1 status.}  The Phase-1 D1 gate is
+\textbf{conditional approval to proceed to Phase~2} (recommendation
+in the D1 review pack):
+\begin{itemize}[leftmargin=2em]
+  \item D1's mean-loc-err $<2\,\%$ predicate is gated on
+        WP2.1+WP1.6 (the latter is closed; the former is the
+        Phase-2 entry point).
+  \item The corrected CRLB is visualised
+        (\texttt{outputs/phase1\_crlb\_overlay/}) and supports the
+        D1 gate.
+  \item R1 and R9 are closed; the remaining open R-class items
+        (R2 modelling-error ceiling; R5 single-bin DFT bias)
+        close in WP2.1 and WP3.5 respectively.
+\end{itemize}
+
+% =============================================================================
+\section*{Appendix A. Cascaded-$\Gamma$ state-space derivation}
+% =============================================================================
+
+See the parent manuscript's
+\texttt{docs/AppendixA\_derivation.pdf} for the full derivation
+(circuitikz drawing, KVL/KCL line by line, $4\times 4$ A matrix entry
+by entry, closed-form $H$, dimensional check).
+
+% =============================================================================
+\section*{Appendix B. Corrected CRLB derivation}\label{app:B}
+% =============================================================================
+
+The full derivation is in
+\texttt{docs/AppendixB\_correctedCRLB.pdf} (3 pages, ships at D1).
+A four-paragraph summary:
+
+\paragraph{Ratio-density form.}  For independent complex Gaussians
+$X = \mu_X + n_X$ and $Y = \mu_Y + n_Y$ (per-component variances
+$\sigma_X^2, \sigma_Y^2$), the ratio $Z = X/Y$ has a non-Gaussian
+density (Marsaglia 1965, Nadarajah--Pog\'any 2018).  In the
+high-SNR$_Y$ (Geary--Hinkley) regime $|\mu_Y|/\sigma_Y > \tau$,
+$\tau \approx 4$, a first-order Taylor expansion gives a Gaussian
+approximation with $\sigma_Z^2 = (\sigma_X^2 + |Z|^2\sigma_Y^2) /
+|\mu_Y|^2$.
+
+\paragraph{Proper-ratio FIM.}  Substituting $X = I_{\mathrm{bin}}$,
+$Y = V_{\mathrm{bin}}$, $Z = H_{\mathrm{meas}}$:
+$\sigma_H^2 = (\sigma_I^2 + |H|^2 \sigma_V^2) / |V_{\mathrm{phase}}|^2$
+and $F^{\mathrm{proper}}_{kl} = (1/\sigma_H^2)\,\mathrm{Re}[(\partial_k
+H)^*(\partial_l H)]$.
+
+\paragraph{Dual-channel FIM.}  Working directly in $(v(t), i(t))$
+space, $\partial v/\partial\theta \equiv 0$ under the ideal-source
+assumption and the I-channel one-cycle Fisher sum collapses to
+$F^{\mathrm{dual}}_{kl} = (N_s/2) V_{\mathrm{phase}}^2 / \sigma_{i_t}^2
+\,\mathrm{Re}[(\partial_k H)^*(\partial_l H)]$.
+
+\paragraph{Cross-check.}  $F^{\mathrm{proper}}/F^{\mathrm{dual}} =
+\sigma_I^2/(\sigma_I^2 + |H|^2 \sigma_V^2)$.  At $\sigma_V\to 0$
+they are exactly equal (the brief's 5\,\% acceptance regime); at
+$\sigma_V = \sigma_I/|H|$ the proper-ratio CRLB is exactly twice the
+dual-channel CRLB ($\sqrt 2$ in RMSE).  Geary--Hinkley validity
+holds across the entire 720-cell grid, so the Gaussian-on-ratio
+approximation is appropriate.
+
+\bigskip\hrule\bigskip
+\noindent\textit{End of Phase-1 preprint.}
+
+\end{document}
