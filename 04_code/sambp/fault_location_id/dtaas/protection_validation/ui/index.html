@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SAMBPS DTaaS — Protection-Validation Widget v1.0</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body {
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    margin: 0; padding: 16px; color: #222; background: #f7f8fa;
+  }
+  h1 { font-size: 18px; margin: 0 0 8px 0; }
+  h2 { font-size: 14px; margin: 16px 0 8px 0; color: #333; }
+  .panel {
+    background: #fff; border: 1px solid #ddd; border-radius: 4px;
+    padding: 12px 16px; margin: 12px 0;
+  }
+  table { border-collapse: collapse; font-size: 13px; }
+  td, th {
+    border: 1px solid #eee; padding: 4px 8px; text-align: right;
+  }
+  th { background: #fafafa; }
+  .controls input, .controls select {
+    margin-right: 8px; padding: 4px 6px; font-size: 13px;
+  }
+  .controls button {
+    padding: 4px 12px; font-size: 13px; cursor: pointer;
+  }
+  #heatmap, #envelope {
+    width: 100%; max-width: 720px; height: 320px;
+    background: #fff;
+  }
+  .status-ok { color: #1b8a4d; font-weight: bold; }
+  .status-degenerate { color: #c0392b; font-weight: bold; }
+  .small { font-size: 12px; color: #666; }
+</style>
+</head>
+<body>
+
+<h1>SAMBPS DTaaS — Protection-Validation Widget</h1>
+<p class="small">
+  v1.0.0 — renders the identifiability heatmap and the corrected-CRLB
+  envelope for a registered network on top of a single-line diagram.
+  Embed via <code>&lt;iframe src="…/dtaas/protection_validation/ui/index.html"&gt;</code>.
+</p>
+
+<div class="panel controls">
+  <label>API base URL: <input type="text" id="apiBase" value="http://localhost:8080" size="36"></label>
+  <label>Network: <select id="networkId">
+    <option value="single_line_11kV_100km">single_line_11kV_100km</option>
+    <option value="ieee34">ieee34</option>
+    <option value="hvdc_stub">hvdc_stub</option>
+  </select></label>
+  <label>SNR (dB): <input type="number" id="snr" value="40" min="-30" max="100" step="1"></label>
+  <button onclick="refreshAll()">Refresh</button>
+  <span id="status" class="small"></span>
+</div>
+
+<div class="panel">
+  <h2>Identifiability heatmap (sigma_min over alpha x R_x)</h2>
+  <canvas id="heatmap"></canvas>
+  <p class="small">
+    Cells with sigma_min &lt; threshold are flagged DEGENERATE on
+    the API; the threshold dot on the right indicates the value
+    used for the WP3.5 calibration.
+  </p>
+</div>
+
+<div class="panel">
+  <h2>CRLB envelope at R_x = 1000 ohm vs alpha</h2>
+  <canvas id="envelope"></canvas>
+</div>
+
+<div class="panel">
+  <h2>Health</h2>
+  <pre id="health" class="small">(refresh to populate)</pre>
+</div>
+
+<script>
+function _fetch(url) {
+  return fetch(url).then(r => r.json()).catch(e => ({error: String(e), status: 999}));
+}
+
+function colorFor(v, vmin, vmax) {
+  if (!isFinite(v)) return '#cccccc';
+  const t = Math.max(0, Math.min(1, (v - vmin) / Math.max(vmax - vmin, 1e-12)));
+  // viridis-ish: blue (low) -> green -> yellow (high)
+  const r = Math.round(255 * t);
+  const g = Math.round(180 * (1 - Math.abs(t - 0.5) * 2));
+  const b = Math.round(255 * (1 - t));
+  return `rgb(${r},${g},${b})`;
+}
+
+function renderHeatmap(data) {
+  const c = document.getElementById('heatmap');
+  c.width = c.clientWidth;
+  c.height = c.clientHeight;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, c.width, c.height);
+  if (data.error) {
+    ctx.fillStyle = '#c0392b';
+    ctx.fillText('error: ' + data.error, 10, 20);
+    return;
+  }
+  const alphas = data.alphas, Rxs = data.Rxs, grid = data.sigma_min_grid;
+  const nA = alphas.length, nR = Rxs.length;
+  const flat = grid.flat().filter(isFinite);
+  const vmin = Math.min(...flat), vmax = Math.max(...flat);
+  const padL = 60, padB = 30, padT = 20, padR = 60;
+  const w = c.width - padL - padR, h = c.height - padT - padB;
+  const cellW = w / nA, cellH = h / nR;
+  for (let i = 0; i < nA; i++) {
+    for (let j = 0; j < nR; j++) {
+      ctx.fillStyle = colorFor(grid[i][j], vmin, vmax);
+      ctx.fillRect(padL + i*cellW, padT + (nR - 1 - j)*cellH, cellW + 1, cellH + 1);
+    }
+  }
+  ctx.fillStyle = '#222'; ctx.font = '11px sans-serif';
+  ctx.fillText('alpha ->', padL, c.height - 6);
+  ctx.fillText('R_x', 6, padT + 12);
+  for (let i = 0; i < nA; i += 3) {
+    ctx.fillText(alphas[i].toFixed(2), padL + i*cellW, c.height - 18);
+  }
+  for (let j = 0; j < nR; j += 3) {
+    ctx.fillText(Rxs[j].toFixed(0), 6, padT + (nR - 1 - j)*cellH + cellH);
+  }
+}
+
+function renderEnvelope(data) {
+  const c = document.getElementById('envelope');
+  c.width = c.clientWidth;
+  c.height = c.clientHeight;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, c.width, c.height);
+  if (data.error) {
+    ctx.fillStyle = '#c0392b';
+    ctx.fillText('error: ' + data.error, 10, 20);
+    return;
+  }
+  const alphas = data.alphas;
+  const yA = data.crlb_alpha_envelope;
+  const yR = data.crlb_Rx_envelope;
+  const padL = 60, padB = 40, padT = 20, padR = 60;
+  const w = c.width - padL - padR, h = c.height - padT - padB;
+  const finite = yA.filter(isFinite);
+  const yMax = Math.max(...finite);
+  const yMin = Math.min(...finite);
+  const xToPx = i => padL + i * w / (alphas.length - 1);
+  const yToPx = v => {
+    if (!isFinite(v)) return NaN;
+    const t = (v - yMin) / Math.max(yMax - yMin, 1e-12);
+    return padT + h - t * h;
+  };
+  // CRLB_alpha curve
+  ctx.strokeStyle = '#1b6ec2'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  let started = false;
+  for (let i = 0; i < alphas.length; i++) {
+    const px = xToPx(i), py = yToPx(yA[i]);
+    if (!isFinite(py)) { started = false; continue; }
+    if (!started) { ctx.moveTo(px, py); started = true; }
+    else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  // axes
+  ctx.strokeStyle = '#444'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + h);
+  ctx.lineTo(padL + w, padT + h);
+  ctx.stroke();
+  ctx.fillStyle = '#222'; ctx.font = '11px sans-serif';
+  ctx.fillText('alpha', padL + w/2, c.height - 8);
+  ctx.fillText('CRLB_alpha (blue)', padL + 8, padT + 12);
+}
+
+async function refreshAll() {
+  const apiBase = document.getElementById('apiBase').value.replace(/\/$/, '');
+  const net = document.getElementById('networkId').value;
+  const snr = document.getElementById('snr').value;
+  document.getElementById('status').textContent = 'fetching...';
+  const [health, ident, env] = await Promise.all([
+    _fetch(`${apiBase}/v1/health`),
+    _fetch(`${apiBase}/v1/identifiability_map?network_id=${encodeURIComponent(net)}`),
+    _fetch(`${apiBase}/v1/crlb_envelope?network_id=${encodeURIComponent(net)}&snr=${encodeURIComponent(snr)}`),
+  ]);
+  document.getElementById('health').textContent = JSON.stringify(health, null, 2);
+  renderHeatmap(ident);
+  renderEnvelope(env);
+  const errs = [health.error, ident.error, env.error].filter(Boolean);
+  document.getElementById('status').textContent = errs.length
+    ? ('errors: ' + errs.join('; '))
+    : 'ok';
+}
+
+window.addEventListener('load', () => {
+  // Don't auto-fetch on load -- user clicks Refresh against a real
+  // API base.  Avoids confusing CORS errors on static-file open.
+});
+</script>
+
+</body>
+</html>

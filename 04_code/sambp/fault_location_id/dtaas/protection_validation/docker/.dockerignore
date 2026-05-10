@@ -1,0 +1,23 @@
+# Exclude heavy artefacts from the Docker build context to keep the
+# image under the 200 MB budget.  Only the Python source + UI assets
+# need to land in the image.
+outputs/
+data/
+docs/
+pscad/
+tests/
+hil/
+.venv/
+__pycache__/
+*.pyc
+*.mat
+*.npz
+*.h5
+*.parquet
+*.pcapng
+.git/
+.github/
+.gitignore
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/

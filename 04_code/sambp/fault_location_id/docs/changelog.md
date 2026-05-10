@@ -1,3 +1,94 @@
+## 2026-05-10 - WP5.4 / D-G - DTaaS Protection-Validation v1.0 release (P5.4)
+
+WP5.4 (P5.4) promotes ``dtaas/protection_validation/`` from a
+placeholder to a v1.0 module structured to plug into the SAMBPS
+DTaaS scenario engine.  All 7 deliverables of the WP5.4 brief
+ship; the Docker image build + push is deferred per the brief's
+explicit STOP gate (PI green-light required before push).
+
+Deliverables
+------------
+
+  api.py                          stdlib http.server-based REST
+                                  API exposing 4 endpoints:
+                                  POST /v1/locate, GET /v1/
+                                  identifiability_map, GET /v1/
+                                  crlb_envelope, GET /v1/health.
+                                  Zero new heavy dependencies.
+
+  cli.py                          Click-based CLI with subcommands
+                                  ``locate``, ``map``, ``envelope``,
+                                  ``validate``.  Thin wrapper over
+                                  the same handlers as api.py.
+
+  scenario_engine_adapter.py      SAMBPS DTaaS scenario-engine
+                                  plugin contract: PluginInfo +
+                                  configure(config) + handle_
+                                  scenario(scenario).  This is the
+                                  FIRST concrete scenario-engine
+                                  adapter in the SAMBPS DTaaS
+                                  programme; the proposed canonical
+                                  shape that sibling sub-projects
+                                  will mirror at their WP5.x
+                                  equivalents.
+
+  ui/index.html                   Static HTML widget (no React
+                                  build chain) rendering the
+                                  identifiability heatmap +
+                                  CRLB envelope.  Embed via
+                                  iframe in the SAMBPS DTaaS
+                                  dashboard.
+
+  dtaas/tests/smoke_test.py       T-G1 smoke test on 3 Reference
+                                  Twins (single_line_11kV_100km,
+                                  ieee34, hvdc_stub).  24 / 24
+                                  PASS:
+                                    - 4 API-handler smoke (per twin);
+                                    - 4 HTTP-wrapper smoke (per twin);
+                                    - 2 scenario-engine adapter smoke;
+                                    - 2 negative-path 400 smoke;
+                                    - 1 health endpoint;
+                                    - 1 plugin-info contract.
+
+  README.md                       Installation, API reference,
+                                  integration guide, license MIT,
+                                  citation.
+
+  docker/Dockerfile               Two-stage minimal Dockerfile
+                                  (python:3.12-slim base + numpy/
+                                  scipy + Click).  Image-size
+                                  budget < 200 MB.  ``.dockerignore``
+                                  excludes the heavy outputs/ +
+                                  data/ artefacts from the build
+                                  context.
+
+  docs/RRR_v1.0.0_dtaas.md        IITM SDLC release-readiness
+                                  review checklist signoff
+                                  template.  Architecture diagram,
+                                  per-section sign-off rows,
+                                  open-items list.  PI sign-off
+                                  recorded as PENDING; v1.0.0-dtaas
+                                  tag lands at this commit.
+
+Acceptance:
+  T-G1                            24 / 24 PASS on 3 Reference Twins.
+  RRR checklist                   IITM SDLC structure signed
+                                  (PI signoff PENDING; self-attested
+                                  at WP5.4 commit).
+  Docker image build + push       DEFERRED per WP5.4 STOP gate.
+
+R-class register update
+-----------------------
+
+  No new R-class.  R8 + R-WP4.5-1 + R-WP4.1-1 (carried from prior
+  WPs) unchanged.
+
+Test gate this commit: 222 passed + 1 skipped + 16 xfailed (was
+198 + 1 + 16 at end of WP5.3; net +24 passed -- the 24 dtaas/
+smoke tests).  ruff clean.
+
+**Tag**: v1.0.0-dtaas (local-only; push gated on PI green-light).
+
 ## 2026-05-10 - WP5.3 25-scenario HIL campaign (P5.3, simulation only)
 
 WP5.3 (P5.3) ships the 25 + 5 scenario test campaign through the
