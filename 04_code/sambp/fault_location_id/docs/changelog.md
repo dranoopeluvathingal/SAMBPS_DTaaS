@@ -1,3 +1,74 @@
+## 2026-05-10 - WP5.1 HIL platform commissioning + partner memos (P5.1, partial R8)
+
+WP5.1 (P5.1) sets up real-time HIL access via three redundant
+paths + one HVDC follow-on contact, per the Phase-5 brief.  All
+five docs ship as DRAFTS in this commit; sending the partnership
+memos is a follow-on PI action gated on PI review of the working-
+tree drafts.
+
+  docs/hil_iitm_status.md         NEW.  Primary path: IIT Madras
+                                  Power Systems Computational Lab.
+                                  Equipment + software-license
+                                  inventory + commissioning
+                                  timeline (placeholder rows for
+                                  PI walkthrough at the lab).
+                                  Section 6 records the PI's
+                                  Typhoon-HIL fallback PRE-APPROVAL
+                                  at USD 30k for HIL-602+ if both
+                                  NUS / NTU paths slip past Q1-2027.
+
+  docs/partnership_memo_NUS_      NEW.  Path 2: Prof. Dipti
+  GEMS.md                         Srinivasan, NUS Green Energy
+                                  Management & Smart-Grid Group.
+                                  Request joint use of RTDS + mu-PMU
+                                  testbed for a 2-week visit; cites
+                                  Cui-Weng 2020 + ASGARD project as
+                                  technical context.  Visit-budget
+                                  approved at USD 8k.
+
+  docs/partnership_memo_NTU_      NEW.  Path 3: Prof. Yan Xu, NTU
+  CTSP.md                         Cham Tao Soon Professorship.
+                                  Request joint use of stability-
+                                  and-security HIL testbed for a
+                                  2-week visit; cites the ML-DSA
+                                  body of work (IEEE TPS multiple)
+                                  as technical context.  Visit-
+                                  budget approved at USD 8k.
+
+  docs/partnership_memo_          NEW.  HVDC follow-on track contact:
+  Amprion.md                      Fabian Erlemeyer, Amprion HVDC
+                                  Engineering.  Explicitly NOT a
+                                  Phase-5 access request; sets up the
+                                  relationship for a Phase-6 / Phase-7
+                                  HVDC sub-project.
+
+  docs/hil_access_matrix.md       NEW.  Feature-by-feature access
+                                  matrix across the three AC paths +
+                                  HVDC follow-on; K09-coverage
+                                  scenario analysis (best / likely /
+                                  fallback); PI sign-off log.
+
+R-class register update
+-----------------------
+
+  R8 (HIL access):  PARTIAL.  Three redundant AC paths and one
+                    HVDC follow-on contact drafted; sending of
+                    partner memos is a PI follow-on action.
+                    Typhoon-HIL fallback at USD 30k is PRE-APPROVED
+                    so K09 cannot be blocked on HIL access alone.
+                    Full closure on partner-window confirmation.
+
+PI sign-off log (recorded 2026-05-10 per the WP5.1 brief):
+  (a) memo review-and-edit-before-send  -> PI edits in working tree
+                                           directly; commit lands
+                                           first, sending follows.
+  (b) visit-budget                       -> APPROVED up to USD 8k
+                                           per visit.
+  (c) Typhoon HIL fallback               -> PRE-APPROVED at USD 30k.
+
+Test gate this commit: 194 passed + 1 skipped + 12 xfailed
+(unchanged from WP4.6).  ruff clean.  No tag.
+
 ## 2026-05-10 - WP4.6 / D4 - Phase-4 IEEE TSG benchmark paper + decision gate (P4.6)
 
 Phase-4 closeout.  Three artefacts staged for release tag
