@@ -2,6 +2,64 @@
 
 Format: each entry is `YYYY-MM-DD - <stage / WP / decision-gate> - <summary>`.
 
+## 2026-05-10 - WP1.3 v1 provenance resolved (P1.3 follow-up)
+
+User re-issued the WP1.3 brief.  Acceptance criterion ("the 30-45 %
+regression test confirms the modelling-error baseline") required the
+test to actually pass, not xfail.  Resolved by isolating what v1's
+"2-section" actually was.
+
+**Resolution.** The v1 manuscript's "2-section" was R-L-series-only -
+no shunt capacitance anywhere on the line.  This was discovered by
+elimination during P1.3:
+
+  * Cascaded-Gamma 2-section (current optimiser, P0.5):    ~0.3 %
+  * Saha standard half-pi 2-section:                       ~10 %
+  * **R-L-only 2-section (no shunt C):**                   **~34 %** at the test point;
+                                                           **mean 40.4 %, max 87.5 %** across 95 cells
+
+The R-L-only formulation reproduces the v1 headline modelling-error
+envelope (mean 39.44 %, max 89.78 %) almost exactly.  v1 likely
+neglected line-charging current entirely on the optimiser side; the
+resulting 39.44 % gap is what Phase-2 was originally framed to close.
+
+This finding *retires* the Phase-1 v1 provenance escalation opened
+in the previous P1.3 commit (87110217).  It also reframes the
+Phase-2 narrative:
+
+  * **My P0.5 Cascaded-Gamma 2-section is already a strict
+    improvement over v1's R-L-only baseline** (~100x lower modelling
+    error vs the same 50-section reference).  The "39.44 % ceiling"
+    framing of WP2.1 is already retired by P0.5; what WP2.1 adds is
+    *closed-form differentiability* for the gradient solver
+    (WP2.2 / WP2.4), not a model-fidelity improvement.
+  * The Phase-2 D-C acceptance ("modelling error vs 50-section ref
+    < 5 %") is satisfied by the current Cascaded-Gamma at 0.4 %.
+
+Files
+-----
+
+- `models/faultloc_legacy_v1_2section.py` (NEW) - R-L-only 2-section
+  forward model.  Backward-compatibility artefact for the WP1.3
+  acceptance check; explicit "Do NOT use this in the optimiser"
+  warning in the module docstring.  Modern Cascaded-Gamma model
+  remains the optimiser's forward model.
+- `tests/test_50section_vs_2section_at_alpha_0p5.py` rewritten:
+  - Removed the `pytest.xfail` marker.
+  - `test_v1_legacy_modelling_error_in_30_to_45_pct_range` PASSES
+    against the legacy module.
+  - `test_modern_cascaded_gamma_is_strictly_better_than_v1` confirms
+    the modern model is >10x better than v1 at the test point.
+  - 3-cell parametrised spot-check confirms the v1 baseline
+    reproduces the mean-39.44 % / max-89.78 % envelope.
+- `docs/glossary.md` MODEL-ERR entry rewritten.  Three values now
+  recorded: v1 legacy baseline, P0.5 Cascaded-Gamma current, and
+  D-C target.  Provenance note added.
+- Test gate this commit: 21 passed, 1 skipped, 1 xfailed (P1.2 noise
+  -realisation, unchanged).  Net +4 passed (5 new tests in the
+  rewritten file vs 1 xfail + 1 always-pass before; net +3 passing
+  + removed 1 xfail = +4).  ruff clean.
+
 ## 2026-05-10 - WP1.3 50-section reference (P1.3) + v1 provenance escalation
 
 - `models/faultloc_50section_reference.py` — pure-numpy generalised

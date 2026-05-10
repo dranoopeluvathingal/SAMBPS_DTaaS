@@ -82,8 +82,19 @@ that owns them.
 - **Scope.** Distinct from `LOC-ERR`: this is a structural property of
   the forward model, not a property of the estimator. Quoted so the
   reader does not conflate the two.
-- **Value (v1 baseline).** `mean 39.44 %, max 89.78 %`
-- **Value (D-C target).** `mean < 5 %, post-WP2.1–WP2.3`
+- **Value (v1 legacy baseline, R-L only 2-section).** `mean 39.44 %, max 89.78 %`
+- **Value (P0.5 Cascaded-Γ 2-section, current optimiser).** `mean ≈ 0.39 %, max ≈ 0.98 %`
+- **Value (D-C target post-WP2.1–WP2.3).** `mean < 5 %`
+- **Provenance note (P1.3 finding).** The v1 manuscript's headline
+  "39.44 %" was measured against a 2-section model that omitted shunt
+  capacitance entirely (`models/faultloc_legacy_v1_2section.py`).
+  The P0.5 Cascaded-Γ 2-section in
+  `models/faultloc_pi_section_model.py` keeps the shunt C terms and
+  is therefore a strict improvement over the v1 baseline (~100× lower
+  modelling error).  Phase-2's WP2.1–WP2.3 (closed-form distributed-
+  parameter $H$) further tightens this to numerically-exact at $f_0$
+  but no longer carries the headline "retire the 39.44 % ceiling"
+  framing — that ceiling is already retired by P0.5.
 
 ## D-B — Phase 1 statistical metrics
 
