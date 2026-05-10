@@ -67,6 +67,7 @@ outputs/*.pkl
 !outputs/phase2_results_per_dataset.parquet
 !outputs/phase2_figs/
 !outputs/phase3_skeleton_smoke.csv
+!outputs/phase3_ieee_feeder_powerflow.csv
 
 # data/ holds heavy waveform bundles emitted by PSCAD or its surrogate.
 # Regenerable from tools/pscad_surrogate.py; keep .gitkeep tracked.
@@ -76,6 +77,9 @@ data/*.h5
 !data/.gitkeep
 !data/pscad_3ph_720.mat
 !data/pscad_branched_720.mat
+!data/ieee13_720.mat
+!data/ieee34_720.mat
+!data/ieee123_720.mat
 
 # --- OS ---------------------------------------------------------------------
 .DS_Store
