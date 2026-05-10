@@ -72,7 +72,21 @@ Convenience phase runners are exposed as Makefile targets:
 
 ## Citation
 
-If you use this code, please cite the IEEE Access submission:
+If you use this code, please cite the appropriate paper for your
+use case:
+
+* **IEEE Access v1** — single-ended single-feeder baseline
+  (the WP1.4 / WP2.4 case):
+* **IEEE PES GM 2027 conference paper** — three-phase + multi-port
+  CRLB + IEEE 13/34/123 + multi-class faults + CNRS validation
+  (the Phase-3 closeout):
+* **IEEE TSG 2027 benchmark paper** — head-to-head comparison
+  on five candidate methods × three independent arc-model classes
+  (the Phase-4 closeout):
+* **IEEE TPWRD / TSG 2027 journal paper** — full pipeline:
+  distributed-parameter optimiser + multi-port CRLB + HIL pipeline
+  + DTaaS Protection-Validation v1.0 (the Phase-5 closeout; **this
+  is the canonical citation for the v1.0.0-phase5 release**):
 
 ```bibtex
 @article{ArjundasSwarup2026HIFTF,
@@ -84,7 +98,42 @@ If you use this code, please cite the IEEE Access submission:
   year      = {2026},
   note      = {Submitted; reproducibility code released under MIT.}
 }
+
+@inproceedings{Phase3conf2027,
+  author    = {Eluvathingal, Anoop and Arjundas, K. and Swarup, K. Shanthi},
+  title     = {Three-Phase, Multi-Section, Branched-Feeder Single-Ended
+               Joint {HIF} Estimation with Multi-Port {CRLB} and
+               Public-Dataset Validation},
+  booktitle = {Proc. IEEE PES General Meeting},
+  year      = {2027},
+  note      = {Phase-3 conference paper; source at docs/Phase3_conference_paper.tex.}
+}
+
+@article{Phase4tsg2027,
+  author  = {Eluvathingal, Anoop and Arjundas, K. and Swarup, K. Shanthi},
+  title   = {Numerical Head-to-Head Benchmark of Single-Ended {HIF}
+             Localisers under Field-Grade Impairments and Three Independent
+             Arc-Model Classes},
+  journal = {IEEE Trans. Smart Grid},
+  year    = {2027},
+  note    = {Phase-4 IEEE TSG paper; source at docs/Phase4_TSG_benchmark.tex.}
+}
+
+@article{Phase5journalv2_2027,
+  author  = {Eluvathingal, Anoop and Arjundas, K. and Swarup, K. Shanthi},
+  title   = {Single-Ended Joint Estimation of {HIF} Location and Arc
+             Resistance: Distributed-Parameter Optimiser, Multi-Port
+             {Cram\'er--Rao} Bound, and Hardware-in-the-Loop Validation},
+  journal = {IEEE Trans. Power Delivery},
+  year    = {2027},
+  note    = {Phase-5 closeout journal paper; submission target
+             (TPWRD vs TSG) confirmed at the v1.0.0-phase5 release.
+             Source at docs/Phase5_journal_v2.tex.}
+}
 ```
+
+A consolidated `CITATION.cff` lands at the v1.0.0-phase5 tag once
+the Zenodo DOI is minted.
 
 ## Data availability
 

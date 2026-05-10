@@ -555,3 +555,198 @@
              numerical equivalent specialised to the two-parameter
              single-bin observation problem.}
 }
+
+@article{Wang2020TPWRD,
+  author  = {Wang, Mingjie and Yang, Boqi and Bo, Zhiqian},
+  title   = {A Distortion-Controllable High-Impedance Arc Fault
+             Model for Renewable-Penetrated Distribution Networks},
+  journal = {IEEE Trans. Power Delivery},
+  year    = {2020},
+  note    = {Cited as the per-half-cycle distortion-zone arc model
+             used at WP4.3.  Open-source PSCAD reference at
+             \url{https://github.com/MingjieWei/PSCAD-FILE-DISTC-HIAF-Model}.}
+}
+
+@article{Torres2022EPSR,
+  author  = {Torres, V. and Ruiz, H.F. and others},
+  title   = {A new high-impedance fault model with configurable
+             stochastic features},
+  journal = {Electric Power Systems Research},
+  volume  = {205},
+  pages   = {107686},
+  year    = {2022},
+  note    = {Cited as the six-feature stochastic arc model
+             (BUILD-UP / SHOULDER / ASYMMETRY / AVALANCHE /
+             INTERMITTENCE / MODULATION) used at WP4.4.}
+}
+
+@article{Santos2022EPSR,
+  author  = {Santos, W.C. and others},
+  title   = {Surface-mode characterisation of high-impedance faults
+             on distribution-feeder grounding paths},
+  journal = {Electric Power Systems Research},
+  volume  = {211},
+  pages   = {108219},
+  year    = {2022},
+  note    = {Cited as the surface-mode tabulation behind the three
+             canonical Torres-2022 profiles (\textit{tree},
+             \textit{sand}, \textit{concrete}).}
+}
+
+@article{Kizilcay1991ETEP,
+  author  = {Kizilcay, M.},
+  title   = {Dynamic arc model for arc burning and arcing faults},
+  journal = {European Trans. Electrical Power},
+  volume  = {1},
+  number  = {1},
+  pages   = {31--38},
+  year    = {1991},
+  note    = {Cited as the canonical dynamic-conductance ODE arc
+             model used at WP4.2.}
+}
+
+@inproceedings{Paramo2023ISGT,
+  author    = {Paramo, G. and Bretas, A.S. and Meyn, S.},
+  title     = {Eigenvalue-based high-impedance fault detection at
+               low {PMU} sampling rates},
+  booktitle = {Proc. IEEE PES ISGT},
+  year      = {2023},
+  note      = {Cited as the published method that we EXTEND to a
+               location estimator at WP4.5; the extension is
+               documented in the module docstring + the WP4.5
+               competitor blind-review record.}
+}
+
+@article{PlatasGarza2010TIM,
+  author  = {Platas-Garza, M.A. and de la O Serna, J.A.},
+  title   = {Dynamic Phasor and Frequency Estimates Through Maximally
+             Flat Differentiators},
+  journal = {IEEE Trans. Instrumentation and Measurement},
+  year    = {2010},
+  note    = {Cited as the canonical Taylor--Fourier transform
+             reference for the WP3.5 K=1 phasor estimator.}
+}
+
+@article{ShirmohammadiHongSemlyenLuo1988TPS,
+  author  = {Shirmohammadi, D. and Hong, H.W. and Semlyen, A. and Luo, G.X.},
+  title   = {A compensation-based power flow method for weakly
+             meshed distribution and transmission networks},
+  journal = {IEEE Trans. Power Systems},
+  volume  = {3},
+  number  = {2},
+  pages   = {753--762},
+  year    = {1988},
+  note    = {Cited as the BFS power-flow solver behind the WP3.3
+             IEEE 13/34/123 feeder factory.}
+}
+
+@article{IEEE_PES_DSAS_test_feeders,
+  author  = {{IEEE PES Distribution System Analysis Subcommittee}},
+  title   = {Distribution Test Feeders Resources},
+  journal = {IEEE PES Resource Center},
+  year    = {2024},
+  note    = {Cited as the canonical IEEE 13 / 34 / 123-node test feeder
+             reference behind the WP3.3 implementation.}
+}
+
+@inproceedings{Phase3conf2027,
+  author    = {Eluvathingal, Anoop and Arjundas, K. and Swarup,
+               K. Shanthi},
+  title     = {Three-Phase, Multi-Section, Branched-Feeder
+               Single-Ended Joint {HIF} Estimation with Multi-Port
+               {CRLB} and Public-Dataset Validation},
+  booktitle = {Proc. IEEE PES General Meeting},
+  year      = {2027},
+  note      = {Phase-3 conference paper companion to this journal
+               submission.  Source at docs/Phase3\_conference\_paper.tex.}
+}
+
+@article{Phase4tsg2027,
+  author  = {Eluvathingal, Anoop and Arjundas, K. and Swarup,
+             K. Shanthi},
+  title   = {Numerical Head-to-Head Benchmark of Single-Ended
+             {HIF} Localisers under Field-Grade Impairments and
+             Three Independent Arc-Model Classes},
+  journal = {IEEE Trans. Smart Grid},
+  year    = {2027},
+  note    = {Phase-4 IEEE TSG paper companion.  Source at
+             docs/Phase4\_TSG\_benchmark.tex.}
+}
+
+@article{IEC61850_92LE_2007,
+  author  = {{IEC TC57 WG10}},
+  title   = {{IEC 61850-9-2LE}: Implementation Guideline for Digital
+             Interface to Instrument Transformers using {IEC} 61850-9-2},
+  year    = {2007},
+  note    = {Cited from \S\,VI as the SV transport profile used by
+             the WP5.2 Merging Unit + IED integration layer.}
+}
+
+@article{IEC61850_81_2020,
+  author  = {{IEC TC57}},
+  title   = {{IEC 61850-8-1}: Communication networks and systems for
+             power utility automation -- Specific communication service
+             mapping ({SCSM}) -- Mappings to {MMS} (\textit{ISO} 9506-1
+             and \textit{ISO} 9506-2) and to {ISO/IEC} 8802-3},
+  year    = {2020},
+  note    = {Cited from \S\,VI as the GOOSE transport profile used by
+             the WP5.2 SAMBPS\_HIF\_LOC\_PROT/SAMBPS\$GO\$LOC\_EST
+             custom GOOSE message.}
+}
+
+@misc{ZenodoDOI_v0_4_0,
+  author       = {Eluvathingal, Anoop and Arjundas, K. and Swarup,
+                  K. Shanthi},
+  title        = {SAMBPS DTaaS HIF-TF-Locator: Phase-2 release
+                  ({v0.4.0-phase2})},
+  howpublished = {Zenodo DOI -- minted at the v0.4.0-phase2 tag},
+  year         = {2026},
+  note         = {Public-repo Phase-2 release archive (D2 deliverable).}
+}
+
+@misc{ZenodoDOI_v0_6_0,
+  author       = {Eluvathingal, Anoop and Arjundas, K. and Swarup,
+                  K. Shanthi},
+  title        = {SAMBPS DTaaS HIF-TF-Locator: Phase-4 release
+                  ({v0.6.0-phase4})},
+  howpublished = {Zenodo DOI -- minted at the v0.6.0-phase4 tag
+                  (pending PI signoff on competitor blind-review)},
+  year         = {2026},
+  note         = {Public-repo Phase-4 release archive (D4 deliverable).}
+}
+
+@misc{ZenodoDOI_v1_0_0,
+  author       = {Eluvathingal, Anoop and Arjundas, K. and Swarup,
+                  K. Shanthi},
+  title        = {SAMBPS DTaaS HIF-TF-Locator: Phase-5 release
+                  ({v1.0.0-phase5}) + Protection-Validation v1.0
+                  Docker image},
+  howpublished = {Zenodo DOI -- minted at the v1.0.0-phase5 tag
+                  (pending PI signoff)},
+  year         = {2026},
+  note         = {Public-repo v1.0 release archive (D5 deliverable).}
+}
+
+@misc{Docker_protection_validation_v10,
+  author       = {{SAMBPS DTaaS Protection-Validation contributors}},
+  title        = {sambps/protection-validation:v1.0 Docker image},
+  howpublished = {Container image -- pushed to {Docker Hub} at the
+                  v1.0.0-phase5 tag (pending PI green-light)},
+  year         = {2026},
+  note         = {Self-contained REST API + scenario-engine plugin
+                  + UI widget; python-3.12-slim base; image size
+                  $< 200$\,MB.  See dtaas/protection\_validation/docker/.}
+}
+
+@misc{ArXiv2510_00831,
+  author       = {Anonymous},
+  title        = {Benchmark deficits in the high-impedance fault
+                  literature: a head-to-head methodological critique},
+  howpublished = {arXiv preprint},
+  eprint       = {2510.00831},
+  archivePrefix= {arXiv},
+  year         = {2025},
+  doi          = {10.48550/arXiv.2510.00831},
+  note         = {Cited from \S\,I as the benchmark-deficit critique
+                  motivating the Phase-4 head-to-head Table 3-bis.}
+}

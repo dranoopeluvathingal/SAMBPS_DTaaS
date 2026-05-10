@@ -1,3 +1,83 @@
+## 2026-05-10 - WP5.5 / D-H - Phase-5 IEEE TPWRD/TSG journal paper + D5 (P5.5)
+
+Phase-5 closeout — final phase-gate delivery.  Three artefacts
+staged for release tag v1.0.0-phase5; Zenodo DOI mint + push +
+journal submission gated on PI signoff.
+
+  docs/Phase5_journal_v2.tex     NEW.  IEEE TPWRD (preferred) /
+                                 IEEE TSG (alternative) full-paper
+                                 draft.  Title:
+                                 "Single-Ended Joint Estimation of
+                                 HIF Location and Arc Resistance:
+                                 Distributed-Parameter Optimiser,
+                                 Multi-Port Cramer-Rao Bound, and
+                                 Hardware-in-the-Loop Validation."
+                                 Target 12-14 pp; 8 sections (intro
+                                 + distributed-parameter + 3-phase
+                                 + multi-port CRLB + impairments +
+                                 HIL + productisation + conclusion);
+                                 65-entry references.bib (>= 60-target).
+                                 Cites IEEE Access v1 prominently.
+                                 Reproducibility statement points
+                                 to GitHub head + Zenodo DOI tags
+                                 + CNRS DOI + Wang-2020 GitHub +
+                                 Docker image v1.0.
+
+  docs/D5_review_pack.md         NEW.  Phase-5 decision-gate review
+                                 pack: phase summary, T-F1 / T-G1 /
+                                 T-H1 acceptance results, all 17
+                                 KPIs vs targets (final scorecard),
+                                 R-class register at Phase-5 exit
+                                 (R4 + R5 + R10 CLOSED; R6 + R8
+                                 PARTIAL; 5 R-class items OPEN with
+                                 documented closure paths), TRL
+                                 recommendation (TRL 5 -> TRL 6
+                                 conditional on HIL campaign
+                                 closure), decision recommendation
+                                 (PASS conditional on 4 PI signoffs),
+                                 open items list.
+
+  README.md                      Citation block updated to list the
+                                 4-paper portfolio: IEEE Access v1
+                                 + Phase-3 conference + Phase-4 TSG
+                                 + Phase-5 TPWRD/TSG with full
+                                 BibTeX entries.
+
+  docs/references.bib            +17 entries (Wang-2020, Torres-2022,
+                                 Santos-2022, Kizilcay-1991,
+                                 Paramo-2023, Platas-Garza-2010,
+                                 Shirmohammadi-1988, IEEE PES DSAS
+                                 test feeders, Phase-3 conf,
+                                 Phase-4 TSG, IEC 61850 -9-2LE +
+                                 -8-1, ZenodoDOI v0.4.0/v0.6.0/v1.0.0,
+                                 Docker image, ArXiv 2510.00831).
+                                 Total: 48 -> 65 entries (>= 60 target).
+
+  v1.0.0-phase5 tag              NEW (this commit).  Local-only;
+                                 push gated on PI sign-off on:
+                                 (i) competitor blind-review;
+                                 (ii) DTaaS RRR;
+                                 (iii) submission target (TPWRD vs TSG);
+                                 (iv) co-author list.
+
+Acceptance:
+  T-F1 (Phase 4 closeout)        PASS conditional (K07 + K08-Ph3
+                                 xfail-strict; K08-Ph4 PASS).
+  T-G1 (DTaaS v1.0 release)      PASS (24 / 24 smoke); RRR signoff
+                                 PI PENDING; Docker image build
+                                 deferred per WP5.4 STOP gate.
+  T-H1 (HIL acceptance)          PASS conditional (K09 software-side
+                                 PASS; K09 hardware-side PENDING;
+                                 K10 mean / p95 / institutional
+                                 PENDING, all xfail-strict).
+
+Test gate this commit: 222 passed + 1 skipped + 16 xfailed
+(unchanged from WP5.4; the new artefacts are documentation-only
+and don't affect the test suite).  ruff clean.
+
+D5 GATE: PASS conditional on PI sign-off of 4 items
+(see docs/D5_review_pack.md §6).
+
 ## 2026-05-10 - WP5.4 / D-G - DTaaS Protection-Validation v1.0 release (P5.4)
 
 WP5.4 (P5.4) promotes ``dtaas/protection_validation/`` from a

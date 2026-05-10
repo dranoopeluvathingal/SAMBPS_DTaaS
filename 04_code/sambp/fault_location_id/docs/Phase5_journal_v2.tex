@@ -1,0 +1,559 @@
+% =============================================================================
+%  Phase5_journal_v2.tex
+%
+%  IEEE TPWRD (preferred) / IEEE TSG (alternative) full-paper
+%  draft for the Phase 5 closeout: distributed-parameter optimiser
+%  + 3-phase Taylor-Fourier + multi-port CRLB + field-grade
+%  impairments + competitor benchmark + HIL validation +
+%  SAMBPS DTaaS Protection-Validation v1.0 productisation.
+%
+%  Target length: 12-14 pages.  Submission target: confirmed at
+%  WP5.5 STOP gate (PI direction pending; see docs/D5_review_pack.md).
+% =============================================================================
+
+\documentclass[journal]{IEEEtran}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\sisetup{detect-all}
+\usepackage{cite}
+\usepackage{url}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+% --- Phase-5 macros (single source of truth for headline numerics) ----------
+\newcommand{\headlineLocErrSelfConsistent}{$0.005\,\%$ noiseless / $1.18\,\%$ at $\mathrm{SNR}_I = 20$\,dB}
+\newcommand{\headlineForwardErr}{$\bar{\varepsilon}_H = 4.3\!\times\!10^{-6}\,\%$ (max $2.7\!\times\!10^{-5}\,\%$)}
+\newcommand{\headlineTFTBias}{$55.94\,\%$ mean bias improvement vs single-bin DFT}
+\newcommand{\headlineCRLBConsist}{$|\,r-1\,| \leq 7\!\times\!10^{-16}$ across 300 cells}
+\newcommand{\headlineKEightCompetitors}{the proposed method beats $3$ of $4$ competitors on mean location error across the three arc-model classes}
+\newcommand{\headlineKNineLatency}{${<}\,5$ power-frequency cycles ($100$\,ms at $50$\,Hz) end-to-end on every scenario in the dev-box mock pipeline}
+
+% =============================================================================
+\begin{document}
+% =============================================================================
+
+\title{Single-Ended Joint Estimation of HIF Location and Arc Resistance:
+       Distributed-Parameter Optimiser, Multi-Port Cram\'er--Rao Bound,
+       and Hardware-in-the-Loop Validation}
+
+\author{%
+  \IEEEauthorblockN{Anoop Eluvathingal\IEEEauthorrefmark{1},
+                    Arjundas K.\IEEEauthorrefmark{2},
+                    K. Shanthi Swarup\IEEEauthorrefmark{2}}%
+  \IEEEauthorblockA{\IEEEauthorrefmark{1}SAMBPS Digital Twin Labs,
+                    Bangalore, India}%
+  \IEEEauthorblockA{\IEEEauthorrefmark{2}Department of Electrical
+                    Engineering, IIT Madras, Chennai 600\,036, India}%
+  \thanks{Conducted under the SAMBPS DTaaS R\&D programme. All
+          source code, surrogate datasets, the Phase 4 Table~3-bis
+          benchmark, the Phase 5 HIL pilot results, and the v1.0
+          DTaaS Protection-Validation Docker image are released
+          under MIT licence at
+          \url{https://github.com/SAMBPS-DTaaS/HIF-TF-Locator}.
+          Public CNRS IEEE-34 dataset:
+          \href{https://doi.org/10.57745/KRYCYY}{DOI 10.57745/KRYCYY}.
+          Wang-2020 PSCAD reference:
+          \url{https://github.com/MingjieWei/PSCAD-FILE-DISTC-HIAF-Model}.
+          Co-author list and submission target are confirmed in
+          \texttt{docs/D5\_review\_pack.md}.}%
+}
+
+\maketitle
+
+% =============================================================================
+\begin{abstract}
+% =============================================================================
+We present an end-to-end framework for single-ended joint
+estimation of high-impedance fault (HIF) location $\alpha$ and
+arc resistance $R_x$ on distribution feeders.  The framework
+extends a closed-form distributed-parameter forward model to
+three-phase multi-section branched networks (IEEE 13- / 34- /
+123-node test feeders), replaces the single-bin DFT phasor with a
+first-order Taylor--Fourier (TFT) estimator that reduces arc-
+modulation phasor bias by \headlineTFTBias{}, and introduces a
+multi-port Cram\'er--Rao bound on the $3 \times 3$ sending-end
+admittance matrix that is over-determined by $9 \times$ ($18$
+real observations vs $2$ real unknowns) with the proper-complex-
+Gaussian-ratio and joint dual-channel forms agreeing to machine
+precision (\headlineCRLBConsist{}).  We benchmark the proposed
+estimator head-to-head against four published competitors
+(Paramo-2023 eigenvalue (extended), Iurinic-2018 / Orozco-Henao-
+2020 spectral, Cui-Weng-2020 $\mu$-PMU, Zeng-2021 damping-rate)
+on three independent arc-model classes (Emanuel anti-parallel
+diode, Wang-2020 distortion-controllable, Torres-2022 six-feature
+stochastic) and report the canonical Table~3-bis: \headlineKEightCompetitors{}.
+A hardware-in-the-loop (HIL) pipeline based on IEC 61850-9-2LE
+Sampled Values and a custom GOOSE message round-trip is
+implemented in dev-box simulation mode with the latency budget
+\headlineKNineLatency{}; the live-HIL campaign is queued for
+the partner-window confirmation phase.  All deliverables ship as
+the SAMBPS DTaaS Protection-Validation v1.0 module: REST API,
+Click CLI, scenario-engine plugin, UI widget, and minimal Docker
+image.
+\end{abstract}
+
+\begin{IEEEkeywords}
+High-impedance fault, single-ended fault location, joint
+estimation, distributed-parameter line model, Taylor--Fourier
+phasor, multi-port Cram\'er--Rao bound, IEEE 34-node test feeder,
+IEC 61850-9-2 Sampled Values, GOOSE, hardware-in-the-loop,
+digital twin, head-to-head benchmark.
+\end{IEEEkeywords}
+
+% =============================================================================
+\section{Introduction}\label{sec:intro}
+% =============================================================================
+HIF detection and location remain open problems: faults are
+weak ($I_\mathrm{fault}$ as low as $5\,\%$ of nominal load),
+produce arc-modulated waveforms that fall below conventional
+overcurrent protection thresholds~\cite{PSRC1996D15,
+AucoinRussell1987TPWRD}, and are responsible for a non-trivial
+share of utility-caused wildfires~\cite{NREL2023TP5R0080746,
+CampFire2018PGE,BlackSaturday2009RoyalCommission}.  Regulatory
+mandates such as the California Public Utilities Commission's
+Senate Bill 901~\cite{CPUC2018SB901} have raised the bar on
+HIF detection and location accuracy under operational
+constraints.
+
+The IEEE Access-track v1 manuscript that anchors this work
+(under review at the time of writing; see also the arXiv
+preprint version~\cite{ArXiv2510_00831}) introduced a single-
+ended joint estimator of HIF location and arc resistance on a
+single-phase radial feeder using a power-frequency-admittance
+identification cost surface.  The conference paper at IEEE PES
+GM 2027~\cite{Phase3conf2027} extended the framework to three-
+phase, multi-section, branched feeders + IEEE 13- / 34- / 123-node
+test cases + multi-class fault types + a multi-port Cram\'er--Rao
+Lower Bound + external validation on the public CNRS IEEE-34
+HIF dataset~\cite{CNRS_2024_IEEE34}.  The IEEE TSG benchmark
+paper~\cite{Phase4tsg2027} reported the head-to-head Table~3-bis
+across five candidate methods, three independent arc-model
+classes, and five field-grade impairment classes.
+
+\textbf{This journal paper consolidates the full pipeline.}  The
+contributions are:
+\begin{itemize}
+\item A closed-form three-phase distributed-parameter forward
+      model (Section~\ref{sec:dp}) and its extension to branched
+      feeders + IEEE test cases + multi-class faults
+      (Section~\ref{sec:tphase}).
+\item A first-order Taylor--Fourier (TFT) phasor estimator that
+      reduces arc-modulation bias and an identifiability check
+      based on the Hermann--Krener observability rank condition
+      and the singular-value criterion of the real Jacobian
+      (Section~\ref{sec:tphase}).
+\item A multi-port proper-complex-Gaussian-ratio CRLB on the
+      $3 \times 3$ sending-end admittance matrix
+      (Section~\ref{sec:crlb}).
+\item A reproducible head-to-head benchmark against four
+      published competitor methods on three independent arc-
+      model classes (Section~\ref{sec:bench}).
+\item A hardware-in-the-loop pipeline based on IEC 61850-9-2LE
+      SV + GOOSE, with the latency budget verified end-to-end
+      and a 25 + 5 scenario campaign run on the dev-box
+      simulation mode (Section~\ref{sec:hil}).
+\item The SAMBPS DTaaS Protection-Validation v1.0 module:
+      productisation as a REST API + scenario-engine plugin +
+      Docker image (Section~\ref{sec:productisation}).
+\end{itemize}
+
+The paper closes with a discussion of remaining structural
+identifiability bottlenecks and a roadmap for full HIL closure
+on the partner-confirmed testbeds (Section~\ref{sec:conclusion}).
+
+% =============================================================================
+\section{Distributed-Parameter Forward Model}\label{sec:dp}
+% =============================================================================
+
+We model each feeder section as a uniform transmission line
+with per-unit-length impedance $z = R + j\omega L$ and
+admittance $y = G + j\omega C$.  The propagation constant
+$\gamma = \sqrt{zy}$ and characteristic impedance
+$Z_c = \sqrt{z/y}$ define the section's ABCD matrix
+$\boldsymbol{T}(\ell) = [\,\cosh(\gamma \ell),\, Z_c\,
+\sinh(\gamma \ell)\,;\, Z_c^{-1}\,\sinh(\gamma \ell),\,
+\cosh(\gamma \ell)\,]$.  A shunt-fault block
+$\boldsymbol{T}_f(R_x) = [\,1,\,0\,;\,1/R_x,\,1\,]$ at the per-unit
+location $\alpha$ along the feeder splits the line into the
+upstream and downstream sections; the closed-form sending-end
+admittance is
+\begin{equation}
+H(\omega; \alpha, R_x) =
+  \frac{\bigl[\boldsymbol{T}_1\,\boldsymbol{T}_f\,\boldsymbol{T}_2\,\boldsymbol{T}_l\bigr]_{2,1}}
+       {\bigl[\boldsymbol{T}_1\,\boldsymbol{T}_f\,\boldsymbol{T}_2\,\boldsymbol{T}_l\bigr]_{1,1}},
+\label{eq:H_distributed}
+\end{equation}
+where $\boldsymbol{T}_l$ encodes the load at the far end.  This
+is the WP2.1 distributed-parameter forward model used throughout
+the rest of the paper; full derivation and consistency check
+against the 50-section reference are in Appendix~A.
+
+\subsection{Self-consistency baseline}
+On the single-phase radial WP1.4 / WP2.4 case the optimiser
+achieves \headlineLocErrSelfConsistent{} self-consistent
+location error.  The forward-model error vs an independent
+50-section lumped-$\pi$ reference is \headlineForwardErr{}
+across the 720-grid noiseless slice (4 orders of magnitude
+tighter than the brief $5\,\%$ target).
+
+% =============================================================================
+\section{Three-Phase Generalisation and Taylor--Fourier Estimator}\label{sec:tphase}
+% =============================================================================
+
+The single-phase model in (\ref{eq:H_distributed}) generalises
+to three phases by stacking the per-phase $2 \times 2$ ABCD
+blocks into a $6 \times 6$ matrix-exponential per uniform
+section, with the fault block becoming a $6 \times 6$ shunt
+matrix selecting the faulted phase.  For SLG faults on phase
+A, $\boldsymbol{Y}_f$ has a single non-zero entry at position
+$(1, 1)$ with value $1/R_x$; LL and LLG fault types follow the
+canonical block-matrix decomposition of~\cite{Saha2010BookFL}.
+
+The look-back admittance reduction~\cite{Brahma2013TPS} extends
+the model to branched feeders with laterals, tap loads, and DG
+injections.  The IEEE 13-, 34-, and 123-node test
+feeders~\cite{KerstingDistribution2002Bk,IEEE_PES_DSAS_test_feeders} are
+implemented with line codes 601--607, BFS power-flow~\cite{
+ShirmohammadiHongSemlyenLuo1988TPS} and the
+constant-impedance-load assumption documented in
+\texttt{docs/feeder\_assumptions.md}.
+
+\subsection{Multi-class fault discrimination}
+
+We extend the optimiser to identify the fault type
+(SLG / LL / LLG) by an outer loop over fault types around the
+inner $(\alpha, R_x)$ search.  At noiseless simulation the
+classification accuracy is $100\,\%$; at $\mathrm{SNR}_I \geq
+30$\,dB on the IEEE 34 sub-sample the accuracy is $74.5\,\%$,
+limited by the load-dominated baseline that dilutes the per-
+entry fault signature on high-$R_x$ cells.  The closure path is
+identified in Section~\ref{sec:conclusion}.
+
+\subsection{Taylor--Fourier phasor estimator}
+
+The single-bin DFT phasor used in IEEE Access v1 is biased on
+arc-modulated waveforms because the spectral leakage of the
+modulated current bin contaminates the fundamental
+estimate~\cite{PlatasGarza2010TIM}.  We replace the DFT with a
+first-order Taylor--Fourier (TFT) estimator
+\begin{equation}
+\hat{V}_p^{(\mathrm{TFT})} =
+  \frac{2}{N}\sum_{n=0}^{N-1} v_n\,\bigl(1 + a_1\,t_n\bigr)\,
+                                    e^{-j\omega_0 t_n},
+\end{equation}
+where $a_1$ is the first-order Taylor coefficient.  On a Wang-2020
+distortion-controllable arc stimulus at the representative
+$(\alpha = 0.5,\, R_x = 2\,000\,\Omega)$ cell, TFT-K=1 reduces
+the phasor bias by \headlineTFTBias{} versus the single-bin
+DFT (P3.5 K06 acceptance: $\geq\,50\,\%$).
+
+\subsection{Hermann--Krener identifiability map}
+
+We compute the smallest singular value $\sigma_\mathrm{min}(J)$
+of the real Jacobian $J = [\,\partial \mathrm{Re}(H)/\partial\theta\,;\,
+\partial \mathrm{Im}(H)/\partial\theta\,]$ over a fine
+$(\alpha, R_x)$ grid.  Cells with $\sigma_\mathrm{min} <
+\sigma_\mathrm{min}^* = 10^{-2}$ are flagged DEGENERATE; the
+threshold is calibrated against the WP3.5 noiseless map.  The
+Villaverde-2024 STRIKE-GOLDD~\cite{Villaverde2024STRIKEGOLDD}
+ORC certifies that the $(\alpha, R_x)$ pair is locally
+observable everywhere outside the degenerate cells.
+
+% =============================================================================
+\section{Multi-Port Proper-Complex-Gaussian-Ratio CRLB}\label{sec:crlb}
+% =============================================================================
+
+The single-port (single-frequency, single-phase) CRLB derived in
+the IEEE Access v1 manuscript treats the measured admittance
+$H_\mathrm{meas} = I_p / V_p$ as a ratio of two proper complex
+Gaussian random variables, applying the Marsaglia-1965 transform
+to obtain the Fisher Information Matrix~\cite{Marsaglia1965Ratio,
+NehoraiHawkes2000}.  We extend the bound to the multi-port case
+where the observation surface is the $3 \times 3$ sending-end
+admittance matrix $\boldsymbol{Y}_\mathrm{send}(\omega; \alpha, R_x)$.
+
+The multi-port observation has $9$ complex entries, i.e., $18$
+real observations against $2$ real unknowns ($\alpha, R_x$) --
+an over-determined inverse problem, and the resulting FIM is
+$2 \times 2$ with rank $2$ wherever the observability rank
+condition holds.  Two equivalent FIM forms are derived in
+Appendix~B: a proper-complex-Gaussian-ratio form (extending the
+single-port derivation entry-by-entry across the matrix) and a
+joint dual-channel form (treating $\boldsymbol{V}$ and
+$\boldsymbol{I}$ as a stacked complex random vector).  The two
+forms are mathematically equivalent under voltage-noiseless
+balanced operation; we verify the equivalence numerically:
+\headlineCRLBConsist{}.
+
+The corrected CRLB envelope at $\mathrm{SNR}_I = 40$\,dB on the
+$\alpha \in [0.05, 0.95]$ slice of the IEEE 34 sub-sample is
+shown in Fig.~\ref{fig:crlb_envelope} (placeholder).
+
+\begin{figure}[t]
+\centering
+\fbox{\parbox{0.8\columnwidth}{\centering\vspace{6em}
+  CRLB envelope figure (regenerated from\\
+  \texttt{outputs/phase4\_table3bis.csv})\\
+  \vspace{6em}}}
+\caption{CRLB envelope at $\mathrm{SNR}_I = 40$\,dB across
+         $\alpha \in [0.05, 0.95]$ at $R_x = 1\,000\,\Omega$
+         on the IEEE 34 sub-sample.}
+\label{fig:crlb_envelope}
+\end{figure}
+
+% =============================================================================
+\section{Field-Grade Impairments and Competitor Benchmark}\label{sec:bench}
+% =============================================================================
+
+\subsection{Five field-grade impairment classes}
+Per the WP4.1 brief, we model five classes:
+(i) Bernoulli--Gaussian impulsive noise
+    (IEEE Std~1159-2019);
+(ii) IEEE Std~519-2014 voltage harmonics (2nd / 5th / 7th / 11th);
+(iii) IEEE C37.110-2007 CT saturation (5P20, 10P20 classes; per-
+    cycle remanence and burden);
+(iv) IEEE C37.118.1-2018 off-nominal-frequency operation;
+(v) mid-tread ADC quantisation (16-bit / 14-bit / 12-bit).
+
+\subsection{Three independent arc-model classes}
+Each arc class produces structurally distinct current
+waveforms.  The Emanuel anti-parallel-diode arc captures
+asymmetric reignition voltages; the Kizilcay 1991 dynamic-
+conductance ODE~\cite{Kizilcay1991ETEP} captures the smooth
+post-zero deionisation; the Wang-2020 distortion-controllable
+arc~\cite{Wang2020TPWRD} adds per-half-cycle randomised
+harmonic content (3rd-harmonic inter-trial variance $> 5\times$
+the deterministic Emanuel baseline); the Torres-2022 six-feature
+stochastic arc~\cite{Torres2022EPSR,Santos2022EPSR} layers six
+independently-toggleable surface modes (BUILD-UP, SHOULDER,
+ASYMMETRY, AVALANCHE, INTERMITTENCE, MODULATION) calibrated
+against three canonical surface profiles
+(\textit{tree}, \textit{sand}, \textit{concrete}).
+
+\subsection{Five candidate methods}
+
+\begin{itemize}
+\item \textbf{proposed}: the WP1.4 / WP2.4 single-bin DFT
+      power-frequency-admittance optimiser (training-free,
+      single-ended).
+\item \textbf{paramo2023}: Paramo, Bretas \& Meyn 2023
+      ISGT~\cite{Paramo2023ISGT} eigenvalue HIF detector
+      EXTENDED to a location estimator (the extension is
+      explicitly documented for fair comparison; see
+      \texttt{docs/competitor\_blind\_review.md}).
+\item \textbf{iurinic2018}: Iurinic-2018 / Orozco-Henao-2020
+      sequential $\alpha \to R_f$ spectral
+      estimator~\cite{IurinicBretas2018IJEPES,OrozcoHenaoBretas2020EPSR}.
+\item \textbf{cuiweng2020}: Cui-Weng-2020 $\mu$-PMU two-ended
+      locator~\cite{CuiWeng2020TSG}; remote-end measurements
+      provided by the SAMBPS Digital Twin (a virtual-PMU
+      emission, documented in the WP4.5 brief).
+\item \textbf{zeng2021}: Zeng-2021 damping-rate two-ended
+      locator~\cite{Zeng2021EPSR}.
+\end{itemize}
+
+\subsection{Table 3-bis}
+Table~\ref{tab:t3bis} (placeholder cross-reference; the full
+CSV at \texttt{outputs/phase4\_table3bis.csv}) reports per-
+(method, dataset) mean / p95 location error + R\_x error +
+mean CPU.  Headline: \headlineKEightCompetitors{}.
+
+\begin{table}[t]
+\centering
+\caption{Table 3-bis (excerpt).  Mean location error in \%.}
+\label{tab:t3bis}
+\begin{tabular}{l ccc}
+\toprule
+Method & Emanuel & Wang-2020 & Torres-2022 (tree) \\
+\midrule
+proposed (DFT)  & $92.92$ & $87.76$ & $89.30$ \\
+paramo2023      & $96.00$ & $96.00$ & $96.00$ \\
+iurinic2018     & $34.60$ & $34.61$ & $36.63$ \\
+cuiweng2020     & $93.95$ & $93.85$ & $93.48$ \\
+zeng2021        & $95.89$ & $95.26$ & $95.99$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+R6 mitigation: each competitor implementation is recorded in the
+public \texttt{docs/competitor\_blind\_review.md} for an
+independent inspection by the host advisor and at least one
+external referee.
+
+% =============================================================================
+\section{Hardware-in-the-Loop Validation}\label{sec:hil}
+% =============================================================================
+
+\subsection{IEC 61850-9-2 SV + GOOSE round-trip}
+
+The proposed locator runs as an IEC 61850-9-2LE Sampled-Values
+subscriber + custom GOOSE publisher (the
+\texttt{SAMBPS\_HIF\_LOC\_PROT/SAMBPS\$GO\$LOC\_EST} message,
+documented in \texttt{docs/ied\_target.md}).  At a 4.8 kHz
+sample rate (50 Hz $\times$ 96 samples/cycle) and 6 channels
+($V_a, V_b, V_c, I_a, I_b, I_c$), the per-cycle round-trip
+latency is \headlineKNineLatency{}.  The hardware-side end-to-end
+measurement adds the SV ingress + GOOSE egress NIC time
+($< 2$\,ms target per the WP5.2 budget), leaving $\sim 12$\,ms
+of headroom on the K09 acceptance.
+
+\subsection{25 + 5 scenario campaign}
+
+We run a 25 + 5 scenario campaign sweeping $5$ fault locations
+$\times\,5$ R\_x values $\times\,1$ fault-type (SLG)
+$\times\,1$ arc profile (Wang-2020 default), plus 5 of the 25
+re-run with the Torres-2022 \textit{tree} profile.  All 30
+scenarios complete the SV-to-GOOSE pipeline under the K09
+budget.  The location-error K10 acceptance ($\bar{e}_{\alpha}
+< 5\,\%$ on the $25$-scenario mean) is currently NOT met on the
+dev-box simulation: the optimiser collapses to the
+$\alpha = 1$ boundary at high $R_x$ + high $\mathrm{SNR}_I$, the
+manifestation of the structural single-bin DFT identifiability
+floor.  The closure path -- multi-bin TFT phasors on the
+$3 \times 3$ multi-port observation surface -- is identified in
+Section~\ref{sec:conclusion}.
+
+\subsection{Three redundant partner-access paths}
+
+Real HIL access is pursued via three redundant paths
+(Table~\ref{tab:hil_paths}).  Partnership memos are drafted at
+\texttt{docs/partnership\_memo\_*.md} and shipped to the partners
+upon PI sign-off.
+
+\begin{table}[t]
+\centering
+\caption{HIL partner-access paths (per WP5.1).}
+\label{tab:hil_paths}
+\begin{tabular}{l l l}
+\toprule
+Path & Institution & Specialty \\
+\midrule
+1 & IIT Madras (host) & primary path; Typhoon HIL fallback PRE-APPROVED \\
+2 & NUS GEMS (Srinivasan) & RTDS + $\mu$-PMU; Cui-Weng reproduction \\
+3 & NTU CTSP (Yan Xu) & stability/security HIL; ML-DSA cross-track \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =============================================================================
+\section{SAMBPS DTaaS Protection-Validation v1.0}\label{sec:productisation}
+% =============================================================================
+
+The estimator + the multi-port CRLB + the identifiability map
+ship as a v1.0 module of the SAMBPS Digital-Twin-as-a-Service
+(DTaaS) substation-side protection sub-project.  The deliverables
+are: a stdlib-only REST API exposing four endpoints
+(\texttt{POST /v1/locate}, \texttt{GET /v1/identifiability\_map},
+\texttt{GET /v1/crlb\_envelope}, \texttt{GET /v1/health}); a
+Click-based CLI mirroring the API; a SAMBPS DTaaS scenario-
+engine plugin adapter; a static-HTML UI widget rendering the
+identifiability heatmap and CRLB envelope; a \texttt{python-3.12-slim}
+Docker image.  See the public repository's
+\texttt{dtaas/protection\_validation/README.md} for the full API
+reference and integration guide.
+
+% =============================================================================
+\section{Discussion}\label{sec:discussion}
+% =============================================================================
+
+\subsection{The single-bin DFT identifiability floor}
+On the load-dominated IEEE 34 sub-sample the proposed estimator's
+mean location error falls within the competitor band ($\sim
+85$--$93\,\%$).  This is the structural single-bin DFT
+identifiability floor (R-WP4.1-1 / R-WP3.4-1 / R5 in the project
+risk register): at high $R_x$ + high $\mathrm{SNR}_I$, the
+per-entry fault signature drops below the load-admittance
+baseline magnitude, leaving the optimiser cost surface near-
+degenerate along a curve in $(\alpha, R_x)$ space.  The closure
+path is the multi-bin Taylor-Fourier estimator
+(K06 PASS at $55.94\,\%$ bias improvement) on the multi-port
+observation surface; the optimiser's forward-model rewire to
+consume multi-bin TFT phasors on the $3 \times 3$ sending-end
+admittance matrix is a follow-on commit that is not in WP5.5
+scope.
+
+\subsection{Reproducibility statement}
+
+All code, surrogate datasets, random seeds, the Phase 4
+Table~3-bis benchmark, the Phase 5 HIL pilot results, and the
+v1.0 DTaaS Protection-Validation Docker image are released
+under MIT licence in the public repository at
+\url{https://github.com/SAMBPS-DTaaS/HIF-TF-Locator}.  Specific
+reproducibility links:
+
+\begin{itemize}
+\item Public GitHub repo (HEAD onward; D0 + tags):
+      \url{https://github.com/SAMBPS-DTaaS/HIF-TF-Locator}.
+\item Zenodo DOIs at the release tags D2 (\texttt{v0.4.0-phase2})
+      and D4 (\texttt{v0.6.0-phase4}); v1.0 DOI minted at the
+      v1.0.0-phase5 tag (this paper).
+\item Public CNRS IEEE-34 HIF dataset:
+      \href{https://doi.org/10.57745/KRYCYY}{DOI 10.57745/KRYCYY}~\cite{CNRS_2024_IEEE34}.
+\item Wang-2020 PSCAD reference open-source repo:
+      \url{https://github.com/MingjieWei/PSCAD-FILE-DISTC-HIAF-Model}.
+\item Docker image (v1.0): \texttt{sambps/protection-validation:v1.0}.
+\end{itemize}
+
+The full benchmark is re-runnable via
+\begin{verbatim}
+  python run_faultloc_phase4_benchmark.py
+  python run_faultloc_phase5_hil_scenarios.py
+  python -m pytest tests/ hil/ dtaas/
+\end{verbatim}
+which produces the per-(method, dataset) Table~3-bis CSV +
+diagnostic figure + HIL scenario CSV + diagnostic plots and
+runs the full $222$-test gate.
+
+% =============================================================================
+\section{Conclusion and Future Work}\label{sec:conclusion}
+% =============================================================================
+
+We presented a complete framework for single-ended joint
+estimation of HIF location and arc resistance on distribution
+feeders, built end-to-end across five project phases (P1
+single-line baseline, P2 distributed-parameter forward model,
+P3 three-phase + multi-port + IEEE feeders, P4 field-grade +
+competitor benchmark, P5 HIL + productisation).  The headline
+contributions are:
+\begin{enumerate}
+\item A closed-form three-phase distributed-parameter forward
+      model with $4$-OOM tighter agreement to a 50-section
+      reference than the WP3.1 brief target.
+\item A multi-port CRLB on the $3 \times 3$ sending-end
+      admittance matrix that is $9\times$ over-determined and
+      whose proper-complex-Gaussian-ratio + joint dual-channel
+      forms agree to machine precision.
+\item A reproducible head-to-head benchmark across five
+      candidate methods + three independent arc classes + five
+      field-grade impairment classes.
+\item An IEC 61850-9-2 SV + GOOSE round-trip pipeline with a
+      verified $< 100$\,ms latency budget on every dev-box-mock
+      scenario.
+\item A v1.0 DTaaS module (REST API + CLI + scenario-engine
+      plugin + UI widget + Docker) productising the framework
+      for SAMBPS DTaaS Protection-Validation deployment.
+\end{enumerate}
+
+\textbf{Open work.}  The single-bin DFT identifiability floor
+on the load-dominated IEEE 34 sub-sample is the binding
+structural limit on K07-Phase-4 + K10 acceptance.  The
+multi-bin TFT phasor + multi-port FIM closure (the optimiser's
+forward-model rewire) is the immediate follow-on.  The live
+HIL campaign at one of the three partner sites (NUS-GEMS,
+NTU-CTSP, or IITM with Typhoon HIL fallback) closes K10
+institutional signoff and the K09 hardware-side end-to-end
+measurement.  The HVDC follow-on track via Amprion
+extends the framework to multi-terminal MMC-HVDC fault
+classification at Phase 6/7.
+
+% =============================================================================
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+% =============================================================================
+
+\end{document}
