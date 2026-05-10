@@ -1,0 +1,79 @@
+# Full fs_mpc_mg stack: 1 Mosquitto broker, N ICAs, 1 CMC, 1 DT.
+#
+# Run from the project root:
+#     docker compose -f docker/docker-compose.yml up --build
+#
+# Override the number of ICAs by editing the `ica_<n>` services or scaling
+# from a single template via your orchestrator.
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: fsmpc_mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+
+  ica1:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: fsmpc_ica1
+    depends_on:
+      - mosquitto
+    command: python -m fs_mpc_mg.entrypoints.ica_main --id ica1 --broker mosquitto
+
+  ica2:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: fsmpc_ica2
+    depends_on:
+      - mosquitto
+    command: python -m fs_mpc_mg.entrypoints.ica_main --id ica2 --broker mosquitto
+
+  ica3:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: fsmpc_ica3
+    depends_on:
+      - mosquitto
+    command: python -m fs_mpc_mg.entrypoints.ica_main --id ica3 --broker mosquitto
+
+  ica4:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: fsmpc_ica4
+    depends_on:
+      - mosquitto
+    command: python -m fs_mpc_mg.entrypoints.ica_main --id ica4 --broker mosquitto
+
+  cmc:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: fsmpc_cmc
+    depends_on:
+      - mosquitto
+    command: >
+      python -m fs_mpc_mg.entrypoints.cmc_main
+      --broker mosquitto
+      --icas ica1,ica2,ica3,ica4
+      --tick-period 0.5
+
+  dt:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: fsmpc_dt
+    depends_on:
+      - mosquitto
+    command: >
+      python -m fs_mpc_mg.entrypoints.dt_main
+      --broker mosquitto
+      --icas ica1,ica2,ica3,ica4
+      --tick-period 0.01

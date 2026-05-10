@@ -1,0 +1,7 @@
+case_name,scenario,fault_R_pu,source,expected_outcome,actual_trip,correct_decision,trip_time_ms,I_L_peak_pu,i_diff_peak_pu,i_rst_peak_pu,lm_success,lm_cost,I_fund_hat,phi_fund_hat,kappa_n,k_ibr_pu,V_pre_bus1,V_pre_bus2
+tr62_ext_R001,external,0.01,andes,no_trip,False,True,,1.29583,0,1.75049,,,,,,1.1,1.01,1.0163
+tr62_ext_R010,external,0.1,andes,no_trip,False,True,,1.05297,0,1.46361,,,,,,1.1,1.01,1.0163
+tr62_ext_R050,external,0.5,andes,no_trip,False,True,,0.524922,0,0.742047,,,,,,1.1,1.01,1.0163
+tr62_int_R001,internal,0.01,andes,trip,True,True,950,1.29583,13.9442,7.94116,True,267908,6.505,-1.5226,1,1.1,1.01,1.0163
+tr62_int_R010,internal,0.1,andes,trip,True,True,950,1.05297,14.0322,7.73412,True,292823,6.30625,-1.88596,1,1.1,1.01,1.0163
+tr62_int_R050,internal,0.5,andes,trip,True,True,950,0.524922,14.0552,7.299,True,368623,10,-1.90014,1,1.1,1.01,1.0163
